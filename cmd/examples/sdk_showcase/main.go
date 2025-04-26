@@ -27,7 +27,7 @@ func main() {
 	ctx := context.Background()
 	
 	// Get required scopes for all services
-	allScopes := pkg.GetScopesByService("auth", "groups", "transfer")
+	allScopes := pkg.GetScopesByService("auth", "groups", "transfer", "search", "flows")
 	
 	// Get token using client credentials
 	tokenResp, err := authClient.GetClientCredentialsToken(ctx, allScopes...)
@@ -41,6 +41,8 @@ func main() {
 	// Create service clients using the access token
 	groupsClient := config.NewGroupsClient(accessToken)
 	transferClient := config.NewTransferClient(accessToken)
+	searchClient := config.NewSearchClient(accessToken)
+	flowsClient := config.NewFlowsClient(accessToken)
 
 	// Demonstrate Groups API - List groups
 	fmt.Println("\n=== Groups API ===")
@@ -112,6 +114,34 @@ func main() {
 		} else {
 			fmt.Printf("Transfer submitted successfully, task ID: %s\n", taskResponse.TaskID)
 			fmt.Printf("You can monitor this task using the Globus web interface\n")
+		}
+	}
+	
+	// Demonstrate Search API - List indexes
+	fmt.Println("\n=== Search API ===")
+	indexes, err := searchClient.ListIndexes(ctx, &pkg.ListIndexesOptions{
+		Limit: 5,
+	})
+	if err != nil {
+		log.Printf("Failed to list search indexes: %v", err)
+	} else {
+		fmt.Printf("Found %d search indexes:\n", len(indexes.Indexes))
+		for i, index := range indexes.Indexes {
+			fmt.Printf("%d. %s (%s)\n", i+1, index.DisplayName, index.ID)
+		}
+	}
+	
+	// Demonstrate Flows API - List flows
+	fmt.Println("\n=== Flows API ===")
+	flows, err := flowsClient.ListFlows(ctx, &pkg.ListFlowsOptions{
+		Limit: 5,
+	})
+	if err != nil {
+		log.Printf("Failed to list flows: %v", err)
+	} else {
+		fmt.Printf("Found %d flows:\n", len(flows.Flows))
+		for i, flow := range flows.Flows {
+			fmt.Printf("%d. %s (%s)\n", i+1, flow.Title, flow.ID)
 		}
 	}
 	

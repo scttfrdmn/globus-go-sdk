@@ -9,6 +9,7 @@
 // - Groups: Group management
 // - Transfer: File transfer and endpoint management
 // - Search: Data search and discovery
+// - Flows: Automation and workflow orchestration
 //
 // Each service has its own client and models, following the pattern
 // established by the official Globus SDKs for Python and JavaScript.
@@ -18,6 +19,7 @@ import (
 	"github.com/yourusername/globus-go-sdk/pkg/core"
 	"github.com/yourusername/globus-go-sdk/pkg/core/config"
 	"github.com/yourusername/globus-go-sdk/pkg/services/auth"
+	"github.com/yourusername/globus-go-sdk/pkg/services/flows"
 	"github.com/yourusername/globus-go-sdk/pkg/services/groups"
 	"github.com/yourusername/globus-go-sdk/pkg/services/search"
 	"github.com/yourusername/globus-go-sdk/pkg/services/transfer"
@@ -39,6 +41,9 @@ const (
 	
 	// SearchScope is the scope for the Search service
 	SearchScope = search.SearchScope
+	
+	// FlowsScope is the scope for the Flows service
+	FlowsScope = flows.FlowsScope
 )
 
 // SDKConfig holds configuration for all services
@@ -96,6 +101,18 @@ func (c *SDKConfig) NewSearchClient(accessToken string) *search.Client {
 	return searchClient
 }
 
+// NewFlowsClient creates a new Flows client with the SDK configuration
+func (c *SDKConfig) NewFlowsClient(accessToken string) *flows.Client {
+	flowsClient := flows.NewClient(accessToken)
+	
+	// Apply configuration
+	if c.Config != nil {
+		c.Config.ApplyToClient(flowsClient.Client)
+	}
+	
+	return flowsClient
+}
+
 // NewConfig creates a new SDK configuration
 func NewConfig() *SDKConfig {
 	return &SDKConfig{
@@ -142,6 +159,8 @@ func GetScopesByService(services ...string) []string {
 			scopes = append(scopes, TransferScope)
 		case "search":
 			scopes = append(scopes, SearchScope)
+		case "flows":
+			scopes = append(scopes, FlowsScope)
 		}
 	}
 	

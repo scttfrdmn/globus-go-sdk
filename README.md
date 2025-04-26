@@ -33,6 +33,7 @@ This SDK follows the structure and patterns established by the official Globus P
 - `pkg/services/groups`: Group management
 - `pkg/services/transfer`: File transfer and endpoint management
 - `pkg/services/search`: Data search and discovery
+- `pkg/services/flows`: Automation and workflow orchestration
 
 ## Quick Start
 
@@ -225,6 +226,60 @@ func main() {
 }
 ```
 
+### Flows
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "os"
+    "time"
+
+    "github.com/yourusername/globus-go-sdk/pkg"
+)
+
+func main() {
+    // Create a new SDK configuration
+    config := pkg.NewConfigFromEnvironment()
+
+    // Create a new Flows client with an access token
+    flowsClient := config.NewFlowsClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+    
+    // List flows the user has access to
+    flows, err := flowsClient.ListFlows(context.Background(), nil)
+    if err != nil {
+        log.Fatalf("Failed to list flows: %v", err)
+    }
+    
+    fmt.Printf("Found %d flows:\n", len(flows.Flows))
+    for i, flow := range flows.Flows {
+        fmt.Printf("%d. %s (%s)\n", i+1, flow.Title, flow.ID)
+    }
+    
+    // Run a flow (if flow ID is provided)
+    flowID := os.Getenv("GLOBUS_FLOW_ID")
+    if flowID != "" {
+        runReq := &pkg.RunRequest{
+            FlowID: flowID,
+            Label:  "Example Run " + time.Now().Format("20060102"),
+            Input: map[string]interface{}{
+                "message": "Hello from Globus Go SDK!",
+            },
+        }
+        
+        run, err := flowsClient.RunFlow(context.Background(), runReq)
+        if err != nil {
+            log.Fatalf("Failed to run flow: %v", err)
+        }
+        
+        fmt.Printf("Flow run started: %s (Status: %s)\n", run.RunID, run.Status)
+    }
+}
+```
+
 ## Documentation
 
 For detailed documentation, see the [GoDoc](https://pkg.go.dev/github.com/yourusername/globus-go-sdk/).
@@ -238,7 +293,7 @@ This SDK is under active development. The current status:
 - ✅ Groups client
 - ✅ Transfer client
 - ✅ Search client
-- 🔄 Flows client (coming soon)
+- ✅ Flows client
 
 ## Alignment with Official SDKs
 
