@@ -8,6 +8,7 @@
 // - Auth: OAuth2 authentication and authorization
 // - Groups: Group management
 // - Transfer: File transfer and endpoint management
+// - Search: Data search and discovery
 //
 // Each service has its own client and models, following the pattern
 // established by the official Globus SDKs for Python and JavaScript.
@@ -18,6 +19,7 @@ import (
 	"github.com/yourusername/globus-go-sdk/pkg/core/config"
 	"github.com/yourusername/globus-go-sdk/pkg/services/auth"
 	"github.com/yourusername/globus-go-sdk/pkg/services/groups"
+	"github.com/yourusername/globus-go-sdk/pkg/services/search"
 	"github.com/yourusername/globus-go-sdk/pkg/services/transfer"
 )
 
@@ -34,6 +36,9 @@ const (
 	
 	// TransferScope is the scope for the Transfer service
 	TransferScope = transfer.TransferScope
+	
+	// SearchScope is the scope for the Search service
+	SearchScope = search.SearchScope
 )
 
 // SDKConfig holds configuration for all services
@@ -77,6 +82,18 @@ func (c *SDKConfig) NewTransferClient(accessToken string) *transfer.Client {
 	}
 	
 	return transferClient
+}
+
+// NewSearchClient creates a new Search client with the SDK configuration
+func (c *SDKConfig) NewSearchClient(accessToken string) *search.Client {
+	searchClient := search.NewClient(accessToken)
+	
+	// Apply configuration
+	if c.Config != nil {
+		c.Config.ApplyToClient(searchClient.Client)
+	}
+	
+	return searchClient
 }
 
 // NewConfig creates a new SDK configuration
@@ -123,6 +140,8 @@ func GetScopesByService(services ...string) []string {
 			scopes = append(scopes, GroupsScope)
 		case "transfer":
 			scopes = append(scopes, TransferScope)
+		case "search":
+			scopes = append(scopes, SearchScope)
 		}
 	}
 	

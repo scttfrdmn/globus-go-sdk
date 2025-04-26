@@ -32,6 +32,7 @@ This SDK follows the structure and patterns established by the official Globus P
 - `pkg/services/auth`: OAuth2 authentication and authorization
 - `pkg/services/groups`: Group management
 - `pkg/services/transfer`: File transfer and endpoint management
+- `pkg/services/search`: Data search and discovery
 
 ## Quick Start
 
@@ -168,6 +169,62 @@ func main() {
 }
 ```
 
+### Search
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+    "os"
+
+    "github.com/yourusername/globus-go-sdk/pkg"
+)
+
+func main() {
+    // Create a new SDK configuration
+    config := pkg.NewConfigFromEnvironment()
+
+    // Create a new Search client with an access token
+    searchClient := config.NewSearchClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+    
+    // List indexes the user has access to
+    indexes, err := searchClient.ListIndexes(context.Background(), nil)
+    if err != nil {
+        log.Fatalf("Failed to list indexes: %v", err)
+    }
+    
+    fmt.Printf("Found %d indexes:\n", len(indexes.Indexes))
+    for i, index := range indexes.Indexes {
+        fmt.Printf("%d. %s (%s)\n", i+1, index.DisplayName, index.ID)
+    }
+    
+    // Search an index (if index ID is provided)
+    indexID := os.Getenv("GLOBUS_SEARCH_INDEX_ID")
+    if indexID != "" {
+        searchReq := &pkg.SearchRequest{
+            IndexID: indexID,
+            Query:   "example",
+            Options: &pkg.SearchOptions{
+                Limit: 10,
+            },
+        }
+        
+        results, err := searchClient.Search(context.Background(), searchReq)
+        if err != nil {
+            log.Fatalf("Failed to search: %v", err)
+        }
+        
+        fmt.Printf("Search found %d results\n", results.Count)
+        for i, result := range results.Results {
+            fmt.Printf("%d. %s (Score: %.2f)\n", i+1, result.Subject, result.Score)
+        }
+    }
+}
+```
+
 ## Documentation
 
 For detailed documentation, see the [GoDoc](https://pkg.go.dev/github.com/yourusername/globus-go-sdk/).
@@ -180,7 +237,7 @@ This SDK is under active development. The current status:
 - ✅ Auth client
 - ✅ Groups client
 - ✅ Transfer client
-- 🔄 Search client (coming soon)
+- ✅ Search client
 - 🔄 Flows client (coming soon)
 
 ## Alignment with Official SDKs
