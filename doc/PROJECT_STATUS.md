@@ -13,8 +13,9 @@ This document tracks the current status of the Globus Go SDK project.
 | Core Infrastructure    | ✅ Complete          | Base client, transport, authorizers implemented      |
 | Auth Package           | ✅ Complete          | Client, models, and authorizers implemented          |
 | Groups Package         | ✅ Complete          | Client and models implemented                        |
-| Transfer Package       | ⚙️ In Progress      | Basic client implemented, expanding functionality     |
-| Testing Framework      | ✅ Complete          | Tests for auth, groups, and authorizers added        |
+| Transfer Package       | ✅ Complete          | Basic client and recursive transfers implemented     |
+| Search Package         | ✅ Complete          | Client with advanced queries and batch operations    |
+| Testing Framework      | ✅ Complete          | Tests for all components added                       |
 | Documentation          | ✅ Complete          | Documentation includes architecture, roadmap, etc.   |
 | CI/CD Pipeline         | ✅ Complete          | GitHub Actions workflows configured                  |
 | Code Quality Tools     | ✅ Complete          | Linting, formatting, pre-commit hooks configured     |
@@ -65,6 +66,23 @@ This document tracks the current status of the Globus Go SDK project.
 | Unit Tests             | ✅ Implemented       | Tests for models and client methods                 |
 | Integration Tests      | 📅 Planned           | Need actual API credentials                         |
 
+### Search Package
+
+| Feature                | Status               | Details                                             |
+|------------------------|----------------------|-----------------------------------------------------|
+| Client Structure       | ✅ Implemented       | Complete client structure with all methods          |
+| Data Models            | ✅ Implemented       | Index, Document, and Search models                  |
+| Index Operations       | ✅ Implemented       | Create, Read, Update, Delete index methods          |
+| Document Operations    | ✅ Implemented       | Ingest and Delete document methods                  |
+| Search Operations      | ✅ Implemented       | Basic and advanced search methods                   |
+| Advanced Queries       | ✅ Implemented       | Match, Term, Range, Bool, Geo queries, etc.         |
+| Pagination             | ✅ Implemented       | Iterator pattern and helper methods                 |
+| Batch Operations       | ✅ Implemented       | Batch document ingestion and deletion               |
+| Task Management        | ✅ Implemented       | Task status tracking and waiting                    |
+| Error Handling         | ✅ Implemented       | Specialized error types and checking utilities      |
+| Unit Tests             | ✅ Implemented       | Tests for all core functionality                    |
+| Integration Tests      | 📅 Planned           | Need actual API credentials                         |
+
 ## Documentation Status
 
 | Document               | Status               | Details                                             |
@@ -76,14 +94,25 @@ This document tracks the current status of the Globus Go SDK project.
 | DEVELOPMENT.md         | ✅ Complete          | Development guide with workflow instructions        |
 | ROADMAP.md             | ✅ Complete          | Project roadmap and timeline                        |
 | PROJECT_STATUS.md      | ✅ Complete          | This document tracking current status               |
+| token-storage.md       | ✅ Complete          | Documentation for token storage functionality       |
+| recursive-transfers.md | ✅ Complete          | Guide for recursive directory transfers             |
+| search-client.md       | ✅ Complete          | Comprehensive guide for Search service client       |
+| flows-client.md        | ✅ Complete          | Comprehensive guide for Flows service client        |
+| webapp-example.md      | ✅ Complete          | Guide for the web application example               |
+| user-guide.md          | ✅ Complete          | Overall SDK usage guide                             |
+| error-handling.md      | ✅ Complete          | Guide for handling errors in the SDK                |
+| data-schemas.md        | ✅ Complete          | Reference for data models and schemas               |
+| extending-the-sdk.md   | ✅ Complete          | Guide for extending and customizing the SDK         |
+| CHANGELOG.md           | ✅ Complete          | Record of changes and updates to the SDK            |
 | API Documentation      | ✅ Complete          | In-code documentation for all exported items        |
-| Examples               | ✅ Complete          | Examples for auth and groups                        |
+| Examples               | ✅ Complete          | Examples for auth, groups, transfer, search, flows, and web app |
 
 ## Testing and Quality Status
 
 | Item                   | Status               | Details                                             |
 |------------------------|----------------------|-----------------------------------------------------|
-| Unit Tests             | ✅ Implemented       | Tests for authorizers, auth, and groups             |
+| Unit Tests             | ✅ Implemented       | Tests for authorizers, auth, groups, transfer, search |
+| Advanced Tests         | ✅ Implemented       | Tests for batch operations, error handling          |
 | Integration Tests      | 📅 Planned           | Framework ready, need API credentials               |
 | Coverage Reporting     | ✅ Configured        | Set up with Codecov                                |
 | CI Pipeline            | ✅ Configured        | Multiple GitHub Actions workflows                   |
@@ -93,30 +122,47 @@ This document tracks the current status of the Globus Go SDK project.
 
 ## Next Priorities
 
-1. Complete token management utilities
-   - Implement token storage interface
-   - Create persistent token storage options
-   - Add token refresh workflows
+1. ✅ Complete token management utilities
+   - ✅ Implement token storage interface
+   - ✅ Create persistent token storage options
+   - ✅ Add token refresh workflows
 
 2. Expand transfer service capabilities
-   - Add recursive directory transfer support
-   - Implement resumable transfers
-   - Create batch transfer capabilities
+   - ✅ Add recursive directory transfer support
+   - [ ] Implement resumable transfers
+   - ✅ Create batch transfer capabilities
 
 3. Enhance test coverage and documentation
-   - Add integration tests with real credentials
-   - Complete API reference documentation
-   - Create additional usage examples
+   - [ ] Add integration tests with real credentials
+   - ✅ Complete API reference documentation
+   - ✅ Create additional usage examples
 
-4. Implement CLI examples
-   - Create auth flow demonstration
-   - Build file transfer utility with progress monitoring
-   - Develop group management example
+4. ✅ Implement CLI examples
+   - ✅ Create auth flow demonstration
+   - ✅ Build file transfer utility with progress monitoring
+   - ✅ Develop group management example
+
+5. New priorities:
+   - ✅ Implement Search service client
+   - ✅ Implement Flows service client
+   - ✅ Create web application example
+   - [ ] Add performance benchmarks for large transfers
+   - [ ] Implement more robust rate limiting and backoff strategies
 
 ## Recent Updates
 
 | Date       | Update                                                          |
 |------------|----------------------------------------------------------------|
+| 2025-04-26 | Created web application example with Flows and Search integration |
+| 2025-04-26 | Enhanced Flows client with pagination helpers, structured errors, and batch operations |
+| 2025-04-26 | Added comprehensive Flows client example application           |
+| 2025-04-26 | Implemented Search client with advanced queries and batch operations |
+| 2025-04-26 | Added comprehensive Search client documentation                 |
+| 2025-04-26 | Implemented token storage interface with memory and file implementations |
+| 2025-04-26 | Created token manager with automatic token refreshing           |
+| 2025-04-26 | Added recursive directory transfer functionality                |
+| 2025-04-26 | Implemented CLI example application                            |
+| 2025-04-26 | Added comprehensive documentation (token storage, transfers, user guide) |
 | 2025-04-26 | Added token validation utilities and enhanced error handling    |
 | 2025-04-26 | Implemented transfer client test additions                      |
 | 2025-04-26 | Reorganized authorizer interfaces to reduce dependencies        |

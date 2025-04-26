@@ -26,17 +26,17 @@ The project has established its core structure and organization:
 - [x] Add token management
   - [x] Token validation utilities
   - [x] Token expiry handling
-  - [ ] Token storage interface
-  - [ ] Memory token storage
-  - [ ] File-based token storage
+  - [x] Token storage interface
+  - [x] Memory token storage
+  - [x] File-based token storage
 - [x] Enhance error handling
   - [x] Standard error types
   - [x] Error checking utilities
   - [x] Improved error parsing
-- [ ] Complete authentication helpers
-  - [ ] Create token refresh workflows
-  - [ ] Implement persistent token storage
-  - [ ] Add session management features
+- [x] Complete authentication helpers
+  - [x] Create token refresh workflows
+  - [x] Implement persistent token storage
+  - [x] Add session management features
 - [ ] Write comprehensive tests
   - [x] Unit tests with mocks
   - [ ] Integration tests with sandbox environment
@@ -53,11 +53,11 @@ The project has established its core structure and organization:
 
 #### Transfer Service (Partially Complete)
 - [x] Implement basic Transfer API client
-- [ ] Expand transfer capabilities
-  - [ ] Add recursive directory transfer support
+- [x] Expand transfer capabilities
+  - [x] Add recursive directory transfer support
   - [ ] Implement resumable transfers
-  - [ ] Add batch transfer capabilities
-  - [ ] Create transfer monitoring tools
+  - [x] Add batch transfer capabilities
+  - [x] Create transfer monitoring tools
 - [ ] Add comprehensive testing
   - [x] Unit tests for client methods
   - [ ] Integration tests with real endpoints
@@ -100,10 +100,10 @@ The project has established its core structure and organization:
 - [ ] Document authentication flows
   - [ ] Sequence diagrams
   - [ ] Configuration examples
-- [ ] Implement CLI examples
-  - [ ] Authentication flow application
-  - [ ] Group management utility
-  - [ ] File transfer utility with progress monitoring
+- [x] Implement CLI examples
+  - [x] Authentication flow application
+  - [x] Group management utility
+  - [x] File transfer utility with progress monitoring
 - [ ] Add badges to README
   - [ ] Build status
   - [ ] Code coverage
@@ -131,8 +131,8 @@ The project has established its core structure and organization:
 ## Future Enhancements
 
 ### Additional Services
-- [ ] Search API
-- [ ] Flows API
+- [x] Search API
+- [x] Flows API
 - [ ] Timers API
 - [ ] Compute API
 
@@ -143,11 +143,11 @@ The project has established its core structure and organization:
 - [ ] Optimize memory usage for large transfers
 
 ### Advanced Features
-- [ ] Automatic token refresh
+- [x] Automatic token refresh
 - [ ] Connection pooling
 - [ ] Rate limiting and backoff
 - [ ] Advanced logging options
-- [ ] Cross-platform token storage
+- [x] Cross-platform token storage
 - [ ] Multi-factor authentication support
 
 ### Dependency Management

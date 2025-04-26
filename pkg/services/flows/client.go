@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2025 Scott Friedman and Project Contributors
-
+// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 package flows
 
 import (
@@ -94,26 +93,76 @@ func (c *Client) doRequest(ctx context.Context, method, path string, query url.V
 	}
 	defer resp.Body.Close()
 	
-	// For non-GET requests with no response body, just check status
-	if method != http.MethodGet && response == nil {
-		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-			return nil
-		}
-		
-		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(respBody))
-	}
-	
-	// Read and decode response body
+	// Read response body
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
 	
+	// Check for error responses
+	if resp.StatusCode >= 400 {
+		// Extract resource ID and type for better error messages
+		resourceID := ""
+		resourceType := ""
+		
+		// Parse path to determine resource type and ID
+		if path == "flows" && method == http.MethodPost {
+			resourceType = "flow"
+		} else if len(path) > 6 && path[:6] == "flows/" {
+			resourceType = "flow"
+			resourceID = path[6:]
+			// Remove trailing components if any
+			for i, c := range resourceID {
+				if c == '/' {
+					resourceID = resourceID[:i]
+					break
+				}
+			}
+		} else if path == "runs" && method == http.MethodPost {
+			resourceType = "run"
+		} else if len(path) > 5 && path[:5] == "runs/" {
+			resourceType = "run"
+			resourceID = path[5:]
+			// Remove trailing components if any
+			for i, c := range resourceID {
+				if c == '/' {
+					resourceID = resourceID[:i]
+					break
+				}
+			}
+		} else if path == "action_providers" {
+			resourceType = "action_provider"
+		} else if len(path) > 17 && path[:17] == "action_providers/" {
+			resourceType = "action_provider"
+			resourceID = path[17:]
+			// Check if this is an action role request
+			for i, c := range resourceID {
+				if c == '/' {
+					if len(resourceID) > i+7 && resourceID[i+1:i+7] == "roles/" {
+						resourceType = "action_role"
+						roleID := resourceID[i+7:]
+						providerID := resourceID[:i]
+						resourceID = providerID + ":" + roleID
+					}
+					break
+				}
+			}
+		}
+		
+		return ParseErrorResponse(respBody, resp.StatusCode, resourceID, resourceType)
+	}
+	
+	// For non-GET requests with no response body, just return nil
+	if method != http.MethodGet && response == nil {
+		return nil
+	}
+	
+	// If there's no content, just return nil
 	if len(respBody) == 0 {
 		return nil
 	}
 	
+	// Unmarshal response
 	if err := json.Unmarshal(respBody, response); err != nil {
 		return fmt.Errorf("failed to unmarshal response: %w", err)
 	}
@@ -463,4 +512,151 @@ func (c *Client) GetActionRole(ctx context.Context, providerID, roleID string) (
 	}
 	
 	return &role, nil
+}
+
+// Iterators for pagination
+
+// GetFlowsIterator returns an iterator for listing flows with pagination.
+func (c *Client) GetFlowsIterator(options *ListFlowsOptions) *FlowIterator {
+	return NewFlowIterator(c, options)
+}
+
+// GetRunsIterator returns an iterator for listing flow runs with pagination.
+func (c *Client) GetRunsIterator(options *ListRunsOptions) *RunIterator {
+	return NewRunIterator(c, options)
+}
+
+// GetActionProvidersIterator returns an iterator for listing action providers with pagination.
+func (c *Client) GetActionProvidersIterator(options *ListActionProvidersOptions) *ActionProviderIterator {
+	return NewActionProviderIterator(c, options)
+}
+
+// GetActionRolesIterator returns an iterator for listing action roles with pagination.
+func (c *Client) GetActionRolesIterator(providerID string, limit int) *ActionRoleIterator {
+	return NewActionRoleIterator(c, providerID, limit)
+}
+
+// GetRunLogsIterator returns an iterator for listing run logs with pagination.
+func (c *Client) GetRunLogsIterator(runID string, limit int) *RunLogIterator {
+	return NewRunLogIterator(c, runID, limit)
+}
+
+// Batch operations
+
+// WaitForRun waits for a flow run to complete or reach a terminal state.
+// It returns the final run state or an error if the context is canceled or the polling fails.
+func (c *Client) WaitForRun(ctx context.Context, runID string, pollInterval time.Duration) (*RunResponse, error) {
+	if runID == "" {
+		return nil, fmt.Errorf("run ID is required")
+	}
+	
+	if pollInterval <= 0 {
+		pollInterval = time.Second * 3
+	}
+	
+	ticker := time.NewTicker(pollInterval)
+	defer ticker.Stop()
+	
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-ticker.C:
+			run, err := c.GetRun(ctx, runID)
+			if err != nil {
+				return nil, err
+			}
+			
+			// Check if run is in a terminal state
+			switch run.Status {
+			case "SUCCEEDED", "FAILED", "CANCELLED":
+				return run, nil
+			}
+		}
+	}
+}
+
+// ListAllFlows lists all flows using pagination, collecting all results.
+// This is a convenience method that uses the FlowIterator internally.
+func (c *Client) ListAllFlows(ctx context.Context, options *ListFlowsOptions) ([]Flow, error) {
+	iterator := c.GetFlowsIterator(options)
+	var flows []Flow
+	
+	for iterator.Next(ctx) {
+		flows = append(flows, *iterator.Flow())
+	}
+	
+	if err := iterator.Err(); err != nil {
+		return nil, err
+	}
+	
+	return flows, nil
+}
+
+// ListAllRuns lists all runs using pagination, collecting all results.
+// This is a convenience method that uses the RunIterator internally.
+func (c *Client) ListAllRuns(ctx context.Context, options *ListRunsOptions) ([]RunResponse, error) {
+	iterator := c.GetRunsIterator(options)
+	var runs []RunResponse
+	
+	for iterator.Next(ctx) {
+		runs = append(runs, *iterator.Run())
+	}
+	
+	if err := iterator.Err(); err != nil {
+		return nil, err
+	}
+	
+	return runs, nil
+}
+
+// ListAllActionProviders lists all action providers using pagination, collecting all results.
+// This is a convenience method that uses the ActionProviderIterator internally.
+func (c *Client) ListAllActionProviders(ctx context.Context, options *ListActionProvidersOptions) ([]ActionProvider, error) {
+	iterator := c.GetActionProvidersIterator(options)
+	var providers []ActionProvider
+	
+	for iterator.Next(ctx) {
+		providers = append(providers, *iterator.ActionProvider())
+	}
+	
+	if err := iterator.Err(); err != nil {
+		return nil, err
+	}
+	
+	return providers, nil
+}
+
+// ListAllActionRoles lists all action roles for a provider using pagination, collecting all results.
+// This is a convenience method that uses the ActionRoleIterator internally.
+func (c *Client) ListAllActionRoles(ctx context.Context, providerID string) ([]ActionRole, error) {
+	iterator := c.GetActionRolesIterator(providerID, 100)
+	var roles []ActionRole
+	
+	for iterator.Next(ctx) {
+		roles = append(roles, *iterator.ActionRole())
+	}
+	
+	if err := iterator.Err(); err != nil {
+		return nil, err
+	}
+	
+	return roles, nil
+}
+
+// ListAllRunLogs lists all logs for a run using pagination, collecting all results.
+// This is a convenience method that uses the RunLogIterator internally.
+func (c *Client) ListAllRunLogs(ctx context.Context, runID string) ([]RunLogEntry, error) {
+	iterator := c.GetRunLogsIterator(runID, 100)
+	var entries []RunLogEntry
+	
+	for iterator.Next(ctx) {
+		entries = append(entries, *iterator.LogEntry())
+	}
+	
+	if err := iterator.Err(); err != nil {
+		return nil, err
+	}
+	
+	return entries, nil
 }

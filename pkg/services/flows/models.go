@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2025 Scott Friedman and Project Contributors
-
+// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 package flows
 
 import (
