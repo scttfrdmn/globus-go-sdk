@@ -99,13 +99,14 @@ This document tracks the current status of the Globus Go SDK project.
 | search-client.md       | ✅ Complete          | Comprehensive guide for Search service client       |
 | flows-client.md        | ✅ Complete          | Comprehensive guide for Flows service client        |
 | webapp-example.md      | ✅ Complete          | Guide for the web application example               |
+| performance-benchmarking.md | ✅ Complete    | Guide for transfer performance benchmarking         |
 | user-guide.md          | ✅ Complete          | Overall SDK usage guide                             |
 | error-handling.md      | ✅ Complete          | Guide for handling errors in the SDK                |
 | data-schemas.md        | ✅ Complete          | Reference for data models and schemas               |
 | extending-the-sdk.md   | ✅ Complete          | Guide for extending and customizing the SDK         |
 | CHANGELOG.md           | ✅ Complete          | Record of changes and updates to the SDK            |
 | API Documentation      | ✅ Complete          | In-code documentation for all exported items        |
-| Examples               | ✅ Complete          | Examples for auth, groups, transfer, search, flows, and web app |
+| Examples               | ✅ Complete          | Examples for auth, groups, transfer, search, flows, benchmarks, and web app |
 
 ## Testing and Quality Status
 
@@ -146,13 +147,14 @@ This document tracks the current status of the Globus Go SDK project.
    - ✅ Implement Search service client
    - ✅ Implement Flows service client
    - ✅ Create web application example
-   - [ ] Add performance benchmarks for large transfers
+   - ✅ Add performance benchmarks for large transfers
    - [ ] Implement more robust rate limiting and backoff strategies
 
 ## Recent Updates
 
 | Date       | Update                                                          |
 |------------|----------------------------------------------------------------|
+| 2025-04-26 | Added performance benchmarking tools for transfer operations    |
 | 2025-04-26 | Created web application example with Flows and Search integration |
 | 2025-04-26 | Enhanced Flows client with pagination helpers, structured errors, and batch operations |
 | 2025-04-26 | Added comprehensive Flows client example application           |
