@@ -1,5 +1,12 @@
 # Globus Go SDK
 
+[![Go Reference](https://pkg.go.dev/badge/github.com/yourusername/globus-go-sdk.svg)](https://pkg.go.dev/github.com/yourusername/globus-go-sdk)
+[![Go Report Card](https://goreportcard.com/badge/github.com/yourusername/globus-go-sdk)](https://goreportcard.com/report/github.com/yourusername/globus-go-sdk)
+[![Build Status](https://github.com/yourusername/globus-go-sdk/workflows/Go/badge.svg)](https://github.com/yourusername/globus-go-sdk/actions)
+[![License](https://img.shields.io/github/license/yourusername/globus-go-sdk)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/yourusername/globus-go-sdk)](https://github.com/yourusername/globus-go-sdk/releases)
+[![Coverage](https://codecov.io/gh/yourusername/globus-go-sdk/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/globus-go-sdk)
+
 A Go SDK for interacting with Globus services, providing a simple and idiomatic Go interface to Globus APIs.
 
 ## Features
@@ -12,8 +19,21 @@ A Go SDK for interacting with Globus services, providing a simple and idiomatic 
 
 ## Installation
 
+### Requirements
+
+- Go 1.18 or higher (uses generics for some utility functions)
+- No external dependencies except for testing
+
+### Using `go get`
+
 ```bash
 go get github.com/yourusername/globus-go-sdk
+```
+
+### Using Go modules in your project
+
+```go
+import "github.com/yourusername/globus-go-sdk/pkg"
 ```
 
 ## SDK Organization
@@ -34,6 +54,7 @@ This SDK follows the structure and patterns established by the official Globus P
 - `pkg/services/transfer`: File transfer and endpoint management
 - `pkg/services/search`: Data search and discovery
 - `pkg/services/flows`: Automation and workflow orchestration
+- `pkg/services/compute`: Distributed computation and function execution
 
 ## Quick Start
 
@@ -286,14 +307,19 @@ For detailed documentation, see the [GoDoc](https://pkg.go.dev/github.com/yourus
 
 ## Development Status
 
-This SDK is under active development. The current status:
+This SDK is under active development. Current version: **v0.1.0-dev**
 
-- ✅ Core infrastructure
-- ✅ Auth client
-- ✅ Groups client
-- ✅ Transfer client
-- ✅ Search client
-- ✅ Flows client
+| Component | Status | Details |
+|-----------|--------|---------|
+| Core Infrastructure | ✅ Complete | Base client, transport, authorizers, logging |
+| Auth Client | ✅ Complete | OAuth flows, token management, validation utilities |
+| Groups Client | ✅ Complete | Group management, membership operations |
+| Transfer Client | ⚙️ In Progress | Basic operations implemented, expanding capabilities |
+| Search Client | 📅 Planned | Initial structure defined |
+| Flows Client | 📅 Planned | Initial structure defined |
+| Compute Client | 📅 Planned | Initial structure defined |
+
+See [PROJECT_STATUS.md](doc/PROJECT_STATUS.md) for detailed status and [ROADMAP.md](doc/ROADMAP.md) for upcoming features.
 
 ## Alignment with Official SDKs
 
