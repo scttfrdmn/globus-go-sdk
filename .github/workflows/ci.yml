@@ -1,0 +1,90 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+
+      - name: Lint
+        run: golangci-lint run
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.20', '1.21']
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go ${{ matrix.go-version }}
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache: true
+
+      - name: Test
+        run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.txt
+          fail_ci_if_error: false
+
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    # Only run integration tests when secrets are available (PRs from forks won't have access)
+    if: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
+    env:
+      GLOBUS_TEST_CLIENT_ID: ${{ secrets.GLOBUS_TEST_CLIENT_ID }}
+      GLOBUS_TEST_CLIENT_SECRET: ${{ secrets.GLOBUS_TEST_CLIENT_SECRET }}
+      GLOBUS_TEST_SOURCE_ENDPOINT_ID: ${{ secrets.GLOBUS_TEST_SOURCE_ENDPOINT_ID }}
+      GLOBUS_TEST_DEST_ENDPOINT_ID: ${{ secrets.GLOBUS_TEST_DEST_ENDPOINT_ID }}
+      GLOBUS_TEST_GROUP_ID: ${{ secrets.GLOBUS_TEST_GROUP_ID }}
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: true
+
+      # Only run integration tests if secrets are available
+      - name: Check for credentials
+        id: check-secrets
+        run: |
+          if [[ -n "$GLOBUS_TEST_CLIENT_ID" && -n "$GLOBUS_TEST_CLIENT_SECRET" ]]; then
+            echo "secrets_available=true" >> $GITHUB_OUTPUT
+          else
+            echo "secrets_available=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run integration tests
+        if: steps.check-secrets.outputs.secrets_available == 'true'
+        run: ./scripts/run_integration_tests.sh
+
+      - name: Skip integration tests
+        if: steps.check-secrets.outputs.secrets_available != 'true'
+        run: |
+          echo "Skipping integration tests because required secrets are not available"
+          echo "Integration tests require GLOBUS_TEST_CLIENT_ID and GLOBUS_TEST_CLIENT_SECRET to be set as secrets"
