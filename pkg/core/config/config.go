@@ -1,0 +1,101 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2025 Scott Friedman and Project Contributors
+package config
+
+import (
+	"net/http"
+	"os"
+	"time"
+
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
+)
+
+// Config represents the configuration for the SDK
+type Config struct {
+	// HTTPClient is the HTTP client to use for API requests
+	HTTPClient *http.Client
+
+	// BaseURL is the base URL for API requests
+	BaseURL string
+
+	// UserAgent is the user agent for API requests
+	UserAgent string
+
+	// LogLevel is the logging level for the SDK
+	LogLevel core.LogLevel
+
+	// Timeout is the timeout for API requests
+	Timeout time.Duration
+
+	// RetryMax is the maximum number of retries for API requests
+	RetryMax int
+
+	// RetryWaitMin is the minimum time to wait between retries
+	RetryWaitMin time.Duration
+
+	// RetryWaitMax is the maximum time to wait between retries
+	RetryWaitMax time.Duration
+}
+
+// DefaultConfig returns the default configuration
+func DefaultConfig() *Config {
+	// Check if connection pooling is disabled
+	disablePooling := os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") == "true"
+	
+	var httpClient *http.Client
+	
+	if !disablePooling {
+		// Use connection pooling by default
+		// Import indirectly to avoid circular imports
+		httpClient = core.NewHTTPClientWithConnectionPool("default", nil)
+	} else {
+		// Use standard HTTP client
+		httpClient = &http.Client{
+			Timeout: time.Second * 30,
+		}
+	}
+
+	return &Config{
+		HTTPClient:   httpClient,
+		UserAgent:    "globus-go-sdk/1.0",
+		LogLevel:     core.LogLevelNone,
+		Timeout:      time.Second * 30,
+		RetryMax:     3,
+		RetryWaitMin: time.Second,
+		RetryWaitMax: time.Second * 5,
+	}
+}
+
+// FromEnvironment loads configuration from environment variables
+func FromEnvironment() *Config {
+	config := DefaultConfig()
+
+	if val := os.Getenv("GLOBUS_SDK_BASE_URL"); val != "" {
+		config.BaseURL = val
+	}
+
+	if val := os.Getenv("GLOBUS_SDK_USER_AGENT"); val != "" {
+		config.UserAgent = val
+	}
+
+	return config
+}
+
+// ApplyToClient applies the configuration to a client
+func (c *Config) ApplyToClient(client *core.Client) {
+	if c.HTTPClient != nil {
+		client.HTTPClient = c.HTTPClient
+	}
+
+	if c.BaseURL != "" {
+		client.BaseURL = c.BaseURL
+	}
+
+	if c.UserAgent != "" {
+		client.UserAgent = c.UserAgent
+	}
+
+	if c.LogLevel != core.LogLevelNone {
+		client.Logger = core.NewDefaultLogger(nil, c.LogLevel)
+	}
+}
