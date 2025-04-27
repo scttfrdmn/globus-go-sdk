@@ -1,11 +1,13 @@
-<!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors -->
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 
 # Performance Optimization Guide
 
 _Last Updated: April 27, 2025_
 
-This guide serves as the comprehensive resource for all performance-related aspects of the Globus Go SDK, covering benchmarking, memory optimization, connection pooling, and rate limiting strategies.
+This guide serves as a resource for performance-related aspects of the Globus Go SDK, covering benchmarking, memory optimization, connection pooling, and rate limiting strategies.
+
+> **DISCLAIMER**: The Globus Go SDK is an independent, community-developed project and is not officially affiliated with, endorsed by, or supported by Globus, the University of Chicago, or their affiliated organizations. Performance characteristics and recommendations in this document are based on testing by project contributors and may vary in different environments.
 
 ## Table of Contents
 

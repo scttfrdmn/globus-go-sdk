@@ -1,11 +1,13 @@
-<!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 
 # Testing Guide
 
 _Last Updated: April 27, 2025_
 
-This comprehensive guide covers all testing aspects of the Globus Go SDK.
+This guide covers testing aspects of the Globus Go SDK.
+
+> **DISCLAIMER**: The Globus Go SDK is an independent, community-developed project and is not officially affiliated with, endorsed by, or supported by Globus, the University of Chicago, or their affiliated organizations. Testing procedures and recommendations in this document are provided as guidance only.
 
 ## Table of Contents
 

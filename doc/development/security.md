@@ -1,10 +1,14 @@
-<!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 # Security Documentation
 
 _Last Updated: April 27, 2025_
 
-This document provides comprehensive security documentation for the Globus Go SDK, consolidating information about security principles, tools, testing procedures, and best practices.
+This document provides guidance on security practices for the Globus Go SDK, consolidating information about security principles, tools, testing procedures, and best practices.
+
+> **DISCLAIMER**: The Globus Go SDK is an independent, community-developed project and is not officially affiliated with, endorsed by, or supported by Globus, the University of Chicago, or their affiliated organizations. 
+>
+> The security recommendations in this document are provided as guidance only and do not represent official security standards, compliance frameworks, or regulatory requirements. Users are responsible for determining whether this SDK meets their own security and compliance requirements.
 
 ## Table of Contents
 

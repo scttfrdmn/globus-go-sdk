@@ -1,9 +1,11 @@
-<!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 
 # Globus Go SDK Documentation
 
 Welcome to the Globus Go SDK documentation. This guide serves as a central index for all documentation resources.
+
+> **DISCLAIMER**: The Globus Go SDK is an independent, community-developed project and is not officially affiliated with, endorsed by, or supported by Globus, the University of Chicago, or their affiliated organizations. This SDK is maintained by independent contributors and is not a product of Globus or the University of Chicago.
 
 ## Getting Started
 

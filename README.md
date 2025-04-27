@@ -1,5 +1,5 @@
-<!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 # Globus Go SDK
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/scttfrdmn/globus-go-sdk.svg)](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk)
@@ -10,6 +10,8 @@
 [![Coverage](https://codecov.io/gh/scttfrdmn/globus-go-sdk/branch/main/graph/badge.svg)](https://codecov.io/gh/scttfrdmn/globus-go-sdk)
 
 A Go SDK for interacting with Globus services, providing a simple and idiomatic Go interface to Globus APIs.
+
+> **DISCLAIMER**: The Globus Go SDK is an independent, community-developed project and is not officially affiliated with, endorsed by, or supported by Globus, the University of Chicago, or their affiliated organizations. This SDK is maintained by independent contributors and is not a product of Globus or the University of Chicago.
 
 ## Features
 
