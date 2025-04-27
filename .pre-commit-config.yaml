@@ -30,3 +30,17 @@ repos:
         language: script
         types: [go]
         pass_filenames: false
+        
+      - id: go-sec
+        name: Run gosec security scanner
+        entry: gosec ./...
+        language: system
+        types: [go]
+        pass_filenames: false
+      
+      - id: shellcheck
+        name: ShellCheck
+        entry: shellcheck
+        language: system
+        types: [shell]
+        exclude: ".*/bats/.*"

@@ -27,6 +27,48 @@ jobs:
         with:
           version: latest
           args: --timeout 5m
+          
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+          cache: true
+
+      - name: Install gosec
+        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+      - name: Run gosec
+        run: gosec -fmt=json -out=gosec-results.json ./...
+        continue-on-error: true  # Don't fail the build yet
+
+      - name: Install nancy
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/sonatype-nexus-community/nancy/master/scripts/install-nancy.sh | sh -s -- -b $(go env GOPATH)/bin
+
+      - name: Run nancy
+        run: go list -json -m all | nancy sleuth
+        continue-on-error: true  # Don't fail the build yet
+
+      - name: Upload gosec results
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: gosec-results.json
+
+      - name: Check gosec issues
+        run: |
+          ISSUES=$(jq '.Issues | length' gosec-results.json || echo "0")
+          if [ "$ISSUES" -gt 0 ]; then
+            echo "gosec found $ISSUES potential security issues"
+            exit 1
+          else
+            echo "No security issues found by gosec"
+          fi
 
   test:
     name: Test
