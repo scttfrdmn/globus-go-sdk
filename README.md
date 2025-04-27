@@ -15,7 +15,7 @@ A Go SDK for interacting with Globus services, providing a simple and idiomatic 
 - Token management with automatic refreshing
 - Persistent token storage (memory and file-based)
 - Groups management
-- File transfer with recursive directory support
+- File transfer with recursive directory and resumable transfer support
 - Context-based API with cancellation support
 - Minimal dependencies
 - Comprehensive error handling
@@ -396,6 +396,7 @@ For detailed documentation, see:
 - [User Guide](doc/user-guide.md)
 - [Token Storage Guide](doc/token-storage.md)
 - [Recursive Transfers Guide](doc/recursive-transfers.md)
+- [Resumable Transfers Guide](doc/resumable-transfers.md)
 - [Search Client Guide](doc/search-client.md)
 - [Data Schemas](doc/data-schemas.md)
 - [Error Handling](doc/error-handling.md)
