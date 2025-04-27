@@ -407,6 +407,7 @@ For detailed documentation, see:
 - [Memory Optimization Guide](doc/memory-optimization.md)
 - [Connection Pooling Guide](doc/connection-pooling.md)
 - [MFA Authentication Guide](doc/mfa-authentication.md)
+- [Shell Testing Guide](doc/shell-testing.md)
 - [Data Schemas](doc/data-schemas.md)
 - [Error Handling](doc/error-handling.md)
 - [Extending the SDK](doc/extending-the-sdk.md)

@@ -1,0 +1,17 @@
+# ShellCheck configuration file
+# See: https://github.com/koalaman/shellcheck/blob/master/shellcheck.1.md
+
+# Shell variables don't need quotes in comparisons with test
+disable=SC2050
+
+# Allow non-constant source
+disable=SC1090
+
+# Allow useless cat (sometimes it's clearer to use cat)
+disable=SC2002
+
+# Don't suggest "$var" for echo $var
+disable=SC2086
+
+# Allow [ p ] && [ q ] instead of [ p -a q ]
+disable=SC2166
