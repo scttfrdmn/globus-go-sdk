@@ -57,6 +57,33 @@ check_env_vars() {
   fi
 }
 
+# Function to load environment variables from .env.test file if it exists
+load_env_file() {
+  if [ -f ".env.test" ]; then
+    echo "Loading environment variables from .env.test file..."
+    
+    # Read each line from .env.test
+    while IFS= read -r line || [[ -n "$line" ]]; do
+      # Skip empty lines and comments
+      if [[ -z "$line" || "$line" =~ ^# ]]; then
+        continue
+      fi
+      
+      # Split the line into key and value
+      key=$(echo "$line" | cut -d= -f1)
+      value=$(echo "$line" | cut -d= -f2-)
+      
+      # Export the variable
+      export "$key"="$value"
+      echo "Loaded $key"
+    done < ".env.test"
+    
+    echo "Environment variables loaded successfully."
+  else
+    echo "No .env.test file found, using existing environment variables."
+  fi
+}
+
 # Function to run tests with a specific pattern
 run_tests() {
   local package=$1
@@ -73,6 +100,9 @@ run_tests() {
 
 # Main function
 main() {
+  # Load environment variables from .env.test file if it exists
+  load_env_file
+  
   # Check for required environment variables
   check_env_vars
   

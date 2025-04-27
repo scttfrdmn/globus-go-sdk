@@ -1,134 +1,180 @@
-# Integration Testing Guide for Globus Go SDK
+# Integration Testing Guide
 
-This document outlines the approach for integration testing the Globus Go SDK, which verifies that the SDK correctly interacts with the actual Globus API services.
+This document provides guidance on setting up and running integration tests for the Globus Go SDK.
+
+## Overview
+
+Integration tests for the Globus Go SDK verify that our code works correctly against the actual Globus API endpoints. These tests ensure that:
+
+1. Our API implementations match the expected behavior of Globus services
+2. Authentication and token handling work correctly
+3. Transfer operations complete as expected
+4. Error handling captures and processes API errors properly
 
 ## Prerequisites
 
-Before running integration tests, you'll need:
+To run the integration tests, you need:
 
-1. A Globus account with access to the services being tested
-2. A registered client application in Globus Auth with appropriate scopes
-3. Environment variables set up with credentials and test resources
+1. A Globus account with appropriate permissions
+2. A Globus client application with the necessary scopes
+3. Access to at least one Globus endpoint for transfer tests
+4. Go installed on your system (version 1.18 or later)
 
-## Environment Setup
+## Setting Up Credentials
 
-Set the following environment variables before running integration tests:
+Integration tests require real Globus API credentials. These should be provided as environment variables:
 
-```bash
-# Required for all tests
-export GLOBUS_TEST_CLIENT_ID="your-client-id"
-export GLOBUS_TEST_CLIENT_SECRET="your-client-secret"
+### Required Variables
 
-# Required for Transfer tests
-export GLOBUS_TEST_SOURCE_ENDPOINT_ID="your-source-endpoint-id"
-export GLOBUS_TEST_DEST_ENDPOINT_ID="your-destination-endpoint-id"
+- `GLOBUS_TEST_CLIENT_ID`: Your Globus client ID
+- `GLOBUS_TEST_CLIENT_SECRET`: Your Globus client secret
 
-# Required for Groups tests
-export GLOBUS_TEST_GROUP_ID="existing-group-id"  # Optional, will create one if not provided
+### Optional Variables (Recommended for Transfer Tests)
+
+- `GLOBUS_TEST_SOURCE_ENDPOINT_ID`: ID of a source endpoint for transfer tests
+- `GLOBUS_TEST_DESTINATION_ENDPOINT_ID`: ID of a destination endpoint for transfer tests
+- `GLOBUS_TEST_SOURCE_PATH`: Path on the source endpoint (default: `/globus-test`)
+- `GLOBUS_TEST_DESTINATION_PATH`: Path on the destination endpoint (default: `/globus-test`)
+
+### Optional Variables (For Group Tests)
+
+- `GLOBUS_TEST_GROUP_ID`: ID of a Globus group for testing group operations
+- `GLOBUS_TEST_USER_ID`: ID of a user for testing group membership operations
+
+## Using an Environment File
+
+You can create a `.env.test` file in the project root to store your credentials:
+
+```
+GLOBUS_TEST_CLIENT_ID=your-client-id
+GLOBUS_TEST_CLIENT_SECRET=your-client-secret
+GLOBUS_TEST_SOURCE_ENDPOINT_ID=your-source-endpoint-id
+GLOBUS_TEST_DESTINATION_ENDPOINT_ID=your-destination-endpoint-id
+GLOBUS_TEST_SOURCE_PATH=/globus-test
+GLOBUS_TEST_DESTINATION_PATH=/globus-test
+GLOBUS_TEST_USER_ID=your-user-id
+GLOBUS_TEST_GROUP_ID=your-group-id
 ```
 
-## Running Integration Tests
+⚠️ **IMPORTANT: Never commit this file to the repository.** The `.env.test` file is included in `.gitignore` to prevent accidental exposure of credentials.
 
-Integration tests are in a separate package with the suffix `_integration_test.go` and are organized by service. They're skipped by default in normal test runs to avoid external dependencies.
+## Running the Tests
 
-To run integration tests:
+### Using the Script
+
+The easiest way to run integration tests is using the provided script:
 
 ```bash
 # Run all integration tests
-go test ./... -tags=integration
+./scripts/run_integration_tests.sh
 
-# Run just Auth integration tests
-go test ./pkg/services/auth -tags=integration
+# Run tests for a specific package
+./scripts/run_integration_tests.sh pkg/services/transfer
 
-# Run specific test
-go test ./pkg/services/transfer -run TestIntegration_SubmitTransfer -tags=integration
+# Run tests for a specific test function
+./scripts/run_integration_tests.sh pkg/services/transfer TestIntegration_ResumableTransfer
 ```
 
-## Test Organization
+The script automatically:
+1. Loads environment variables from `.env.test` if present
+2. Checks that required variables are set
+3. Runs the specified tests with the appropriate tags
 
-Integration tests follow these principles:
+### Manual Execution
 
-1. **Self-contained**: Each test should create and clean up its own resources when possible
-2. **Graceful degradation**: Tests should skip (not fail) if credentials are missing
-3. **Realistic scenarios**: Tests should model real-world usage patterns
-4. **Comprehensive coverage**: Test all key API interactions
-5. **Idempotency**: Tests should be repeatable without side effects
+Alternatively, you can run the tests manually:
 
-## Test Structure
+```bash
+# Set environment variables (if not using .env.test)
+export GLOBUS_TEST_CLIENT_ID=your-client-id
+export GLOBUS_TEST_CLIENT_SECRET=your-client-secret
+# ... set other variables as needed
 
-Each service has an integration test file with the following structure:
+# Run all integration tests
+go test -v -tags=integration ./...
 
-1. **Setup code**: Functions to create test resources and check environment
-2. **Teardown code**: Functions to clean up resources after tests
-3. **Helper functions**: Common code used by multiple tests
-4. **Test cases**: Individual tests for each API feature
+# Run tests for a specific package
+go test -v -tags=integration ./pkg/services/transfer/...
+
+# Run a specific test
+go test -v -tags=integration ./pkg/services/transfer -run TestIntegration_ResumableTransfer
+```
 
 ## Writing Integration Tests
 
-When writing integration tests:
+When writing new integration tests:
 
-1. Follow the naming convention `TestIntegration_<FunctionName>`
-2. Check for required environment variables and skip if missing
-3. Use descriptive error messages
-4. Clean up resources in defer statements
-5. Allow for reasonable timing variations in asynchronous operations
-6. Add meaningful assertions that verify correct behavior
+1. Use the `_test` suffix in the test file name
+2. Use the `//go:build integration` build tag at the top of the file
+3. Name test functions with the `TestIntegration_` prefix
+4. Use the `getTestCredentials` function to get credentials
+5. Include cleanup code to remove any created resources
+6. Make tests skip gracefully if required credentials are missing
 
-## Example Test Structure
+Example structure:
 
 ```go
-func TestIntegration_TransferClient(t *testing.T) {
-    if testing.Short() {
-        t.Skip("Skipping integration test in short mode")
-    }
+//go:build integration
+package mypackage_test
+
+import (
+    "testing"
+    "context"
+    "os"
     
-    // Check for required env vars
+    "github.com/scttfrdmn/globus-go-sdk/pkg/services/myservice"
+)
+
+func TestIntegration_MyFeature(t *testing.T) {
+    // Get credentials
     clientID := os.Getenv("GLOBUS_TEST_CLIENT_ID")
     clientSecret := os.Getenv("GLOBUS_TEST_CLIENT_SECRET")
+    
     if clientID == "" || clientSecret == "" {
         t.Skip("Integration test requires GLOBUS_TEST_CLIENT_ID and GLOBUS_TEST_CLIENT_SECRET")
     }
     
-    // Create test resources
+    // Create client and run test
     // ...
     
-    // Clean up afterwards
+    // Clean up resources
     defer func() {
-        // Cleanup code
+        // Delete any created resources
     }()
-    
-    // Run test
-    // ...
-    
-    // Verify results
-    // ...
 }
 ```
 
-## Continuous Integration
+## Test Data Safety
 
-Integration tests are marked with build tags so they can be selectively run in CI environments where credentials are available. They are not run on every PR but can be manually triggered for significant changes.
+To avoid data loss or unintended consequences:
 
-## Best Practices
+1. Always use test-specific paths and resources
+2. Include timestamps in test resource names to avoid conflicts
+3. Clean up all created resources when tests complete
+4. Use read-only operations where possible
+5. Never modify or delete data outside of your test directories
 
-1. **Be respectful of API rate limits**
-2. **Never hardcode credentials**
-3. **Avoid testing in production when possible**
-4. **Consider graceful retries for intermittent failures**
-5. **Focus on end-to-end workflows rather than individual calls**
-6. **Maintain test independence**
+## CI/CD Integration
 
-## Supporting Files
+When running in CI/CD environments:
 
-Look for helper files in the `testdata` directory that provide:
+1. Store credentials as secure environment variables
+2. Consider using dedicated test credentials with limited permissions
+3. Set up separate test endpoints for automated testing
+4. Ensure cleanup runs even if tests fail
 
-1. Template requests for creating test resources
-2. Expected response structures 
-3. Test file contents for transfer tests
+## Troubleshooting
 
-## Development Workflow
+If integration tests fail:
 
-1. Start with unit tests for all components
-2. Add integration tests for critical paths
-3. Run integration tests on significant changes
-4. Verify real-world usage with example applications
+1. Check that your credentials are correct and not expired
+2. Verify that endpoints are accessible and activated
+3. Check if you have the necessary permissions
+4. Look for rate limiting or service availability issues
+5. Check the Globus status page for service disruptions
+
+## Related Documentation
+
+- [Globus API Documentation](https://docs.globus.org/api/)
+- [Go Testing Package](https://golang.org/pkg/testing/)
+- [Development Guide](DEVELOPMENT.md)
