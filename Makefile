@@ -87,6 +87,12 @@ test-shell: install-bats
 	@echo "Running shell script tests..."
 	@./scripts/run_shell_tests.sh
 
+# Security scanning
+.PHONY: security-scan
+security-scan:
+	@echo "Running security scan..."
+	@./scripts/run_security_scan.sh
+
 .PHONY: help
 help:
 	@echo "Available targets:"
@@ -100,6 +106,7 @@ help:
 	@echo "  test-shell         - Run shell script tests"
 	@echo "  test-coverage      - Run tests with coverage report"
 	@echo "  test-integration   - Run integration tests"
+	@echo "  security-scan      - Run security scanning tools"
 	@echo "  install-bats       - Install BATS testing framework"
 	@echo "  clean              - Clean build artifacts"
 	@echo "  help               - Show this help"

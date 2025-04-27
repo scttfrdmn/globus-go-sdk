@@ -408,6 +408,8 @@ For detailed documentation, see:
 - [Connection Pooling Guide](doc/connection-pooling.md)
 - [MFA Authentication Guide](doc/mfa-authentication.md)
 - [Shell Testing Guide](doc/shell-testing.md)
+- [Security Guidelines](doc/SECURITY_GUIDELINES.md)
+- [Security Audit Plan](doc/SECURITY_AUDIT_PLAN.md)
 - [Data Schemas](doc/data-schemas.md)
 - [Error Handling](doc/error-handling.md)
 - [Extending the SDK](doc/extending-the-sdk.md)
