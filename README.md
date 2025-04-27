@@ -405,6 +405,7 @@ For detailed documentation, see:
 - [Search Client Guide](doc/search-client.md)
 - [Timers Client Guide](doc/timers-client.md)
 - [Memory Optimization Guide](doc/memory-optimization.md)
+- [Connection Pooling Guide](doc/connection-pooling.md)
 - [Data Schemas](doc/data-schemas.md)
 - [Error Handling](doc/error-handling.md)
 - [Extending the SDK](doc/extending-the-sdk.md)
