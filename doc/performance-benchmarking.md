@@ -19,7 +19,7 @@ The Globus Go SDK includes tools to benchmark and monitor transfer performance. 
 The benchmark package (`pkg/benchmark`) provides tools for testing and measuring performance:
 
 ```go
-import "github.com/yourusername/globus-go-sdk/pkg/benchmark"
+import "github.com/scttfrdmn/globus-go-sdk/pkg/benchmark"
 ```
 
 ### Key Components

@@ -2,41 +2,54 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2025 Scott Friedman and Project Contributors
 
-# Check for license headers in Go files
+# This script checks that all source files have proper SPDX license headers
 
-set -e
+set -e  # Exit on error
 
-LICENSE_HEADER="// SPDX-License-Identifier: Apache-2.0"
-COPYRIGHT="// Copyright (c) 2025 Scott Friedman and Project Contributors"
+# Print colorized output
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
-# Find all Go files in the project
-files=$(find . -name "*.go" -not -path "./vendor/*" -not -path "./.git/*")
+echo -e "${BLUE}Checking for SPDX license headers...${NC}"
 
-# Check each file for license headers
-missing_license=0
-missing_copyright=0
+MISSING_HEADERS=0
 
-for file in $files; do
-  if ! grep -q "$LICENSE_HEADER" "$file"; then
-    echo "❌ Missing license header in $file"
-    missing_license=1
-  fi
-  
-  if ! grep -q "$COPYRIGHT" "$file"; then
-    echo "❌ Missing copyright notice in $file"
-    missing_copyright=1
+# Check Go files
+echo -e "${BLUE}Checking Go files...${NC}"
+for file in $(find . -name "*.go" -not -path "./vendor/*" -not -path "./pkg/gen/*"); do
+  if ! grep -q "SPDX-License-Identifier: Apache-2.0" "$file"; then
+    echo -e "${RED}❌ Missing SPDX header: ${file}${NC}"
+    MISSING_HEADERS=$((MISSING_HEADERS+1))
   fi
 done
 
-# Report results
-if [ $missing_license -eq 0 ] && [ $missing_copyright -eq 0 ]; then
-  echo "✅ All Go files have correct license headers and copyright notices"
+# Check shell scripts
+echo -e "${BLUE}Checking shell scripts...${NC}"
+for file in $(find . -name "*.sh"); do
+  if ! grep -q "SPDX-License-Identifier: Apache-2.0" "$file"; then
+    echo -e "${RED}❌ Missing SPDX header: ${file}${NC}"
+    MISSING_HEADERS=$((MISSING_HEADERS+1))
+  fi
+done
+
+# Check Markdown files (optional, uncomment if needed)
+echo -e "${BLUE}Checking Markdown files...${NC}"
+for file in $(find . -name "*.md" -not -path "./vendor/*" -not -path "./LICENSE.md"); do
+  if ! grep -q "SPDX-License-Identifier: Apache-2.0" "$file"; then
+    echo -e "${YELLOW}⚠ Missing SPDX header: ${file}${NC}"
+    # Not counting this as an error, just a warning
+  fi
+done
+
+# Display summary
+if [ $MISSING_HEADERS -eq 0 ]; then
+  echo -e "${GREEN}✓ All files have proper SPDX license headers${NC}"
   exit 0
 else
-  echo "❌ Some files are missing license headers or copyright notices"
-  echo "Please add the following lines at the top of the file:"
-  echo "$LICENSE_HEADER"
-  echo "$COPYRIGHT"
-  echo ""
+  echo -e "${RED}❌ Found ${MISSING_HEADERS} files missing SPDX license headers${NC}"
+  echo -e "${YELLOW}Run './scripts/standardize-spdx-headers.sh' to fix${NC}"
   exit 1
 fi

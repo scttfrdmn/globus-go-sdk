@@ -9,8 +9,8 @@ Please be respectful and considerate of others when contributing to this project
 ## Getting Started
 
 1. Fork the repository on GitHub
-2. Clone your fork locally: `git clone https://github.com/yourusername/globus-go-sdk.git`
-3. Add the upstream repository: `git remote add upstream https://github.com/original-owner/globus-go-sdk.git`
+2. Clone your fork locally: `git clone https://github.com/scttfrdmn/globus-go-sdk.git`
+3. Add the upstream repository: `git remote add upstream https://github.com/scttfrdmn/globus-go-sdk.git`
 4. Create a branch for your work: `git checkout -b your-feature-branch`
 
 ## Development Environment Setup

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2025 Scott Friedman and Project Contributors
-
 package search
 
 import (
@@ -9,46 +8,46 @@ import (
 
 // Index represents a Globus Search index
 type Index struct {
-	ID                 string            `json:"id,omitempty"`
-	DisplayName        string            `json:"display_name,omitempty"`
-	Description        string            `json:"description,omitempty"`
-	IsActive           bool              `json:"is_active,omitempty"`
-	IsPublic           bool              `json:"is_public,omitempty"`
-	IsMonitored        bool              `json:"is_monitored,omitempty"`
-	MonitoringFrequency int               `json:"monitoring_frequency,omitempty"`
-	CreatedBy          string            `json:"created_by,omitempty"`
-	CreatedAt          time.Time         `json:"created_at,omitempty"`
-	UpdatedAt          time.Time         `json:"updated_at,omitempty"`
-	MaxSize            int64             `json:"max_size_in_megabytes,omitempty"`
-	DefinitionDocument map[string]interface{} `json:"definition_document,omitempty"`
+	ID                  string                 `json:"id,omitempty"`
+	DisplayName         string                 `json:"display_name,omitempty"`
+	Description         string                 `json:"description,omitempty"`
+	IsActive            bool                   `json:"is_active,omitempty"`
+	IsPublic            bool                   `json:"is_public,omitempty"`
+	IsMonitored         bool                   `json:"is_monitored,omitempty"`
+	MonitoringFrequency int                    `json:"monitoring_frequency,omitempty"`
+	CreatedBy           string                 `json:"created_by,omitempty"`
+	CreatedAt           time.Time              `json:"created_at,omitempty"`
+	UpdatedAt           time.Time              `json:"updated_at,omitempty"`
+	MaxSize             int64                  `json:"max_size_in_megabytes,omitempty"`
+	DefinitionDocument  map[string]interface{} `json:"definition_document,omitempty"`
 }
 
 // IndexList is a list of indexes
 type IndexList struct {
 	Indexes   []Index `json:"indexes,omitempty"`
-	Total     int      `json:"total,omitempty"`
-	HadErrors bool     `json:"had_errors,omitempty"`
-	HasMore   bool     `json:"has_more,omitempty"`
-	Marker    string   `json:"marker,omitempty"`
+	Total     int     `json:"total,omitempty"`
+	HadErrors bool    `json:"had_errors,omitempty"`
+	HasMore   bool    `json:"has_more,omitempty"`
+	Marker    string  `json:"marker,omitempty"`
 }
 
 // IndexCreateRequest is the request to create a new index
 type IndexCreateRequest struct {
-	DisplayName        string            `json:"display_name"`
-	Description        string            `json:"description,omitempty"`
-	IsMonitored        bool              `json:"is_monitored,omitempty"`
-	MonitoringFrequency int               `json:"monitoring_frequency,omitempty"`
-	DefinitionDocument map[string]interface{} `json:"definition_document,omitempty"`
+	DisplayName         string                 `json:"display_name"`
+	Description         string                 `json:"description,omitempty"`
+	IsMonitored         bool                   `json:"is_monitored,omitempty"`
+	MonitoringFrequency int                    `json:"monitoring_frequency,omitempty"`
+	DefinitionDocument  map[string]interface{} `json:"definition_document,omitempty"`
 }
 
 // IndexUpdateRequest is the request to update an index
 type IndexUpdateRequest struct {
-	DisplayName        string            `json:"display_name,omitempty"`
-	Description        string            `json:"description,omitempty"`
-	IsMonitored        bool              `json:"is_monitored,omitempty"`
-	MonitoringFrequency int               `json:"monitoring_frequency,omitempty"`
-	IsActive           bool              `json:"is_active,omitempty"`
-	DefinitionDocument map[string]interface{} `json:"definition_document,omitempty"`
+	DisplayName         string                 `json:"display_name,omitempty"`
+	Description         string                 `json:"description,omitempty"`
+	IsMonitored         bool                   `json:"is_monitored,omitempty"`
+	MonitoringFrequency int                    `json:"monitoring_frequency,omitempty"`
+	IsActive            bool                   `json:"is_active,omitempty"`
+	DefinitionDocument  map[string]interface{} `json:"definition_document,omitempty"`
 }
 
 // ListIndexesOptions are the options for listing indexes
@@ -65,15 +64,15 @@ type ListIndexesOptions struct {
 
 // SearchDocument represents a document in a Globus Search index
 type SearchDocument struct {
-	Subject     string                 `json:"subject"`
-	Content     map[string]interface{} `json:"content"`
-	VisibleTo   []string               `json:"visible_to,omitempty"`
-	IndexedAt   time.Time              `json:"indexed_at,omitempty"`
-	CreatedAt   time.Time              `json:"created_at,omitempty"`
-	UpdatedAt   time.Time              `json:"updated_at,omitempty"`
-	DeletedAt   time.Time              `json:"deleted_at,omitempty"`
-	Version     string                 `json:"version,omitempty"`
-	GMETA       map[string]interface{} `json:"gmeta,omitempty"`
+	Subject   string                 `json:"subject"`
+	Content   map[string]interface{} `json:"content"`
+	VisibleTo []string               `json:"visible_to,omitempty"`
+	IndexedAt time.Time              `json:"indexed_at,omitempty"`
+	CreatedAt time.Time              `json:"created_at,omitempty"`
+	UpdatedAt time.Time              `json:"updated_at,omitempty"`
+	DeletedAt time.Time              `json:"deleted_at,omitempty"`
+	Version   string                 `json:"version,omitempty"`
+	GMETA     map[string]interface{} `json:"gmeta,omitempty"`
 }
 
 // IngestRequest represents a request to ingest documents
@@ -104,7 +103,7 @@ type IngestResponse struct {
 type SearchOptions struct {
 	Limit             int      `url:"limit,omitempty"`
 	Offset            int      `url:"offset,omitempty"`
-	PageSize          int      `url:"page_size,omitempty"` // Alias for Limit
+	PageSize          int      `url:"page_size,omitempty"`  // Alias for Limit
 	PageToken         string   `url:"page_token,omitempty"` // Alias for Marker
 	Sort              []string `url:"sort,omitempty"`
 	Filter            string   `url:"filter,omitempty"`
@@ -116,8 +115,8 @@ type SearchOptions struct {
 
 // SearchRequest represents a search query request
 type SearchRequest struct {
-	IndexID string        `json:"index_id"`
-	Query   string        `json:"q"`
+	IndexID string         `json:"index_id"`
+	Query   string         `json:"q"`
 	Options *SearchOptions `json:"options,omitempty"`
 }
 
@@ -144,14 +143,14 @@ type SearchResult struct {
 
 // SearchResponse is the response from a search operation
 type SearchResponse struct {
-	Count      int           `json:"count"`
-	Total      int           `json:"total"`
-	Subjects   []string      `json:"subjects"`
-	Results    []SearchResult `json:"results"`
-	Facets     []Facet       `json:"facets,omitempty"`
-	HadErrors  bool          `json:"had_errors"`
-	HasMore    bool          `json:"has_more"`
-	PageToken  string        `json:"page_token,omitempty"`
+	Count     int            `json:"count"`
+	Total     int            `json:"total"`
+	Subjects  []string       `json:"subjects"`
+	Results   []SearchResult `json:"results"`
+	Facets    []Facet        `json:"facets,omitempty"`
+	HadErrors bool           `json:"had_errors"`
+	HasMore   bool           `json:"has_more"`
+	PageToken string         `json:"page_token,omitempty"`
 }
 
 // DeleteDocumentsRequest represents a request to delete documents

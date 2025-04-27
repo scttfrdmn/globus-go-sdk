@@ -100,7 +100,7 @@ func ParseErrorResponse(body []byte, statusCode int, resourceID string, resource
 			Message: fmt.Sprintf("HTTP %d: %s", statusCode, string(body)),
 		}
 	}
-	
+
 	// Create appropriate error based on status code and resource type
 	switch statusCode {
 	case http.StatusNotFound:

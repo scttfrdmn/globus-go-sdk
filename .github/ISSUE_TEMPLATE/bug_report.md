@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
 ---
 name: Bug report
 about: Create a report to help improve the Globus Go SDK

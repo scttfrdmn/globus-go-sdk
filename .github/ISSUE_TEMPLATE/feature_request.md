@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
 ---
 name: Feature request
 about: Suggest an idea for the Globus Go SDK

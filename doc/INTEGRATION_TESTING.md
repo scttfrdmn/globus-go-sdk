@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
 # Integration Testing Guide
 
 This document provides guidance on setting up and running integration tests for the Globus Go SDK.

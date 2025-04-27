@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
 # Security Guidelines
 
 This document provides security guidelines and best practices for using the Globus Go SDK. Following these guidelines will help ensure your application maintains a strong security posture when interacting with Globus services.

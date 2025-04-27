@@ -35,7 +35,7 @@ To run this example, you need:
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/globus-go-sdk.git
+git clone https://github.com/scttfrdmn/globus-go-sdk.git
 cd globus-go-sdk
 ```
 

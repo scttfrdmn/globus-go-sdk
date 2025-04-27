@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
 # Error Handling Documentation
 
 The `errors.go` file provides enhanced error handling for the Globus Auth client. It defines common error types, error checking functions, and utilities for parsing error responses from the Globus Auth API.

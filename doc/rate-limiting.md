@@ -20,7 +20,7 @@ These components work together to make your applications more resilient and resp
 The `RateLimiter` interface provides rate limiting functionality:
 
 ```go
-import "github.com/yourusername/globus-go-sdk/pkg/core/ratelimit"
+import "github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
 ```
 
 ### Creating a Rate Limiter
@@ -225,5 +225,5 @@ client := core.NewClient(
 ## Further Reading
 
 - [Example applications](../examples/ratelimit/)
-- [API reference documentation](https://pkg.go.dev/github.com/yourusername/globus-go-sdk/pkg/core/ratelimit)
+- [API reference documentation](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit)
 - [Globus API rate limits documentation](https://docs.globus.org/api/)

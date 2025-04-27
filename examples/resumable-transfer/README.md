@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
 # Resumable Transfers Example
 
 This example demonstrates how to use the resumable transfer functionality in the Globus Go SDK to perform large transfers that can be paused and resumed.

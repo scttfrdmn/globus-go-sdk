@@ -109,22 +109,22 @@ type RunRequest struct {
 
 // RunResponse represents a Flow run
 type RunResponse struct {
-	RunID      string                 `json:"run_id"`
-	FlowID     string                 `json:"flow_id"`
-	Status     string                 `json:"status"`
-	CreatedAt  time.Time              `json:"created_at"`
-	StartedAt  time.Time              `json:"started_at,omitempty"`
+	RunID       string                 `json:"run_id"`
+	FlowID      string                 `json:"flow_id"`
+	Status      string                 `json:"status"`
+	CreatedAt   time.Time              `json:"created_at"`
+	StartedAt   time.Time              `json:"started_at,omitempty"`
 	CompletedAt time.Time              `json:"completed_at,omitempty"`
-	Label      string                 `json:"label,omitempty"`
-	Tags       []string               `json:"tags,omitempty"`
-	UserID     string                 `json:"user_id"`
-	RunOwner   string                 `json:"run_owner"`
+	Label       string                 `json:"label,omitempty"`
+	Tags        []string               `json:"tags,omitempty"`
+	UserID      string                 `json:"user_id"`
+	RunOwner    string                 `json:"run_owner"`
 	RunManagers []string               `json:"run_managers,omitempty"`
 	RunMonitors []string               `json:"run_monitors,omitempty"`
-	Input      map[string]interface{} `json:"input,omitempty"`
-	Output     map[string]interface{} `json:"output,omitempty"`
-	FlowTitle  string                 `json:"flow_title,omitempty"`
-	FlowScope  string                 `json:"flow_scope,omitempty"`
+	Input       map[string]interface{} `json:"input,omitempty"`
+	Output      map[string]interface{} `json:"output,omitempty"`
+	FlowTitle   string                 `json:"flow_title,omitempty"`
+	FlowScope   string                 `json:"flow_scope,omitempty"`
 }
 
 // RunList represents a list of Flow runs
@@ -138,19 +138,19 @@ type RunList struct {
 
 // RunUpdateRequest represents a request to update a Flow run
 type RunUpdateRequest struct {
-	Label      string   `json:"label,omitempty"`
-	Tags       []string `json:"tags,omitempty"`
+	Label       string   `json:"label,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
 	RunManagers []string `json:"run_managers,omitempty"`
 	RunMonitors []string `json:"run_monitors,omitempty"`
 }
 
 // RunLogEntry represents an entry in a Flow run log
 type RunLogEntry struct {
-	Code      string    `json:"code"`
-	RunID     string    `json:"run_id"`
-	CreatedAt time.Time `json:"created_at"`
-	Details   map[string]interface{} `json:"details,omitempty"`
-	Description string   `json:"description"`
+	Code        string                 `json:"code"`
+	RunID       string                 `json:"run_id"`
+	CreatedAt   time.Time              `json:"created_at"`
+	Details     map[string]interface{} `json:"details,omitempty"`
+	Description string                 `json:"description"`
 }
 
 // RunLogList represents a list of Flow run logs
@@ -178,10 +178,10 @@ type ActionProvider struct {
 // ActionProviderList represents a list of Flow action providers
 type ActionProviderList struct {
 	ActionProviders []ActionProvider `json:"action_providers"`
-	Total          int              `json:"total"`
-	HadMore        bool             `json:"had_more"`
-	Offset         int              `json:"offset"`
-	Limit          int              `json:"limit"`
+	Total           int              `json:"total"`
+	HadMore         bool             `json:"had_more"`
+	Offset          int              `json:"offset"`
+	Limit           int              `json:"limit"`
 }
 
 // ActionRole represents a role in a Flow action
@@ -218,8 +218,8 @@ type ListActionProvidersOptions struct {
 
 // RunMutableFields contains the fields that can be modified on a Flow run
 type RunMutableFields struct {
-	Label        string   `json:"label,omitempty"`
-	Tags         []string `json:"tags,omitempty"`
-	RunManagers  []string `json:"run_managers,omitempty"`
-	RunMonitors  []string `json:"run_monitors,omitempty"`
+	Label       string   `json:"label,omitempty"`
+	Tags        []string `json:"tags,omitempty"`
+	RunManagers []string `json:"run_managers,omitempty"`
+	RunMonitors []string `json:"run_monitors,omitempty"`
 }

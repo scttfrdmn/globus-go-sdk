@@ -12,8 +12,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/yourusername/globus-go-sdk/pkg/core"
-	"github.com/yourusername/globus-go-sdk/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
 )
 
 // BenchmarkResult contains the results of a transfer benchmark
@@ -111,17 +111,17 @@ func BenchmarkTransfer(
 
 	// Create transfer task
 	taskOptions := &transfer.SubmitTransferOptions{
-		Label:           "Benchmark Transfer",
-		SourceEndpoint:  config.SourceEndpoint,
-		DestEndpoint:    config.DestEndpoint,
-		TransferItems:   transferItems,
-		Deadline:        time.Now().Add(24 * time.Hour).Format(time.RFC3339),
-		SyncLevel:       transfer.SyncLevelChecksum,
-		VerifyChecksum:  true,
+		Label:             "Benchmark Transfer",
+		SourceEndpoint:    config.SourceEndpoint,
+		DestEndpoint:      config.DestEndpoint,
+		TransferItems:     transferItems,
+		Deadline:          time.Now().Add(24 * time.Hour).Format(time.RFC3339),
+		SyncLevel:         transfer.SyncLevelChecksum,
+		VerifyChecksum:    true,
 		PreserveTimestamp: true,
-		EncryptData:     true,
-		Notify:          transfer.NotifyOff,
-		Parallelism:     config.Parallelism,
+		EncryptData:       true,
+		Notify:            transfer.NotifyOff,
+		Parallelism:       config.Parallelism,
 	}
 
 	// Submit the transfer task
@@ -198,8 +198,8 @@ func generateTestData(
 	mkdirTask := &transfer.SubmitOperationOptions{
 		Endpoint: config.SourceEndpoint,
 		Operation: transfer.Operation{
-			Op:    transfer.OpMkdir,
-			Path:  filepath.Join(config.SourcePath, "benchmark"),
+			Op:   transfer.OpMkdir,
+			Path: filepath.Join(config.SourcePath, "benchmark"),
 		},
 	}
 
@@ -246,8 +246,8 @@ func generateTestData(
 						DestinationPath: filepath.Join(config.SourcePath, "benchmark", fmt.Sprintf("file_%d.dat", fileIndex)),
 					},
 				},
-				Deadline:      time.Now().Add(1 * time.Hour).Format(time.RFC3339),
-				SyncLevel:     transfer.SyncLevelExistence,
+				Deadline:       time.Now().Add(1 * time.Hour).Format(time.RFC3339),
+				SyncLevel:      transfer.SyncLevelExistence,
 				VerifyChecksum: true,
 			}
 
@@ -346,9 +346,9 @@ func cleanupTestData(
 	rmTask := &transfer.SubmitOperationOptions{
 		Endpoint: config.SourceEndpoint,
 		Operation: transfer.Operation{
-			Op:          transfer.OpDelete,
-			Path:        filepath.Join(config.SourcePath, "benchmark"),
-			Recursive:   true,
+			Op:        transfer.OpDelete,
+			Path:      filepath.Join(config.SourcePath, "benchmark"),
+			Recursive: true,
 		},
 	}
 
@@ -361,9 +361,9 @@ func cleanupTestData(
 	rmTask = &transfer.SubmitOperationOptions{
 		Endpoint: config.DestEndpoint,
 		Operation: transfer.Operation{
-			Op:          transfer.OpDelete,
-			Path:        filepath.Join(config.DestPath, "benchmark"),
-			Recursive:   true,
+			Op:        transfer.OpDelete,
+			Path:      filepath.Join(config.DestPath, "benchmark"),
+			Recursive: true,
 		},
 	}
 
@@ -510,29 +510,29 @@ func RunBenchmarkSuite(
 	for _, tc := range testCases {
 		fmt.Fprintf(output, "\n====== Benchmark: %s ======\n\n", tc.name)
 		config := tc.config(baseConfig)
-		
+
 		result, err := BenchmarkTransfer(ctx, client, config, output)
 		if err != nil {
 			fmt.Fprintf(output, "Error running benchmark %s: %v\n", tc.name, err)
 			continue
 		}
-		
+
 		results = append(results, result)
-		
+
 		// Add a small delay between benchmarks
 		time.Sleep(5 * time.Second)
 	}
 
 	// Print comparison table
 	fmt.Fprintf(output, "\n====== Benchmark Summary ======\n\n")
-	fmt.Fprintf(output, "| %-25s | %-10s | %-10s | %-15s | %-15s |\n", 
+	fmt.Fprintf(output, "| %-25s | %-10s | %-10s | %-15s | %-15s |\n",
 		"Benchmark", "Size", "Files", "Time", "Speed (MB/s)")
 	fmt.Fprintf(output, "|%-25s-|%-10s-|%-10s-|%-15s-|%-15s-|\n",
 		"-------------------------", "----------", "----------", "---------------", "---------------")
-	
+
 	for i, result := range results {
 		fmt.Fprintf(output, "| %-25s | %-10.2f | %-10d | %-15s | %-15.2f |\n",
-			testCases[i].name, result.TotalSizeMB, result.FileCount, 
+			testCases[i].name, result.TotalSizeMB, result.FileCount,
 			result.ElapsedTime.Round(time.Millisecond), result.TransferSpeedMBs)
 	}
 

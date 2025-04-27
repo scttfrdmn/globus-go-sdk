@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
 # Globus Timers API Example
 
 This example demonstrates how to use the Timers service in the Globus Go SDK to schedule and manage tasks.

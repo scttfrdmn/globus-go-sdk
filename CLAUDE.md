@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
 # Working with Claude to Develop the Globus Go SDK
 
 This document provides guidance on using Claude (via Claude Code or other interfaces) to assist with the development of the Globus Go SDK.

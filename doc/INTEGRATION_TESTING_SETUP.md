@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
 # Integration Testing Setup Guide
 
 This document provides step-by-step instructions for setting up Globus API credentials and endpoints to run integration tests for the Globus Go SDK.

@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
 # Timers Client Guide
 
 This guide provides information about using the Timers service client in the Globus Go SDK.

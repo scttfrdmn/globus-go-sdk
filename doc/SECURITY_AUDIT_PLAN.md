@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
 # Security Audit Plan
 
 This document outlines the plan for conducting a comprehensive security audit of the Globus Go SDK. The audit will focus on identifying potential security issues, ensuring best practices are followed, and providing recommendations for improvements.

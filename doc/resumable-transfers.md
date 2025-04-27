@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
 # Resumable Transfers in the Globus Go SDK
 
 This document provides detailed information about the resumable transfers feature in the Globus Go SDK.

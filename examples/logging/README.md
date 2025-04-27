@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
 # Logging and Tracing Example
 
 This example demonstrates the enhanced logging and tracing capabilities of the Globus Go SDK.

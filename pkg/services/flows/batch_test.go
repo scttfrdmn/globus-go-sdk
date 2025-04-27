@@ -8,11 +8,10 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"testing"
 	"time"
 
-	"github.com/yourusername/globus-go-sdk/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 )
 
 func TestBatchRunFlows(t *testing.T) {
@@ -23,7 +22,7 @@ func TestBatchRunFlows(t *testing.T) {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		
+
 		// Parse request body
 		var request RunRequest
 		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
@@ -31,7 +30,7 @@ func TestBatchRunFlows(t *testing.T) {
 			w.WriteHeader(http.StatusBadRequest)
 			return
 		}
-		
+
 		// Create a response with details from the request
 		runTime, _ := time.Parse(time.RFC3339, "2023-01-01T00:00:00Z")
 		response := RunResponse{
@@ -46,16 +45,16 @@ func TestBatchRunFlows(t *testing.T) {
 			RunOwner:  "test-user",
 			Input:     request.Input,
 		}
-		
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
-	
+
 	// Create client
 	client := NewClient("test-token", core.WithBaseURL(server.URL+"/"))
-	
+
 	// Create batch request
 	const batchSize = 5
 	requests := make([]*RunRequest, batchSize)
@@ -68,44 +67,44 @@ func TestBatchRunFlows(t *testing.T) {
 			},
 		}
 	}
-	
+
 	batchRequest := &BatchRunFlowsRequest{
 		Requests: requests,
 		Options: &BatchOptions{
 			Concurrency: 2, // Low concurrency to test batching
 		},
 	}
-	
+
 	// Execute batch
 	ctx := context.Background()
 	response := client.BatchRunFlows(ctx, batchRequest)
-	
+
 	// Verify results
 	if len(response.Responses) != batchSize {
 		t.Errorf("Expected %d responses, got %d", batchSize, len(response.Responses))
 	}
-	
+
 	for i, result := range response.Responses {
 		if result.Error != nil {
 			t.Errorf("Result %d had error: %v", i, result.Error)
 			continue
 		}
-		
+
 		if result.Response == nil {
 			t.Errorf("Result %d had nil response", i)
 			continue
 		}
-		
+
 		expectedLabel := fmt.Sprintf("batch-%d", i)
 		if result.Response.Label != expectedLabel {
 			t.Errorf("Expected label %s, got %s", expectedLabel, result.Response.Label)
 		}
-		
+
 		expectedRunID := "run-id-" + expectedLabel
 		if result.Response.RunID != expectedRunID {
 			t.Errorf("Expected run ID %s, got %s", expectedRunID, result.Response.RunID)
 		}
-		
+
 		expectedParam := fmt.Sprintf("value-%d", i)
 		if param, ok := result.Response.Input["param"].(string); !ok || param != expectedParam {
 			t.Errorf("Expected param value %s, got %v", expectedParam, result.Response.Input["param"])
@@ -125,7 +124,7 @@ func TestBatchGetFlows(t *testing.T) {
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		
+
 		// Return flow information or error
 		if flowID == "error-id" {
 			w.WriteHeader(http.StatusNotFound)
@@ -135,7 +134,7 @@ func TestBatchGetFlows(t *testing.T) {
 			})
 			return
 		}
-		
+
 		flowTime, _ := time.Parse(time.RFC3339, "2023-01-01T00:00:00Z")
 		response := Flow{
 			ID:          flowID,
@@ -145,16 +144,16 @@ func TestBatchGetFlows(t *testing.T) {
 			CreatedAt:   flowTime,
 			UpdatedAt:   flowTime,
 		}
-		
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		json.NewEncoder(w).Encode(response)
 	}))
 	defer server.Close()
-	
+
 	// Create client
 	client := NewClient("test-token", core.WithBaseURL(server.URL+"/"))
-	
+
 	// Create batch request
 	flowIDs := []string{
 		"flow-1",
@@ -162,23 +161,23 @@ func TestBatchGetFlows(t *testing.T) {
 		"error-id", // This will result in an error
 		"flow-3",
 	}
-	
+
 	batchRequest := &BatchFlowsRequest{
 		FlowIDs: flowIDs,
 		Options: &BatchOptions{
 			Concurrency: 2,
 		},
 	}
-	
+
 	// Execute batch
 	ctx := context.Background()
 	response := client.BatchGetFlows(ctx, batchRequest)
-	
+
 	// Verify results
 	if len(response.Responses) != len(flowIDs) {
 		t.Errorf("Expected %d responses, got %d", len(flowIDs), len(response.Responses))
 	}
-	
+
 	// Check successful responses
 	for i, result := range response.Responses {
 		if flowIDs[i] == "error-id" {
@@ -193,12 +192,12 @@ func TestBatchGetFlows(t *testing.T) {
 				t.Errorf("Result %d had unexpected error: %v", i, result.Error)
 				continue
 			}
-			
+
 			if result.Flow == nil {
 				t.Errorf("Result %d had nil flow", i)
 				continue
 			}
-			
+
 			if result.Flow.ID != flowIDs[i] {
 				t.Errorf("Expected flow ID %s, got %s", flowIDs[i], result.Flow.ID)
 			}
@@ -212,17 +211,17 @@ func TestBatchCancelRuns(t *testing.T) {
 		// Extract run ID from path
 		const cancelPath = "/runs/"
 		const cancelSuffix = "/cancel"
-		
-		if len(r.URL.Path) <= len(cancelPath)+len(cancelSuffix) || 
-		   r.URL.Path[:len(cancelPath)] != cancelPath ||
-		   r.URL.Path[len(r.URL.Path)-len(cancelSuffix):] != cancelSuffix {
+
+		if len(r.URL.Path) <= len(cancelPath)+len(cancelSuffix) ||
+			r.URL.Path[:len(cancelPath)] != cancelPath ||
+			r.URL.Path[len(r.URL.Path)-len(cancelSuffix):] != cancelSuffix {
 			t.Errorf("Unexpected path: %s", r.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
-		
-		runID := r.URL.Path[len(cancelPath):len(r.URL.Path)-len(cancelSuffix)]
-		
+
+		runID := r.URL.Path[len(cancelPath) : len(r.URL.Path)-len(cancelSuffix)]
+
 		// Return success or error based on run ID
 		if runID == "error-id" {
 			w.WriteHeader(http.StatusNotFound)
@@ -232,15 +231,15 @@ func TestBatchCancelRuns(t *testing.T) {
 			})
 			return
 		}
-		
+
 		// Return success
 		w.WriteHeader(http.StatusNoContent)
 	}))
 	defer server.Close()
-	
+
 	// Create client
 	client := NewClient("test-token", core.WithBaseURL(server.URL+"/"))
-	
+
 	// Create batch request
 	runIDs := []string{
 		"run-1",
@@ -248,23 +247,23 @@ func TestBatchCancelRuns(t *testing.T) {
 		"error-id", // This will result in an error
 		"run-3",
 	}
-	
+
 	batchRequest := &BatchCancelRunsRequest{
 		RunIDs: runIDs,
 		Options: &BatchOptions{
 			Concurrency: 2,
 		},
 	}
-	
+
 	// Execute batch
 	ctx := context.Background()
 	response := client.BatchCancelRuns(ctx, batchRequest)
-	
+
 	// Verify results
 	if len(response.Responses) != len(runIDs) {
 		t.Errorf("Expected %d responses, got %d", len(runIDs), len(response.Responses))
 	}
-	
+
 	// Check responses
 	for i, result := range response.Responses {
 		if runIDs[i] == "error-id" {
@@ -278,7 +277,7 @@ func TestBatchCancelRuns(t *testing.T) {
 			if result.Error != nil {
 				t.Errorf("Result %d had unexpected error: %v", i, result.Error)
 			}
-			
+
 			if result.RunID != runIDs[i] {
 				t.Errorf("Expected run ID %s, got %s", runIDs[i], result.RunID)
 			}

@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
 # Token Utilities Documentation
 
 The `token_utils.go` file provides several helpful utilities for working with Globus Auth tokens. These utilities make it easier to validate, check, and manage token lifetimes.

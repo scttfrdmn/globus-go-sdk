@@ -9,14 +9,12 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"time"
 
-	"github.com/yourusername/globus-go-sdk/pkg/core"
-	"github.com/yourusername/globus-go-sdk/pkg/services/auth"
-	"github.com/yourusername/globus-go-sdk/pkg/services/flows"
-	"github.com/yourusername/globus-go-sdk/pkg/services/search"
-	"github.com/yourusername/globus-go-sdk/pkg/services/tokens"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/flows"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/search"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/tokens"
 )
 
 // Configuration constants
@@ -122,7 +120,7 @@ func main() {
 // handleHome renders the home page
 func (app *App) handleHome(w http.ResponseWriter, r *http.Request) {
 	session := app.getSession(r)
-	
+
 	if session == nil {
 		// Not logged in
 		w.Header().Set("Content-Type", "text/html")
@@ -209,13 +207,13 @@ func (app *App) handleHome(w http.ResponseWriter, r *http.Request) {
 func (app *App) handleLogin(w http.ResponseWriter, r *http.Request) {
 	// Generate a state parameter to protect against CSRF
 	state := fmt.Sprintf("%d", time.Now().UnixNano())
-	
+
 	// Create the authorization URL
 	authURL := app.AuthClient.GetAuthorizationURL(
 		state,
 		app.Config.Scopes...,
 	)
-	
+
 	// Store the state in a cookie for verification later
 	http.SetCookie(w, &http.Cookie{
 		Name:     "globus_auth_state",
@@ -225,7 +223,7 @@ func (app *App) handleLogin(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		MaxAge:   300, // 5 minutes
 	})
-	
+
 	// Redirect to Globus Auth
 	http.Redirect(w, r, authURL, http.StatusFound)
 }
@@ -238,13 +236,13 @@ func (app *App) handleCallback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing state cookie", http.StatusBadRequest)
 		return
 	}
-	
+
 	state := r.URL.Query().Get("state")
 	if state != stateCookie.Value {
 		http.Error(w, "Invalid state parameter", http.StatusBadRequest)
 		return
 	}
-	
+
 	// Clear the state cookie
 	http.SetCookie(w, &http.Cookie{
 		Name:     "globus_auth_state",
@@ -254,14 +252,14 @@ func (app *App) handleCallback(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		MaxAge:   -1,
 	})
-	
+
 	// Get authorization code from query
 	code := r.URL.Query().Get("code")
 	if code == "" {
 		http.Error(w, "Missing authorization code", http.StatusBadRequest)
 		return
 	}
-	
+
 	// Exchange code for tokens
 	ctx := context.Background()
 	tokenResponse, err := app.AuthClient.ExchangeAuthorizationCode(ctx, code)
@@ -269,14 +267,14 @@ func (app *App) handleCallback(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Failed to exchange code: %v", err), http.StatusInternalServerError)
 		return
 	}
-	
+
 	// Get user info
 	userInfo, err := app.getUserInfo(ctx, tokenResponse.AccessToken)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to get user info: %v", err), http.StatusInternalServerError)
 		return
 	}
-	
+
 	// Create a new session
 	sessionID := fmt.Sprintf("%d", time.Now().UnixNano())
 	session := &Session{
@@ -288,13 +286,13 @@ func (app *App) handleCallback(w http.ResponseWriter, r *http.Request) {
 		LastAccess:   time.Now(),
 	}
 	app.Sessions[sessionID] = session
-	
+
 	// Store tokens in token storage
 	if err := app.storeTokens(session.UserID, tokenResponse); err != nil {
 		http.Error(w, fmt.Sprintf("Failed to store tokens: %v", err), http.StatusInternalServerError)
 		return
 	}
-	
+
 	// Set session cookie
 	http.SetCookie(w, &http.Cookie{
 		Name:     sessionCookieName,
@@ -304,7 +302,7 @@ func (app *App) handleCallback(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		MaxAge:   3600 * 24, // 24 hours
 	})
-	
+
 	// Redirect to home page
 	http.Redirect(w, r, "/", http.StatusFound)
 }
@@ -317,10 +315,10 @@ func (app *App) handleLogout(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusFound)
 		return
 	}
-	
+
 	// Remove session
 	delete(app.Sessions, session.ID)
-	
+
 	// Clear session cookie
 	http.SetCookie(w, &http.Cookie{
 		Name:     sessionCookieName,
@@ -330,7 +328,7 @@ func (app *App) handleLogout(w http.ResponseWriter, r *http.Request) {
 		HttpOnly: true,
 		MaxAge:   -1,
 	})
-	
+
 	// Redirect to home page
 	http.Redirect(w, r, "/", http.StatusFound)
 }
@@ -342,7 +340,7 @@ func (app *App) handleProfile(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
-	
+
 	w.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(w, `
 <!DOCTYPE html>
@@ -398,9 +396,9 @@ func (app *App) handleProfile(w http.ResponseWriter, r *http.Request) {
     </table>
 </body>
 </html>
-	`, session.Username, session.Email, session.UserID, 
-	   session.SessionStart.Format(time.RFC1123),
-	   session.LastAccess.Format(time.RFC1123))
+	`, session.Username, session.Email, session.UserID,
+		session.SessionStart.Format(time.RFC1123),
+		session.LastAccess.Format(time.RFC1123))
 }
 
 // handleFlows displays the flows dashboard
@@ -410,7 +408,7 @@ func (app *App) handleFlows(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
-	
+
 	w.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(w, `
 <!DOCTYPE html>
@@ -526,7 +524,7 @@ func (app *App) handleSearch(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusFound)
 		return
 	}
-	
+
 	w.Header().Set("Content-Type", "text/html")
 	fmt.Fprintf(w, `
 <!DOCTYPE html>
@@ -682,7 +680,7 @@ func (app *App) handleAPIFlows(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	
+
 	// Get tokens for the user
 	ctx := context.Background()
 	accessToken, err := app.getAccessToken(ctx, session.UserID, flows.FlowsScope)
@@ -690,12 +688,12 @@ func (app *App) handleAPIFlows(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Failed to get access token: %v", err), http.StatusInternalServerError)
 		return
 	}
-	
+
 	// Initialize Flows client if not already done
 	if app.FlowsClient == nil || app.FlowsClient.Client.Authorizer == nil {
 		app.FlowsClient = flows.NewClient(accessToken)
 	}
-	
+
 	// List flows
 	flowList, err := app.FlowsClient.ListFlows(ctx, &flows.ListFlowsOptions{
 		Limit: 10,
@@ -704,7 +702,7 @@ func (app *App) handleAPIFlows(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Failed to list flows: %v", err), http.StatusInternalServerError)
 		return
 	}
-	
+
 	// Return flows as JSON
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(flowList)
@@ -717,14 +715,14 @@ func (app *App) handleAPISearch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Unauthorized", http.StatusUnauthorized)
 		return
 	}
-	
+
 	// Get query parameter
 	query := r.URL.Query().Get("q")
 	if query == "" {
 		http.Error(w, "Missing query parameter", http.StatusBadRequest)
 		return
 	}
-	
+
 	// Get tokens for the user
 	ctx := context.Background()
 	accessToken, err := app.getAccessToken(ctx, session.UserID, search.SearchScope)
@@ -732,24 +730,24 @@ func (app *App) handleAPISearch(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("Failed to get access token: %v", err), http.StatusInternalServerError)
 		return
 	}
-	
+
 	// Initialize Search client if not already done
 	if app.SearchClient == nil || app.SearchClient.Client.Authorizer == nil {
 		app.SearchClient = search.NewClient(accessToken)
 	}
-	
+
 	// Perform search
 	searchQuery := &search.SearchQuery{
 		Q:     query,
 		Limit: 10,
 	}
-	
+
 	searchResults, err := app.SearchClient.Search(ctx, searchQuery)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Search failed: %v", err), http.StatusInternalServerError)
 		return
 	}
-	
+
 	// Return results as JSON
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(map[string]interface{}{
@@ -764,12 +762,12 @@ func (app *App) getSession(r *http.Request) *Session {
 	if err != nil {
 		return nil
 	}
-	
+
 	session, ok := app.Sessions[cookie.Value]
 	if !ok {
 		return nil
 	}
-	
+
 	// Update last access time
 	session.LastAccess = time.Now()
 	return session
@@ -784,13 +782,13 @@ func (app *App) storeTokens(userID string, tokenResponse *auth.TokenResponse) er
 		ExpiresAt:    time.Now().Add(time.Duration(tokenResponse.ExpiresIn) * time.Second),
 		Scope:        tokenResponse.Scope,
 	}
-	
+
 	// Create a token entry for the storage
 	entry := &tokens.Entry{
 		Resource: userID,
 		TokenSet: tokenSet,
 	}
-	
+
 	// Store the tokens
 	return app.TokenStorage.Store(entry)
 }
@@ -802,13 +800,13 @@ func (app *App) getAccessToken(ctx context.Context, userID, scope string) (strin
 	if err != nil {
 		return "", fmt.Errorf("failed to lookup tokens: %w", err)
 	}
-	
+
 	// Check if token is valid and has the required scope
-	if entry != nil && entry.AccessToken != "" && !entry.IsExpired() && 
-	   (entry.Scope == "" || containsScope(entry.Scope, scope)) {
+	if entry != nil && entry.AccessToken != "" && !entry.IsExpired() &&
+		(entry.Scope == "" || containsScope(entry.Scope, scope)) {
 		return entry.AccessToken, nil
 	}
-	
+
 	// If we have a refresh token, try to refresh
 	if entry != nil && entry.RefreshToken != "" {
 		// Refresh the token
@@ -816,15 +814,15 @@ func (app *App) getAccessToken(ctx context.Context, userID, scope string) (strin
 		if err != nil {
 			return "", fmt.Errorf("failed to refresh token: %w", err)
 		}
-		
+
 		// Store the new tokens
 		if err := app.storeTokens(userID, tokenResponse); err != nil {
 			return "", fmt.Errorf("failed to store refreshed tokens: %w", err)
 		}
-		
+
 		return tokenResponse.AccessToken, nil
 	}
-	
+
 	return "", fmt.Errorf("no valid token available for user %s", userID)
 }
 

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2025 Scott Friedman and Project Contributors
-
 package search
 
 import (
@@ -13,8 +12,8 @@ import (
 	"net/url"
 	"strconv"
 
-	"github.com/yourusername/globus-go-sdk/pkg/core"
-	"github.com/yourusername/globus-go-sdk/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
 )
 
 // Constants for Globus Search
@@ -31,20 +30,20 @@ type Client struct {
 // NewClient creates a new Search client
 func NewClient(accessToken string, options ...core.ClientOption) *Client {
 	// Create the authorizer with the access token
-	authorizer := authorizers.NewStaticTokenAuthorizer(accessToken)
-	
+	authorizer := authorizers.StaticTokenCoreAuthorizer(accessToken)
+
 	// Apply default options specific to Search
 	defaultOptions := []core.ClientOption{
 		core.WithBaseURL(DefaultBaseURL),
 		core.WithAuthorizer(authorizer),
 	}
-	
+
 	// Merge with user options
 	options = append(defaultOptions, options...)
-	
+
 	// Create the base client
 	baseClient := core.NewClient(options...)
-	
+
 	return &Client{
 		Client: baseClient,
 	}
@@ -56,19 +55,19 @@ func (c *Client) buildURL(path string, query url.Values) string {
 	if baseURL[len(baseURL)-1] != '/' {
 		baseURL += "/"
 	}
-	
+
 	url := baseURL + path
 	if query != nil && len(query) > 0 {
 		url += "?" + query.Encode()
 	}
-	
+
 	return url
 }
 
 // doRequest performs an HTTP request and decodes the JSON response
 func (c *Client) doRequest(ctx context.Context, method, path string, query url.Values, body, response interface{}) error {
 	url := c.buildURL(path, query)
-	
+
 	var bodyReader io.Reader
 	if body != nil {
 		bodyJSON, err := json.Marshal(body)
@@ -77,47 +76,67 @@ func (c *Client) doRequest(ctx context.Context, method, path string, query url.V
 		}
 		bodyReader = bytes.NewReader(bodyJSON)
 	}
-	
+
 	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	req.Header.Set("Accept", "application/json")
-	
+
 	resp, err := c.Client.Do(ctx, req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-	
-	// For non-GET requests with no response body, just check status
-	if method != http.MethodGet && response == nil {
-		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-			return nil
-		}
-		
-		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(respBody))
-	}
-	
-	// Read and decode response body
+
+	// Read response body
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
-	
-	if len(respBody) == 0 {
+
+	// Check for error status codes
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		var errorResp struct {
+			Code      string `json:"code"`
+			Message   string `json:"message"`
+			RequestID string `json:"request_id"`
+		}
+
+		// Try to parse as JSON error
+		if len(respBody) > 0 {
+			if err := json.Unmarshal(respBody, &errorResp); err == nil && errorResp.Message != "" {
+				return &SearchError{
+					Code:      errorResp.Code,
+					Message:   errorResp.Message,
+					Status:    resp.StatusCode,
+					RequestID: errorResp.RequestID,
+				}
+			}
+		}
+
+		// Fallback to generic error message
+		return &SearchError{
+			Code:    fmt.Sprintf("HTTP%d", resp.StatusCode),
+			Message: fmt.Sprintf("request failed with status %d: %s", resp.StatusCode, string(respBody)),
+			Status:  resp.StatusCode,
+		}
+	}
+
+	// For empty responses, return early
+	if len(respBody) == 0 || response == nil {
 		return nil
 	}
-	
+
+	// Parse the response body
 	if err := json.Unmarshal(respBody, response); err != nil {
 		return fmt.Errorf("failed to unmarshal response: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -150,13 +169,13 @@ func (c *Client) ListIndexes(ctx context.Context, options *ListIndexesOptions) (
 			query.Set("by_path", options.ByPath)
 		}
 	}
-	
+
 	var indexList IndexList
 	err := c.doRequest(ctx, http.MethodGet, "index_list", query, nil, &indexList)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &indexList, nil
 }
 
@@ -165,13 +184,13 @@ func (c *Client) GetIndex(ctx context.Context, indexID string) (*Index, error) {
 	if indexID == "" {
 		return nil, fmt.Errorf("index ID is required")
 	}
-	
+
 	var index Index
 	err := c.doRequest(ctx, http.MethodGet, "index/"+indexID, nil, nil, &index)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &index, nil
 }
 
@@ -180,17 +199,17 @@ func (c *Client) CreateIndex(ctx context.Context, request *IndexCreateRequest) (
 	if request == nil {
 		return nil, fmt.Errorf("index create request is required")
 	}
-	
+
 	if request.DisplayName == "" {
 		return nil, fmt.Errorf("display name is required")
 	}
-	
+
 	var index Index
 	err := c.doRequest(ctx, http.MethodPost, "index", nil, request, &index)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &index, nil
 }
 
@@ -199,17 +218,17 @@ func (c *Client) UpdateIndex(ctx context.Context, indexID string, request *Index
 	if indexID == "" {
 		return nil, fmt.Errorf("index ID is required")
 	}
-	
+
 	if request == nil {
 		return nil, fmt.Errorf("index update request is required")
 	}
-	
+
 	var index Index
 	err := c.doRequest(ctx, http.MethodPatch, "index/"+indexID, nil, request, &index)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &index, nil
 }
 
@@ -218,7 +237,7 @@ func (c *Client) DeleteIndex(ctx context.Context, indexID string) error {
 	if indexID == "" {
 		return fmt.Errorf("index ID is required")
 	}
-	
+
 	return c.doRequest(ctx, http.MethodDelete, "index/"+indexID, nil, nil, nil)
 }
 
@@ -227,21 +246,21 @@ func (c *Client) IngestDocuments(ctx context.Context, request *IngestRequest) (*
 	if request == nil {
 		return nil, fmt.Errorf("ingest request is required")
 	}
-	
+
 	if request.IndexID == "" {
 		return nil, fmt.Errorf("index ID is required")
 	}
-	
+
 	if len(request.Documents) == 0 {
 		return nil, fmt.Errorf("at least one document is required")
 	}
-	
+
 	var response IngestResponse
 	err := c.doRequest(ctx, http.MethodPost, "ingest", nil, request, &response)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &response, nil
 }
 
@@ -250,17 +269,40 @@ func (c *Client) Search(ctx context.Context, request *SearchRequest) (*SearchRes
 	if request == nil {
 		return nil, fmt.Errorf("search request is required")
 	}
-	
+
 	if request.IndexID == "" {
 		return nil, fmt.Errorf("index ID is required")
 	}
-	
+
 	var response SearchResponse
 	err := c.doRequest(ctx, http.MethodPost, "search", nil, request, &response)
 	if err != nil {
 		return nil, err
 	}
-	
+
+	return &response, nil
+}
+
+// StructuredSearch performs a search query with a structured query object
+func (c *Client) StructuredSearch(ctx context.Context, request *StructuredSearchRequest) (*SearchResponse, error) {
+	if request == nil {
+		return nil, fmt.Errorf("search request is required")
+	}
+
+	if request.IndexID == "" {
+		return nil, fmt.Errorf("index ID is required")
+	}
+
+	if request.Query == nil {
+		return nil, fmt.Errorf("query is required")
+	}
+
+	var response SearchResponse
+	err := c.doRequest(ctx, http.MethodPost, "search", nil, request, &response)
+	if err != nil {
+		return nil, err
+	}
+
 	return &response, nil
 }
 
@@ -269,21 +311,21 @@ func (c *Client) DeleteDocuments(ctx context.Context, request *DeleteDocumentsRe
 	if request == nil {
 		return nil, fmt.Errorf("delete request is required")
 	}
-	
+
 	if request.IndexID == "" {
 		return nil, fmt.Errorf("index ID is required")
 	}
-	
+
 	if len(request.Subjects) == 0 {
 		return nil, fmt.Errorf("at least one subject is required")
 	}
-	
+
 	var response DeleteDocumentsResponse
 	err := c.doRequest(ctx, http.MethodPost, "delete", nil, request, &response)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &response, nil
 }
 
@@ -292,12 +334,169 @@ func (c *Client) GetTaskStatus(ctx context.Context, taskID string) (*TaskStatusR
 	if taskID == "" {
 		return nil, fmt.Errorf("task ID is required")
 	}
-	
+
 	var response TaskStatusResponse
 	err := c.doRequest(ctx, http.MethodGet, "task/"+taskID, nil, nil, &response)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &response, nil
+}
+
+// SearchIterator provides a way to iterate through search results
+type SearchIterator struct {
+	client        *Client
+	ctx           context.Context
+	request       *SearchRequest
+	structRequest *StructuredSearchRequest
+	pageSize      int
+	currentResp   *SearchResponse
+	hasMore       bool
+	err           error
+}
+
+// NewSearchIterator creates a new search iterator
+func (c *Client) NewSearchIterator(ctx context.Context, request *SearchRequest, pageSize int) *SearchIterator {
+	if pageSize <= 0 {
+		pageSize = 100
+	}
+
+	// Copy the request and set the page size
+	reqCopy := *request
+	if reqCopy.Options == nil {
+		reqCopy.Options = &SearchOptions{}
+	}
+	reqCopy.Options.Limit = pageSize
+
+	return &SearchIterator{
+		client:   c,
+		ctx:      ctx,
+		request:  &reqCopy,
+		pageSize: pageSize,
+		hasMore:  true,
+	}
+}
+
+// NewStructuredSearchIterator creates a new structured search iterator
+func (c *Client) NewStructuredSearchIterator(ctx context.Context, request *StructuredSearchRequest, pageSize int) *SearchIterator {
+	if pageSize <= 0 {
+		pageSize = 100
+	}
+
+	// Copy the request and set the page size
+	reqCopy := *request
+	if reqCopy.Options == nil {
+		reqCopy.Options = &SearchOptions{}
+	}
+	reqCopy.Options.Limit = pageSize
+
+	return &SearchIterator{
+		client:        c,
+		ctx:           ctx,
+		structRequest: &reqCopy,
+		pageSize:      pageSize,
+		hasMore:       true,
+	}
+}
+
+// Next fetches the next page of results
+func (it *SearchIterator) Next() bool {
+	if !it.hasMore || it.err != nil {
+		return false
+	}
+
+	var resp *SearchResponse
+	var err error
+
+	if it.structRequest != nil {
+		// For structured search
+		resp, err = it.client.StructuredSearch(it.ctx, it.structRequest)
+	} else {
+		// For regular search
+		resp, err = it.client.Search(it.ctx, it.request)
+	}
+
+	if err != nil {
+		it.err = err
+		return false
+	}
+
+	it.currentResp = resp
+	it.hasMore = resp.HasMore
+
+	// Update the page token for the next request
+	if it.hasMore {
+		if it.structRequest != nil {
+			if it.structRequest.Options == nil {
+				it.structRequest.Options = &SearchOptions{}
+			}
+			it.structRequest.Options.PageToken = resp.PageToken
+		} else {
+			if it.request.Options == nil {
+				it.request.Options = &SearchOptions{}
+			}
+			it.request.Options.PageToken = resp.PageToken
+		}
+	}
+
+	return true
+}
+
+// Response returns the current page of results
+func (it *SearchIterator) Response() *SearchResponse {
+	return it.currentResp
+}
+
+// Error returns any error that occurred during iteration
+func (it *SearchIterator) Error() error {
+	return it.err
+}
+
+// SearchAll retrieves all search results across multiple pages
+func (c *Client) SearchAll(ctx context.Context, request *SearchRequest, pageSize int) ([]SearchResult, error) {
+	if pageSize <= 0 {
+		pageSize = 100
+	}
+
+	// Create iterator
+	it := c.NewSearchIterator(ctx, request, pageSize)
+
+	// Collect all results
+	var allResults []SearchResult
+
+	for it.Next() {
+		resp := it.Response()
+		allResults = append(allResults, resp.Results...)
+	}
+
+	if it.Error() != nil {
+		return nil, it.Error()
+	}
+
+	return allResults, nil
+}
+
+// StructuredSearchAll retrieves all search results across multiple pages for a structured search
+func (c *Client) StructuredSearchAll(ctx context.Context, request *StructuredSearchRequest, pageSize int) ([]SearchResult, error) {
+	if pageSize <= 0 {
+		pageSize = 100
+	}
+
+	// Create iterator
+	it := c.NewStructuredSearchIterator(ctx, request, pageSize)
+
+	// Collect all results
+	var allResults []SearchResult
+
+	for it.Next() {
+		resp := it.Response()
+		allResults = append(allResults, resp.Results...)
+	}
+
+	if it.Error() != nil {
+		return nil, it.Error()
+	}
+
+	return allResults, nil
 }

@@ -10,10 +10,10 @@ import (
 	"os"
 	"time"
 
-	"github.com/yourusername/globus-go-sdk/pkg/benchmark"
-	"github.com/yourusername/globus-go-sdk/pkg/core"
-	"github.com/yourusername/globus-go-sdk/pkg/services/auth"
-	"github.com/yourusername/globus-go-sdk/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/benchmark"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
 )
 
 func main() {
@@ -29,11 +29,11 @@ func main() {
 	generateData := flag.Bool("generate", true, "Generate test data")
 	deleteAfter := flag.Bool("delete", true, "Delete test data after benchmark")
 	accessToken := flag.String("token", "", "Globus access token (if not provided, will use auth flow)")
-	
+
 	// Flags for specific benchmark suites
 	runSize := flag.Bool("size", false, "Run file size benchmark suite")
 	runParallelism := flag.Bool("parallelism-test", false, "Run parallelism benchmark suite")
-	
+
 	flag.Parse()
 
 	// Check required parameters
@@ -45,7 +45,7 @@ func main() {
 
 	// Set up logging
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	
+
 	// Get access token
 	accessTokenStr := *accessToken
 	if accessTokenStr == "" {
@@ -89,7 +89,7 @@ func main() {
 		fmt.Printf("  Destination Endpoint: %s\n", *destEndpointID)
 		fmt.Printf("  File Size:          %.2f MB\n", *fileSizeMB)
 		fmt.Printf("  File Count:         %d\n", *fileCount)
-		fmt.Printf("  Total Size:         %.2f MB\n", *fileSizeMB * float64(*fileCount))
+		fmt.Printf("  Total Size:         %.2f MB\n", *fileSizeMB*float64(*fileCount))
 		fmt.Printf("  Parallelism:        %d\n", *parallelism)
 		fmt.Printf("  Use Recursive:      %v\n", *useRecursive)
 		fmt.Printf("  Generate Test Data: %v\n", *generateData)
@@ -120,38 +120,38 @@ func getAccessToken() (string, error) {
 	// Get client credentials from environment
 	clientID := os.Getenv("GLOBUS_CLIENT_ID")
 	clientSecret := os.Getenv("GLOBUS_CLIENT_SECRET")
-	
+
 	if clientID == "" || clientSecret == "" {
 		return "", fmt.Errorf("GLOBUS_CLIENT_ID and GLOBUS_CLIENT_SECRET environment variables are required")
 	}
-	
+
 	// Create auth client
 	authClient := auth.NewClient(clientID, clientSecret)
 	authClient.SetRedirectURL("http://localhost:8080/callback")
-	
+
 	// Get authorization URL
 	state := "benchmark-state"
 	authURL := authClient.GetAuthorizationURL(
 		state,
 		transfer.TransferScope,
 	)
-	
+
 	// Instruct user to visit the URL
 	fmt.Printf("Please visit the following URL to authorize this application:\n\n%s\n\n", authURL)
 	fmt.Printf("After authorization, you will be redirected to a localhost URL.\n")
 	fmt.Printf("Copy the authorization code from the URL and paste it here: ")
-	
+
 	// Read authorization code
 	var code string
 	fmt.Scanln(&code)
-	
+
 	// Exchange code for tokens
 	ctx := context.Background()
 	tokenResponse, err := authClient.ExchangeAuthorizationCode(ctx, code)
 	if err != nil {
 		return "", fmt.Errorf("failed to exchange authorization code: %w", err)
 	}
-	
+
 	return tokenResponse.AccessToken, nil
 }
 
@@ -159,7 +159,7 @@ func getAccessToken() (string, error) {
 func runFileSizeBenchmarkSuite(ctx context.Context, client *transfer.Client, baseConfig *benchmark.TransferBenchmarkConfig) {
 	fmt.Println("Running File Size Benchmark Suite")
 	fmt.Println("=================================")
-	
+
 	// Define file size test cases
 	testCases := []struct {
 		name     string
@@ -171,52 +171,52 @@ func runFileSizeBenchmarkSuite(ctx context.Context, client *transfer.Client, bas
 		{"Large Files", 100.0, 2},
 		{"Very Large File", 500.0, 1},
 	}
-	
+
 	results := make([]*benchmark.BenchmarkResult, 0, len(testCases))
-	
+
 	for _, tc := range testCases {
-		fmt.Printf("\n====== Benchmark: %s (%.1f MB x %d files) ======\n\n", 
+		fmt.Printf("\n====== Benchmark: %s (%.1f MB x %d files) ======\n\n",
 			tc.name, tc.fileSize, tc.count)
-		
+
 		config := *baseConfig
 		config.FileSizeMB = tc.fileSize
 		config.FileCount = tc.count
-		
+
 		// Start memory sampler
 		memorySampler := benchmark.NewMemorySampler(500 * time.Millisecond)
 		memorySampler.Start()
-		
+
 		// Run benchmark
 		result, err := benchmark.BenchmarkTransfer(ctx, client, &config, os.Stdout)
-		
+
 		// Stop memory sampler
 		memorySampler.Stop()
 		memorySampler.PrintSummary()
-		
+
 		if err != nil {
 			fmt.Printf("Error running benchmark %s: %v\n", tc.name, err)
 			continue
 		}
-		
+
 		// Update result with memory usage
 		result.MemoryPeakMB = memorySampler.GetPeakMemory()
 		results = append(results, result)
-		
+
 		// Add a small delay between benchmarks
 		time.Sleep(5 * time.Second)
 	}
-	
+
 	// Print comparison table
 	fmt.Printf("\n====== File Size Benchmark Summary ======\n\n")
-	fmt.Printf("| %-15s | %-10s | %-10s | %-15s | %-15s | %-15s |\n", 
+	fmt.Printf("| %-15s | %-10s | %-10s | %-15s | %-15s | %-15s |\n",
 		"Benchmark", "Size/File", "Files", "Total Size", "Time", "Speed (MB/s)")
 	fmt.Printf("|%-15s-|%-10s-|%-10s-|%-15s-|%-15s-|%-15s-|\n",
 		"---------------", "----------", "----------", "---------------", "---------------", "---------------")
-	
+
 	for i, result := range results {
 		tc := testCases[i]
 		fmt.Printf("| %-15s | %-10.1f | %-10d | %-15.1f | %-15s | %-15.2f |\n",
-			tc.name, tc.fileSize, tc.count, result.TotalSizeMB, 
+			tc.name, tc.fileSize, tc.count, result.TotalSizeMB,
 			result.ElapsedTime.Round(time.Millisecond), result.TransferSpeedMBs)
 	}
 }
@@ -225,7 +225,7 @@ func runFileSizeBenchmarkSuite(ctx context.Context, client *transfer.Client, bas
 func runParallelismBenchmarkSuite(ctx context.Context, client *transfer.Client, baseConfig *benchmark.TransferBenchmarkConfig) {
 	fmt.Println("Running Parallelism Benchmark Suite")
 	fmt.Println("==================================")
-	
+
 	// Define parallelism test cases
 	testCases := []struct {
 		name        string
@@ -237,56 +237,56 @@ func runParallelismBenchmarkSuite(ctx context.Context, client *transfer.Client, 
 		{"High Parallelism", 8},
 		{"Very High Parallelism", 16},
 	}
-	
+
 	results := make([]*benchmark.BenchmarkResult, 0, len(testCases))
-	
+
 	// Use consistent file size for all tests
 	baseConfig.FileSizeMB = 10.0
 	baseConfig.FileCount = 10
-	
+
 	for _, tc := range testCases {
-		fmt.Printf("\n====== Benchmark: %s (Parallelism: %d) ======\n\n", 
+		fmt.Printf("\n====== Benchmark: %s (Parallelism: %d) ======\n\n",
 			tc.name, tc.parallelism)
-		
+
 		config := *baseConfig
 		config.Parallelism = tc.parallelism
-		
+
 		// Start memory sampler
 		memorySampler := benchmark.NewMemorySampler(500 * time.Millisecond)
 		memorySampler.Start()
-		
+
 		// Run benchmark
 		result, err := benchmark.BenchmarkTransfer(ctx, client, &config, os.Stdout)
-		
+
 		// Stop memory sampler
 		memorySampler.Stop()
 		memorySampler.PrintSummary()
-		
+
 		if err != nil {
 			fmt.Printf("Error running benchmark %s: %v\n", tc.name, err)
 			continue
 		}
-		
+
 		// Update result with memory usage
 		result.MemoryPeakMB = memorySampler.GetPeakMemory()
 		results = append(results, result)
-		
+
 		// Add a small delay between benchmarks
 		time.Sleep(5 * time.Second)
 	}
-	
+
 	// Print comparison table
 	fmt.Printf("\n====== Parallelism Benchmark Summary ======\n\n")
-	fmt.Printf("| %-20s | %-12s | %-15s | %-15s | %-15s |\n", 
+	fmt.Printf("| %-20s | %-12s | %-15s | %-15s | %-15s |\n",
 		"Benchmark", "Parallelism", "Time", "Speed (MB/s)", "Memory (MB)")
 	fmt.Printf("|%-20s-|%-12s-|%-15s-|%-15s-|%-15s-|\n",
 		"--------------------", "------------", "---------------", "---------------", "---------------")
-	
+
 	for i, result := range results {
 		tc := testCases[i]
 		fmt.Printf("| %-20s | %-12d | %-15s | %-15.2f | %-15.2f |\n",
-			tc.name, tc.parallelism, 
-			result.ElapsedTime.Round(time.Millisecond), 
+			tc.name, tc.parallelism,
+			result.ElapsedTime.Round(time.Millisecond),
 			result.TransferSpeedMBs, result.MemoryPeakMB)
 	}
 }

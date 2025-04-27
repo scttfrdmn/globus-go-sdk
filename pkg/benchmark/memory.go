@@ -10,14 +10,14 @@ import (
 
 // MemoryStats contains memory usage statistics
 type MemoryStats struct {
-	Alloc      uint64    `json:"alloc"`       // bytes allocated and not yet freed
-	TotalAlloc uint64    `json:"total_alloc"` // bytes allocated (even if freed)
-	Sys        uint64    `json:"sys"`         // bytes obtained from system
-	NumGC      uint32    `json:"num_gc"`      // number of completed GC cycles
-	GCCPUFraction float64 `json:"gc_cpu_fraction"` // fraction of CPU time used by GC
-	HeapAlloc  uint64    `json:"heap_alloc"`  // bytes allocated and not yet freed (same as Alloc)
-	HeapSys    uint64    `json:"heap_sys"`    // bytes obtained from system
-	Time       time.Time `json:"time"`        // time when stats were collected
+	Alloc         uint64    `json:"alloc"`           // bytes allocated and not yet freed
+	TotalAlloc    uint64    `json:"total_alloc"`     // bytes allocated (even if freed)
+	Sys           uint64    `json:"sys"`             // bytes obtained from system
+	NumGC         uint32    `json:"num_gc"`          // number of completed GC cycles
+	GCCPUFraction float64   `json:"gc_cpu_fraction"` // fraction of CPU time used by GC
+	HeapAlloc     uint64    `json:"heap_alloc"`      // bytes allocated and not yet freed (same as Alloc)
+	HeapSys       uint64    `json:"heap_sys"`        // bytes obtained from system
+	Time          time.Time `json:"time"`            // time when stats were collected
 }
 
 // MemorySampler continuously samples memory usage
@@ -34,7 +34,7 @@ func NewMemorySampler(interval time.Duration) *MemorySampler {
 	if interval < time.Millisecond {
 		interval = time.Millisecond
 	}
-	
+
 	return &MemorySampler{
 		interval: interval,
 		samples:  make([]MemoryStats, 0),
@@ -47,13 +47,13 @@ func (s *MemorySampler) Start() {
 	go func() {
 		ticker := time.NewTicker(s.interval)
 		defer ticker.Stop()
-		
+
 		for {
 			select {
 			case <-ticker.C:
 				stats := s.collectStats()
 				s.samples = append(s.samples, stats)
-				
+
 				// Update max values
 				if stats.Alloc > s.maxAlloc {
 					s.maxAlloc = stats.Alloc
@@ -61,7 +61,7 @@ func (s *MemorySampler) Start() {
 				if stats.Sys > s.maxSys {
 					s.maxSys = stats.Sys
 				}
-				
+
 			case <-s.done:
 				return
 			}
@@ -91,27 +91,27 @@ func (s *MemorySampler) GetSummary() map[string]interface{} {
 			"error": "no samples collected",
 		}
 	}
-	
+
 	first := s.samples[0]
 	last := s.samples[len(s.samples)-1]
-	
+
 	return map[string]interface{}{
-		"samples_count":       len(s.samples),
-		"sampling_duration":   last.Time.Sub(first.Time).String(),
-		"sampling_interval":   s.interval.String(),
-		"peak_alloc_mb":       float64(s.maxAlloc) / (1024 * 1024),
-		"peak_sys_mb":         float64(s.maxSys) / (1024 * 1024),
-		"final_alloc_mb":      float64(last.Alloc) / (1024 * 1024),
-		"total_alloc_mb":      float64(last.TotalAlloc) / (1024 * 1024),
-		"gc_cycles":           last.NumGC - first.NumGC,
-		"gc_cpu_fraction":     last.GCCPUFraction,
+		"samples_count":     len(s.samples),
+		"sampling_duration": last.Time.Sub(first.Time).String(),
+		"sampling_interval": s.interval.String(),
+		"peak_alloc_mb":     float64(s.maxAlloc) / (1024 * 1024),
+		"peak_sys_mb":       float64(s.maxSys) / (1024 * 1024),
+		"final_alloc_mb":    float64(last.Alloc) / (1024 * 1024),
+		"total_alloc_mb":    float64(last.TotalAlloc) / (1024 * 1024),
+		"gc_cycles":         last.NumGC - first.NumGC,
+		"gc_cpu_fraction":   last.GCCPUFraction,
 	}
 }
 
 // PrintSummary prints a summary of memory usage statistics to the provided writer
 func (s *MemorySampler) PrintSummary() {
 	summary := s.GetSummary()
-	
+
 	fmt.Println("\nMemory Usage Summary:")
 	fmt.Printf("  Samples Count:       %d\n", summary["samples_count"])
 	fmt.Printf("  Sampling Duration:   %s\n", summary["sampling_duration"])
@@ -128,7 +128,7 @@ func (s *MemorySampler) PrintSummary() {
 func (s *MemorySampler) collectStats() MemoryStats {
 	var memStats runtime.MemStats
 	runtime.ReadMemStats(&memStats)
-	
+
 	return MemoryStats{
 		Alloc:         memStats.Alloc,
 		TotalAlloc:    memStats.TotalAlloc,

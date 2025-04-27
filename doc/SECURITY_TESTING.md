@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
 # Security Testing Guide
 
 This document provides information about security testing practices for the Globus Go SDK, including how to set up, run, and interpret different types of security tests.

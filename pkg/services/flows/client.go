@@ -11,9 +11,10 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
-	"github.com/yourusername/globus-go-sdk/pkg/core"
-	"github.com/yourusername/globus-go-sdk/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
 )
 
 // Constants for Globus Flows
@@ -30,20 +31,20 @@ type Client struct {
 // NewClient creates a new Flows client
 func NewClient(accessToken string, options ...core.ClientOption) *Client {
 	// Create the authorizer with the access token
-	authorizer := authorizers.NewStaticTokenAuthorizer(accessToken)
-	
+	authorizer := authorizers.StaticTokenCoreAuthorizer(accessToken)
+
 	// Apply default options specific to Flows
 	defaultOptions := []core.ClientOption{
 		core.WithBaseURL(DefaultBaseURL),
 		core.WithAuthorizer(authorizer),
 	}
-	
+
 	// Merge with user options
 	options = append(defaultOptions, options...)
-	
+
 	// Create the base client
 	baseClient := core.NewClient(options...)
-	
+
 	return &Client{
 		Client: baseClient,
 	}
@@ -55,19 +56,19 @@ func (c *Client) buildURL(path string, query url.Values) string {
 	if baseURL[len(baseURL)-1] != '/' {
 		baseURL += "/"
 	}
-	
+
 	url := baseURL + path
 	if query != nil && len(query) > 0 {
 		url += "?" + query.Encode()
 	}
-	
+
 	return url
 }
 
 // doRequest performs an HTTP request and decodes the JSON response
 func (c *Client) doRequest(ctx context.Context, method, path string, query url.Values, body, response interface{}) error {
 	url := c.buildURL(path, query)
-	
+
 	var bodyReader io.Reader
 	if body != nil {
 		bodyJSON, err := json.Marshal(body)
@@ -76,35 +77,35 @@ func (c *Client) doRequest(ctx context.Context, method, path string, query url.V
 		}
 		bodyReader = bytes.NewReader(bodyJSON)
 	}
-	
+
 	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
-	
+
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
 	req.Header.Set("Accept", "application/json")
-	
+
 	resp, err := c.Client.Do(ctx, req)
 	if err != nil {
 		return err
 	}
 	defer resp.Body.Close()
-	
+
 	// Read response body
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
-	
+
 	// Check for error responses
 	if resp.StatusCode >= 400 {
 		// Extract resource ID and type for better error messages
 		resourceID := ""
 		resourceType := ""
-		
+
 		// Parse path to determine resource type and ID
 		if path == "flows" && method == http.MethodPost {
 			resourceType = "flow"
@@ -148,25 +149,25 @@ func (c *Client) doRequest(ctx context.Context, method, path string, query url.V
 				}
 			}
 		}
-		
+
 		return ParseErrorResponse(respBody, resp.StatusCode, resourceID, resourceType)
 	}
-	
+
 	// For non-GET requests with no response body, just return nil
 	if method != http.MethodGet && response == nil {
 		return nil
 	}
-	
+
 	// If there's no content, just return nil
 	if len(respBody) == 0 {
 		return nil
 	}
-	
+
 	// Unmarshal response
 	if err := json.Unmarshal(respBody, response); err != nil {
 		return fmt.Errorf("failed to unmarshal response: %w", err)
 	}
-	
+
 	return nil
 }
 
@@ -205,13 +206,13 @@ func (c *Client) ListFlows(ctx context.Context, options *ListFlowsOptions) (*Flo
 			query.Set("roles_only", "true")
 		}
 	}
-	
+
 	var flowList FlowList
 	err := c.doRequest(ctx, http.MethodGet, "flows", query, nil, &flowList)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &flowList, nil
 }
 
@@ -220,13 +221,13 @@ func (c *Client) GetFlow(ctx context.Context, flowID string) (*Flow, error) {
 	if flowID == "" {
 		return nil, fmt.Errorf("flow ID is required")
 	}
-	
+
 	var flow Flow
 	err := c.doRequest(ctx, http.MethodGet, "flows/"+flowID, nil, nil, &flow)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &flow, nil
 }
 
@@ -235,21 +236,21 @@ func (c *Client) CreateFlow(ctx context.Context, request *FlowCreateRequest) (*F
 	if request == nil {
 		return nil, fmt.Errorf("flow create request is required")
 	}
-	
+
 	if request.Title == "" {
 		return nil, fmt.Errorf("flow title is required")
 	}
-	
+
 	if request.Definition == nil {
 		return nil, fmt.Errorf("flow definition is required")
 	}
-	
+
 	var flow Flow
 	err := c.doRequest(ctx, http.MethodPost, "flows", nil, request, &flow)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &flow, nil
 }
 
@@ -258,17 +259,17 @@ func (c *Client) UpdateFlow(ctx context.Context, flowID string, request *FlowUpd
 	if flowID == "" {
 		return nil, fmt.Errorf("flow ID is required")
 	}
-	
+
 	if request == nil {
 		return nil, fmt.Errorf("flow update request is required")
 	}
-	
+
 	var flow Flow
 	err := c.doRequest(ctx, http.MethodPut, "flows/"+flowID, nil, request, &flow)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &flow, nil
 }
 
@@ -277,7 +278,7 @@ func (c *Client) DeleteFlow(ctx context.Context, flowID string) error {
 	if flowID == "" {
 		return fmt.Errorf("flow ID is required")
 	}
-	
+
 	return c.doRequest(ctx, http.MethodDelete, "flows/"+flowID, nil, nil, nil)
 }
 
@@ -286,21 +287,21 @@ func (c *Client) RunFlow(ctx context.Context, request *RunRequest) (*RunResponse
 	if request == nil {
 		return nil, fmt.Errorf("run request is required")
 	}
-	
+
 	if request.FlowID == "" {
 		return nil, fmt.Errorf("flow ID is required")
 	}
-	
+
 	if request.Input == nil {
 		return nil, fmt.Errorf("input is required")
 	}
-	
+
 	var run RunResponse
 	err := c.doRequest(ctx, http.MethodPost, "runs", nil, request, &run)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &run, nil
 }
 
@@ -339,13 +340,13 @@ func (c *Client) ListRuns(ctx context.Context, options *ListRunsOptions) (*RunLi
 			query.Set("label", options.Label)
 		}
 	}
-	
+
 	var runList RunList
 	err := c.doRequest(ctx, http.MethodGet, "runs", query, nil, &runList)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &runList, nil
 }
 
@@ -354,13 +355,13 @@ func (c *Client) GetRun(ctx context.Context, runID string) (*RunResponse, error)
 	if runID == "" {
 		return nil, fmt.Errorf("run ID is required")
 	}
-	
+
 	var run RunResponse
 	err := c.doRequest(ctx, http.MethodGet, "runs/"+runID, nil, nil, &run)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &run, nil
 }
 
@@ -369,7 +370,7 @@ func (c *Client) CancelRun(ctx context.Context, runID string) error {
 	if runID == "" {
 		return fmt.Errorf("run ID is required")
 	}
-	
+
 	return c.doRequest(ctx, http.MethodPost, "runs/"+runID+"/cancel", nil, nil, nil)
 }
 
@@ -378,17 +379,17 @@ func (c *Client) UpdateRun(ctx context.Context, runID string, request *RunUpdate
 	if runID == "" {
 		return nil, fmt.Errorf("run ID is required")
 	}
-	
+
 	if request == nil {
 		return nil, fmt.Errorf("run update request is required")
 	}
-	
+
 	var run RunResponse
 	err := c.doRequest(ctx, http.MethodPatch, "runs/"+runID, nil, request, &run)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &run, nil
 }
 
@@ -397,7 +398,7 @@ func (c *Client) GetRunLogs(ctx context.Context, runID string, limit, offset int
 	if runID == "" {
 		return nil, fmt.Errorf("run ID is required")
 	}
-	
+
 	query := url.Values{}
 	if limit > 0 {
 		query.Set("limit", strconv.Itoa(limit))
@@ -405,13 +406,13 @@ func (c *Client) GetRunLogs(ctx context.Context, runID string, limit, offset int
 	if offset > 0 {
 		query.Set("offset", strconv.Itoa(offset))
 	}
-	
+
 	var logs RunLogList
 	err := c.doRequest(ctx, http.MethodGet, "runs/"+runID+"/log", query, nil, &logs)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &logs, nil
 }
 
@@ -447,13 +448,13 @@ func (c *Client) ListActionProviders(ctx context.Context, options *ListActionPro
 			query.Set("filter_globus", "true")
 		}
 	}
-	
+
 	var providerList ActionProviderList
 	err := c.doRequest(ctx, http.MethodGet, "action_providers", query, nil, &providerList)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &providerList, nil
 }
 
@@ -462,13 +463,13 @@ func (c *Client) GetActionProvider(ctx context.Context, providerID string) (*Act
 	if providerID == "" {
 		return nil, fmt.Errorf("action provider ID is required")
 	}
-	
+
 	var provider ActionProvider
 	err := c.doRequest(ctx, http.MethodGet, "action_providers/"+providerID, nil, nil, &provider)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &provider, nil
 }
 
@@ -477,7 +478,7 @@ func (c *Client) ListActionRoles(ctx context.Context, providerID string, limit, 
 	if providerID == "" {
 		return nil, fmt.Errorf("action provider ID is required")
 	}
-	
+
 	query := url.Values{}
 	if limit > 0 {
 		query.Set("limit", strconv.Itoa(limit))
@@ -485,13 +486,13 @@ func (c *Client) ListActionRoles(ctx context.Context, providerID string, limit, 
 	if offset > 0 {
 		query.Set("offset", strconv.Itoa(offset))
 	}
-	
+
 	var roleList ActionRoleList
 	err := c.doRequest(ctx, http.MethodGet, "action_providers/"+providerID+"/roles", query, nil, &roleList)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &roleList, nil
 }
 
@@ -500,17 +501,17 @@ func (c *Client) GetActionRole(ctx context.Context, providerID, roleID string) (
 	if providerID == "" {
 		return nil, fmt.Errorf("action provider ID is required")
 	}
-	
+
 	if roleID == "" {
 		return nil, fmt.Errorf("action role ID is required")
 	}
-	
+
 	var role ActionRole
 	err := c.doRequest(ctx, http.MethodGet, "action_providers/"+providerID+"/roles/"+roleID, nil, nil, &role)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	return &role, nil
 }
 
@@ -549,14 +550,14 @@ func (c *Client) WaitForRun(ctx context.Context, runID string, pollInterval time
 	if runID == "" {
 		return nil, fmt.Errorf("run ID is required")
 	}
-	
+
 	if pollInterval <= 0 {
 		pollInterval = time.Second * 3
 	}
-	
+
 	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
-	
+
 	for {
 		select {
 		case <-ctx.Done():
@@ -566,7 +567,7 @@ func (c *Client) WaitForRun(ctx context.Context, runID string, pollInterval time
 			if err != nil {
 				return nil, err
 			}
-			
+
 			// Check if run is in a terminal state
 			switch run.Status {
 			case "SUCCEEDED", "FAILED", "CANCELLED":
@@ -581,15 +582,15 @@ func (c *Client) WaitForRun(ctx context.Context, runID string, pollInterval time
 func (c *Client) ListAllFlows(ctx context.Context, options *ListFlowsOptions) ([]Flow, error) {
 	iterator := c.GetFlowsIterator(options)
 	var flows []Flow
-	
+
 	for iterator.Next(ctx) {
 		flows = append(flows, *iterator.Flow())
 	}
-	
+
 	if err := iterator.Err(); err != nil {
 		return nil, err
 	}
-	
+
 	return flows, nil
 }
 
@@ -598,15 +599,15 @@ func (c *Client) ListAllFlows(ctx context.Context, options *ListFlowsOptions) ([
 func (c *Client) ListAllRuns(ctx context.Context, options *ListRunsOptions) ([]RunResponse, error) {
 	iterator := c.GetRunsIterator(options)
 	var runs []RunResponse
-	
+
 	for iterator.Next(ctx) {
 		runs = append(runs, *iterator.Run())
 	}
-	
+
 	if err := iterator.Err(); err != nil {
 		return nil, err
 	}
-	
+
 	return runs, nil
 }
 
@@ -615,15 +616,15 @@ func (c *Client) ListAllRuns(ctx context.Context, options *ListRunsOptions) ([]R
 func (c *Client) ListAllActionProviders(ctx context.Context, options *ListActionProvidersOptions) ([]ActionProvider, error) {
 	iterator := c.GetActionProvidersIterator(options)
 	var providers []ActionProvider
-	
+
 	for iterator.Next(ctx) {
 		providers = append(providers, *iterator.ActionProvider())
 	}
-	
+
 	if err := iterator.Err(); err != nil {
 		return nil, err
 	}
-	
+
 	return providers, nil
 }
 
@@ -632,15 +633,15 @@ func (c *Client) ListAllActionProviders(ctx context.Context, options *ListAction
 func (c *Client) ListAllActionRoles(ctx context.Context, providerID string) ([]ActionRole, error) {
 	iterator := c.GetActionRolesIterator(providerID, 100)
 	var roles []ActionRole
-	
+
 	for iterator.Next(ctx) {
 		roles = append(roles, *iterator.ActionRole())
 	}
-	
+
 	if err := iterator.Err(); err != nil {
 		return nil, err
 	}
-	
+
 	return roles, nil
 }
 
@@ -649,14 +650,14 @@ func (c *Client) ListAllActionRoles(ctx context.Context, providerID string) ([]A
 func (c *Client) ListAllRunLogs(ctx context.Context, runID string) ([]RunLogEntry, error) {
 	iterator := c.GetRunLogsIterator(runID, 100)
 	var entries []RunLogEntry
-	
+
 	for iterator.Next(ctx) {
 		entries = append(entries, *iterator.LogEntry())
 	}
-	
+
 	if err := iterator.Err(); err != nil {
 		return nil, err
 	}
-	
+
 	return entries, nil
 }

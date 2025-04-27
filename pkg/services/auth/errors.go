@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2025 Scott Friedman and Project Contributors
-
 package auth
 
 import (
@@ -14,15 +13,15 @@ import (
 // Common error codes returned by the Globus Auth API
 const (
 	// Error codes for token endpoint
-	ErrCodeInvalidGrant        = "invalid_grant"
-	ErrCodeInvalidRequest      = "invalid_request"
-	ErrCodeInvalidClient       = "invalid_client"
-	ErrCodeInvalidScope        = "invalid_scope"
+	ErrCodeInvalidGrant         = "invalid_grant"
+	ErrCodeInvalidRequest       = "invalid_request"
+	ErrCodeInvalidClient        = "invalid_client"
+	ErrCodeInvalidScope         = "invalid_scope"
 	ErrCodeUnsupportedTokenType = "unsupported_token_type"
-	ErrCodeAccessDenied        = "access_denied"
-	
+	ErrCodeAccessDenied         = "access_denied"
+
 	// Error codes for authorization endpoint
-	ErrCodeServerError         = "server_error"
+	ErrCodeServerError            = "server_error"
 	ErrCodeTemporarilyUnavailable = "temporarily_unavailable"
 )
 
@@ -30,22 +29,22 @@ const (
 var (
 	// ErrInvalidGrant is returned when the grant (authorization code or refresh token) is invalid
 	ErrInvalidGrant = errors.New("invalid grant")
-	
+
 	// ErrInvalidClient is returned when the client credentials are invalid
 	ErrInvalidClient = errors.New("invalid client")
-	
+
 	// ErrInvalidScope is returned when the requested scope is invalid
 	ErrInvalidScope = errors.New("invalid scope")
-	
+
 	// ErrAccessDenied is returned when the user denies the authorization request
 	ErrAccessDenied = errors.New("access denied")
-	
+
 	// ErrServerError is returned when the server encounters an error
 	ErrServerError = errors.New("server error")
-	
+
 	// ErrUnathorized is returned when the request is not authorized
 	ErrUnauthorized = errors.New("unauthorized")
-	
+
 	// ErrBadRequest is returned when the request is malformed
 	ErrBadRequest = errors.New("bad request")
 )
@@ -141,17 +140,17 @@ func parseAuthError(statusCode int, respBody []byte) error {
 			return fmt.Errorf("request failed with status code %d", statusCode)
 		}
 	}
-	
+
 	// Try to parse the error as JSON
 	var authErr AuthError
 	if err := json.Unmarshal(respBody, &authErr); err != nil {
 		// If parsing fails, return the body as a string
 		return fmt.Errorf("request failed with status code %d: %s", statusCode, string(respBody))
 	}
-	
+
 	// Set the status code for later checking
 	authErr.StatusCode = statusCode
-	
+
 	// Map common error codes to standard errors
 	switch authErr.Code {
 	case ErrCodeInvalidGrant:

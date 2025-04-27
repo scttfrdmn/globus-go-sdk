@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
 # Security Tooling
 
 This document provides information about the security tools integrated into the Globus Go SDK development workflow, how to use them, and best practices for maintaining a secure codebase.

@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2025 Scott Friedman and Project Contributors
-
 package main
 
 import (
@@ -11,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/yourusername/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/pkg"
 )
 
 func main() {
@@ -31,7 +30,8 @@ func main() {
 		log.Fatalf("Failed to get token: %v", err)
 	}
 
-	fmt.Printf("Obtained access token (expires in %d seconds)\n", tokenResp.ExpiresIn)
+	fmt.Printf("Obtained access token (expires in %d seconds)
+", tokenResp.ExpiresIn)
 	accessToken := tokenResp.AccessToken
 
 	// Create Search client
@@ -41,7 +41,8 @@ func main() {
 	indexID := os.Getenv("GLOBUS_SEARCH_INDEX_ID")
 	if indexID == "" {
 		// List available indexes if no index ID is provided
-		fmt.Println("\n=== Available Indexes ===")
+		fmt.Println("
+=== Available Indexes ===")
 		
 		indexes, err := searchClient.ListIndexes(ctx, nil)
 		if err != nil {
@@ -52,7 +53,8 @@ func main() {
 			fmt.Println("No indexes found. Create an index first.")
 			
 			// Create a new index
-			fmt.Println("\n=== Creating New Index ===")
+			fmt.Println("
+=== Creating New Index ===")
 			
 			timestamp := time.Now().Format("20060102_150405")
 			createRequest := &pkg.IndexCreateRequest{
@@ -65,17 +67,22 @@ func main() {
 				log.Fatalf("Failed to create index: %v", err)
 			}
 			
-			fmt.Printf("Created new index: %s (%s)\n", newIndex.DisplayName, newIndex.ID)
+			fmt.Printf("Created new index: %s (%s)
+", newIndex.DisplayName, newIndex.ID)
 			indexID = newIndex.ID
 		} else {
 			// Use the first available index
-			fmt.Printf("Found %d indexes:\n", len(indexes.Indexes))
+			fmt.Printf("Found %d indexes:
+", len(indexes.Indexes))
 			for i, index := range indexes.Indexes {
-				fmt.Printf("%d. %s (%s)\n", i+1, index.DisplayName, index.ID)
+				fmt.Printf("%d. %s (%s)
+", i+1, index.DisplayName, index.ID)
 			}
 			
 			indexID = indexes.Indexes[0].ID
-			fmt.Printf("\nUsing first index: %s\n", indexID)
+			fmt.Printf("
+Using first index: %s
+", indexID)
 		}
 	} else {
 		// If index ID is provided, show details
@@ -84,16 +91,24 @@ func main() {
 			log.Fatalf("Failed to get index: %v", err)
 		}
 		
-		fmt.Printf("\n=== Index Details ===\n")
-		fmt.Printf("ID: %s\n", index.ID)
-		fmt.Printf("Name: %s\n", index.DisplayName)
-		fmt.Printf("Description: %s\n", index.Description)
-		fmt.Printf("Is Active: %t\n", index.IsActive)
-		fmt.Printf("Is Public: %t\n", index.IsPublic)
+		fmt.Printf("
+=== Index Details ===
+")
+		fmt.Printf("ID: %s
+", index.ID)
+		fmt.Printf("Name: %s
+", index.DisplayName)
+		fmt.Printf("Description: %s
+", index.Description)
+		fmt.Printf("Is Active: %t
+", index.IsActive)
+		fmt.Printf("Is Public: %t
+", index.IsPublic)
 	}
 
 	// Ingest some sample documents
-	fmt.Println("\n=== Ingesting Documents ===")
+	fmt.Println("
+=== Ingesting Documents ===")
 	
 	timestamp := time.Now().Format("20060102_150405")
 	documents := []pkg.SearchDocument{
@@ -131,12 +146,15 @@ func main() {
 		log.Fatalf("Failed to ingest documents: %v", err)
 	}
 	
-	fmt.Printf("Ingest task ID: %s\n", ingestResponse.Task.TaskID)
-	fmt.Printf("Documents: %d succeeded, %d failed, %d total\n",
+	fmt.Printf("Ingest task ID: %s
+", ingestResponse.Task.TaskID)
+	fmt.Printf("Documents: %d succeeded, %d failed, %d total
+",
 		ingestResponse.Succeeded, ingestResponse.Failed, ingestResponse.Total)
 	
 	// Wait for indexing to complete
-	fmt.Println("\nWaiting for indexing to complete...")
+	fmt.Println("
+Waiting for indexing to complete...")
 	time.Sleep(3 * time.Second)
 	
 	// Get task status
@@ -144,11 +162,13 @@ func main() {
 	if err != nil {
 		log.Printf("Failed to get task status: %v", err)
 	} else {
-		fmt.Printf("Task status: %s\n", taskStatus.State)
+		fmt.Printf("Task status: %s
+", taskStatus.State)
 	}
 
 	// Search for documents
-	fmt.Println("\n=== Searching Documents ===")
+	fmt.Println("
+=== Searching Documents ===")
 	
 	// First search using a general term
 	searchRequest := &pkg.SearchRequest{
@@ -164,26 +184,33 @@ func main() {
 		log.Fatalf("Failed to search: %v", err)
 	}
 	
-	fmt.Printf("Found %d documents for query 'example'\n", searchResponse.Count)
+	fmt.Printf("Found %d documents for query 'example'
+", searchResponse.Count)
 	
 	if len(searchResponse.Results) > 0 {
-		fmt.Println("\nResults:")
+		fmt.Println("
+Results:")
 		for i, result := range searchResponse.Results {
 			title := result.Content["title"]
-			fmt.Printf("%d. %s (Subject: %s, Score: %.2f)\n", 
+			fmt.Printf("%d. %s (Subject: %s, Score: %.2f)
+", 
 				i+1, title, result.Subject, result.Score)
 		}
 		
 		// Print the first result as JSON for demonstration
 		firstResult := searchResponse.Results[0]
 		resultJSON, _ := json.MarshalIndent(firstResult, "", "  ")
-		fmt.Printf("\nFirst result details:\n%s\n", resultJSON)
+		fmt.Printf("
+First result details:
+%s
+", resultJSON)
 	} else {
 		fmt.Println("No results found. The documents may still be indexing.")
 	}
 
 	// Search with a more specific query
-	fmt.Println("\n=== Advanced Search ===")
+	fmt.Println("
+=== Advanced Search ===")
 	
 	advancedRequest := &pkg.SearchRequest{
 		IndexID: indexID,
@@ -197,16 +224,20 @@ func main() {
 	if err != nil {
 		log.Printf("Failed to perform advanced search: %v", err)
 	} else {
-		fmt.Printf("Found %d documents for query 'tags:go'\n", advancedResponse.Count)
+		fmt.Printf("Found %d documents for query 'tags:go'
+", advancedResponse.Count)
 		
 		if len(advancedResponse.Results) > 0 {
-			fmt.Println("\nResults:")
+			fmt.Println("
+Results:")
 			for i, result := range advancedResponse.Results {
 				title := result.Content["title"]
-				fmt.Printf("%d. %s (Subject: %s)\n", i+1, title, result.Subject)
+				fmt.Printf("%d. %s (Subject: %s)
+", i+1, title, result.Subject)
 			}
 		}
 	}
 
-	fmt.Println("\nSearch example complete!")
+	fmt.Println("
+Search example complete!")
 }

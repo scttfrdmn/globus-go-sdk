@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
 # Shell Script Testing Guide
 
 This guide explains how the shell script testing infrastructure works in the Globus Go SDK and how to use it for developing and testing shell scripts.

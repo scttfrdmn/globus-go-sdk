@@ -20,12 +20,12 @@ func NewFlowIterator(client *Client, options *ListFlowsOptions) *FlowIterator {
 	if options == nil {
 		options = &ListFlowsOptions{}
 	}
-	
+
 	// Default values for pagination
 	if options.Limit == 0 && options.PerPage == 0 {
 		options.Limit = 100
 	}
-	
+
 	return &FlowIterator{
 		client:   client,
 		options:  options,
@@ -39,7 +39,7 @@ func (i *FlowIterator) Next(ctx context.Context) bool {
 	if i.err != nil {
 		return false
 	}
-	
+
 	// If we're at the end of the current page, or haven't fetched any flows yet
 	if i.current == nil || (i.position >= len(i.current.Flows)-1 && i.current.HadMore) {
 		// If we have a marker from the previous page, update options
@@ -50,7 +50,7 @@ func (i *FlowIterator) Next(ctx context.Context) bool {
 				i.options.Marker = "" // Clear marker if it was set
 			}
 		}
-		
+
 		// Fetch the next page
 		var err error
 		i.current, err = i.client.ListFlows(ctx, i.options)
@@ -58,19 +58,19 @@ func (i *FlowIterator) Next(ctx context.Context) bool {
 			i.err = err
 			return false
 		}
-		
+
 		// Reset position for the new page
 		i.position = -1
-		
+
 		// Check if we got an empty page
 		if len(i.current.Flows) == 0 {
 			return false
 		}
 	}
-	
+
 	// Move to the next item
 	i.position++
-	
+
 	// Check if we've reached the end
 	return i.position < len(i.current.Flows)
 }
@@ -102,12 +102,12 @@ func NewRunIterator(client *Client, options *ListRunsOptions) *RunIterator {
 	if options == nil {
 		options = &ListRunsOptions{}
 	}
-	
+
 	// Default values for pagination
 	if options.Limit == 0 && options.PerPage == 0 {
 		options.Limit = 100
 	}
-	
+
 	return &RunIterator{
 		client:   client,
 		options:  options,
@@ -121,7 +121,7 @@ func (i *RunIterator) Next(ctx context.Context) bool {
 	if i.err != nil {
 		return false
 	}
-	
+
 	// If we're at the end of the current page, or haven't fetched any runs yet
 	if i.current == nil || (i.position >= len(i.current.Runs)-1 && i.current.HadMore) {
 		// If we have a marker from the previous page, update options
@@ -132,7 +132,7 @@ func (i *RunIterator) Next(ctx context.Context) bool {
 				i.options.Marker = "" // Clear marker if it was set
 			}
 		}
-		
+
 		// Fetch the next page
 		var err error
 		i.current, err = i.client.ListRuns(ctx, i.options)
@@ -140,19 +140,19 @@ func (i *RunIterator) Next(ctx context.Context) bool {
 			i.err = err
 			return false
 		}
-		
+
 		// Reset position for the new page
 		i.position = -1
-		
+
 		// Check if we got an empty page
 		if len(i.current.Runs) == 0 {
 			return false
 		}
 	}
-	
+
 	// Move to the next item
 	i.position++
-	
+
 	// Check if we've reached the end
 	return i.position < len(i.current.Runs)
 }
@@ -184,12 +184,12 @@ func NewActionProviderIterator(client *Client, options *ListActionProvidersOptio
 	if options == nil {
 		options = &ListActionProvidersOptions{}
 	}
-	
+
 	// Default values for pagination
 	if options.Limit == 0 && options.PerPage == 0 {
 		options.Limit = 100
 	}
-	
+
 	return &ActionProviderIterator{
 		client:   client,
 		options:  options,
@@ -203,7 +203,7 @@ func (i *ActionProviderIterator) Next(ctx context.Context) bool {
 	if i.err != nil {
 		return false
 	}
-	
+
 	// If we're at the end of the current page, or haven't fetched any providers yet
 	if i.current == nil || (i.position >= len(i.current.ActionProviders)-1 && i.current.HadMore) {
 		// If we have a marker from the previous page, update options
@@ -214,7 +214,7 @@ func (i *ActionProviderIterator) Next(ctx context.Context) bool {
 				i.options.Marker = "" // Clear marker if it was set
 			}
 		}
-		
+
 		// Fetch the next page
 		var err error
 		i.current, err = i.client.ListActionProviders(ctx, i.options)
@@ -222,19 +222,19 @@ func (i *ActionProviderIterator) Next(ctx context.Context) bool {
 			i.err = err
 			return false
 		}
-		
+
 		// Reset position for the new page
 		i.position = -1
-		
+
 		// Check if we got an empty page
 		if len(i.current.ActionProviders) == 0 {
 			return false
 		}
 	}
-	
+
 	// Move to the next item
 	i.position++
-	
+
 	// Check if we've reached the end
 	return i.position < len(i.current.ActionProviders)
 }
@@ -268,7 +268,7 @@ func NewRunLogIterator(client *Client, runID string, limit int) *RunLogIterator 
 	if limit <= 0 {
 		limit = 100
 	}
-	
+
 	return &RunLogIterator{
 		client:   client,
 		runID:    runID,
@@ -284,7 +284,7 @@ func (i *RunLogIterator) Next(ctx context.Context) bool {
 	if i.err != nil {
 		return false
 	}
-	
+
 	// If we're at the end of the current page, or haven't fetched any logs yet
 	if i.current == nil || (i.position >= len(i.current.Entries)-1 && i.current.HadMore) {
 		// Fetch the next page
@@ -294,22 +294,22 @@ func (i *RunLogIterator) Next(ctx context.Context) bool {
 			i.err = err
 			return false
 		}
-		
+
 		// Update offset for next page
 		i.offset += len(i.current.Entries)
-		
+
 		// Reset position for the new page
 		i.position = -1
-		
+
 		// Check if we got an empty page
 		if len(i.current.Entries) == 0 {
 			return false
 		}
 	}
-	
+
 	// Move to the next item
 	i.position++
-	
+
 	// Check if we've reached the end
 	return i.position < len(i.current.Entries)
 }
@@ -343,7 +343,7 @@ func NewActionRoleIterator(client *Client, providerID string, limit int) *Action
 	if limit <= 0 {
 		limit = 100
 	}
-	
+
 	return &ActionRoleIterator{
 		client:     client,
 		providerID: providerID,
@@ -359,7 +359,7 @@ func (i *ActionRoleIterator) Next(ctx context.Context) bool {
 	if i.err != nil {
 		return false
 	}
-	
+
 	// If we're at the end of the current page, or haven't fetched any roles yet
 	if i.current == nil || (i.position >= len(i.current.ActionRoles)-1 && i.current.HadMore) {
 		// Fetch the next page
@@ -369,22 +369,22 @@ func (i *ActionRoleIterator) Next(ctx context.Context) bool {
 			i.err = err
 			return false
 		}
-		
+
 		// Update offset for next page
 		i.offset += len(i.current.ActionRoles)
-		
+
 		// Reset position for the new page
 		i.position = -1
-		
+
 		// Check if we got an empty page
 		if len(i.current.ActionRoles) == 0 {
 			return false
 		}
 	}
-	
+
 	// Move to the next item
 	i.position++
-	
+
 	// Check if we've reached the end
 	return i.position < len(i.current.ActionRoles)
 }

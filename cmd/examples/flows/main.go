@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2025 Scott Friedman and Project Contributors
-
 package main
 
 import (
@@ -11,7 +10,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/yourusername/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/pkg"
 )
 
 func main() {
@@ -31,7 +30,8 @@ func main() {
 		log.Fatalf("Failed to get token: %v", err)
 	}
 
-	fmt.Printf("Obtained access token (expires in %d seconds)\n", tokenResp.ExpiresIn)
+	fmt.Printf("Obtained access token (expires in %d seconds)
+", tokenResp.ExpiresIn)
 	accessToken := tokenResp.AccessToken
 
 	// Create Flows client
@@ -41,7 +41,8 @@ func main() {
 	flowID := os.Getenv("GLOBUS_FLOW_ID")
 	if flowID == "" {
 		// List available flows if no flow ID is provided
-		fmt.Println("\n=== Available Flows ===")
+		fmt.Println("
+=== Available Flows ===")
 		
 		flows, err := flowsClient.ListFlows(ctx, &pkg.ListFlowsOptions{
 			Limit: 5,
@@ -54,7 +55,8 @@ func main() {
 			fmt.Println("No flows found. Create a flow first.")
 			
 			// Create a simple flow for demonstration
-			fmt.Println("\n=== Creating New Flow ===")
+			fmt.Println("
+=== Creating New Flow ===")
 			
 			timestamp := time.Now().Format("20060102_150405")
 			flowTitle := fmt.Sprintf("SDK Example Flow %s", timestamp)
@@ -98,17 +100,22 @@ func main() {
 				log.Fatalf("Failed to create flow: %v", err)
 			}
 			
-			fmt.Printf("Created new flow: %s (%s)\n", newFlow.Title, newFlow.ID)
+			fmt.Printf("Created new flow: %s (%s)
+", newFlow.Title, newFlow.ID)
 			flowID = newFlow.ID
 		} else {
 			// Use the first available flow
-			fmt.Printf("Found %d flows:\n", len(flows.Flows))
+			fmt.Printf("Found %d flows:
+", len(flows.Flows))
 			for i, flow := range flows.Flows {
-				fmt.Printf("%d. %s (%s)\n", i+1, flow.Title, flow.ID)
+				fmt.Printf("%d. %s (%s)
+", i+1, flow.Title, flow.ID)
 			}
 			
 			flowID = flows.Flows[0].ID
-			fmt.Printf("\nUsing first flow: %s\n", flowID)
+			fmt.Printf("
+Using first flow: %s
+", flowID)
 		}
 	}
 
@@ -118,22 +125,34 @@ func main() {
 		log.Fatalf("Failed to get flow: %v", err)
 	}
 	
-	fmt.Printf("\n=== Flow Details ===\n")
-	fmt.Printf("ID: %s\n", flow.ID)
-	fmt.Printf("Title: %s\n", flow.Title)
-	fmt.Printf("Description: %s\n", flow.Description)
-	fmt.Printf("Owner: %s\n", flow.FlowOwner)
-	fmt.Printf("Created: %s\n", flow.CreatedAt.Format(time.RFC3339))
-	fmt.Printf("Run Count: %d\n", flow.RunCount)
+	fmt.Printf("
+=== Flow Details ===
+")
+	fmt.Printf("ID: %s
+", flow.ID)
+	fmt.Printf("Title: %s
+", flow.Title)
+	fmt.Printf("Description: %s
+", flow.Description)
+	fmt.Printf("Owner: %s
+", flow.FlowOwner)
+	fmt.Printf("Created: %s
+", flow.CreatedAt.Format(time.RFC3339))
+	fmt.Printf("Run Count: %d
+", flow.RunCount)
 	
 	// Print input schema if available
 	if flow.InputSchema != nil {
 		inputSchemaJSON, _ := json.MarshalIndent(flow.InputSchema, "", "  ")
-		fmt.Printf("\nInput Schema:\n%s\n", inputSchemaJSON)
+		fmt.Printf("
+Input Schema:
+%s
+", inputSchemaJSON)
 	}
 
 	// Run the flow
-	fmt.Println("\n=== Running Flow ===")
+	fmt.Println("
+=== Running Flow ===")
 	
 	// Create a run request
 	runRequest := &pkg.RunRequest{
@@ -150,12 +169,16 @@ func main() {
 		log.Fatalf("Failed to run flow: %v", err)
 	}
 	
-	fmt.Printf("Flow run started with ID: %s\n", run.RunID)
-	fmt.Printf("Status: %s\n", run.Status)
-	fmt.Printf("Created at: %s\n", run.CreatedAt.Format(time.RFC3339))
+	fmt.Printf("Flow run started with ID: %s
+", run.RunID)
+	fmt.Printf("Status: %s
+", run.Status)
+	fmt.Printf("Created at: %s
+", run.CreatedAt.Format(time.RFC3339))
 	
 	// Wait for a few seconds to let the flow run
-	fmt.Println("\nWaiting for flow run to complete...")
+	fmt.Println("
+Waiting for flow run to complete...")
 	time.Sleep(3 * time.Second)
 	
 	// Get updated run status
@@ -164,19 +187,27 @@ func main() {
 		log.Fatalf("Failed to get run status: %v", err)
 	}
 	
-	fmt.Printf("\n=== Run Status ===\n")
-	fmt.Printf("Status: %s\n", runStatus.Status)
+	fmt.Printf("
+=== Run Status ===
+")
+	fmt.Printf("Status: %s
+", runStatus.Status)
 	if runStatus.CompletedAt.IsZero() {
 		fmt.Println("Run is still in progress")
 	} else {
-		fmt.Printf("Completed at: %s\n", runStatus.CompletedAt.Format(time.RFC3339))
-		fmt.Printf("Duration: %s\n", runStatus.CompletedAt.Sub(runStatus.CreatedAt))
+		fmt.Printf("Completed at: %s
+", runStatus.CompletedAt.Format(time.RFC3339))
+		fmt.Printf("Duration: %s
+", runStatus.CompletedAt.Sub(runStatus.CreatedAt))
 	}
 	
 	// Show run output if available
 	if runStatus.Output != nil {
 		outputJSON, _ := json.MarshalIndent(runStatus.Output, "", "  ")
-		fmt.Printf("\nRun Output:\n%s\n", outputJSON)
+		fmt.Printf("
+Run Output:
+%s
+", outputJSON)
 	}
 	
 	// Get run logs
@@ -184,9 +215,12 @@ func main() {
 	if err != nil {
 		log.Printf("Failed to get run logs: %v", err)
 	} else {
-		fmt.Printf("\n=== Run Logs (%d entries) ===\n", len(logs.Entries))
+		fmt.Printf("
+=== Run Logs (%d entries) ===
+", len(logs.Entries))
 		for i, entry := range logs.Entries {
-			fmt.Printf("%d. [%s] %s - %s\n", 
+			fmt.Printf("%d. [%s] %s - %s
+", 
 				i+1, 
 				entry.CreatedAt.Format("15:04:05"),
 				entry.Code, 
@@ -194,13 +228,15 @@ func main() {
 			
 			if entry.Details != nil && len(entry.Details) > 0 {
 				detailsJSON, _ := json.MarshalIndent(entry.Details, "", "  ")
-				fmt.Printf("   Details: %s\n", detailsJSON)
+				fmt.Printf("   Details: %s
+", detailsJSON)
 			}
 		}
 	}
 	
 	// List action providers
-	fmt.Println("\n=== Action Providers ===")
+	fmt.Println("
+=== Action Providers ===")
 	providers, err := flowsClient.ListActionProviders(ctx, &pkg.ListActionProvidersOptions{
 		Limit:        5,
 		FilterGlobus: true,
@@ -208,9 +244,11 @@ func main() {
 	if err != nil {
 		log.Printf("Failed to list action providers: %v", err)
 	} else {
-		fmt.Printf("Found %d Globus action providers:\n", len(providers.ActionProviders))
+		fmt.Printf("Found %d Globus action providers:
+", len(providers.ActionProviders))
 		for i, provider := range providers.ActionProviders {
-			fmt.Printf("%d. %s (%s) - %s\n", 
+			fmt.Printf("%d. %s (%s) - %s
+", 
 				i+1, 
 				provider.DisplayName, 
 				provider.ID,
@@ -220,21 +258,26 @@ func main() {
 		// Show roles for the first provider
 		if len(providers.ActionProviders) > 0 {
 			provider := providers.ActionProviders[0]
-			fmt.Printf("\nRoles for %s:\n", provider.DisplayName)
+			fmt.Printf("
+Roles for %s:
+", provider.DisplayName)
 			
 			roles, err := flowsClient.ListActionRoles(ctx, provider.ID, 5, 0)
 			if err != nil {
 				log.Printf("Failed to list action roles: %v", err)
 			} else {
 				for i, role := range roles.ActionRoles {
-					fmt.Printf("%d. %s (%s)\n", i+1, role.Name, role.ID)
+					fmt.Printf("%d. %s (%s)
+", i+1, role.Name, role.ID)
 					if role.Description != "" {
-						fmt.Printf("   Description: %s\n", role.Description)
+						fmt.Printf("   Description: %s
+", role.Description)
 					}
 				}
 			}
 		}
 	}
 
-	fmt.Println("\nFlows example complete!")
+	fmt.Println("
+Flows example complete!")
 }

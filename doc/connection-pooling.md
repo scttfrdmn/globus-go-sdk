@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
 # Connection Pooling
 
 This guide explains how to use the connection pooling functionality in the Globus Go SDK. Connection pooling can dramatically improve performance by reusing HTTP connections across multiple requests.
