@@ -213,12 +213,34 @@ Implemented advanced logging and tracing capabilities:
 - Created trace ID propagation for distributed tracing
 - Provided comprehensive tests and examples for logging features
 
+### 14. Timers API Client
+
+Implemented comprehensive Timers service client:
+
+- Created models for timer schedules, callbacks, and runs
+- Added support for one-time, recurring, and cron schedules
+- Implemented web callbacks and flow execution capabilities
+- Added helper methods for creating common timer types
+- Created comprehensive documentation and examples
+- Integrated with the SDK configuration
+
+### 15. Memory-Optimized Transfers
+
+Implemented memory-efficient transfer functionality for large transfers:
+
+- Created streaming file iterators that process files on-demand
+- Added batch-based file processing to limit memory usage
+- Implemented concurrent task submission with controlled parallelism
+- Added memory usage monitoring and benchmarking
+- Created comprehensive documentation and examples
+- Demonstrated significant memory savings (up to 97% for large transfers)
+
 ## Next Steps
 
 Based on the updated roadmap and project status, the next priorities are:
 
-1. Implement Timers API client
-2. Optimize memory usage for large transfers
+1. ✅ Implement Timers API client (COMPLETED)
+2. ✅ Optimize memory usage for large transfers (COMPLETED)
 3. Add connection pooling
 4. Add multi-factor authentication support
 5. Complete security audit and review

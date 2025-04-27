@@ -18,6 +18,7 @@ A Go SDK for interacting with Globus services, providing a simple and idiomatic 
 - File transfer with recursive directory and resumable transfer support
 - Context-based API with cancellation support
 - Structured logging and distributed tracing
+- Timers for scheduling tasks
 - Integration testing infrastructure
 - Minimal dependencies
 - Comprehensive error handling
@@ -402,6 +403,8 @@ For detailed documentation, see:
 - [Logging and Tracing Guide](doc/logging-and-tracing.md)
 - [Integration Testing Guide](doc/INTEGRATION_TESTING.md)
 - [Search Client Guide](doc/search-client.md)
+- [Timers Client Guide](doc/timers-client.md)
+- [Memory Optimization Guide](doc/memory-optimization.md)
 - [Data Schemas](doc/data-schemas.md)
 - [Error Handling](doc/error-handling.md)
 - [Extending the SDK](doc/extending-the-sdk.md)
@@ -418,10 +421,11 @@ This SDK is under active development. Current version: **v0.1.0-dev**
 | Token Storage | ✅ Complete | Interface with memory and file-based implementations |
 | Token Manager | ✅ Complete | Automatic token refreshing and management |
 | Groups Client | ✅ Complete | Group management, membership operations |
-| Transfer Client | ✅ Complete | Basic operations, recursive directory transfers |
+| Transfer Client | ✅ Complete | Basic operations, recursive directory transfers, resumable transfers |
 | Search Client | ✅ Complete | Advanced queries, batch operations, pagination |
+| Flows Client | ✅ Complete | Flow discovery, execution, management |
+| Timers Client | ✅ Complete | Creating and managing scheduled tasks |
 | CLI Example | ✅ Complete | Command-line application showcasing SDK features |
-| Flows Client | 📅 Planned | Initial structure defined |
 | Compute Client | 📅 Planned | Initial structure defined |
 
 See [PROJECT_STATUS.md](doc/PROJECT_STATUS.md) for detailed status and [ROADMAP.md](doc/ROADMAP.md) for upcoming features.
