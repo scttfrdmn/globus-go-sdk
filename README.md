@@ -406,6 +406,7 @@ For detailed documentation, see:
 - [Timers Client Guide](doc/timers-client.md)
 - [Memory Optimization Guide](doc/memory-optimization.md)
 - [Connection Pooling Guide](doc/connection-pooling.md)
+- [MFA Authentication Guide](doc/mfa-authentication.md)
 - [Data Schemas](doc/data-schemas.md)
 - [Error Handling](doc/error-handling.md)
 - [Extending the SDK](doc/extending-the-sdk.md)
