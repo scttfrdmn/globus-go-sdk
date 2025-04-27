@@ -1,28 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2025 Scott Friedman and Project Contributors
-
-// Package pkg provides the main entry point for the Globus Go SDK.
-//
-// The SDK is organized into services that match the Globus APIs:
-//
-// - Auth: OAuth2 authentication and authorization
-// - Groups: Group management
-// - Transfer: File transfer and endpoint management
-// - Search: Data search and discovery
-// - Flows: Automation and workflow orchestration
-//
-// Each service has its own client and models, following the pattern
-// established by the official Globus SDKs for Python and JavaScript.
 package pkg
 
 import (
-	"github.com/yourusername/globus-go-sdk/pkg/core"
-	"github.com/yourusername/globus-go-sdk/pkg/core/config"
-	"github.com/yourusername/globus-go-sdk/pkg/services/auth"
-	"github.com/yourusername/globus-go-sdk/pkg/services/flows"
-	"github.com/yourusername/globus-go-sdk/pkg/services/groups"
-	"github.com/yourusername/globus-go-sdk/pkg/services/search"
-	"github.com/yourusername/globus-go-sdk/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/config"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/compute"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/flows"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/groups"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/search"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/timers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
 )
 
 // Version is the SDK version
@@ -32,18 +20,24 @@ const Version = "0.1.0"
 const (
 	// AuthScope is the scope for the Auth service
 	AuthScope = auth.AuthScope
-	
+
 	// GroupsScope is the scope for the Groups service
 	GroupsScope = groups.GroupsScope
-	
+
 	// TransferScope is the scope for the Transfer service
 	TransferScope = transfer.TransferScope
-	
+
 	// SearchScope is the scope for the Search service
 	SearchScope = search.SearchScope
-	
+
 	// FlowsScope is the scope for the Flows service
 	FlowsScope = flows.FlowsScope
+
+	// ComputeScope is the scope for the Compute service
+	ComputeScope = compute.ComputeScope
+
+	// TimersScope is the scope for the Timers service
+	TimersScope = timers.TimersScope
 )
 
 // SDKConfig holds configuration for all services
@@ -56,61 +50,85 @@ type SDKConfig struct {
 // NewAuthClient creates a new Auth client with the SDK configuration
 func (c *SDKConfig) NewAuthClient() *auth.Client {
 	authClient := auth.NewClient(c.ClientID, c.ClientSecret)
-	
+
 	// Apply configuration
 	if c.Config != nil {
 		c.Config.ApplyToClient(authClient.Client)
 	}
-	
+
 	return authClient
 }
 
 // NewGroupsClient creates a new Groups client with the SDK configuration
 func (c *SDKConfig) NewGroupsClient(accessToken string) *groups.Client {
 	groupsClient := groups.NewClient(accessToken)
-	
+
 	// Apply configuration
 	if c.Config != nil {
 		c.Config.ApplyToClient(groupsClient.Client)
 	}
-	
+
 	return groupsClient
 }
 
 // NewTransferClient creates a new Transfer client with the SDK configuration
 func (c *SDKConfig) NewTransferClient(accessToken string) *transfer.Client {
 	transferClient := transfer.NewClient(accessToken)
-	
+
 	// Apply configuration
 	if c.Config != nil {
 		c.Config.ApplyToClient(transferClient.Client)
 	}
-	
+
 	return transferClient
 }
 
 // NewSearchClient creates a new Search client with the SDK configuration
 func (c *SDKConfig) NewSearchClient(accessToken string) *search.Client {
 	searchClient := search.NewClient(accessToken)
-	
+
 	// Apply configuration
 	if c.Config != nil {
 		c.Config.ApplyToClient(searchClient.Client)
 	}
-	
+
 	return searchClient
 }
 
 // NewFlowsClient creates a new Flows client with the SDK configuration
 func (c *SDKConfig) NewFlowsClient(accessToken string) *flows.Client {
 	flowsClient := flows.NewClient(accessToken)
-	
+
 	// Apply configuration
 	if c.Config != nil {
 		c.Config.ApplyToClient(flowsClient.Client)
 	}
-	
+
 	return flowsClient
+}
+
+// NewComputeClient creates a new Compute client with the SDK configuration
+func (c *SDKConfig) NewComputeClient(accessToken string) *compute.Client {
+	computeClient := compute.NewClient(accessToken)
+
+	// Apply configuration
+	if c.Config != nil {
+		c.Config.ApplyToClient(computeClient.Client)
+	}
+
+	return computeClient
+}
+
+// NewTimersClient creates a new Timers client with the SDK configuration
+func (c *SDKConfig) NewTimersClient(accessToken string) *timers.Client {
+	timersClient := timers.NewClient(accessToken)
+
+	// Apply configuration
+	if c.Config != nil {
+		c.Config.ApplyToClient(timersClient.Client)
+	}
+
+	return timersClient
 }
 
 // NewConfig creates a new SDK configuration
@@ -148,7 +166,7 @@ func (c *SDKConfig) WithConfig(config *config.Config) *SDKConfig {
 // GetScopesByService returns the OAuth2 scopes needed for the specified services
 func GetScopesByService(services ...string) []string {
 	scopes := make([]string, 0, len(services))
-	
+
 	for _, service := range services {
 		switch service {
 		case "auth":
@@ -161,8 +179,10 @@ func GetScopesByService(services ...string) []string {
 			scopes = append(scopes, SearchScope)
 		case "flows":
 			scopes = append(scopes, FlowsScope)
+		case "compute":
+			scopes = append(scopes, ComputeScope)
 		}
 	}
-	
+
 	return scopes
 }
