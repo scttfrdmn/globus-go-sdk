@@ -131,7 +131,7 @@ This document tracks the current status of the Globus Go SDK project.
 
 2. Expand transfer service capabilities
    - ✅ Add recursive directory transfer support
-   - [ ] Implement resumable transfers
+   - ✅ Implement resumable transfers
    - ✅ Create batch transfer capabilities
 
 3. Enhance test coverage and documentation
