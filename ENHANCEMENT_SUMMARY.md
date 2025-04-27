@@ -190,13 +190,35 @@ The enhancements have improved test coverage across several areas:
 - **CLI Example**: Manual testing with real Globus credentials
 - **Edge Cases**: Tests for error conditions and edge scenarios
 
+## Recent Enhancements (2025-04-27)
+
+### 12. Integration Testing for Resumable Transfers
+
+Added comprehensive integration testing infrastructure:
+
+- Created integration test for resumable transfers with real Globus endpoints
+- Enhanced `run_integration_tests.sh` to load environment variables from `.env.test`
+- Implemented test patterns for creating, resuming, and canceling transfers
+- Added detailed test cleanup procedures to prevent resource leaks
+- Created comprehensive documentation on integration testing setup and practices
+
+### 13. Enhanced Logging and Tracing
+
+Implemented advanced logging and tracing capabilities:
+
+- Created structured logging system with both text and JSON formats
+- Added support for HTTP request/response tracing with trace IDs
+- Implemented field-based contextual logging
+- Added automatic sensitive data redaction in logs
+- Created trace ID propagation for distributed tracing
+- Provided comprehensive tests and examples for logging features
+
 ## Next Steps
 
 Based on the updated roadmap and project status, the next priorities are:
 
-1. Add more comprehensive integration tests
-2. Enhance logging and tracing capabilities
-3. Implement Timers API client
-4. Optimize memory usage for large transfers
-5. Add connection pooling
-6. Add multi-factor authentication support
+1. Implement Timers API client
+2. Optimize memory usage for large transfers
+3. Add connection pooling
+4. Add multi-factor authentication support
+5. Complete security audit and review

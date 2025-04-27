@@ -9,15 +9,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Implemented enhanced logging and tracing system:
+  - Structured logging with text and JSON formats
+  - HTTP request/response tracing with trace IDs
+  - Field-based contextual logging
+  - Automatic sensitive data redaction in logs
+  - Trace ID propagation for distributed tracing
+  - Comprehensive logging configuration options
+  - Detailed documentation and examples
+- Added comprehensive integration testing:
+  - Test infrastructure for resumable transfers with real endpoints
+  - Environment variable loading from `.env.test`
+  - Improved test setup and cleanup procedures
+  - Detailed integration testing documentation
 - Implemented resumable transfer functionality with checkpointing:
   - File-based checkpoint storage for persistently tracking transfer state
   - Batch processing of transfers for efficiency and error recovery
   - Progress tracking and status reporting
   - Automatic retries for failed transfers
   - Client methods for creating, resuming, and monitoring transfers
-- Added new example application for demonstrating resumable transfers
-- Created comprehensive documentation for resumable transfers (`doc/resumable-transfers.md`)
-- Created resumable transfers example with command-line interface
+- Added new example applications:
+  - Resumable transfers example with command-line interface
+  - Logging and tracing example demonstrating various capabilities
+- Created comprehensive documentation:
+  - Resumable transfers guide (`doc/resumable-transfers.md`)
+  - Logging and tracing guide (`doc/logging-and-tracing.md`)
+  - Integration testing guide (`doc/INTEGRATION_TESTING.md`)
 
 ## [0.1.0] - 2025-04-26
 
