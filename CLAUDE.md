@@ -41,7 +41,7 @@ The Globus Go SDK has made significant progress with the following components im
 
 ## Current File Structure
 ```
-github.com/yourusername/globus-go-sdk/
+github.com/scttfrdmn/globus-go-sdk/
 ├── .github/                # GitHub workflows, issue templates
 ├── cmd/                    # CLI examples
 │   └── examples/           # Example applications

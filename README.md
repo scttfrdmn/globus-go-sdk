@@ -1,21 +1,25 @@
 # Globus Go SDK
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/yourusername/globus-go-sdk.svg)](https://pkg.go.dev/github.com/yourusername/globus-go-sdk)
-[![Go Report Card](https://goreportcard.com/badge/github.com/yourusername/globus-go-sdk)](https://goreportcard.com/report/github.com/yourusername/globus-go-sdk)
-[![Build Status](https://github.com/yourusername/globus-go-sdk/workflows/Go/badge.svg)](https://github.com/yourusername/globus-go-sdk/actions)
-[![License](https://img.shields.io/github/license/yourusername/globus-go-sdk)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/yourusername/globus-go-sdk)](https://github.com/yourusername/globus-go-sdk/releases)
-[![Coverage](https://codecov.io/gh/yourusername/globus-go-sdk/branch/main/graph/badge.svg)](https://codecov.io/gh/yourusername/globus-go-sdk)
+[![Go Reference](https://pkg.go.dev/badge/github.com/scttfrdmn/globus-go-sdk.svg)](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk)
+[![Go Report Card](https://goreportcard.com/badge/github.com/scttfrdmn/globus-go-sdk)](https://goreportcard.com/report/github.com/scttfrdmn/globus-go-sdk)
+[![Build Status](https://github.com/scttfrdmn/globus-go-sdk/workflows/Go/badge.svg)](https://github.com/scttfrdmn/globus-go-sdk/actions)
+[![License](https://img.shields.io/github/license/scttfrdmn/globus-go-sdk)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/scttfrdmn/globus-go-sdk)](https://github.com/scttfrdmn/globus-go-sdk/releases)
+[![Coverage](https://codecov.io/gh/scttfrdmn/globus-go-sdk/branch/main/graph/badge.svg)](https://codecov.io/gh/scttfrdmn/globus-go-sdk)
 
 A Go SDK for interacting with Globus services, providing a simple and idiomatic Go interface to Globus APIs.
 
 ## Features
 
 - OAuth2 authentication support
+- Token management with automatic refreshing
+- Persistent token storage (memory and file-based)
 - Groups management
+- File transfer with recursive directory support
 - Context-based API with cancellation support
 - Minimal dependencies
 - Comprehensive error handling
+- CLI example application
 
 ## Installation
 
@@ -27,13 +31,13 @@ A Go SDK for interacting with Globus services, providing a simple and idiomatic 
 ### Using `go get`
 
 ```bash
-go get github.com/yourusername/globus-go-sdk
+go get github.com/scttfrdmn/globus-go-sdk
 ```
 
 ### Using Go modules in your project
 
 ```go
-import "github.com/yourusername/globus-go-sdk/pkg"
+import "github.com/scttfrdmn/globus-go-sdk/pkg"
 ```
 
 ## SDK Organization
@@ -58,7 +62,7 @@ This SDK follows the structure and patterns established by the official Globus P
 
 ## Quick Start
 
-### Authentication
+### Authentication with Token Management
 
 ```go
 package main
@@ -69,11 +73,19 @@ import (
     "log"
     "net/http"
     "os"
+    "time"
 
-    "github.com/yourusername/globus-go-sdk/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
 )
 
 func main() {
+    // Create a token storage for persisting tokens
+    storage, err := auth.NewFileTokenStorage("~/.globus-tokens")
+    if err != nil {
+        log.Fatalf("Failed to create token storage: %v", err)
+    }
+    
     // Create a new SDK configuration
     config := pkg.NewConfigFromEnvironment().
         WithClientID(os.Getenv("GLOBUS_CLIENT_ID")).
@@ -83,7 +95,24 @@ func main() {
     authClient := config.NewAuthClient()
     authClient.SetRedirectURL("http://localhost:8080/callback")
     
-    // Get authorization URL for user authentication
+    // Create a token manager for automatic refresh
+    tokenManager := &auth.TokenManager{
+        Storage:          storage,
+        RefreshThreshold: 5 * time.Minute,
+        RefreshFunc: func(ctx context.Context, token auth.TokenInfo) (auth.TokenInfo, error) {
+            return authClient.RefreshToken(ctx, token.RefreshToken)
+        },
+    }
+    
+    // Check if we already have tokens
+    token, err := tokenManager.GetToken(context.Background(), "default")
+    if err == nil && !token.IsExpired() {
+        // We have valid tokens, use them
+        fmt.Printf("Using existing token (expires in %v)\n", token.Lifetime())
+        return
+    }
+    
+    // We need new tokens, start the OAuth2 flow
     authURL := authClient.GetAuthorizationURL("my-state")
     fmt.Printf("Visit this URL to log in: %s\n", authURL)
     
@@ -95,9 +124,20 @@ func main() {
         tokenResponse, err := authClient.ExchangeAuthorizationCode(context.Background(), code)
         if err != nil {
             log.Fatalf("Failed to exchange code: %v", err)
+            http.Error(w, "Failed to exchange code", http.StatusInternalServerError)
+            return
         }
         
-        fmt.Printf("Access Token: %s\n", tokenResponse.AccessToken)
+        // Store the tokens
+        err = tokenManager.StoreToken(context.Background(), "default", tokenResponse)
+        if err != nil {
+            log.Fatalf("Failed to store token: %v", err)
+            http.Error(w, "Failed to store token", http.StatusInternalServerError)
+            return
+        }
+        
+        fmt.Fprintf(w, "Authentication successful! You can close this window.")
+        fmt.Printf("Authentication successful! Tokens stored.\n")
     })
     
     log.Fatal(http.ListenAndServe(":8080", nil))
@@ -115,7 +155,7 @@ import (
     "log"
     "os"
 
-    "github.com/yourusername/globus-go-sdk/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/pkg"
 )
 
 func main() {
@@ -148,8 +188,10 @@ import (
     "fmt"
     "log"
     "os"
+    "time"
 
-    "github.com/yourusername/globus-go-sdk/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
 )
 
 func main() {
@@ -170,23 +212,68 @@ func main() {
         fmt.Printf("%d. %s (%s)\n", i+1, endpoint.DisplayName, endpoint.ID)
     }
     
-    // Submit a transfer (if source and destination endpoints are provided)
+    // Submit a file transfer (if source and destination endpoints are provided)
     sourceEndpointID := os.Getenv("SOURCE_ENDPOINT_ID")
     destEndpointID := os.Getenv("DEST_ENDPOINT_ID")
     
     if sourceEndpointID != "" && destEndpointID != "" {
+        // Regular file transfer
         task, err := transferClient.SubmitTransfer(
             context.Background(),
-            sourceEndpointID, "/~/source.txt",
-            destEndpointID, "/~/destination.txt",
-            "SDK Example Transfer",
-            nil,
+            sourceEndpointID,
+            destEndpointID,
+            &transfer.TransferData{
+                Label: "SDK Example Transfer",
+                Items: []transfer.TransferItem{
+                    {
+                        Source:      "/~/source.txt",
+                        Destination: "/~/destination.txt",
+                    },
+                },
+                SyncLevel: transfer.SyncChecksum,
+                Verify:    true,
+            },
         )
         if err != nil {
             log.Fatalf("Failed to submit transfer: %v", err)
         }
         
         fmt.Printf("Transfer submitted, task ID: %s\n", task.TaskID)
+        
+        // Monitor the task
+        for {
+            status, err := transferClient.GetTaskStatus(context.Background(), task.TaskID)
+            if err != nil {
+                log.Fatalf("Failed to get task status: %v", err)
+            }
+            
+            fmt.Printf("Task status: %s (%d/%d files)\n", 
+                status.Status, status.FilesTransferred, status.FilesTotal)
+                
+            if status.Status == "SUCCEEDED" || status.Status == "FAILED" {
+                break
+            }
+            
+            time.Sleep(2 * time.Second)
+        }
+        
+        // Submit a recursive directory transfer
+        result, err := transferClient.SubmitRecursiveTransfer(
+            context.Background(),
+            sourceEndpointID, "/~/source_dir",
+            destEndpointID, "/~/dest_dir",
+            &transfer.RecursiveTransferOptions{
+                Label:     "SDK Example Recursive Transfer",
+                SyncLevel: transfer.SyncChecksum,
+                BatchSize: 100,
+            },
+        )
+        if err != nil {
+            log.Fatalf("Failed to submit recursive transfer: %v", err)
+        }
+        
+        fmt.Printf("Recursive transfer submitted with %d tasks\n", len(result.TaskIDs))
+        fmt.Printf("Transferred %d items\n", result.ItemsTransferred)
     }
 }
 ```
@@ -202,7 +289,7 @@ import (
     "log"
     "os"
 
-    "github.com/yourusername/globus-go-sdk/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/pkg"
 )
 
 func main() {
@@ -259,7 +346,7 @@ import (
     "os"
     "time"
 
-    "github.com/yourusername/globus-go-sdk/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/pkg"
 )
 
 func main() {
@@ -303,7 +390,17 @@ func main() {
 
 ## Documentation
 
-For detailed documentation, see the [GoDoc](https://pkg.go.dev/github.com/yourusername/globus-go-sdk/).
+For detailed documentation, see:
+
+- [GoDoc Reference](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/)
+- [User Guide](doc/user-guide.md)
+- [Token Storage Guide](doc/token-storage.md)
+- [Recursive Transfers Guide](doc/recursive-transfers.md)
+- [Search Client Guide](doc/search-client.md)
+- [Data Schemas](doc/data-schemas.md)
+- [Error Handling](doc/error-handling.md)
+- [Extending the SDK](doc/extending-the-sdk.md)
+- [CLI Example](cmd/globus-cli/README.md)
 
 ## Development Status
 
@@ -313,9 +410,12 @@ This SDK is under active development. Current version: **v0.1.0-dev**
 |-----------|--------|---------|
 | Core Infrastructure | ✅ Complete | Base client, transport, authorizers, logging |
 | Auth Client | ✅ Complete | OAuth flows, token management, validation utilities |
+| Token Storage | ✅ Complete | Interface with memory and file-based implementations |
+| Token Manager | ✅ Complete | Automatic token refreshing and management |
 | Groups Client | ✅ Complete | Group management, membership operations |
-| Transfer Client | ⚙️ In Progress | Basic operations implemented, expanding capabilities |
-| Search Client | 📅 Planned | Initial structure defined |
+| Transfer Client | ✅ Complete | Basic operations, recursive directory transfers |
+| Search Client | ✅ Complete | Advanced queries, batch operations, pagination |
+| CLI Example | ✅ Complete | Command-line application showcasing SDK features |
 | Flows Client | 📅 Planned | Initial structure defined |
 | Compute Client | 📅 Planned | Initial structure defined |
 
