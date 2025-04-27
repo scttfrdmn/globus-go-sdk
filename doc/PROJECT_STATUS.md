@@ -135,7 +135,7 @@ This document tracks the current status of the Globus Go SDK project.
    - ✅ Create batch transfer capabilities
 
 3. Enhance test coverage and documentation
-   - [ ] Add integration tests with real credentials
+   - ✅ Add integration tests with real credentials
    - ✅ Complete API reference documentation
    - ✅ Create additional usage examples
 
@@ -178,7 +178,7 @@ This document tracks the current status of the Globus Go SDK project.
 
 ## Current Blockers
 
-- Need Globus API credentials for integration testing
+None - all core features implemented and ready for testing
 
 ## Resources
 
