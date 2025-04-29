@@ -7,7 +7,7 @@ All notable changes to the Globus Go SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2025-04-28
 
 ### Added
 
@@ -30,13 +30,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Progress tracking and status reporting
   - Automatic retries for failed transfers
   - Client methods for creating, resuming, and monitoring transfers
+- Added connection pooling for improved performance:
+  - Service-specific connection pools with optimized settings
+  - Configurable pool parameters (connection limits, timeouts)
+  - Automatic connection reuse for better performance
+- Implemented robust rate limiting and backoff strategies:
+  - Circuit breaker pattern to prevent cascading failures
+  - Exponential backoff with jitter for retries
+  - Rate limiting to avoid API throttling 
+  - Response handler for rate limit headers
 - Added new example applications:
   - Resumable transfers example with command-line interface
   - Logging and tracing example demonstrating various capabilities
+  - Rate limiting and backoff example application
+- Created verify-credentials utility for validating credentials:
+  - Tests credentials against Auth, Transfer, Groups, and Search services
+  - Multiple implementation options (SDK, API-only, standalone)
+  - Comprehensive documentation and use instructions
 - Created comprehensive documentation:
   - Resumable transfers guide (`doc/resumable-transfers.md`)
   - Logging and tracing guide (`doc/logging-and-tracing.md`)
   - Integration testing guide (`doc/INTEGRATION_TESTING.md`)
+  - Rate limiting guide (`doc/rate-limiting.md`)
+  - Performance benchmarking guide (`doc/performance-benchmarking.md`)
+
+### Changed
+
+- Updated authorizer interfaces to be more flexible and eliminate import cycles
+- Improved error handling for better diagnostics and recovery
+- Enhanced package structure for clearer API boundaries
+- Updated all services to use connection pooling by default
+- Standardized logging approach across all services
+- Improved test coverage across all packages
+
+### Fixed
+
+- Resolved import cycles in multiple packages
+- Fixed field naming inconsistencies in model structs
+- Corrected error handling in authentication flows
+- Fixed thread safety issues in connection management
+- Addressed memory leaks in transfer operations
 
 ## [0.1.0] - 2025-04-26
 

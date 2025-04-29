@@ -70,6 +70,7 @@ test-integration:
 clean:
 	$(GO) clean
 	rm -f coverage.txt coverage.json coverage.xml coverage.html
+	rm -f cmd/verify-credentials/verify-credentials cmd/verify-credentials/verify-credentials-standalone cmd/verify-credentials/verify-credentials-sdk-api cmd/verify-credentials/main
 
 # Shell script linting and testing
 .PHONY: lint-shell
@@ -93,6 +94,22 @@ security-scan:
 	@echo "Running security scan..."
 	@./scripts/run_security_scan.sh
 
+# Verify credentials tool
+.PHONY: verify-credentials
+verify-credentials:
+	@echo "Building verify-credentials tool..."
+	$(GO) build -o cmd/verify-credentials/verify-credentials cmd/verify-credentials/main.go
+
+.PHONY: verify-credentials-standalone
+verify-credentials-standalone:
+	@echo "Building standalone verify-credentials tool..."
+	$(GO) build -tags standalone -o cmd/verify-credentials/verify-credentials-standalone cmd/verify-credentials/standalone.go
+
+.PHONY: verify-credentials-sdk-api
+verify-credentials-sdk-api:
+	@echo "Building SDK API verify-credentials tool..."
+	$(GO) build -tags sdk_api -o cmd/verify-credentials/verify-credentials-sdk-api cmd/verify-credentials/verify-credentials-sdk.go
+
 .PHONY: help
 help:
 	@echo "Available targets:"
@@ -108,5 +125,8 @@ help:
 	@echo "  test-integration   - Run integration tests"
 	@echo "  security-scan      - Run security scanning tools"
 	@echo "  install-bats       - Install BATS testing framework"
+	@echo "  verify-credentials        - Build the verify-credentials SDK tool"
+	@echo "  verify-credentials-standalone - Build the standalone verify-credentials tool"
+	@echo "  verify-credentials-sdk-api    - Build the SDK API verify-credentials tool"
 	@echo "  clean              - Clean build artifacts"
 	@echo "  help               - Show this help"

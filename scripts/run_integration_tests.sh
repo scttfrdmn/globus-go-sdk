@@ -41,10 +41,10 @@ check_env_vars() {
     echo -e "${GREEN}✅ GLOBUS_TEST_SOURCE_ENDPOINT_ID is set${NC}"
   fi
   
-  if [ -z "$GLOBUS_TEST_DEST_ENDPOINT_ID" ]; then
-    echo -e "${YELLOW}⚠️  GLOBUS_TEST_DEST_ENDPOINT_ID is not set (transfer tests may be limited)${NC}"
+  if [ -z "$GLOBUS_TEST_DESTINATION_ENDPOINT_ID" ]; then
+    echo -e "${YELLOW}⚠️  GLOBUS_TEST_DESTINATION_ENDPOINT_ID is not set (transfer tests may be limited)${NC}"
   else
-    echo -e "${GREEN}✅ GLOBUS_TEST_DEST_ENDPOINT_ID is set${NC}"
+    echo -e "${GREEN}✅ GLOBUS_TEST_DESTINATION_ENDPOINT_ID is set${NC}"
   fi
   
   # Optional for group tests
@@ -67,8 +67,17 @@ check_env_vars() {
 
 # Function to load environment variables from .env.test file if it exists
 load_env_file() {
+  # Check in multiple locations
   if [ -f ".env.test" ]; then
-    echo -e "${BLUE}Loading environment variables from .env.test file...${NC}"
+    ENV_FILE=".env.test"
+  elif [ -f "../.env.test" ]; then
+    ENV_FILE="../.env.test"
+  elif [ -f "../../.env.test" ]; then
+    ENV_FILE="../../.env.test"
+  fi
+
+  if [ -n "$ENV_FILE" ]; then
+    echo -e "${BLUE}Loading environment variables from $ENV_FILE file...${NC}"
     
     # Read each line from .env.test
     while IFS= read -r line || [[ -n "$line" ]]; do
@@ -84,13 +93,13 @@ load_env_file() {
       # Export the variable
       export "$key"="$value"
       echo -e "${GREEN}Loaded $key${NC}"
-    done < ".env.test"
+    done < "$ENV_FILE"
     
     echo -e "${GREEN}Environment variables loaded successfully.${NC}"
   else
     echo -e "${YELLOW}No .env.test file found, using existing environment variables.${NC}"
     echo -e "${BLUE}You can create a .env.test file for easier credential management.${NC}"
-    echo -e "${BLUE}See doc/INTEGRATION_TESTING_SETUP.md for details.${NC}"
+    echo -e "${BLUE}See doc/INTEGRATION_TESTING.md for details.${NC}"
   fi
 }
 
@@ -126,9 +135,25 @@ main() {
 
   # Check if verification flag is present
   if [ "$1" = "--verify" ] || [ "$1" = "-v" ]; then
-    echo -e "${YELLOW}Running verification test to check environment setup...${NC}"
-    go test -v -tags=integration ./pkg -run TestIntegration_VerifySetup
-    echo -e "${GREEN}Verification completed! If successful, you can now run the full test suite.${NC}"
+    echo -e "${YELLOW}Running credential verification tool...${NC}"
+    
+    # Check if the credentials verification tool is built
+    if [ ! -f "cmd/verify-credentials/verify-credentials" ]; then
+      echo -e "${BLUE}Building credential verification tool...${NC}"
+      cd cmd/verify-credentials
+      go build -o verify-credentials main.go verify-credentials-sdk.go
+      cd ../../
+    fi
+    
+    # Run the credential verification tool
+    cmd/verify-credentials/verify-credentials
+    
+    if [ $? -ne 0 ]; then
+      echo -e "${RED}❌ Credential verification failed. Please check your credentials.${NC}"
+      exit 1
+    fi
+    
+    echo -e "${GREEN}✅ Verification completed! Your credentials are valid for integration testing.${NC}"
     exit 0
   fi
   

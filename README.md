@@ -1,32 +1,41 @@
 # SPDX-License-Identifier: Apache-2.0
 # SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
-# Globus Go SDK
 
-[![Go Reference](https://pkg.go.dev/badge/github.com/scttfrdmn/globus-go-sdk.svg)](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk)
-[![Go Report Card](https://goreportcard.com/badge/github.com/scttfrdmn/globus-go-sdk)](https://goreportcard.com/report/github.com/scttfrdmn/globus-go-sdk)
-[![Build Status](https://github.com/scttfrdmn/globus-go-sdk/workflows/Go/badge.svg)](https://github.com/scttfrdmn/globus-go-sdk/actions)
-[![License](https://img.shields.io/github/license/scttfrdmn/globus-go-sdk)](LICENSE)
-[![Release](https://img.shields.io/github/v/release/scttfrdmn/globus-go-sdk)](https://github.com/scttfrdmn/globus-go-sdk/releases)
-[![Coverage](https://codecov.io/gh/scttfrdmn/globus-go-sdk/branch/main/graph/badge.svg)](https://codecov.io/gh/scttfrdmn/globus-go-sdk)
+<p align="center">
+  <img src="doc/images/globus-go-sdk-logo.png" alt="Globus Go SDK Logo" width="400"/>
+</p>
+
+<h1 align="center">Globus Go SDK</h1>
+
+<p align="center">
+  <a href="https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk"><img src="https://pkg.go.dev/badge/github.com/scttfrdmn/globus-go-sdk.svg" alt="Go Reference"></a>
+  <a href="https://goreportcard.com/report/github.com/scttfrdmn/globus-go-sdk"><img src="https://goreportcard.com/badge/github.com/scttfrdmn/globus-go-sdk" alt="Go Report Card"></a>
+  <a href="https://github.com/scttfrdmn/globus-go-sdk/actions"><img src="https://github.com/scttfrdmn/globus-go-sdk/workflows/Go/badge.svg" alt="Build Status"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/github/license/scttfrdmn/globus-go-sdk" alt="License"></a>
+  <a href="https://github.com/scttfrdmn/globus-go-sdk/releases"><img src="https://img.shields.io/github/v/release/scttfrdmn/globus-go-sdk" alt="Release"></a>
+  <a href="https://codecov.io/gh/scttfrdmn/globus-go-sdk"><img src="https://codecov.io/gh/scttfrdmn/globus-go-sdk/branch/main/graph/badge.svg" alt="Coverage"></a>
+</p>
 
 A Go SDK for interacting with Globus services, providing a simple and idiomatic Go interface to Globus APIs.
+
+> **STATUS**: Version 0.2.0 is now available! See the [CHANGELOG](doc/project/changelog.md) for details on the latest features and improvements.
 
 > **DISCLAIMER**: The Globus Go SDK is an independent, community-developed project and is not officially affiliated with, endorsed by, or supported by Globus, the University of Chicago, or their affiliated organizations. This SDK is maintained by independent contributors and is not a product of Globus or the University of Chicago.
 
 ## Features
 
-- OAuth2 authentication support
-- Token management with automatic refreshing
-- Persistent token storage (memory and file-based)
-- Groups management
-- File transfer with recursive directory and resumable transfer support
-- Context-based API with cancellation support
-- Structured logging and distributed tracing
-- Timers for scheduling tasks
-- Integration testing infrastructure
-- Minimal dependencies
-- Comprehensive error handling
-- CLI example application
+- **Authentication**: OAuth2 flows with token management and automatic refreshing
+- **Token Storage**: Persistent token storage (memory and file-based implementations)
+- **Groups**: Group management and membership operations
+- **Transfer**: File transfer with recursive directory support and resumable transfers
+- **Search**: Advanced search capabilities with query building and pagination
+- **Flows**: Automation workflows with batch operations
+- **Performance**: Connection pooling, rate limiting, and backoff strategies
+- **Observability**: Structured logging and distributed tracing
+- **Reliability**: Comprehensive error handling with retries and circuit breakers
+- **Integration**: Extensive testing infrastructure
+- **Examples**: CLI and web application examples
+- **Utilities**: Verification tools to test credentials
 
 ## Installation
 
@@ -46,6 +55,35 @@ go get github.com/scttfrdmn/globus-go-sdk
 ```go
 import "github.com/scttfrdmn/globus-go-sdk/pkg"
 ```
+
+## Testing with Globus Credentials
+
+This SDK includes a standalone credential verification tool to test your Globus credentials:
+
+```bash
+# Clone the repository
+git clone https://github.com/scttfrdmn/globus-go-sdk.git
+cd globus-go-sdk
+
+# Copy the example .env.test file and add your credentials
+cp .env.test.example .env.test
+# Edit .env.test with your favorite editor and add your credentials
+
+# Build and run the verification tool
+cd cmd/verify-credentials
+go build
+./verify-credentials
+```
+
+For full integration testing:
+
+```bash
+# After setting up your .env.test file
+./scripts/run_integration_tests.sh --verify  # Verify credentials only
+./scripts/run_integration_tests.sh           # Run all integration tests
+```
+
+See [doc/INTEGRATION_TESTING.md](doc/INTEGRATION_TESTING.md) for more details on testing with credentials.
 
 ## SDK Organization
 
@@ -421,7 +459,7 @@ For detailed documentation, see:
 
 ## Development Status
 
-This SDK is under active development. Current version: **v0.1.0-dev**
+This SDK is under active development. Current version: **v0.1.0-pre**
 
 | Component | Status | Details |
 |-----------|--------|---------|
@@ -437,7 +475,7 @@ This SDK is under active development. Current version: **v0.1.0-dev**
 | CLI Example | ✅ Complete | Command-line application showcasing SDK features |
 | Compute Client | 📅 Planned | Initial structure defined |
 
-See [PROJECT_STATUS.md](doc/PROJECT_STATUS.md) for detailed status and [ROADMAP.md](doc/ROADMAP.md) for upcoming features.
+See [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) for detailed status, [KNOWN_ISSUES.md](doc/KNOWN_ISSUES.md) for current limitations, and [ROADMAP.md](doc/ROADMAP.md) for upcoming features.
 
 ## Alignment with Official SDKs
 

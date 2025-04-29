@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/config"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/http"
+	httppool "github.com/scttfrdmn/globus-go-sdk/pkg/core/http"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/compute"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/flows"
@@ -18,7 +18,7 @@ import (
 )
 
 // Version is the SDK version
-const Version = "0.1.0"
+const Version = "0.2.0"
 
 // OAuth2 scopes for Globus services
 const (
@@ -62,7 +62,7 @@ func (c *SDKConfig) NewAuthClient() *auth.Client {
 	
 	// Use service-specific connection pool if enabled
 	if os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") != "true" {
-		serviceClient := http.GetHTTPClientForService("auth", nil)
+		serviceClient := httppool.GetHTTPClientForService("auth", nil)
 		authClient.Client.HTTPClient = serviceClient
 	}
 
@@ -80,7 +80,7 @@ func (c *SDKConfig) NewGroupsClient(accessToken string) *groups.Client {
 	
 	// Use service-specific connection pool if enabled
 	if os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") != "true" {
-		serviceClient := http.GetHTTPClientForService("groups", nil)
+		serviceClient := httppool.GetHTTPClientForService("groups", nil)
 		groupsClient.Client.HTTPClient = serviceClient
 	}
 
@@ -98,7 +98,7 @@ func (c *SDKConfig) NewTransferClient(accessToken string) *transfer.Client {
 	
 	// Use service-specific connection pool if enabled
 	if os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") != "true" {
-		serviceClient := http.GetHTTPClientForService("transfer", nil)
+		serviceClient := httppool.GetHTTPClientForService("transfer", nil)
 		transferClient.Client.HTTPClient = serviceClient
 	}
 
@@ -116,7 +116,7 @@ func (c *SDKConfig) NewSearchClient(accessToken string) *search.Client {
 	
 	// Use service-specific connection pool if enabled
 	if os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") != "true" {
-		serviceClient := http.GetHTTPClientForService("search", nil)
+		serviceClient := httppool.GetHTTPClientForService("search", nil)
 		searchClient.Client.HTTPClient = serviceClient
 	}
 
@@ -134,7 +134,7 @@ func (c *SDKConfig) NewFlowsClient(accessToken string) *flows.Client {
 	
 	// Use service-specific connection pool if enabled
 	if os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") != "true" {
-		serviceClient := http.GetHTTPClientForService("flows", nil)
+		serviceClient := httppool.GetHTTPClientForService("flows", nil)
 		flowsClient.Client.HTTPClient = serviceClient
 	}
 
@@ -152,7 +152,7 @@ func (c *SDKConfig) NewComputeClient(accessToken string) *compute.Client {
 	
 	// Use service-specific connection pool if enabled
 	if os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") != "true" {
-		serviceClient := http.GetHTTPClientForService("compute", nil)
+		serviceClient := httppool.GetHTTPClientForService("compute", nil)
 		computeClient.Client.HTTPClient = serviceClient
 	}
 
@@ -170,7 +170,7 @@ func (c *SDKConfig) NewTimersClient(accessToken string) *timers.Client {
 	
 	// Use service-specific connection pool if enabled
 	if os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") != "true" {
-		serviceClient := http.GetHTTPClientForService("timers", nil)
+		serviceClient := httppool.GetHTTPClientForService("timers", nil)
 		timersClient.Client.HTTPClient = serviceClient
 	}
 
@@ -196,7 +196,7 @@ func NewConfigFromEnvironment() *SDKConfig {
 	
 	// If connection pooling is enabled, override HTTP clients
 	if useConnectionPool {
-		httpClient := http.GetHTTPClientForService("default", nil)
+		httpClient := httppool.GetHTTPClientForService("default", nil)
 		config.HTTPClient = httpClient
 	}
 	
@@ -207,8 +207,11 @@ func NewConfigFromEnvironment() *SDKConfig {
 
 // initializeConnectionPools sets up connection pools for all services
 func initializeConnectionPools() {
+	// Create the global pool manager if not already created
+	httpPoolManager := httppool.NewHttpConnectionPoolManager(nil)
+	
 	// Create pools for each service with optimized settings
-	serviceConfigs := map[string]*http.ConnectionPoolConfig{
+	serviceConfigs := map[string]*httppool.ConnectionPoolConfig{
 		"auth": {
 			MaxIdleConnsPerHost: 4,
 			MaxConnsPerHost:     8,
@@ -247,9 +250,9 @@ func initializeConnectionPools() {
 		"default": nil, // Use defaults for the default pool
 	}
 	
-	// Initialize all service pools
+	// Initialize all service pools using the HTTP adapter manager
 	for service, poolConfig := range serviceConfigs {
-		http.GetServicePool(service, poolConfig)
+		httpPoolManager.GetPool(service, poolConfig)
 	}
 }
 
