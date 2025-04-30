@@ -23,6 +23,9 @@ This document summarizes the integration testing efforts, results, and recommend
 | `GLOBUS_TEST_GROUP_ID` | Existing group ID for group tests | Optional |
 | `GLOBUS_TEST_PUBLIC_GROUP_ID` | Public group ID for group tests | Optional |
 | `GLOBUS_TEST_GROUPS_TOKEN` | Pre-authenticated token for groups operations | Optional |
+| `GLOBUS_TEST_SEARCH_INDEX_ID` | Existing search index ID for search tests | Optional |
+| `GLOBUS_TEST_PUBLIC_SEARCH_INDEX_ID` | Public search index ID for tests | Optional |
+| `GLOBUS_TEST_SEARCH_TOKEN` | Pre-authenticated token for search operations | Optional |
 | `HTTP_DEBUG` | Enable HTTP debugging output | Optional |
 
 ## Test Coverage
@@ -44,6 +47,12 @@ The integration tests focus on the following services:
    - Group membership management
    - Role operations
    - Permissions handling
+
+4. **Search Service**
+   - Index creation and management
+   - Index listing with permissions handling
+   - Basic search capabilities
+   - Support for public and private indexes
 
 ## Results Summary
 
@@ -72,6 +81,14 @@ The integration tests focus on the following services:
 | `TestIntegration_ListGroups` | ✅ Pass* | *Limited by permissions, handles 405 error gracefully |
 | `TestIntegration_GroupLifecycle` | ✅ Pass* | Successfully creates and deletes groups, update operation limited by permissions |
 | `TestIntegration_ExistingGroup` | ✅ Pass* | Added fallback to public group, handles permission errors gracefully |
+
+### Search Service Tests
+
+| Test | Result | Notes |
+|------|--------|-------|
+| `TestIntegration_ListIndexes` | ✅ Pass | Handles 400 errors and falls back to simpler requests |
+| `TestIntegration_IndexLifecycle` | ✅ Pass | Successfully creates, verifies, and deletes a test index |
+| `TestIntegration_ExistingIndex` | ✅ Pass | Uses a stored or fallback index for testing |
 
 ## Improvements Made
 
