@@ -253,6 +253,73 @@ type ListDependenciesOptions struct {
 	Search  string `url:"search,omitempty"`
 }
 
+// EnvironmentCreateRequest represents a request to create an environment configuration
+type EnvironmentCreateRequest struct {
+	Name        string                 `json:"name"`
+	Description string                 `json:"description,omitempty"`
+	Variables   map[string]string      `json:"variables,omitempty"`
+	Secrets     []string               `json:"secrets,omitempty"`
+	Resources   map[string]interface{} `json:"resources,omitempty"`
+	Public      bool                   `json:"public,omitempty"`
+}
+
+// EnvironmentUpdateRequest represents a request to update an environment configuration
+type EnvironmentUpdateRequest struct {
+	Name        string                 `json:"name,omitempty"`
+	Description string                 `json:"description,omitempty"`
+	Variables   map[string]string      `json:"variables,omitempty"`
+	Secrets     []string               `json:"secrets,omitempty"`
+	Resources   map[string]interface{} `json:"resources,omitempty"`
+	Public      *bool                  `json:"public,omitempty"`
+}
+
+// EnvironmentResponse represents an environment configuration
+type EnvironmentResponse struct {
+	ID          string                 `json:"id,omitempty"`
+	Name        string                 `json:"name,omitempty"`
+	Description string                 `json:"description,omitempty"`
+	Owner       string                 `json:"owner,omitempty"`
+	Variables   map[string]string      `json:"variables,omitempty"`
+	Secrets     []string               `json:"secrets,omitempty"`
+	Resources   map[string]interface{} `json:"resources,omitempty"`
+	Public      bool                   `json:"public,omitempty"`
+	CreatedAt   time.Time              `json:"created_at,omitempty"`
+	ModifiedAt  time.Time              `json:"modified_at,omitempty"`
+}
+
+// EnvironmentList is a list of environment configurations
+type EnvironmentList struct {
+	Environments []EnvironmentResponse `json:"environments,omitempty"`
+	Total        int                   `json:"total,omitempty"`
+	HasNextPage  bool                  `json:"has_next_page,omitempty"`
+	Offset       int                   `json:"offset,omitempty"`
+	Limit        int                   `json:"limit,omitempty"`
+}
+
+// ListEnvironmentsOptions are options for listing environments
+type ListEnvironmentsOptions struct {
+	PerPage int    `url:"per_page,omitempty"`
+	Marker  string `url:"marker,omitempty"`
+	Search  string `url:"search,omitempty"`
+}
+
+// SecretCreateRequest represents a request to create a secret
+type SecretCreateRequest struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Value       string `json:"value"`
+}
+
+// SecretResponse represents a secret (note that the value is never returned)
+type SecretResponse struct {
+	ID          string    `json:"id,omitempty"`
+	Name        string    `json:"name,omitempty"`
+	Description string    `json:"description,omitempty"`
+	Owner       string    `json:"owner,omitempty"`
+	CreatedAt   time.Time `json:"created_at,omitempty"`
+	ModifiedAt  time.Time `json:"modified_at,omitempty"`
+}
+
 // TaskRequest represents a request to execute a function
 type TaskRequest struct {
 	FunctionID string         `json:"function_id"`

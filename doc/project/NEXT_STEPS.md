@@ -32,10 +32,10 @@ This document outlines the prioritized next steps for the Globus Go SDK project 
   - [x] Add package and module dependencies
   - [x] Support requirements.txt for Python functions
   - [x] Handle version constraints
-- [ ] Add environment configuration options
-  - [ ] Support for secrets and environment variables
-  - [ ] Runtime parameter configuration
-  - [ ] Resource allocation settings
+- [x] Add environment configuration options
+  - [x] Support for secrets and environment variables
+  - [x] Runtime parameter configuration
+  - [x] Resource allocation settings
 - [ ] Create sophisticated batch execution patterns
   - [ ] Dependency graphs for task execution
   - [ ] Workflow orchestration capabilities
