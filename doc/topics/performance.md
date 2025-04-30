@@ -12,49 +12,307 @@ This guide serves as a resource for performance-related aspects of the Globus Go
 ## Table of Contents
 
 1. [Overview](#overview)
-2. [Performance Benchmarking](#performance-benchmarking)
+2. [Performance Monitoring and Metrics](#performance-monitoring-and-metrics)
+   - [Transfer Metrics Collection](#transfer-metrics-collection)
+   - [Performance Reporting](#performance-reporting)
+   - [Progress Visualization](#progress-visualization)
+   - [Integration with Transfer Operations](#integration-with-transfer-operations)
+3. [Performance Benchmarking](#performance-benchmarking)
    - [Benchmark Package](#benchmark-package)
    - [Running Benchmarks](#running-benchmarks)
    - [Benchmark Configuration](#benchmark-configuration)
    - [Benchmark Analysis](#benchmark-analysis)
-3. [Memory Optimization](#memory-optimization)
+4. [Memory Optimization](#memory-optimization)
    - [Memory-Optimized Transfers](#memory-optimized-transfers)
    - [Memory Optimization Techniques](#memory-optimization-techniques)
    - [When to Use Memory-Optimized Transfers](#when-to-use-memory-optimized-transfers)
    - [Benchmark Results](#memory-benchmark-results)
-4. [Connection Pooling](#connection-pooling)
+5. [Connection Pooling](#connection-pooling)
    - [Basic Usage](#connection-pooling-basic-usage)
    - [Customizing Connection Pool Settings](#customizing-connection-pool-settings)
    - [Monitoring Connection Pools](#monitoring-connection-pool-usage)
    - [Configuration Options](#connection-pool-configuration-options)
    - [Performance Considerations](#connection-pooling-performance-considerations)
-5. [Rate Limiting and Resilience](#rate-limiting-and-resilience)
+6. [Rate Limiting and Resilience](#rate-limiting-and-resilience)
    - [Rate Limiting](#rate-limiting)
    - [Backoff and Retry](#backoff-and-retry)
    - [Circuit Breaker](#circuit-breaker)
    - [Integration with Core Client](#integration-with-core-client)
    - [Configuration Recommendations](#configuration-recommendations)
-6. [Best Practices](#best-practices)
+7. [Best Practices](#best-practices)
    - [General Performance Optimization](#general-performance-optimization)
    - [Memory Management](#memory-management-best-practices)
    - [Network Optimization](#network-optimization)
    - [Error Handling and Resilience](#error-handling-and-resilience)
-7. [Tuning Guidelines](#tuning-guidelines)
+8. [Tuning Guidelines](#tuning-guidelines)
    - [Resource-Constrained Environments](#resource-constrained-environments)
    - [High-Throughput Applications](#high-throughput-applications)
    - [Long-Running Services](#long-running-services)
-8. [Resources](#resources)
+9. [Resources](#resources)
 
 ## Overview
 
 Performance optimization in the Globus Go SDK involves several key areas:
 
-1. **Benchmarking**: Tools for measuring and analyzing performance
-2. **Memory Optimization**: Techniques for minimizing memory usage
-3. **Connection Pooling**: Reusing HTTP connections for better efficiency 
-4. **Rate Limiting**: Controlling request rates for better resilience
+1. **Performance Monitoring and Metrics**: Real-time tracking and reporting of transfer performance
+2. **Benchmarking**: Tools for measuring and analyzing performance
+3. **Memory Optimization**: Techniques for minimizing memory usage
+4. **Connection Pooling**: Reusing HTTP connections for better efficiency 
+5. **Rate Limiting**: Controlling request rates for better resilience
 
 These components work together to help you build high-performance applications that interact efficiently with Globus services.
+
+## Performance Monitoring and Metrics
+
+The SDK provides comprehensive performance monitoring and metrics collection for transfer operations through the `metrics` package.
+
+```go
+import "github.com/scttfrdmn/globus-go-sdk/pkg/metrics"
+```
+
+### Transfer Metrics Collection
+
+The `PerformanceMonitor` interface provides tools for tracking transfer metrics:
+
+```go
+// Create a performance monitor
+monitor := metrics.NewPerformanceMonitor()
+
+// Start monitoring a transfer
+metrics := monitor.StartMonitoring(
+    "transfer-123",       // Transfer ID
+    "task-456",           // Task ID
+    "source-endpoint-id", // Source endpoint
+    "dest-endpoint-id",   // Destination endpoint
+    "My Transfer",        // Label
+)
+
+// Set expected totals
+monitor.SetTotalBytes("transfer-123", 1000000) // 1 MB
+monitor.SetTotalFiles("transfer-123", 10)
+
+// Update metrics as the transfer progresses
+monitor.UpdateMetrics("transfer-123", 500000, 5) // 50% complete
+
+// Get the current metrics
+currentMetrics, exists := monitor.GetMetrics("transfer-123")
+if exists {
+    fmt.Printf("Progress: %.1f%%\n", currentMetrics.PercentComplete)
+    fmt.Printf("Speed: %.2f MB/s\n", currentMetrics.BytesPerSecond / 1024 / 1024)
+}
+
+// Mark the transfer as complete when done
+monitor.StopMonitoring("transfer-123")
+```
+
+#### Available Metrics
+
+The `TransferMetrics` structure contains comprehensive information:
+
+| Metric | Description |
+|--------|-------------|
+| `BytesTransferred` | Number of bytes transferred so far |
+| `FilesTransferred` | Number of files transferred so far |
+| `BytesPerSecond` | Current throughput in bytes per second |
+| `PeakBytesPerSecond` | Peak throughput achieved during transfer |
+| `AvgBytesPerSecond` | Average throughput over the entire transfer |
+| `PercentComplete` | Percentage of completion (0-100) |
+| `EstimatedTimeLeft` | Estimated time remaining to completion |
+| `StartTime` | When the transfer started |
+| `EndTime` | When the transfer completed (if done) |
+| `ErrorCount` | Number of errors encountered |
+| `RetryCount` | Number of retry attempts |
+| `ThroughputSamples` | Time-series data of throughput measurements |
+
+### Performance Reporting
+
+The SDK provides multiple reporting options for performance metrics.
+
+#### Text Reports
+
+```go
+// Create a text reporter
+reporter := metrics.NewTextReporter()
+
+// Get metrics for a transfer
+transferMetrics, _ := monitor.GetMetrics("transfer-123")
+
+// Generate a summary report
+reporter.ReportSummary(os.Stdout, transferMetrics)
+```
+
+Example summary output:
+```
+Transfer Summary:
+  ID:             transfer-123
+  Task ID:        task-456
+  Label:          My Transfer
+  Source:         source-endpoint-id
+  Destination:    dest-endpoint-id
+  Status:         ACTIVE
+  Start Time:     2025-04-30T14:25:30Z
+  Bytes:          500.0 KB / 1.0 MB (50.0%)
+  Files:          5 / 10
+  Throughput:     2.5 MB/s (avg), 3.2 MB/s (peak)
+  Est. Time Left: 2m 30s
+```
+
+#### Detailed Reports
+
+```go
+// Generate a detailed report with throughput samples
+reporter.ReportDetailed(os.Stdout, transferMetrics)
+```
+
+Example detailed output (includes detailed throughput samples over time).
+
+#### Progress Reports
+
+```go
+// Generate a compact progress report
+reporter.ReportProgress(os.Stdout, transferMetrics)
+```
+
+Example progress output:
+```
+[====================>                    ] 50.0%, 2m 30s left
+2.5 MB/s | 500.0 KB / 1.0 MB | 5 / 10 files
+```
+
+### Progress Visualization
+
+For CLI applications, the SDK provides a progress bar component:
+
+```go
+// Create a progress bar for a 100MB transfer
+progressBar := metrics.NewProgressBar(
+    os.Stdout,         // Output writer
+    100*1024*1024,     // Total bytes
+    metrics.WithWidth(50),                  // 50 characters wide
+    metrics.WithRefreshRate(200*time.Millisecond), // Refresh every 200ms
+    metrics.WithMessage("Downloading file.txt"),   // Custom message
+)
+
+// Start the progress bar
+progressBar.Start()
+
+// Update the progress bar as data is transferred
+progressBar.Update(bytesTransferred)
+
+// Complete the progress bar when done
+progressBar.Complete()
+```
+
+#### Progress Bar Options
+
+| Option | Description | Default |
+|--------|-------------|---------|
+| `WithWidth` | Width of the progress bar in characters | 40 |
+| `WithRefreshRate` | How often to refresh the display | 200ms |
+| `WithSpeed` | Show speed information | true |
+| `WithETA` | Show estimated time remaining | true |
+| `WithValues` | Show current/total values | true |
+| `WithPercent` | Show percentage | true |
+| `WithHideAfterComplete` | Hide the bar after completion | false |
+
+### Integration with Transfer Operations
+
+You can integrate performance monitoring with transfer operations:
+
+```go
+// Create a transfer client
+transferClient := transfer.NewClient(accessToken)
+
+// Create a performance monitor
+monitor := metrics.NewPerformanceMonitor()
+
+// Set up a progress bar
+progressBar := metrics.NewProgressBar(os.Stdout, fileSize)
+progressBar.Start()
+
+// Start monitoring the transfer
+monitor.StartMonitoring(transferID, taskID, sourceEndpoint, destEndpoint, label)
+monitor.SetTotalBytes(transferID, fileSize)
+monitor.SetTotalFiles(transferID, 1)
+
+// Submit the transfer task with a callback
+resp, err := transferClient.SubmitTransfer(
+    ctx,
+    sourceEndpoint, sourcePath,
+    destEndpoint, destPath,
+    label,
+    map[string]interface{}{
+        "notify_on_succeeded": true,
+        "notify_on_failed": true,
+    },
+)
+
+if err != nil {
+    return err
+}
+
+// Monitor the task
+taskID := resp.TaskID
+for {
+    // Get task status
+    task, err := transferClient.GetTask(ctx, taskID)
+    if err != nil {
+        monitor.RecordError(transferID, err)
+        continue
+    }
+
+    // Update metrics
+    monitor.UpdateMetrics(transferID, task.BytesTransferred, task.FilesTransferred)
+    progressBar.Update(task.BytesTransferred)
+
+    // Check if complete
+    if task.Status == "SUCCEEDED" || task.Status == "FAILED" {
+        monitor.SetStatus(transferID, task.Status)
+        monitor.StopMonitoring(transferID)
+        progressBar.Complete()
+        break
+    }
+
+    // Wait before checking again
+    time.Sleep(2 * time.Second)
+}
+```
+
+### Advanced Features
+
+The metrics package also supports:
+
+1. **Error and Retry Tracking**: Record errors and retries for diagnostics
+   ```go
+   monitor.RecordError(transferID, err)
+   monitor.RecordRetry(transferID)
+   ```
+
+2. **Status Updates**: Track transfer status changes
+   ```go
+   monitor.SetStatus(transferID, "SUCCEEDED")
+   ```
+
+3. **Throughput Analysis**: Analyze performance over time using sample data
+   ```go
+   metrics, _ := monitor.GetMetrics(transferID)
+   for _, sample := range metrics.ThroughputSamples {
+       fmt.Printf("%s: %.2f MB/s\n", 
+           sample.Timestamp.Format(time.RFC3339),
+           float64(sample.BytesPerSecond)/(1024*1024))
+   }
+   ```
+
+4. **Active Transfers Management**: Track all active transfers
+   ```go
+   activeTransfers := monitor.ListActiveTransfers()
+   for _, id := range activeTransfers {
+       metrics, _ := monitor.GetMetrics(id)
+       fmt.Printf("%s: %.1f%% complete\n", id, metrics.PercentComplete)
+   }
+   ```
+
+For a complete example of performance monitoring, see the [metrics-dashboard](../../examples/metrics-dashboard/) example application.
 
 ## Performance Benchmarking
 
@@ -666,15 +924,16 @@ For long-running services and applications:
 
 ## Resources
 
-- [Benchmark Example Application](../examples/benchmark/)
-- [Rate Limiting Example Application](../examples/ratelimit/)
-- [Web Application Example](../examples/webapp/)
+- [Metrics Dashboard Example](../../examples/metrics-dashboard/)
+- [Benchmark Example Application](../../examples/benchmark/)
+- [Rate Limiting Example Application](../../examples/ratelimit/)
+- [Web Application Example](../../examples/webapp/)
 - [SDK Code Repository](https://github.com/scttfrdmn/globus-go-sdk)
 - [Globus API Documentation](https://docs.globus.org/api/)
 
 ## Cross-References
 
-- For more details on recursive transfers, see [Recursive Transfers Guide](../recursive-transfers.md)
-- For information about resumable transfers, see [Resumable Transfers Guide](../resumable-transfers.md)
+- For more details on recursive transfers, see [Recursive Transfers Guide](../advanced/recursive-transfers.md)
+- For information about resumable transfers, see [Resumable Transfers Guide](../advanced/resumable-transfers.md)
 - For error handling information, see [Error Handling Guide](../error-handling.md)
-- For logging and tracing functionality, see [Logging and Tracing Guide](../logging-and-tracing.md)
+- For logging and tracing functionality, see [Logging Guide](../topics/logging.md)
