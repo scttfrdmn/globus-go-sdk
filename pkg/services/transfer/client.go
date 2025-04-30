@@ -14,13 +14,14 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
 )
 
 // Constants for Globus Transfer
 const (
-	DefaultBaseURL = "https://transfer.api.globus.org/v0.10/"
-	TransferScope  = "urn:globus:auth:scope:transfer.api.globus.org:all"
+	DefaultBaseURL     = "https://transfer.api.globus.org/v0.10/"
+	TransferScope      = "urn:globus:auth:scope:transfer.api.globus.org:all"
+	MinimumAPIVersion  = "v0.10"  // Minimum supported API version
 )
 
 // Client provides methods for interacting with Globus Transfer
@@ -29,25 +30,48 @@ type Client struct {
 }
 
 // NewClient creates a new Transfer client
-func NewClient(accessToken string, options ...core.ClientOption) *Client {
-	// Create the authorizer with the access token
-	authorizer := authorizers.StaticTokenCoreAuthorizer(accessToken)
+func NewClient(options ...Option) (*Client, error) {
+	// Apply the options to create the client configuration
+	cfg := &clientConfig{}
+	for _, option := range options {
+		option(cfg)
+	}
+
+	// Validate configuration
+	if cfg.authorizer == nil {
+		return nil, fmt.Errorf("authorizer is required")
+	}
 
 	// Apply default options specific to Transfer
 	defaultOptions := []core.ClientOption{
 		core.WithBaseURL(DefaultBaseURL),
-		core.WithAuthorizer(authorizer),
+		core.WithAuthorizer(cfg.authorizer),
+		// Default to a token bucket rate limiter
+		core.WithRateLimiter(ratelimit.NewTokenBucketLimiter(nil)),
 	}
 
-	// Merge with user options
-	options = append(defaultOptions, options...)
+	// Apply debug options if enabled
+	if cfg.debug {
+		defaultOptions = append(defaultOptions, core.WithHTTPDebugging(true))
+	}
+	if cfg.trace {
+		defaultOptions = append(defaultOptions, core.WithHTTPTracing(true))
+	}
+	if cfg.logger != nil {
+		defaultOptions = append(defaultOptions, core.WithLogger(cfg.logger))
+	}
+
+	// Apply any additional core options
+	if cfg.coreOptions != nil {
+		defaultOptions = append(defaultOptions, cfg.coreOptions...)
+	}
 
 	// Create the base client
-	baseClient := core.NewClient(options...)
+	baseClient := core.NewClient(defaultOptions...)
 
 	return &Client{
 		Client: baseClient,
-	}
+	}, nil
 }
 
 // buildURL builds a URL for the transfer API
@@ -94,17 +118,34 @@ func (c *Client) doRequest(ctx context.Context, method, path string, query url.V
 	}
 	defer resp.Body.Close()
 
-	// For non-GET requests with no response body, just check status
-	if method != http.MethodGet && response == nil {
-		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-			return nil
-		}
-
+	// Check for non-success status code
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(respBody))
+		return parseTransferError(resp.StatusCode, respBody)
+	}
+	
+	// Process rate limit headers if present
+	if limiter := c.Client.RateLimiter; limiter != nil {
+		limit := parseIntHeader(resp.Header, "X-RateLimit-Limit", -1)
+		remaining := parseIntHeader(resp.Header, "X-RateLimit-Remaining", -1)
+		reset := parseIntHeader(resp.Header, "X-RateLimit-Reset", -1)
+		
+		if limit > 0 && remaining >= 0 && reset > 0 {
+			limiter.UpdateLimit(limit, remaining, reset)
+		}
 	}
 
-	// Read and decode response body
+	// Process 204 No Content or empty responses
+	if resp.StatusCode == http.StatusNoContent || resp.ContentLength == 0 {
+		if response == nil {
+			return nil
+		}
+		// If caller expects a response but we got none, set an empty response
+		// This can happen with PATCH/PUT operations that don't return content
+		return nil
+	}
+
+	// Read and decode response body 
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
@@ -114,8 +155,11 @@ func (c *Client) doRequest(ctx context.Context, method, path string, query url.V
 		return nil
 	}
 
-	if err := json.Unmarshal(respBody, response); err != nil {
-		return fmt.Errorf("failed to unmarshal response: %w", err)
+	// Parse the response body
+	if response != nil {
+		if err := json.Unmarshal(respBody, response); err != nil {
+			return fmt.Errorf("failed to unmarshal response: %w", err)
+		}
 	}
 
 	return nil
@@ -176,44 +220,10 @@ func (c *Client) GetEndpoint(ctx context.Context, endpointID string) (*Endpoint,
 	return &endpoint, nil
 }
 
-// ActivateEndpoint activates an endpoint
-func (c *Client) ActivateEndpoint(ctx context.Context, endpointID string) error {
-	if endpointID == "" {
-		return fmt.Errorf("endpoint ID is required")
-	}
-
-	body := map[string]bool{
-		"auto_activate": true,
-	}
-
-	var result OperationResult
-	err := c.doRequest(ctx, http.MethodPost, "endpoint/"+endpointID+"/autoactivate", nil, body, &result)
-	if err != nil {
-		return err
-	}
-
-	// Check for activation error (code is not "AutoActivated" or "AlreadyActivated")
-	if result.Code != "AutoActivated" && result.Code != "AlreadyActivated" {
-		return fmt.Errorf("activation failed: %s - %s", result.Code, result.Message)
-	}
-
-	return nil
-}
-
-// GetActivationRequirements gets the requirements for activating an endpoint
-func (c *Client) GetActivationRequirements(ctx context.Context, endpointID string) (*ActivationRequirements, error) {
-	if endpointID == "" {
-		return nil, fmt.Errorf("endpoint ID is required")
-	}
-
-	var requirements ActivationRequirements
-	err := c.doRequest(ctx, http.MethodGet, "endpoint/"+endpointID+"/activation_requirements", nil, nil, &requirements)
-	if err != nil {
-		return nil, err
-	}
-
-	return &requirements, nil
-}
+// NOTE: ActivateEndpoint and GetActivationRequirements have been removed.
+// Modern Globus endpoints supporting the minimum API version (v0.10+) use
+// auto-activation with properly scoped tokens. Explicit activation is no longer
+// needed or supported by this SDK.
 
 // ListFiles lists the files and directories in a path on an endpoint
 func (c *Client) ListFiles(ctx context.Context, endpointID, path string, options *ListFileOptions) (*FileList, error) {
@@ -383,23 +393,21 @@ func (c *Client) GetTask(ctx context.Context, taskID string) (*Task, error) {
 }
 
 // CancelTask cancels a task
-func (c *Client) CancelTask(ctx context.Context, taskID string) error {
+func (c *Client) CancelTask(ctx context.Context, taskID string) (*OperationResult, error) {
 	if taskID == "" {
-		return fmt.Errorf("task ID is required")
+		return nil, fmt.Errorf("task ID is required")
 	}
 
 	var result OperationResult
 	err := c.doRequest(ctx, http.MethodPost, "task/"+taskID+"/cancel", nil, nil, &result)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// Check for cancellation error
-	if result.Code != "Canceled" {
-		return fmt.Errorf("cancellation failed: %s - %s", result.Code, result.Message)
-	}
-
-	return nil
+	// Add the task ID to the result for convenience
+	result.TaskID = taskID
+	
+	return &result, nil
 }
 
 // Mkdir creates a directory on an endpoint
@@ -556,4 +564,23 @@ func (c *Client) CancelResumableTransfer(
 	checkpointID string,
 ) error {
 	return c.DeleteTransferCheckpoint(ctx, checkpointID)
+}
+
+// parseIntHeader parses an integer header value with a default fallback
+func parseIntHeader(header http.Header, key string, defaultValue int) int {
+	if header == nil {
+		return defaultValue
+	}
+	
+	value := header.Get(key)
+	if value == "" {
+		return defaultValue
+	}
+	
+	intValue, err := strconv.Atoi(value)
+	if err != nil {
+		return defaultValue
+	}
+	
+	return intValue
 }

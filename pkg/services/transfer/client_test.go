@@ -5,6 +5,7 @@ package transfer
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -17,17 +18,50 @@ func setupMockServer(handler http.HandlerFunc) (*httptest.Server, *Client) {
 	server := httptest.NewServer(handler)
 
 	// Create a client that uses the test server
-	client := NewClient("test-access-token",
-		core.WithBaseURL(server.URL+"/"),
+	client, err := NewClient(
+		WithAuthorizer(mockAuthorizer("test-access-token")),
+		WithCoreOption(core.WithBaseURL(server.URL+"/")),
 	)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create client: %v", err))
+	}
 
 	return server, client
 }
 
+// mockAuthorizer creates a mock authorizer for testing
+func mockAuthorizer(token string) *testAuthorizer {
+	return &testAuthorizer{token: token}
+}
+
+// testAuthorizer implements interfaces.Authorizer for testing
+type testAuthorizer struct {
+	token string
+}
+
+// GetAuthorizationHeader returns the authorization header value
+func (a *testAuthorizer) GetAuthorizationHeader(ctx ...context.Context) (string, error) {
+	return "Bearer " + a.token, nil
+}
+
+// IsValid returns whether the authorization is valid
+func (a *testAuthorizer) IsValid() bool {
+	return a.token != ""
+}
+
+// GetToken returns the token
+func (a *testAuthorizer) GetToken() string {
+	return a.token
+}
+
 func TestBuildURL(t *testing.T) {
-	client := NewClient("test-access-token",
-		core.WithBaseURL("https://example.com"),
+	client, err := NewClient(
+		WithAuthorizer(mockAuthorizer("test-access-token")),
+		WithCoreOption(core.WithBaseURL("https://example.com")),
 	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 
 	// Test with no query parameters
 	url := client.buildURL("test/path", nil)
@@ -46,9 +80,13 @@ func TestBuildURL(t *testing.T) {
 	}
 
 	// Test with trailing slash in base URL
-	client = NewClient("test-access-token",
-		core.WithBaseURL("https://example.com/"),
+	client, err = NewClient(
+		WithAuthorizer(mockAuthorizer("test-access-token")),
+		WithCoreOption(core.WithBaseURL("https://example.com/")),
 	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	url = client.buildURL("test/path", nil)
 	if url != "https://example.com/test/path" {
 		t.Errorf("buildURL() with trailing slash = %v, want %v", url, "https://example.com/test/path")
@@ -226,76 +264,9 @@ func TestGetEndpoint(t *testing.T) {
 	}
 }
 
-func TestActivateEndpoint(t *testing.T) {
-	// Setup test server
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		// Check request method
-		if r.Method != http.MethodPost {
-			t.Errorf("Expected POST request, got %s", r.Method)
-		}
-
-		// Check path
-		if r.URL.Path != "/endpoint/endpoint1/autoactivate" {
-			t.Errorf("Expected path /endpoint/endpoint1/autoactivate, got %s", r.URL.Path)
-		}
-
-		// Check request body
-		var requestBody map[string]bool
-		if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
-			t.Fatalf("Failed to decode request body: %v", err)
-		}
-
-		if autoActivate, ok := requestBody["auto_activate"]; !ok || !autoActivate {
-			t.Errorf("Expected auto_activate=true, got %v", autoActivate)
-		}
-
-		// Return mock response
-		result := OperationResult{
-			Code:    "AutoActivated",
-			Message: "Endpoint activated successfully",
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(result)
-	}
-
-	server, client := setupMockServer(handler)
-	defer server.Close()
-
-	// Test activate endpoint
-	err := client.ActivateEndpoint(context.Background(), "endpoint1")
-	if err != nil {
-		t.Fatalf("ActivateEndpoint() error = %v", err)
-	}
-
-	// Test with failure response
-	handler = func(w http.ResponseWriter, r *http.Request) {
-		result := OperationResult{
-			Code:    "ActivationFailed",
-			Message: "Failed to activate endpoint",
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(result)
-	}
-
-	server, client = setupMockServer(handler)
-	defer server.Close()
-
-	err = client.ActivateEndpoint(context.Background(), "endpoint1")
-	if err == nil {
-		t.Error("ActivateEndpoint() with failure response should return error")
-	}
-
-	// Test with empty ID
-	_, client = setupMockServer(handler)
-	err = client.ActivateEndpoint(context.Background(), "")
-	if err == nil {
-		t.Error("ActivateEndpoint() with empty ID should return error")
-	}
-}
+// TestActivateEndpoint has been removed because explicit endpoint activation
+// is no longer supported. Modern Globus endpoints (v0.10+) automatically activate
+// with properly scoped tokens.
 
 func TestListFiles(t *testing.T) {
 	// Setup test server

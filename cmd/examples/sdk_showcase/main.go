@@ -95,14 +95,9 @@ func main() {
 		fmt.Printf("Starting transfer from %s to %s
 ", sourcePath, destPath)
 		
-		// Activate the endpoints
-		if err := transferClient.ActivateEndpoint(ctx, sourceEndpointID); err != nil {
-			log.Printf("Warning: Failed to activate source endpoint: %v", err)
-		}
-		
-		if err := transferClient.ActivateEndpoint(ctx, destEndpointID); err != nil {
-			log.Printf("Warning: Failed to activate destination endpoint: %v", err)
-		}
+		// NOTE: Explicit endpoint activation has been removed.
+		// Modern Globus endpoints (v0.10+) automatically activate with properly scoped tokens.
+		// Just ensure your token has the proper permissions for the endpoints you're using.
 		
 		// Submit the transfer
 		options := map[string]interface{}{

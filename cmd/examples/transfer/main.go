@@ -76,22 +76,13 @@ Select source endpoint (enter number): ")
 	sourceEndpoint := endpoints.Data[sourceIdx]
 	destEndpoint := endpoints.Data[destIdx]
 
-	// Activate endpoints if needed
-	if !sourceEndpoint.Activated {
-		fmt.Printf("Activating source endpoint %s...
-", sourceEndpoint.DisplayName)
-		if err := transferClient.ActivateEndpoint(ctx, sourceEndpoint.ID); err != nil {
-			log.Fatalf("Failed to activate source endpoint: %v", err)
-		}
-	}
-
-	if !destEndpoint.Activated {
-		fmt.Printf("Activating destination endpoint %s...
-", destEndpoint.DisplayName)
-		if err := transferClient.ActivateEndpoint(ctx, destEndpoint.ID); err != nil {
-			log.Fatalf("Failed to activate destination endpoint: %v", err)
-		}
-	}
+	// NOTE: Explicit endpoint activation has been removed.
+	// Modern Globus endpoints (v0.10+) automatically activate with properly scoped tokens.
+	// Just ensure your token has the proper permissions for the endpoints.
+	
+	fmt.Println("Using endpoints:")
+	fmt.Printf("  - Source: %s (%s)\n", sourceEndpoint.DisplayName, sourceEndpoint.ID)
+	fmt.Printf("  - Destination: %s (%s)\n", destEndpoint.DisplayName, destEndpoint.ID)
 
 	// Get source and destination paths from user
 	var sourcePath, destPath string

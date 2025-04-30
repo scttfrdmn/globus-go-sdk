@@ -7,6 +7,14 @@ import (
 	"time"
 )
 
+const (
+	// SyncLevel constants define how to synchronize files
+	SyncLevelExists    = 0 // Only transfer if destination doesn't exist
+	SyncLevelSize      = 1 // Transfer if size differs
+	SyncLevelModified  = 2 // Transfer if size or modification time differs
+	SyncLevelChecksum  = 3 // Transfer if size, modification time, or checksum differs
+)
+
 // Endpoint represents a Globus endpoint (source or destination for transfers)
 type Endpoint struct {
 	ID                     string                 `json:"id"`
@@ -23,7 +31,7 @@ type Endpoint struct {
 	ContactEmail           string                 `json:"contact_email,omitempty"`
 	ContactInfo            string                 `json:"contact_info,omitempty"`
 	Public                 bool                   `json:"public"`
-	Subscription           bool                   `json:"subscription_id,omitempty"`
+	Subscription           interface{}            `json:"subscription_id,omitempty"`
 	NetworkUse             string                 `json:"network_use,omitempty"`
 	DefaultDirectory       string                 `json:"default_directory,omitempty"`
 	Force                  bool                   `json:"force_encryption,omitempty"`
@@ -130,6 +138,7 @@ type Task struct {
 type TaskList struct {
 	Data          []Task `json:"data"`
 	NextPageToken string `json:"next_page_token,omitempty"`
+	NextMarker    string `json:"next_marker,omitempty"` // Alternative name for NextPageToken
 	HasNextPage   bool   `json:"has_next_page"`
 }
 
@@ -138,6 +147,8 @@ type ListTasksOptions struct {
 	FilterTaskID         string    `url:"filter_task_id,omitempty"`
 	FilterType           string    `url:"filter_type,omitempty"`   // TRANSFER or DELETE
 	FilterStatus         string    `url:"filter_status,omitempty"` // ACTIVE, INACTIVE, FAILED, SUCCEEDED, CANCELLED
+	TaskType             string    `url:"task_type,omitempty"`     // Alias for FilterType
+	Status               string    `url:"status,omitempty"`        // Alias for FilterStatus
 	FilterCompletedSince time.Time `url:"filter_completion_time.min,omitempty"`
 	FilterCompletedUntil time.Time `url:"filter_completion_time.max,omitempty"`
 	FilterRequestedSince time.Time `url:"filter_request_time.min,omitempty"`
@@ -182,7 +193,7 @@ type TransferTaskRequest struct {
 	UseSharing             bool           `json:"use_sharing,omitempty"`
 	SymlinkDepth           int            `json:"symlink_depth,omitempty"`
 	PreserveMtime          bool           `json:"preserve_mtime,omitempty"`
-	Items                  []TransferItem `json:"DATA"`
+	Items                  []TransferItem `json:"data"`
 }
 
 // DeleteTaskRequest represents a request to create a delete task
@@ -195,7 +206,7 @@ type DeleteTaskRequest struct {
 	NotifyOnFailed    bool         `json:"notify_on_failed,omitempty"`
 	NotifyOnInactive  bool         `json:"notify_on_inactive,omitempty"`
 	SubmissionID      string       `json:"submission_id,omitempty"`
-	Items             []DeleteItem `json:"DATA"`
+	Items             []DeleteItem `json:"data"`
 }
 
 // TaskResponse represents the response from creating a task
@@ -215,19 +226,11 @@ type OperationResult struct {
 	Resource  string      `json:"resource,omitempty"`
 	RequestID string      `json:"request_id,omitempty"`
 	Details   interface{} `json:"details,omitempty"`
+	TaskID    string      `json:"task_id,omitempty"` // Added for convenience in some operations
 }
 
-// ActivationRequirements represents the requirements for activating an endpoint
-type ActivationRequirements struct {
-	OAuthServer       string                   `json:"oauth_server,omitempty"`
-	OAuthServerScopes []string                 `json:"oauth_server_scopes,omitempty"`
-	RedirectURI       string                   `json:"redirect_uri,omitempty"`
-	UserMessage       string                   `json:"user_message,omitempty"`
-	AutoActivate      bool                     `json:"auto_activate,omitempty"`
-	Activated         bool                     `json:"activated"`
-	ExpiresIn         int                      `json:"expires_in,omitempty"`
-	Fields            []map[string]interface{} `json:"fields,omitempty"`
-}
+// NOTE: ActivationRequirements struct has been removed as activation is now handled
+// automatically with properly scoped tokens in modern Globus endpoints (v0.10+).
 
 // FileListItem represents an item in a file listing
 type FileListItem struct {
@@ -244,7 +247,7 @@ type FileListItem struct {
 
 // FileList represents a paginated list of files and directories
 type FileList struct {
-	Data          []FileListItem `json:"DATA"`
+	Data          []FileListItem `json:"data"`
 	EndpointID    string         `json:"endpoint_id"`
 	Path          string         `json:"path"`
 	MaybeSharing  bool           `json:"maybe_sharing,omitempty"`

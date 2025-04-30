@@ -1,18 +1,42 @@
+//go:build integration
+// +build integration
+
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 package transfer
 
 import (
 	"context"
 	"fmt"
+	"io"
 	"io/ioutil"
+	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/joho/godotenv"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 )
+
+func init() {
+	// Load environment variables from .env.test file
+	_ = godotenv.Load("../../../.env.test")
+	_ = godotenv.Load("../../.env.test")
+	_ = godotenv.Load(".env.test")
+}
+
+// min returns the minimum of two integers
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
 
 // This is a comprehensive integration test for the Transfer service.
 // It tests the core functionality of the Transfer API including:
@@ -30,12 +54,20 @@ func getTestCredentialsComprehensive(t *testing.T) (string, string, string, stri
 	sourceEndpointID := os.Getenv("GLOBUS_TEST_SOURCE_ENDPOINT_ID")
 	destEndpointID := os.Getenv("GLOBUS_TEST_DEST_ENDPOINT_ID")
 
-	if clientID == "" || clientSecret == "" {
-		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_ID and GLOBUS_TEST_CLIENT_SECRET")
+	if clientID == "" {
+		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_ID environment variable")
+	}
+	
+	if clientSecret == "" {
+		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_SECRET environment variable")
 	}
 
-	if sourceEndpointID == "" || destEndpointID == "" {
-		t.Skip("Integration test requires GLOBUS_TEST_SOURCE_ENDPOINT_ID and GLOBUS_TEST_DEST_ENDPOINT_ID")
+	if sourceEndpointID == "" {
+		t.Skip("Integration test requires GLOBUS_TEST_SOURCE_ENDPOINT_ID environment variable")
+	}
+	
+	if destEndpointID == "" {
+		t.Skip("Integration test requires GLOBUS_TEST_DEST_ENDPOINT_ID environment variable")
 	}
 
 	return clientID, clientSecret, sourceEndpointID, destEndpointID
@@ -43,13 +75,56 @@ func getTestCredentialsComprehensive(t *testing.T) (string, string, string, stri
 
 // getTransferToken obtains an access token for the Transfer service
 func getTransferToken(t *testing.T, clientID, clientSecret string) string {
-	authClient := auth.NewClient(clientID, clientSecret)
-
-	tokenResp, err := authClient.GetClientCredentialsToken(context.Background(), "urn:globus:auth:scope:transfer.api.globus.org:all")
-	if err != nil {
-		t.Fatalf("Failed to get access token: %v", err)
+	// First, check if there's a transfer token provided directly
+	staticToken := os.Getenv("GLOBUS_TEST_TRANSFER_TOKEN")
+	if staticToken != "" {
+		t.Log("Using static transfer token from environment")
+		return staticToken
 	}
-
+	
+	// If no static token, try to get one via client credentials
+	t.Log("Getting client credentials token for transfer")
+	authClient := auth.NewClient(clientID, clientSecret)
+	
+	// Try different scopes that might work for transfer
+	scopes := []string{
+		"urn:globus:auth:scope:transfer.api.globus.org:all",
+		"https://auth.globus.org/scopes/transfer.api.globus.org/all",
+	}
+	
+	var tokenResp *auth.TokenResponse
+	var err error
+	var gotToken bool
+	
+	// Try each scope until we get a token
+	for _, scope := range scopes {
+		tokenResp, err = authClient.GetClientCredentialsToken(context.Background(), scope)
+		if err != nil {
+			t.Logf("Failed to get token with scope %s: %v", scope, err)
+			continue
+		}
+		
+		// Check if we got a token for the transfer service
+		t.Logf("Got token with resource server: %s, scopes: %s", tokenResp.ResourceServer, tokenResp.Scope)
+		if strings.Contains(tokenResp.ResourceServer, "transfer") || 
+		   strings.Contains(tokenResp.Scope, "transfer") {
+			gotToken = true
+			break
+		}
+	}
+	
+	// If we didn't get a transfer token, fall back to the default token
+	if !gotToken {
+		t.Log("Could not get a transfer token, falling back to default token")
+		tokenResp, err = authClient.GetClientCredentialsToken(context.Background())
+		if err != nil {
+			t.Fatalf("Failed to get any token: %v", err)
+		}
+		t.Logf("Using default token with resource server: %s, scopes: %s", 
+		       tokenResp.ResourceServer, tokenResp.Scope)
+		t.Log("WARNING: This token may not have transfer permissions. Consider providing GLOBUS_TEST_TRANSFER_TOKEN")
+	}
+	
 	return tokenResp.AccessToken
 }
 
@@ -61,49 +136,139 @@ func TestComprehensiveTransfer(t *testing.T) {
 	// Get access token for the Transfer service
 	accessToken := getTransferToken(t, clientID, clientSecret)
 
-	// Create Transfer client
-	client := NewClient(accessToken)
+	// Create Transfer client (rate limiting is built into the client)
+	client, err := NewClient(
+		WithAuthorizer(&testAuthorizer{token: accessToken}),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create transfer client: %v", err)
+	}
 	ctx := context.Background()
 
-	// Step 1: Activate endpoints
-	t.Log("Activating endpoints...")
-	err := client.ActivateEndpoint(ctx, sourceEndpointID)
+	// Before activation, let's test API connectivity first
+	t.Log("Testing API connectivity...")
+	
+	// First, let's try a direct HTTP request to verify connectivity
+	queryUrl, err := url.Parse("https://transfer.api.globus.org/v0.10/endpoint_search")
 	if err != nil {
-		t.Logf("Source endpoint activation might require additional steps: %v", err)
-		// Continue anyway, as the endpoint might already be activated
+		t.Fatalf("Failed to parse URL: %v", err)
 	}
-
-	err = client.ActivateEndpoint(ctx, destEndpointID)
+	
+	// Add required filter parameters to avoid the 400 error
+	query := queryUrl.Query()
+	query.Add("filter_scope", "my-endpoints")
+	query.Add("limit", "10")
+	queryUrl.RawQuery = query.Encode()
+	
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, queryUrl.String(), nil)
 	if err != nil {
-		t.Logf("Destination endpoint activation might require additional steps: %v", err)
-		// Continue anyway, as the endpoint might already be activated
+		t.Fatalf("Failed to create direct HTTP request: %v", err)
 	}
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	
+	// Use a standard HTTP client for this test
+	httpClient := &http.Client{Timeout: 30 * time.Second}
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		t.Fatalf("Direct HTTP request failed: %v", err)
+	}
+	defer resp.Body.Close()
+	
+	bodyBytes, _ := io.ReadAll(resp.Body)
+	t.Logf("Direct API test HTTP status: %d", resp.StatusCode)
+	t.Logf("Direct API test response: %s", string(bodyBytes))
+	
+	if resp.StatusCode == http.StatusUnauthorized {
+		t.Fatalf("AUTHENTICATION ERROR: Token doesn't have transfer permissions (status: %d) - To resolve, provide GLOBUS_TEST_TRANSFER_TOKEN with correct permissions", resp.StatusCode)
+	}
+	
+	// NOTE: Explicit endpoint activation has been removed.
+	// Modern Globus endpoints (v0.10+) automatically activate with properly scoped tokens.
 
-	// Step 2: Verify endpoints
+	// Step 2: Verify endpoints with retry
 	t.Log("Verifying endpoints...")
-	sourceEndpoint, err := client.GetEndpoint(ctx, sourceEndpointID)
+	
+	var sourceEndpoint *Endpoint
+	err = ratelimit.RetryWithBackoff(
+		ctx,
+		func(ctx context.Context) error {
+			var getErr error
+			sourceEndpoint, getErr = client.GetEndpoint(ctx, sourceEndpointID)
+			return getErr
+		},
+		ratelimit.DefaultBackoff(),
+		IsRetryableTransferError,
+	)
+	
 	if err != nil {
-		t.Fatalf("Failed to get source endpoint: %v", err)
+		if IsResourceNotFound(err) {
+			t.Fatalf("ENDPOINT ERROR: Source endpoint not found: %v - To resolve, check the GLOBUS_TEST_SOURCE_ENDPOINT_ID is correct", err)
+		} else if IsPermissionDenied(err) || strings.Contains(err.Error(), "403") {
+			t.Fatalf("PERMISSION ERROR: Access denied for source endpoint: %v - To resolve, provide GLOBUS_TEST_TRANSFER_TOKEN with proper permissions", err)
+		} else if strings.Contains(err.Error(), "401") {
+			t.Fatalf("AUTHENTICATION ERROR: Authentication failed for source endpoint: %v - To resolve, provide valid GLOBUS_TEST_TRANSFER_TOKEN", err)
+		} else {
+			t.Fatalf("ERROR: Failed to get source endpoint: %v - To resolve, check the endpoint configuration and token", err)
+		}
 	}
 	t.Logf("Source endpoint: %s (%s)", sourceEndpoint.DisplayName, sourceEndpoint.ID)
 
-	destEndpoint, err := client.GetEndpoint(ctx, destEndpointID)
+	var destEndpoint *Endpoint
+	err = ratelimit.RetryWithBackoff(
+		ctx,
+		func(ctx context.Context) error {
+			var getErr error
+			destEndpoint, getErr = client.GetEndpoint(ctx, destEndpointID)
+			return getErr
+		},
+		ratelimit.DefaultBackoff(),
+		IsRetryableTransferError,
+	)
+	
 	if err != nil {
-		t.Fatalf("Failed to get destination endpoint: %v", err)
+		if IsResourceNotFound(err) {
+			t.Fatalf("ENDPOINT ERROR: Destination endpoint not found: %v - To resolve, check the GLOBUS_TEST_DEST_ENDPOINT_ID is correct", err)
+		} else if IsPermissionDenied(err) || strings.Contains(err.Error(), "403") {
+			t.Fatalf("PERMISSION ERROR: Access denied for destination endpoint: %v - To resolve, provide GLOBUS_TEST_TRANSFER_TOKEN with proper permissions", err)
+		} else if strings.Contains(err.Error(), "401") {
+			t.Fatalf("AUTHENTICATION ERROR: Authentication failed for destination endpoint: %v - To resolve, provide valid GLOBUS_TEST_TRANSFER_TOKEN", err)
+		} else {
+			t.Fatalf("ERROR: Failed to get destination endpoint: %v - To resolve, check the endpoint configuration and token", err)
+		}
 	}
 	t.Logf("Destination endpoint: %s (%s)", destEndpoint.DisplayName, destEndpoint.ID)
 
 	// Step 3: Create unique test directories with timestamp
 	timestamp := time.Now().Format("20060102_150405")
 	testDirName := fmt.Sprintf("go_sdk_test_%s", timestamp)
-	sourceTestDir := fmt.Sprintf("/~/%s", testDirName)
-	destTestDir := fmt.Sprintf("/~/%s", testDirName)
+	
+	// Use test directory path from environment or default to a simple test directory
+	// This allows specifying a directory with proper permissions for testing
+	testBasePath := os.Getenv("GLOBUS_TEST_DIRECTORY_PATH")
+	if testBasePath == "" {
+		testBasePath = "globus-test" // Default to a simple test directory
+	}
+	
+	sourceTestDir := fmt.Sprintf("%s/%s", testBasePath, testDirName)
+	destTestDir := fmt.Sprintf("%s/%s", testBasePath, testDirName)
 
-	// Create test directory on source endpoint
+	// Create test directory on source endpoint with retry
 	t.Logf("Creating test directory on source endpoint: %s", sourceTestDir)
-	err = client.Mkdir(ctx, sourceEndpointID, sourceTestDir)
+	err = ratelimit.RetryWithBackoff(
+		ctx,
+		func(ctx context.Context) error {
+			return client.Mkdir(ctx, sourceEndpointID, sourceTestDir)
+		},
+		ratelimit.DefaultBackoff(),
+		IsRetryableTransferError,
+	)
+	
 	if err != nil {
-		t.Fatalf("Failed to create source test directory: %v", err)
+		if IsPermissionDenied(err) || strings.Contains(err.Error(), "403") {
+			t.Fatalf("PERMISSION ERROR: Cannot create source directory: %v - To resolve, set GLOBUS_TEST_TRANSFER_TOKEN with a token that has write permissions", err)
+		} else {
+			t.Fatalf("Failed to create source test directory: %v", err)
+		}
 	}
 
 	// Create cleanup functions to be executed with defer
@@ -124,17 +289,40 @@ func TestComprehensiveTransfer(t *testing.T) {
 
 		deleteResp, err := client.CreateDeleteTask(ctx, deleteRequest)
 		if err != nil {
-			t.Logf("Warning: Failed to delete source test directory: %v", err)
+			errDetail := err.Error()
+			if strings.Contains(errDetail, "400") {
+				t.Logf("CLEANUP WARNING: Failed to delete source test directory (status: 400) - %v - This may require manual cleanup", err)
+			} else if strings.Contains(errDetail, "403") {
+				t.Logf("CLEANUP WARNING: Permission denied when deleting source test directory - %v - This may require manual cleanup", err)
+			} else {
+				t.Logf("CLEANUP WARNING: Failed to delete source test directory: %v - This may require manual cleanup", err)
+			}
 		} else {
 			t.Logf("Submitted delete task for source directory, task ID: %s", deleteResp.TaskID)
 		}
 	}()
 
-	// Create test directory on destination endpoint
+	// Create test directory on destination endpoint with retry
 	t.Logf("Creating test directory on destination endpoint: %s", destTestDir)
-	err = client.Mkdir(ctx, destEndpointID, destTestDir)
+	err = ratelimit.RetryWithBackoff(
+		ctx,
+		func(ctx context.Context) error {
+			return client.Mkdir(ctx, destEndpointID, destTestDir)
+		},
+		ratelimit.DefaultBackoff(),
+		IsRetryableTransferError,
+	)
+	
 	if err != nil {
-		t.Fatalf("Failed to create destination test directory: %v", err)
+		if IsPermissionDenied(err) || strings.Contains(err.Error(), "403") {
+			t.Fatalf("PERMISSION ERROR: Cannot create destination directory: %v - To resolve, set GLOBUS_TEST_TRANSFER_TOKEN with a token that has write permissions", err)
+		} else if strings.Contains(err.Error(), "502") {
+			t.Fatalf("ENDPOINT ERROR: Destination endpoint unavailable: %v - To resolve, check if the endpoint is online and accessible", err)
+		} else if strings.Contains(err.Error(), "400") {
+			t.Fatalf("BAD REQUEST ERROR: Invalid directory request: %v - To resolve, check path format and endpoint configuration", err)
+		} else {
+			t.Fatalf("ERROR: Failed to create destination test directory: %v - To resolve, check endpoint configuration and token permissions", err)
+		}
 	}
 
 	defer func() {
@@ -154,7 +342,14 @@ func TestComprehensiveTransfer(t *testing.T) {
 
 		deleteResp, err := client.CreateDeleteTask(ctx, deleteRequest)
 		if err != nil {
-			t.Logf("Warning: Failed to delete destination test directory: %v", err)
+			errDetail := err.Error()
+			if strings.Contains(errDetail, "400") {
+				t.Logf("CLEANUP WARNING: Failed to delete destination test directory (status: 400) - %v - This may require manual cleanup", err)
+			} else if strings.Contains(errDetail, "403") {
+				t.Logf("CLEANUP WARNING: Permission denied when deleting destination test directory - %v - This may require manual cleanup", err)
+			} else {
+				t.Logf("CLEANUP WARNING: Failed to delete destination test directory: %v - This may require manual cleanup", err)
+			}
 		} else {
 			t.Logf("Submitted delete task for destination directory, task ID: %s", deleteResp.TaskID)
 		}
@@ -222,9 +417,32 @@ func TestComprehensiveTransfer(t *testing.T) {
 		},
 	}
 
-	taskResponse, err := client.CreateTransferTask(ctx, transferRequest)
+	// Submit transfer task with retry for rate limiting and transient errors
+	var taskResponse *TaskResponse
+	err = ratelimit.RetryWithBackoff(
+		ctx,
+		func(ctx context.Context) error {
+			var taskErr error
+			taskResponse, taskErr = client.CreateTransferTask(ctx, transferRequest)
+			return taskErr
+		},
+		ratelimit.DefaultBackoff(),
+		IsRetryableTransferError,
+	)
+	
 	if err != nil {
-		t.Logf("Transfer request failed (possibly file doesn't exist yet): %v", err)
+		errDetail := err.Error()
+		if IsRateLimitExceeded(err) {
+			t.Fatalf("RATE LIMIT ERROR: %v - To resolve, reduce request frequency or try later", err)
+		} else if IsResourceNotFound(err) {
+			t.Fatalf("TRANSFER ERROR: Resource not found - %v - To resolve, check that source and destination paths exist", err)
+		} else if IsPermissionDenied(err) || strings.Contains(errDetail, "403") {
+			t.Fatalf("PERMISSION ERROR: Access denied for transfer: %v - To resolve, provide GLOBUS_TEST_TRANSFER_TOKEN with proper permissions", err)
+		} else if strings.Contains(errDetail, "400") {
+			t.Fatalf("TRANSFER ERROR: %v (status: 400) (Bad request - This could be due to invalid paths, endpoint configuration, or permission issues) - To resolve, ensure your token has the correct permissions and the paths are correct", errDetail)
+		} else {
+			t.Fatalf("TRANSFER ERROR: %v - To resolve, check logs for more details", err)
+		}
 
 		// For test demonstration, let's create the file directly on the destination endpoint
 		// Note: In a real scenario, you would ensure the file exists on the source endpoint
@@ -378,7 +596,18 @@ func TestComprehensiveTransfer(t *testing.T) {
 	)
 
 	if err != nil {
-		t.Logf("Recursive transfer failed: %v", err)
+		errDetail := err.Error()
+		if IsRateLimitExceeded(err) {
+			t.Fatalf("RATE LIMIT ERROR: Recursive transfer failed - %v - To resolve, reduce request frequency or try later", err)
+		} else if IsResourceNotFound(err) {
+			t.Fatalf("TRANSFER ERROR: Recursive transfer failed - resource not found - %v - To resolve, check that source and destination paths exist", err)
+		} else if IsPermissionDenied(err) || strings.Contains(errDetail, "403") {
+			t.Fatalf("PERMISSION ERROR: Recursive transfer failed - access denied: %v - To resolve, provide GLOBUS_TEST_TRANSFER_TOKEN with proper permissions", err)
+		} else if strings.Contains(errDetail, "400") {
+			t.Fatalf("TRANSFER ERROR: Recursive transfer failed - %v (status: 400) (Bad request - This could be due to invalid paths, endpoint configuration, or permission issues) - To resolve, ensure your token has the correct permissions and the paths are correct", errDetail)
+		} else {
+			t.Fatalf("TRANSFER ERROR: Recursive transfer failed - %v - To resolve, check logs for more details", err)
+		}
 	} else {
 		t.Logf("Recursive transfer submitted, task ID: %s", transferResult.TaskID)
 		t.Logf("Transfer statistics: %d files, %d bytes, %d directories",
