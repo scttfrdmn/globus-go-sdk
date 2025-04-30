@@ -13,20 +13,48 @@ This document summarizes the integration testing efforts, results, and recommend
 
 ### Environment Variables
 
+#### Required Variables
+These variables are necessary for most integration tests to run:
+
 | Variable | Purpose | Required? |
 |----------|---------|-----------|
 | `GLOBUS_TEST_CLIENT_ID` | Client ID for authentication | Required |
 | `GLOBUS_TEST_CLIENT_SECRET` | Client secret for authentication | Required |
+
+#### Transfer Tests Variables
+These variables are needed specifically for transfer tests:
+
+| Variable | Purpose | Required? |
+|----------|---------|-----------|
 | `GLOBUS_TEST_SOURCE_ENDPOINT_ID` | Source endpoint for transfer tests | Required for transfer tests |
 | `GLOBUS_TEST_DEST_ENDPOINT_ID` | Destination endpoint for transfer tests | Required for transfer tests |
-| `GLOBUS_TEST_TRANSFER_TOKEN` | Pre-authenticated token for transfer operations | Optional |
-| `GLOBUS_TEST_GROUP_ID` | Existing group ID for group tests | Optional |
-| `GLOBUS_TEST_PUBLIC_GROUP_ID` | Public group ID for group tests | Optional |
-| `GLOBUS_TEST_GROUPS_TOKEN` | Pre-authenticated token for groups operations | Optional |
-| `GLOBUS_TEST_SEARCH_INDEX_ID` | Existing search index ID for search tests | Optional |
-| `GLOBUS_TEST_PUBLIC_SEARCH_INDEX_ID` | Public search index ID for tests | Optional |
-| `GLOBUS_TEST_SEARCH_TOKEN` | Pre-authenticated token for search operations | Optional |
+| `GLOBUS_TEST_TRANSFER_TOKEN` | Pre-authenticated token with transfer permissions | Optional - falls back to client credentials |
+
+#### Groups Tests Variables
+These variables are helpful but not strictly required for Groups tests (built-in fallbacks are provided):
+
+| Variable | Purpose | Required? |
+|----------|---------|-----------|
+| `GLOBUS_TEST_GROUP_ID` | Existing group ID for group tests | Optional - tests will use fallback public group ID |
+| `GLOBUS_TEST_PUBLIC_GROUP_ID` | Public group ID for group tests | Optional - built-in fallback: `6c91e6eb-085c-11e6-a7a4-22000bf2d559` |
+| `GLOBUS_TEST_GROUPS_TOKEN` | Pre-authenticated token with groups permissions | Optional - falls back to client credentials |
+
+#### Search Tests Variables
+These variables are helpful but not strictly required for Search tests (built-in fallbacks are provided):
+
+| Variable | Purpose | Required? |
+|----------|---------|-----------|
+| `GLOBUS_TEST_SEARCH_INDEX_ID` | Existing search index ID | Optional - tests will create a temporary index or use fallback |
+| `GLOBUS_TEST_PUBLIC_SEARCH_INDEX_ID` | Public search index ID | Optional - built-in fallback: Materials Data Facility index |
+| `GLOBUS_TEST_SEARCH_TOKEN` | Pre-authenticated token with search permissions | Optional - falls back to client credentials |
+
+#### Debug Variables
+For troubleshooting:
+
+| Variable | Purpose | Required? |
+|----------|---------|-----------|
 | `HTTP_DEBUG` | Enable HTTP debugging output | Optional |
+| `GLOBUS_TEST_SKIP_TRANSFER` | Skip transfer tests completely | Optional |
 
 ## Test Coverage
 
@@ -89,6 +117,28 @@ The integration tests focus on the following services:
 | `TestIntegration_ListIndexes` | ✅ Pass | Handles 400 errors and falls back to simpler requests |
 | `TestIntegration_IndexLifecycle` | ✅ Pass | Successfully creates, verifies, and deletes a test index |
 | `TestIntegration_ExistingIndex` | ✅ Pass | Uses a stored or fallback index for testing |
+
+## Fallback Mechanisms
+
+The integration tests have been designed with fallback mechanisms to ensure they can run successfully with minimal configuration:
+
+### Authentication Fallbacks
+- Tests first look for service-specific tokens (e.g., `GLOBUS_TEST_TRANSFER_TOKEN`)
+- If not found, they attempt to get tokens via client credentials with service-specific scopes
+- If that fails, they fall back to a default token with no specific scope
+
+### Groups Service Fallbacks
+- `TestIntegration_ExistingGroup` first looks for `GLOBUS_TEST_GROUP_ID`
+- If not found, it looks for `GLOBUS_TEST_PUBLIC_GROUP_ID` 
+- If still not found, it uses a built-in fallback ID for the "Globus Tutorial Group"
+- Tests handle 405 "Method Not Allowed" errors gracefully when permissions are limited
+
+### Search Service Fallbacks
+- `TestIntegration_ExistingIndex` first looks for `GLOBUS_TEST_SEARCH_INDEX_ID`
+- If not found, it looks for `GLOBUS_TEST_PUBLIC_SEARCH_INDEX_ID`
+- If still not found, it uses a built-in fallback ID for the Materials Data Facility index
+- `TestIntegration_IndexLifecycle` creates a temporary index and shares its ID with other tests
+- `TestIntegration_ListIndexes` falls back to simpler requests if the initial query fails
 
 ## Improvements Made
 
