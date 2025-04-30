@@ -100,6 +100,13 @@ func (c *Client) doRequest(ctx context.Context, method, path string, query url.V
 		if err != nil {
 			return fmt.Errorf("failed to marshal request body: %w", err)
 		}
+		
+		// Debug output for request
+		if os.Getenv("HTTP_DEBUG") != "" {
+			fmt.Printf("DEBUG REQUEST URL: %s\n", url)
+			fmt.Printf("DEBUG REQUEST BODY: %s\n", string(bodyJSON))
+		}
+		
 		bodyReader = bytes.NewReader(bodyJSON)
 	}
 
@@ -150,6 +157,12 @@ func (c *Client) doRequest(ctx context.Context, method, path string, query url.V
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
+	}
+
+	// Debug output for response
+	if os.Getenv("HTTP_DEBUG") != "" {
+		fmt.Printf("DEBUG RESPONSE STATUS: %d\n", resp.StatusCode)
+		fmt.Printf("DEBUG RESPONSE BODY: %s\n", string(respBody))
 	}
 
 	if len(respBody) == 0 {
@@ -308,14 +321,9 @@ func (c *Client) ListFiles(ctx context.Context, endpointID, path string, options
 
 // GetSubmissionID obtains a submission ID for transfer operations
 func (c *Client) GetSubmissionID(ctx context.Context) (string, error) {
-	// Return a simulated submission ID for all tests
-	// In production, we would call the Globus API
-	if isIntegrationTest := os.Getenv("GLOBUS_INTEGRATION_TEST") != ""; isIntegrationTest {
+	// Return a simulated submission ID only for unit tests, not integration tests
+	if os.Getenv("MOCK_SUBMISSION_ID") == "true" {
 		return "mock-submission-id-for-testing", nil
-	}
-
-	body := map[string]string{
-		"DATA_TYPE": "submission_id",
 	}
 
 	var response struct {
@@ -323,7 +331,8 @@ func (c *Client) GetSubmissionID(ctx context.Context) (string, error) {
 		SubmissionID string `json:"submission_id"`
 	}
 
-	err := c.doRequest(ctx, http.MethodPost, "submission_id", nil, body, &response)
+	// The API endpoint is a GET request, not POST
+	err := c.doRequest(ctx, http.MethodGet, "submission_id", nil, nil, &response)
 	if err != nil {
 		return "", fmt.Errorf("failed to get submission ID: %w", err)
 	}
