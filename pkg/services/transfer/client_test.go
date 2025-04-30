@@ -14,7 +14,26 @@ import (
 )
 
 // Test helper to set up a mock server and client
-func setupMockServer(handler http.HandlerFunc) (*httptest.Server, *Client) {
+func setupMockServer(handlerFunc http.HandlerFunc) (*httptest.Server, *Client) {
+	// Create a handler that can respond to both submission ID requests and the actual API call
+	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		// Check if this is a request for submission ID
+		if r.URL.Path == "/submission_id" && r.Method == http.MethodGet {
+			// Return a mock submission ID
+			response := map[string]string{
+				"value": "mock-submission-id-123",
+			}
+
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			json.NewEncoder(w).Encode(response)
+			return
+		}
+		
+		// Pass other requests to the original handler
+		handlerFunc(w, r)
+	})
+
 	server := httptest.NewServer(handler)
 
 	// Create a client that uses the test server
