@@ -30,13 +30,9 @@ type ComputeEndpointMetrics struct {
 }
 
 // ComputeEndpointList is a list of Compute endpoints
+// The API sometimes returns an array of endpoints directly instead of a structured response
 type ComputeEndpointList struct {
-	EndpointIDs []string          `json:"endpoint_ids,omitempty"`
-	Endpoints   []ComputeEndpoint `json:"endpoints,omitempty"`
-	Total       int               `json:"total,omitempty"`
-	Offset      int               `json:"offset,omitempty"`
-	Limit       int               `json:"limit,omitempty"`
-	HasMorePage bool              `json:"has_more_page,omitempty"`
+	Endpoints []ComputeEndpoint 
 }
 
 // ListEndpointsOptions are options for listing Compute endpoints
@@ -111,6 +107,75 @@ type Container struct {
 	Unpack    bool              `json:"unpack,omitempty"`
 	Arguments []string          `json:"arguments,omitempty"`
 	Variables map[string]string `json:"variables,omitempty"`
+}
+
+// ContainerRegistrationRequest represents a request to register a container
+type ContainerRegistrationRequest struct {
+	Name        string            `json:"name"`
+	Description string            `json:"description,omitempty"`
+	Image       string            `json:"image"`
+	Type        string            `json:"type,omitempty"`
+	Registry    string            `json:"registry,omitempty"`
+	Public      bool              `json:"public,omitempty"`
+	Variables   map[string]string `json:"variables,omitempty"`
+	Arguments   []string          `json:"arguments,omitempty"`
+}
+
+// ContainerUpdateRequest represents a request to update a container
+type ContainerUpdateRequest struct {
+	Name        string            `json:"name,omitempty"`
+	Description string            `json:"description,omitempty"`
+	Image       string            `json:"image,omitempty"`
+	Type        string            `json:"type,omitempty"`
+	Registry    string            `json:"registry,omitempty"`
+	Public      *bool             `json:"public,omitempty"`
+	Variables   map[string]string `json:"variables,omitempty"`
+	Arguments   []string          `json:"arguments,omitempty"`
+}
+
+// ContainerResponse represents a container registered with Globus Compute
+type ContainerResponse struct {
+	ID          string            `json:"id,omitempty"`
+	Name        string            `json:"name,omitempty"`
+	Description string            `json:"description,omitempty"`
+	Image       string            `json:"image,omitempty"`
+	Type        string            `json:"type,omitempty"`
+	Registry    string            `json:"registry,omitempty"`
+	Public      bool              `json:"public,omitempty"`
+	Owner       string            `json:"owner,omitempty"`
+	Variables   map[string]string `json:"variables,omitempty"`
+	Arguments   []string          `json:"arguments,omitempty"`
+	CreatedAt   time.Time         `json:"created_at,omitempty"`
+	ModifiedAt  time.Time         `json:"modified_at,omitempty"`
+}
+
+// ContainerList is a list of containers
+type ContainerList struct {
+	Containers  []ContainerResponse `json:"containers,omitempty"`
+	Total       int                 `json:"total,omitempty"`
+	HasNextPage bool                `json:"has_next_page,omitempty"`
+	Offset      int                 `json:"offset,omitempty"`
+	Limit       int                 `json:"limit,omitempty"`
+}
+
+// ListContainersOptions are options for listing containers
+type ListContainersOptions struct {
+	PerPage int    `url:"per_page,omitempty"`
+	Marker  string `url:"marker,omitempty"`
+	Search  string `url:"search,omitempty"`
+}
+
+// ContainerTaskRequest represents a request to execute code within a container
+type ContainerTaskRequest struct {
+	EndpointID  string            `json:"endpoint_id"`
+	ContainerID string            `json:"container_id"`
+	FunctionID  string            `json:"function_id,omitempty"`
+	Code        string            `json:"code,omitempty"`
+	Args        []any             `json:"args,omitempty"`
+	Kwargs      map[string]any    `json:"kwargs,omitempty"`
+	Environment map[string]string `json:"environment,omitempty"`
+	Priority    int               `json:"priority,omitempty"`
+	ExecMode    string            `json:"exec_mode,omitempty"`
 }
 
 // TaskRequest represents a request to execute a function

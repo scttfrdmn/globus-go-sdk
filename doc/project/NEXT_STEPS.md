@@ -24,10 +24,10 @@ This document outlines the prioritized next steps for the Globus Go SDK project 
 
 ### 2. Advanced Compute Service Features
 
-- [ ] Add container execution support
-  - [ ] Implement container registration
-  - [ ] Add container execution capabilities
-  - [ ] Support environment variable configuration
+- [x] Add container execution support
+  - [x] Implement container registration
+  - [x] Add container execution capabilities
+  - [x] Support environment variable configuration
 - [ ] Implement dependency management for functions
   - [ ] Add package and module dependencies
   - [ ] Support requirements.txt for Python functions
