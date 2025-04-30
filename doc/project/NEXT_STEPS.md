@@ -28,10 +28,10 @@ This document outlines the prioritized next steps for the Globus Go SDK project 
   - [x] Implement container registration
   - [x] Add container execution capabilities
   - [x] Support environment variable configuration
-- [ ] Implement dependency management for functions
-  - [ ] Add package and module dependencies
-  - [ ] Support requirements.txt for Python functions
-  - [ ] Handle version constraints
+- [x] Implement dependency management for functions
+  - [x] Add package and module dependencies
+  - [x] Support requirements.txt for Python functions
+  - [x] Handle version constraints
 - [ ] Add environment configuration options
   - [ ] Support for secrets and environment variables
   - [ ] Runtime parameter configuration

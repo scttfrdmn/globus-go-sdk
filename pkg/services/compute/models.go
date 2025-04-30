@@ -178,6 +178,81 @@ type ContainerTaskRequest struct {
 	ExecMode    string            `json:"exec_mode,omitempty"`
 }
 
+// DependencyRegistrationRequest represents a request to register a dependency
+type DependencyRegistrationRequest struct {
+	Name               string              `json:"name"`
+	Description        string              `json:"description,omitempty"`
+	Public             bool                `json:"public,omitempty"`
+	PythonRequirements string              `json:"python_requirements,omitempty"`
+	PythonPackages     []PythonPackage     `json:"python_packages,omitempty"`
+	CustomDependencies []CustomDependency  `json:"custom_dependencies,omitempty"`
+	GitRepo            string              `json:"git_repo,omitempty"`
+	GitRef             string              `json:"git_ref,omitempty"`
+	Version            string              `json:"version,omitempty"`
+}
+
+// DependencyUpdateRequest represents a request to update a dependency
+type DependencyUpdateRequest struct {
+	Name               string              `json:"name,omitempty"`
+	Description        string              `json:"description,omitempty"`
+	Public             *bool               `json:"public,omitempty"`
+	PythonRequirements string              `json:"python_requirements,omitempty"`
+	PythonPackages     []PythonPackage     `json:"python_packages,omitempty"`
+	CustomDependencies []CustomDependency  `json:"custom_dependencies,omitempty"`
+	GitRepo            string              `json:"git_repo,omitempty"`
+	GitRef             string              `json:"git_ref,omitempty"`
+	Version            string              `json:"version,omitempty"`
+}
+
+// DependencyResponse represents a dependency registered with Globus Compute
+type DependencyResponse struct {
+	ID                 string              `json:"id,omitempty"`
+	Name               string              `json:"name,omitempty"`
+	Description        string              `json:"description,omitempty"`
+	Owner              string              `json:"owner,omitempty"`
+	Public             bool                `json:"public,omitempty"`
+	PythonRequirements string              `json:"python_requirements,omitempty"`
+	PythonPackages     []PythonPackage     `json:"python_packages,omitempty"`
+	CustomDependencies []CustomDependency  `json:"custom_dependencies,omitempty"`
+	GitRepo            string              `json:"git_repo,omitempty"`
+	GitRef             string              `json:"git_ref,omitempty"`
+	Version            string              `json:"version,omitempty"`
+	CreatedAt          time.Time           `json:"created_at,omitempty"`
+	ModifiedAt         time.Time           `json:"modified_at,omitempty"`
+}
+
+// PythonPackage represents a Python package dependency
+type PythonPackage struct {
+	Name         string   `json:"name"`
+	Version      string   `json:"version,omitempty"`
+	ExtraIndices []string `json:"extra_indices,omitempty"`
+}
+
+// CustomDependency represents a custom dependency
+type CustomDependency struct {
+	Type     string                 `json:"type"`
+	Name     string                 `json:"name"`
+	Version  string                 `json:"version,omitempty"`
+	Specs    map[string]interface{} `json:"specs,omitempty"`
+	Commands []string               `json:"commands,omitempty"`
+}
+
+// DependencyList is a list of dependencies
+type DependencyList struct {
+	Dependencies []DependencyResponse `json:"dependencies,omitempty"`
+	Total        int                  `json:"total,omitempty"`
+	HasNextPage  bool                 `json:"has_next_page,omitempty"`
+	Offset       int                  `json:"offset,omitempty"`
+	Limit        int                  `json:"limit,omitempty"`
+}
+
+// ListDependenciesOptions are options for listing dependencies
+type ListDependenciesOptions struct {
+	PerPage int    `url:"per_page,omitempty"`
+	Marker  string `url:"marker,omitempty"`
+	Search  string `url:"search,omitempty"`
+}
+
 // TaskRequest represents a request to execute a function
 type TaskRequest struct {
 	FunctionID string         `json:"function_id"`
