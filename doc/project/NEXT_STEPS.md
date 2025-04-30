@@ -9,18 +9,18 @@ This document outlines the prioritized next steps for the Globus Go SDK project 
 
 ### 1. Enhanced Performance Monitoring and Reporting
 
-- [ ] Implement detailed transfer performance metrics collection
-  - [ ] Track bytes/second for transfers
-  - [ ] Monitor concurrent operations
-  - [ ] Measure queue times and delays
-- [ ] Add visual reporting options
-  - [ ] Create progress bar utilities for CLI applications
-  - [ ] Add structured logging for performance metrics
-  - [ ] Implement transfer summary reporting
-- [ ] Create performance dashboards for monitoring
-  - [ ] Build example dashboard application
-  - [ ] Add persistent metrics storage
-  - [ ] Implement real-time updates for ongoing operations
+- [x] Implement detailed transfer performance metrics collection
+  - [x] Track bytes/second for transfers
+  - [x] Monitor concurrent operations
+  - [x] Measure queue times and delays
+- [x] Add visual reporting options
+  - [x] Create progress bar utilities for CLI applications
+  - [x] Add structured logging for performance metrics
+  - [x] Implement transfer summary reporting
+- [x] Create performance dashboards for monitoring
+  - [x] Build example dashboard application
+  - [x] Add persistent metrics storage
+  - [x] Implement real-time updates for ongoing operations
 
 ### 2. Advanced Compute Service Features
 

@@ -3,20 +3,116 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"math/rand"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg/metrics"
 )
 
 func main() {
+	// Parse command line flags
+	var (
+		storageDirFlag = flag.String("storage-dir", "", "Directory for metrics storage")
+		loadExistingFlag = flag.Bool("load-existing", false, "Load existing metrics from storage")
+		historyFlag = flag.Bool("history", false, "Show historical transfers and exit")
+	)
+	flag.Parse()
+
 	// Create a monitor
 	monitor := metrics.NewPerformanceMonitor()
 
+	// Set up metrics storage if specified
+	var storage metrics.MetricsStorage
+	if *storageDirFlag != "" {
+		// Create storage directory if it doesn't exist
+		storageDir := *storageDirFlag
+		if storageDir == "" {
+			// Default to a metrics directory in the user's home directory
+			home, err := os.UserHomeDir()
+			if err == nil {
+				storageDir = filepath.Join(home, ".globus-sdk", "metrics")
+			} else {
+				// Fallback to current directory
+				storageDir = "metrics"
+			}
+		}
+
+		// Create the storage directory
+		err := os.MkdirAll(storageDir, 0755)
+		if err != nil {
+			fmt.Printf("Warning: Failed to create metrics storage directory: %v\n", err)
+		} else {
+			// Create a file-based metrics storage
+			var storageErr error
+			storage, storageErr = metrics.NewFileMetricsStorage(storageDir)
+			if storageErr != nil {
+				fmt.Printf("Warning: Failed to initialize metrics storage: %v\n", storageErr)
+				storage = nil
+			} else {
+				fmt.Printf("Using metrics storage: %s\n", storageDir)
+				
+				// Configure auto-save for storage
+				monitor.WithStorage(&metrics.StorageConfig{
+					Storage:      storage,
+					SaveInterval: 5 * time.Second,
+					AutoSave:     true,
+					AutoCleanup:  true,
+					CleanupAge:   7 * 24 * time.Hour, // 7 days
+				})
+
+				// Load existing metrics if requested
+				if *loadExistingFlag {
+					err := monitor.LoadAllMetrics(storage)
+					if err != nil {
+						fmt.Printf("Warning: Failed to load existing metrics: %v\n", err)
+					} else {
+						fmt.Println("Loaded existing metrics from storage")
+					}
+				}
+			}
+		}
+	}
+
 	// Create a reporter
 	reporter := metrics.NewTextReporter()
+
+	// If in history mode, show historical transfers and exit
+	if *historyFlag && storage != nil {
+		fmt.Println("=== Historical Transfers ===")
+		
+		// List all transfer IDs from storage
+		ids, err := storage.ListTransferIDs()
+		if err != nil {
+			fmt.Printf("Error listing transfers: %v\n", err)
+			return
+		}
+		
+		if len(ids) == 0 {
+			fmt.Println("No historical transfers found.")
+			return
+		}
+		
+		fmt.Printf("Found %d historical transfers:\n\n", len(ids))
+		
+		// Load and display each transfer
+		for _, id := range ids {
+			storedMetrics, err := storage.RetrieveMetrics(id)
+			if err != nil {
+				fmt.Printf("Error loading metrics for %s: %v\n", id, err)
+				continue
+			}
+			
+			fmt.Printf("==== Transfer: %s ====\n", id)
+			reporter.ReportSummary(os.Stdout, storedMetrics)
+			fmt.Println()
+		}
+		
+		return
+	}
 
 	// Start 3 simulated transfers
 	transferIDs := []string{
@@ -89,6 +185,9 @@ func main() {
 				// Clear the screen
 				fmt.Print("\033[H\033[2J")
 				fmt.Println("=== Transfer Statistics ===")
+				if storage != nil {
+					fmt.Println("Metrics are being stored automatically")
+				}
 				fmt.Println()
 
 				// Get active transfers
@@ -111,6 +210,17 @@ func main() {
 				// Check if all transfers are complete
 				if allCompleted && completed < len(transferIDs) {
 					completed = len(transferIDs)
+					
+					// Save final metrics if storage is enabled
+					if storage != nil {
+						fmt.Println("Saving final metrics to storage...")
+						for _, id := range transferIDs {
+							if err := monitor.SaveMetrics(storage, id); err != nil {
+								fmt.Printf("Failed to save final metrics for %s: %v\n", id, err)
+							}
+						}
+					}
+					
 					// Wait a moment to show final statistics before exiting
 					time.AfterFunc(2*time.Second, func() {
 						done <- true
@@ -125,6 +235,10 @@ func main() {
 	// Wait for all transfers to complete
 	<-done
 	fmt.Println("\nAll transfers completed!")
+	
+	if storage != nil {
+		fmt.Println("\nRun with --history flag to view historical transfers")
+	}
 }
 
 // simulateTransfer simulates a transfer with progress updates

@@ -278,6 +278,73 @@ for {
 }
 ```
 
+### Persistent Metrics Storage
+
+The metrics package includes functionality to persistently store metrics data, allowing for historical analysis and reporting:
+
+```go
+// Create a file-based metrics storage
+storage, err := metrics.NewFileMetricsStorage("/path/to/metrics/dir")
+if err != nil {
+    log.Fatalf("Failed to create metrics storage: %v", err)
+}
+
+// Configure auto-save for the performance monitor
+monitor.WithStorage(&metrics.StorageConfig{
+    Storage:      storage,
+    SaveInterval: 5 * time.Second,
+    AutoSave:     true,
+    AutoCleanup:  true,
+    CleanupAge:   7 * 24 * time.Hour, // 7 days
+})
+```
+
+#### Manual Storage Operations
+
+You can also perform storage operations manually:
+
+```go
+// Save metrics for a specific transfer
+err = monitor.SaveMetrics(storage, "transfer-123")
+
+// Load metrics from storage
+err = monitor.LoadMetrics(storage, "transfer-123")
+
+// Load all metrics from storage
+err = monitor.LoadAllMetrics(storage)
+
+// List all stored transfer IDs
+ids, err := storage.ListTransferIDs()
+
+// Delete old metrics
+err = storage.Cleanup(24 * time.Hour) // Delete metrics older than 24 hours
+```
+
+#### Storage Interface
+
+The `MetricsStorage` interface allows for custom storage implementations:
+
+```go
+type MetricsStorage interface {
+    // StoreMetrics stores transfer metrics data
+    StoreMetrics(transferID string, metrics *TransferMetrics) error
+    
+    // RetrieveMetrics retrieves transfer metrics data
+    RetrieveMetrics(transferID string) (*TransferMetrics, error)
+    
+    // ListTransferIDs lists all transfer IDs in storage
+    ListTransferIDs() ([]string, error)
+    
+    // DeleteMetrics deletes metrics for a transfer
+    DeleteMetrics(transferID string) error
+    
+    // Cleanup removes old metrics data
+    Cleanup(olderThan time.Duration) error
+}
+```
+
+The SDK includes a file-based implementation, but you can create custom implementations for databases, cloud storage, or other backends.
+
 ### Advanced Features
 
 The metrics package also supports:
@@ -310,6 +377,24 @@ The metrics package also supports:
        metrics, _ := monitor.GetMetrics(id)
        fmt.Printf("%s: %.1f%% complete\n", id, metrics.PercentComplete)
    }
+   ```
+
+5. **Historical Analysis**: Analyze past transfers for performance patterns
+   ```go
+   // List all stored transfer IDs
+   ids, _ := storage.ListTransferIDs()
+   
+   // Calculate average throughput across all transfers
+   var totalBytes, totalDuration int64
+   for _, id := range ids {
+       metrics, _ := storage.RetrieveMetrics(id)
+       duration := metrics.EndTime.Sub(metrics.StartTime)
+       totalBytes += metrics.BytesTransferred
+       totalDuration += int64(duration.Seconds())
+   }
+   
+   avgThroughput := float64(totalBytes) / float64(totalDuration)
+   fmt.Printf("Average throughput: %.2f MB/s\n", avgThroughput / (1024*1024))
    ```
 
 For a complete example of performance monitoring, see the [metrics-dashboard](../../examples/metrics-dashboard/) example application.
