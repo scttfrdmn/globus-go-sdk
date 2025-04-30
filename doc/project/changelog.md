@@ -7,6 +7,22 @@ All notable changes to the Globus Go SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+- Full Compute service client implementation with:
+  - Endpoint management
+  - Function registration and management
+  - Execution operations with status monitoring
+  - Batch task processing
+  - Comprehensive models and error handling
+  
+### Fixed
+- Fixed integration tests for recursive transfers by adding proper mock submission ID endpoints
+- Improved test infrastructure with better error handling
+- Enhanced mock server implementation for more realistic API behavior simulation
+- Updated integration testing documentation with Compute service information
+
 ## [0.2.0] - 2025-04-28
 
 ### Added

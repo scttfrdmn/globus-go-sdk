@@ -48,7 +48,7 @@ This document tracks the current status of the Globus Go SDK project.
 | Token Validation       | ✅ Implemented       | Token validation and expiry utilities               |
 | Error Handling         | ✅ Implemented       | Comprehensive error types and checking utilities    |
 | Unit Tests             | ✅ Implemented       | Tests for models and client methods                 |
-| Integration Tests      | 📅 Planned           | Need actual API credentials                         |
+| Integration Tests      | ✅ Implemented       | Tests with actual API credentials implemented       |
 
 ### Groups Package
 
@@ -64,7 +64,7 @@ This document tracks the current status of the Globus Go SDK project.
 | Membership Operations  | ✅ Implemented       | AddMember, RemoveMember, UpdateMemberRole methods   |
 | Role Management        | ✅ Implemented       | ListRoles, GetRole, CreateRole, etc. methods        |
 | Unit Tests             | ✅ Implemented       | Tests for models and client methods                 |
-| Integration Tests      | 📅 Planned           | Need actual API credentials                         |
+| Integration Tests      | ✅ Implemented       | Tests with actual API credentials implemented       |
 
 ### Search Package
 
@@ -81,7 +81,37 @@ This document tracks the current status of the Globus Go SDK project.
 | Task Management        | ✅ Implemented       | Task status tracking and waiting                    |
 | Error Handling         | ✅ Implemented       | Specialized error types and checking utilities      |
 | Unit Tests             | ✅ Implemented       | Tests for all core functionality                    |
-| Integration Tests      | 📅 Planned           | Need actual API credentials                         |
+| Integration Tests      | ✅ Implemented       | Tests with actual API credentials implemented       |
+
+### Compute Package
+
+| Feature                | Status               | Details                                             |
+|------------------------|----------------------|-----------------------------------------------------|
+| Client Structure       | ✅ Implemented       | Complete client structure with all methods          |
+| Data Models            | ✅ Implemented       | Endpoint, Function, Task models implemented         |
+| Endpoint Operations    | ✅ Implemented       | List endpoints and endpoint details                 |
+| Function Operations    | ✅ Implemented       | CRUD operations for function management             |
+| Execution Operations   | ✅ Implemented       | Run functions and monitor execution                 |
+| Batch Processing       | ✅ Implemented       | Run multiple functions in batch mode                |
+| Task Management        | ✅ Implemented       | Task status tracking and result handling            |
+| Error Handling         | ✅ Implemented       | Specialized error types and checking utilities      |
+| Unit Tests             | ✅ Implemented       | Tests for all core functionality                    |
+| Integration Tests      | ✅ Implemented       | Tests with actual API credentials implemented       |
+
+### Flows Package 
+
+| Feature                | Status               | Details                                             |
+|------------------------|----------------------|-----------------------------------------------------|
+| Client Structure       | ✅ Implemented       | Complete client structure with all methods          |
+| Data Models            | ✅ Implemented       | Flow, Run, ActionProvider models implemented        |
+| Flow Operations        | ✅ Implemented       | CRUD operations for flow management                 |
+| Run Operations         | ✅ Implemented       | Run flows and monitor execution                     |
+| Action Providers       | ✅ Implemented       | List and get action provider details                |
+| Batch Processing       | ✅ Implemented       | Run and manage multiple flows in batch mode         |
+| Run Logs               | ✅ Implemented       | Access and process flow run logs                    |
+| Error Handling         | ✅ Implemented       | Specialized error types and checking utilities      |
+| Unit Tests             | ✅ Implemented       | Tests for all core functionality                    |
+| Integration Tests      | ✅ Implemented       | Tests with actual API credentials implemented       |
 
 ## Documentation Status
 
@@ -115,7 +145,7 @@ This document tracks the current status of the Globus Go SDK project.
 |------------------------|----------------------|-----------------------------------------------------|
 | Unit Tests             | ✅ Implemented       | Tests for authorizers, auth, groups, transfer, search |
 | Advanced Tests         | ✅ Implemented       | Tests for batch operations, error handling          |
-| Integration Tests      | 📅 Planned           | Framework ready, need API credentials               |
+| Integration Tests      | ✅ Implemented       | Tests for all services implemented and passing     |
 | Coverage Reporting     | ✅ Configured        | Set up with Codecov                                |
 | CI Pipeline            | ✅ Configured        | Multiple GitHub Actions workflows                   |
 | Linting                | ✅ Configured        | golangci-lint with comprehensive rules             |
@@ -129,12 +159,12 @@ This document tracks the current status of the Globus Go SDK project.
    - ✅ Create persistent token storage options
    - ✅ Add token refresh workflows
 
-2. Expand transfer service capabilities
+2. ✅ Expand transfer service capabilities
    - ✅ Add recursive directory transfer support
    - ✅ Implement resumable transfers
    - ✅ Create batch transfer capabilities
 
-3. Enhance test coverage and documentation
+3. ✅ Enhance test coverage and documentation
    - ✅ Add integration tests with real credentials
    - ✅ Complete API reference documentation
    - ✅ Create additional usage examples
@@ -144,20 +174,34 @@ This document tracks the current status of the Globus Go SDK project.
    - ✅ Build file transfer utility with progress monitoring
    - ✅ Develop group management example
 
-5. New priorities:
+5. ✅ Implement all service clients
    - ✅ Implement Search service client
    - ✅ Implement Flows service client
+   - ✅ Implement Compute service client
    - ✅ Create web application example
    - ✅ Add performance benchmarks for large transfers
    - ✅ Implement more robust rate limiting and backoff strategies
+
+6. Future enhancements:
+   - Enhance performance monitoring and reporting
+   - Add more advanced Compute service features (container execution)
+   - Implement interactive CLI application
+   - Expand web application examples with frontend components
+   - Add support for more authentication flows
 
 ## Recent Updates
 
 | Date       | Update                                                          |
 |------------|----------------------------------------------------------------|
-| 2025-04-26 | Implemented rate limiting, backoff, and circuit breaker patterns |
-| 2025-04-26 | Added performance benchmarking tools for transfer operations    |
-| 2025-04-26 | Created web application example with Flows and Search integration |
+| 2025-04-30 | Fixed integration tests for recursive transfers by adding mock submission ID endpoints |
+| 2025-04-30 | Updated integration testing results documentation with complete Compute service support |
+| 2025-04-29 | Implemented Flows service client with complete API support |
+| 2025-04-29 | Added Compute service client with function execution capabilities |
+| 2025-04-28 | Enhanced integration testing across all services |
+| 2025-04-28 | Released v0.2.0 with improved reliability features |
+| 2025-04-27 | Implemented rate limiting, backoff, and circuit breaker patterns |
+| 2025-04-27 | Added performance benchmarking tools for transfer operations    |
+| 2025-04-27 | Created web application example with Flows and Search integration |
 | 2025-04-26 | Enhanced Flows client with pagination helpers, structured errors, and batch operations |
 | 2025-04-26 | Added comprehensive Flows client example application           |
 | 2025-04-26 | Implemented Search client with advanced queries and batch operations |
@@ -169,12 +213,6 @@ This document tracks the current status of the Globus Go SDK project.
 | 2025-04-26 | Added comprehensive documentation (token storage, transfers, user guide) |
 | 2025-04-26 | Added token validation utilities and enhanced error handling    |
 | 2025-04-26 | Implemented transfer client test additions                      |
-| 2025-04-26 | Reorganized authorizer interfaces to reduce dependencies        |
-| 2025-04-26 | Updated project roadmap with detailed next steps                |
-| 2025-04-26 | Implemented auth and groups packages                           |
-| 2025-04-26 | Added comprehensive test suite                                 |
-| 2025-04-26 | Set up CI/CD and code quality tools                            |
-| 2025-04-26 | Created documentation framework                                |
 
 ## Current Blockers
 
