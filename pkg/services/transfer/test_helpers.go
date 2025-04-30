@@ -9,14 +9,14 @@ import (
 	"time"
 )
 
-// CreateDirectoryOptions contains options for creating a directory
-type CreateDirectoryOptions struct {
+// TestCreateDirectoryOptions contains options for creating a directory (for tests)
+type TestCreateDirectoryOptions struct {
 	EndpointID string
 	Path       string
 }
 
-// CreateDirectory creates a directory on an endpoint
-func (c *Client) CreateDirectory(ctx context.Context, options *CreateDirectoryOptions) error {
+// TestCreateDirectory creates a directory on an endpoint (for tests)
+func (c *Client) TestCreateDirectory(ctx context.Context, options *TestCreateDirectoryOptions) error {
 	return c.Mkdir(ctx, options.EndpointID, options.Path)
 }
 
@@ -24,7 +24,8 @@ func (c *Client) CreateDirectory(ctx context.Context, options *CreateDirectoryOp
 type DeleteItemOptions struct {
 	EndpointID string
 	Path       string
-	Recursive  bool
+	// Note: The API does not support a "recursive" field for delete_item as of API v0.10
+	// All deletions in Globus Transfer appear to be recursive by default
 }
 
 // DeleteItem deletes a file or directory on an endpoint
@@ -36,8 +37,8 @@ func (c *Client) DeleteItem(ctx context.Context, options *DeleteItemOptions) err
 		EndpointID: options.EndpointID,
 		Items: []DeleteItem{
 			{
-				Path:      options.Path,
-				Recursive: options.Recursive,
+				DataType: "delete_item",
+				Path:     options.Path,
 			},
 		},
 	}
@@ -46,8 +47,8 @@ func (c *Client) DeleteItem(ctx context.Context, options *DeleteItemOptions) err
 	return err
 }
 
-// ListDirectoryOptions contains options for listing a directory
-type ListDirectoryOptions struct {
+// TestListDirectoryOptions contains options for listing a directory (for tests)
+type TestListDirectoryOptions struct {
 	EndpointID string
 	Path       string
 	ShowHidden bool
@@ -56,8 +57,8 @@ type ListDirectoryOptions struct {
 	Limit      int
 }
 
-// ListDirectory lists files and directories in a path on an endpoint
-func (c *Client) ListDirectory(ctx context.Context, options *ListDirectoryOptions) (*FileList, error) {
+// TestListDirectory lists files and directories in a path on an endpoint (for tests)
+func (c *Client) TestListDirectory(ctx context.Context, options *TestListDirectoryOptions) (*FileList, error) {
 	listOptions := &ListFileOptions{
 		ShowHidden: options.ShowHidden,
 		OrderBy:    options.OrderBy,
@@ -114,7 +115,7 @@ func (c *Client) GetTaskEvents(ctx context.Context, taskID string, options *GetT
 
 // TaskEventList represents a list of task events
 type TaskEventList struct {
-	DATA []TaskEvent `json:"DATA"`
+	Data []TaskEvent `json:"data"`
 }
 
 // TaskEvent represents a task event
@@ -176,8 +177,8 @@ func (c *Client) WaitForTaskCompletion(ctx context.Context, taskID string, inter
 	}
 }
 
-// RecursiveTransferOptions contains options for recursive transfer
-type RecursiveTransferOptions struct {
+// TestRecursiveTransferOptions contains options for recursive transfer in test helpers
+type TestRecursiveTransferOptions struct {
 	SourceEndpointID      string
 	DestinationEndpointID string
 	SourcePath            string
@@ -187,8 +188,8 @@ type RecursiveTransferOptions struct {
 	VerifyChecksum        bool
 }
 
-// RecursiveTransfer starts a recursive transfer between endpoints
-func (c *Client) RecursiveTransfer(ctx context.Context, options *RecursiveTransferOptions) error {
+// TestRecursiveTransfer starts a recursive transfer between endpoints using test options
+func (c *Client) TestRecursiveTransfer(ctx context.Context, options *TestRecursiveTransferOptions) error {
 	// Create transfer request
 	transferRequest := &TransferTaskRequest{
 		DataType:              "transfer",

@@ -411,6 +411,16 @@ func (c *Client) CreateDeleteTask(ctx context.Context, request *DeleteTaskReques
 		request.DataType = "delete"
 	}
 
+	// Ensure each delete item has the DATA_TYPE field set
+	for i := range request.Items {
+		if request.Items[i].DataType == "" {
+			request.Items[i].DataType = "delete_item"
+		}
+	}
+	
+	// Note: The API does not support a "recursive" field for delete_item as of API v0.10
+	// Instead, all deletions in Globus Transfer appear to be recursive by default
+
 	// Get a submission ID if not provided
 	if request.SubmissionID == "" {
 		var err error

@@ -170,8 +170,9 @@ type TransferItem struct {
 
 // DeleteItem represents a single file or directory to delete
 type DeleteItem struct {
+	DataType  string `json:"DATA_TYPE"` // Must be "delete_item" - Important: This field is required for the API
 	Path      string `json:"path"`
-	Recursive bool   `json:"recursive,omitempty"`
+	// Note: The API does not support a "recursive" field for delete_item as of API v0.10
 }
 
 // TransferTaskRequest represents a request to create a transfer task
@@ -207,7 +208,7 @@ type DeleteTaskRequest struct {
 	NotifyOnFailed    bool         `json:"notify_on_failed,omitempty"`
 	NotifyOnInactive  bool         `json:"notify_on_inactive,omitempty"`
 	SubmissionID      string       `json:"submission_id,omitempty"`
-	Items             []DeleteItem `json:"DATA"`
+	Items             []DeleteItem `json:"DATA"` // Important: "DATA" field must be uppercase
 }
 
 // TaskResponse represents the response from creating a task
