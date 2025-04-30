@@ -11,6 +11,20 @@ This document summarizes the integration testing efforts, results, and recommend
 - **Test Data Directory**: `/Users/scttfrdmn/globus-test`
 - **Authentication**: Using client credentials flow
 
+### Environment Variables
+
+| Variable | Purpose | Required? |
+|----------|---------|-----------|
+| `GLOBUS_TEST_CLIENT_ID` | Client ID for authentication | Required |
+| `GLOBUS_TEST_CLIENT_SECRET` | Client secret for authentication | Required |
+| `GLOBUS_TEST_SOURCE_ENDPOINT_ID` | Source endpoint for transfer tests | Required for transfer tests |
+| `GLOBUS_TEST_DEST_ENDPOINT_ID` | Destination endpoint for transfer tests | Required for transfer tests |
+| `GLOBUS_TEST_TRANSFER_TOKEN` | Pre-authenticated token for transfer operations | Optional |
+| `GLOBUS_TEST_GROUP_ID` | Existing group ID for group tests | Optional |
+| `GLOBUS_TEST_PUBLIC_GROUP_ID` | Public group ID for group tests | Optional |
+| `GLOBUS_TEST_GROUPS_TOKEN` | Pre-authenticated token for groups operations | Optional |
+| `HTTP_DEBUG` | Enable HTTP debugging output | Optional |
+
 ## Test Coverage
 
 The integration tests focus on the following services:
@@ -24,6 +38,12 @@ The integration tests focus on the following services:
    - Endpoint operations
    - Directory and file operations
    - Transfer task submission and monitoring
+
+3. **Groups Service**
+   - Group creation and deletion
+   - Group membership management
+   - Role operations
+   - Permissions handling
 
 ## Results Summary
 
@@ -44,6 +64,14 @@ The integration tests focus on the following services:
 | `TestIntegration_TransferFlow` | ✅ Pass | Complete workflow from directory creation to transfer and cleanup |
 | `TestComprehensiveTransfer` | 🟡 Partial | Directory deletion and file operations working, recursive transfers still have issues |
 | `TestIntegration_TaskManagement` | ❓ Pending | Not yet run |
+
+### Groups Service Tests
+
+| Test | Result | Notes |
+|------|--------|-------|
+| `TestIntegration_ListGroups` | ✅ Pass* | *Limited by permissions, handles 405 error gracefully |
+| `TestIntegration_GroupLifecycle` | ✅ Pass* | Successfully creates and deletes groups, update operation limited by permissions |
+| `TestIntegration_ExistingGroup` | ✅ Pass* | Added fallback to public group, handles permission errors gracefully |
 
 ## Improvements Made
 
