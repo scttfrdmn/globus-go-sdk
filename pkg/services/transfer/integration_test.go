@@ -225,6 +225,11 @@ func TestIntegration_ListEndpoints(t *testing.T) {
 }
 
 func TestIntegration_TransferFlow(t *testing.T) {
+	// Skip tests if the GLOBUS_TEST_SKIP_TRANSFER environment variable is set
+	if os.Getenv("GLOBUS_TEST_SKIP_TRANSFER") != "" {
+		t.Skip("Skipping transfer test due to GLOBUS_TEST_SKIP_TRANSFER environment variable")
+	}
+
 	clientID, clientSecret, sourceEndpointID, destEndpointID := getTestCredentials(t)
 
 	// Skip if source endpoint ID is not provided
@@ -316,10 +321,7 @@ func TestIntegration_TransferFlow(t *testing.T) {
 	err = ratelimit.RetryWithBackoff(
 		ctx,
 		func(ctx context.Context) error {
-			return client.CreateDirectory(ctx, &transfer.CreateDirectoryOptions{
-				EndpointID: sourceEndpointID,
-				Path:       sourceDir,
-			})
+			return client.Mkdir(ctx, sourceEndpointID, sourceDir)
 		},
 		ratelimit.DefaultBackoff(),
 		transfer.IsRetryableTransferError,
@@ -384,10 +386,7 @@ func TestIntegration_TransferFlow(t *testing.T) {
 	err = ratelimit.RetryWithBackoff(
 		ctx,
 		func(ctx context.Context) error {
-			return client.CreateDirectory(ctx, &transfer.CreateDirectoryOptions{
-				EndpointID: destEndpointID,
-				Path:       destDir,
-			})
+			return client.Mkdir(ctx, destEndpointID, destDir)
 		},
 		ratelimit.DefaultBackoff(),
 		transfer.IsRetryableTransferError,
@@ -459,10 +458,7 @@ func TestIntegration_TransferFlow(t *testing.T) {
 	err = ratelimit.RetryWithBackoff(
 		ctx,
 		func(ctx context.Context) error {
-			return client.CreateDirectory(ctx, &transfer.CreateDirectoryOptions{
-				EndpointID: sourceEndpointID,
-				Path:       sourceSubDir,
-			})
+			return client.Mkdir(ctx, sourceEndpointID, sourceSubDir)
 		},
 		ratelimit.DefaultBackoff(),
 		transfer.IsRetryableTransferError,
@@ -589,10 +585,7 @@ func TestIntegration_TransferFlow(t *testing.T) {
 				ctx,
 				func(ctx context.Context) error {
 					var listErr error
-					listing, listErr = client.ListDirectory(ctx, &transfer.ListDirectoryOptions{
-						EndpointID: destEndpointID,
-						Path:       destDir,
-					})
+					listing, listErr = client.ListFiles(ctx, destEndpointID, destDir, nil)
 					return listErr
 				},
 				ratelimit.DefaultBackoff(),

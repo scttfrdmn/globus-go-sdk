@@ -161,6 +161,7 @@ type ListTasksOptions struct {
 
 // TransferItem represents a single file or directory to transfer
 type TransferItem struct {
+	DataType        string `json:"DATA_TYPE,omitempty"` // Should be "transfer_item"
 	SourcePath      string `json:"source_path"`
 	DestinationPath string `json:"destination_path"`
 	Recursive       bool   `json:"recursive,omitempty"`
@@ -175,7 +176,7 @@ type DeleteItem struct {
 
 // TransferTaskRequest represents a request to create a transfer task
 type TransferTaskRequest struct {
-	DataType               string         `json:"data_type,omitempty"`
+	DataType               string         `json:"DATA_TYPE,omitempty"`
 	Label                  string         `json:"label,omitempty"`
 	SourceEndpointID       string         `json:"source_endpoint"`
 	DestinationEndpointID  string         `json:"destination_endpoint"`
@@ -193,12 +194,12 @@ type TransferTaskRequest struct {
 	UseSharing             bool           `json:"use_sharing,omitempty"`
 	SymlinkDepth           int            `json:"symlink_depth,omitempty"`
 	PreserveMtime          bool           `json:"preserve_mtime,omitempty"`
-	Items                  []TransferItem `json:"data"`
+	Items                  []TransferItem `json:"DATA"`
 }
 
 // DeleteTaskRequest represents a request to create a delete task
 type DeleteTaskRequest struct {
-	DataType          string       `json:"data_type,omitempty"`
+	DataType          string       `json:"DATA_TYPE,omitempty"`
 	Label             string       `json:"label,omitempty"`
 	EndpointID        string       `json:"endpoint"`
 	Deadline          *time.Time   `json:"deadline,omitempty"`
@@ -206,7 +207,7 @@ type DeleteTaskRequest struct {
 	NotifyOnFailed    bool         `json:"notify_on_failed,omitempty"`
 	NotifyOnInactive  bool         `json:"notify_on_inactive,omitempty"`
 	SubmissionID      string       `json:"submission_id,omitempty"`
-	Items             []DeleteItem `json:"data"`
+	Items             []DeleteItem `json:"DATA"`
 }
 
 // TaskResponse represents the response from creating a task

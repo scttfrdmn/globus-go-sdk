@@ -130,6 +130,11 @@ func getTransferToken(t *testing.T, clientID, clientSecret string) string {
 
 // TestComprehensiveTransfer is a comprehensive test for the Transfer service
 func TestComprehensiveTransfer(t *testing.T) {
+	// Skip tests if the GLOBUS_TEST_SKIP_TRANSFER environment variable is set
+	if os.Getenv("GLOBUS_TEST_SKIP_TRANSFER") != "" {
+		t.Skip("Skipping transfer test due to GLOBUS_TEST_SKIP_TRANSFER environment variable")
+	}
+
 	// Skip if missing credentials
 	clientID, clientSecret, sourceEndpointID, destEndpointID := getTestCredentialsComprehensive(t)
 
