@@ -1,17 +1,20 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
-<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
+<!-- SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors -->
 # Token Storage Interface
 
 The Globus Go SDK includes a flexible token storage system that allows applications to persist OAuth2 tokens in different ways. This document explains how to use the token storage interface and its available implementations.
+
+> **Note**: A new unified token management system is now available in the `pkg/services/tokens` package. 
+> For more details, see the [Token Management Example](../examples/token-management/README.md).
 
 ## Overview
 
 The token storage system consists of:
 
-1. A `TokenInfo` struct that contains token data
-2. A `TokenStorage` interface for storing and retrieving tokens
+1. A `TokenInfo` struct (or `TokenSet` in the new tokens package) that contains token data
+2. A `TokenStorage` interface (or `Storage` in the new tokens package) for storing and retrieving tokens
 3. Implementations of the interface (memory, file)
-4. A `TokenManager` that handles token refreshing
+4. A `TokenManager` (or `Manager` in the new tokens package) that handles token refreshing
 
 ## TokenInfo Structure
 
@@ -136,3 +139,54 @@ func (s *CustomTokenStorage) ListTokens(ctx context.Context) ([]string, error) {
 3. **Error Handling**: Return appropriate errors, especially for not found conditions
 4. **Context Support**: Honor context cancellation for long operations
 5. **Key Naming**: Use consistent key naming for tokens (e.g., user IDs, resource IDs)
+
+## New Tokens Package
+
+The SDK now includes a new unified token management package in `pkg/services/tokens` that provides enhanced functionality:
+
+### Key Features
+
+- Simplified API for token storage and management
+- Built-in support for automatic token refreshing
+- Background refreshing of tokens that are close to expiry
+- Support for both memory and file-based storage
+- Comprehensive test suite and documentation
+
+### Using the New Tokens Package
+
+```go
+import (
+    "github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
+    "github.com/scttfrdmn/globus-go-sdk/pkg/services/tokens"
+)
+
+// Create a storage backend (file or memory)
+storage, err := tokens.NewFileStorage("./tokens")
+if err != nil {
+    log.Fatalf("Failed to create token storage: %v", err)
+}
+
+// Create an auth client
+authClient := auth.NewClient(clientID, clientSecret)
+
+// Create a token manager
+manager := tokens.NewManager(storage, authClient)
+
+// Configure refresh threshold
+manager.SetRefreshThreshold(10 * time.Minute)
+
+// Start background refresh
+stopRefresh := manager.StartBackgroundRefresh(15 * time.Minute)
+defer stopRefresh() // Call when done
+
+// Get a token (will refresh if needed)
+entry, err := manager.GetToken(ctx, "user-123")
+if err != nil {
+    log.Fatalf("Failed to get token: %v", err)
+}
+
+// Use the access token
+accessToken := entry.TokenSet.AccessToken
+```
+
+For a complete example, see the [Token Management Example](../examples/token-management/README.md).

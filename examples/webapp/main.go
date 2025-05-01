@@ -99,7 +99,14 @@ func main() {
 
 	// Initialize token manager
 	app.TokenManager = tokens.NewManager(app.TokenStorage, app.AuthClient)
-
+	
+	// Configure token refresh to happen when tokens are within 10 minutes of expiry
+	app.TokenManager.SetRefreshThreshold(10 * time.Minute)
+	
+	// Start background token refresh (refresh every 15 minutes)
+	stopRefresh := app.TokenManager.StartBackgroundRefresh(15 * time.Minute)
+	defer stopRefresh() // Will be called when the app terminates
+	
 	// Set up HTTP routes
 	http.HandleFunc("/", app.handleHome)
 	http.HandleFunc("/login", app.handleLogin)
@@ -689,20 +696,19 @@ func (app *App) handleAPIFlows(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Initialize Flows client if not already done
-	if app.FlowsClient == nil || app.FlowsClient.Client.Authorizer == nil {
-		app.FlowsClient = flows.NewClient(accessToken)
-	}
-
-	// List flows
-	flowList, err := app.FlowsClient.ListFlows(ctx, &flows.ListFlowsOptions{
-		Limit: 10,
-	})
+	// Create a new flows client with the fresh token for this request
+	app.FlowsClient = flows.NewClient(accessToken)
+	
+	// Note: In a production implementation, we would use the flows client's method directly
+	// but for this example we're using our own implementation
+	
+	// For this example, we'll use our own simple flows implementation
+	flowList, err := app.performSimpleFlowsList(ctx, 10)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to list flows: %v", err), http.StatusInternalServerError)
 		return
 	}
-
+	
 	// Return flows as JSON
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(flowList)
@@ -731,18 +737,14 @@ func (app *App) handleAPISearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Initialize Search client if not already done
-	if app.SearchClient == nil || app.SearchClient.Client.Authorizer == nil {
-		app.SearchClient = search.NewClient(accessToken)
-	}
+	// Create a new search client with the fresh token for this request
+	app.SearchClient = search.NewClient(accessToken)
 
-	// Perform search
-	searchQuery := &search.SearchQuery{
-		Q:     query,
-		Limit: 10,
-	}
-
-	searchResults, err := app.SearchClient.Search(ctx, searchQuery)
+	// Note: In a production implementation, we would use the search client's method directly
+	// but for this example we're using our own implementation
+	
+	// For this example, we'll use our own simple search implementation
+	searchResults, err := app.performSimpleSearch(ctx, query, 10)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Search failed: %v", err), http.StatusInternalServerError)
 		return
@@ -775,18 +777,15 @@ func (app *App) getSession(r *http.Request) *Session {
 
 // storeTokens stores tokens for a user
 func (app *App) storeTokens(userID string, tokenResponse *auth.TokenResponse) error {
-	// Create a token set
-	tokenSet := &tokens.TokenSet{
-		AccessToken:  tokenResponse.AccessToken,
-		RefreshToken: tokenResponse.RefreshToken,
-		ExpiresAt:    time.Now().Add(time.Duration(tokenResponse.ExpiresIn) * time.Second),
-		Scope:        tokenResponse.Scope,
-	}
-
-	// Create a token entry for the storage
+	// Create a token entry with TokenSet
 	entry := &tokens.Entry{
 		Resource: userID,
-		TokenSet: tokenSet,
+		TokenSet: &tokens.TokenSet{
+			AccessToken:  tokenResponse.AccessToken,
+			RefreshToken: tokenResponse.RefreshToken,
+			ExpiresAt:    time.Now().Add(time.Duration(tokenResponse.ExpiresIn) * time.Second),
+			Scope:        tokenResponse.Scope,
+		},
 	}
 
 	// Store the tokens
@@ -795,35 +794,18 @@ func (app *App) storeTokens(userID string, tokenResponse *auth.TokenResponse) er
 
 // getAccessToken gets an access token for the specified user and scope
 func (app *App) getAccessToken(ctx context.Context, userID, scope string) (string, error) {
-	// Look up tokens in storage
-	entry, err := app.TokenStorage.Lookup(userID)
+	// Use the TokenManager to get (and potentially refresh) the token
+	entry, err := app.TokenManager.GetToken(ctx, userID)
 	if err != nil {
-		return "", fmt.Errorf("failed to lookup tokens: %w", err)
+		return "", fmt.Errorf("failed to get token: %w", err)
 	}
 
-	// Check if token is valid and has the required scope
-	if entry != nil && entry.AccessToken != "" && !entry.IsExpired() &&
-		(entry.Scope == "" || containsScope(entry.Scope, scope)) {
-		return entry.AccessToken, nil
+	// Check if token has the required scope
+	if entry.TokenSet.Scope == "" || containsScope(entry.TokenSet.Scope, scope) {
+		return entry.TokenSet.AccessToken, nil
 	}
 
-	// If we have a refresh token, try to refresh
-	if entry != nil && entry.RefreshToken != "" {
-		// Refresh the token
-		tokenResponse, err := app.AuthClient.RefreshToken(ctx, entry.RefreshToken)
-		if err != nil {
-			return "", fmt.Errorf("failed to refresh token: %w", err)
-		}
-
-		// Store the new tokens
-		if err := app.storeTokens(userID, tokenResponse); err != nil {
-			return "", fmt.Errorf("failed to store refreshed tokens: %w", err)
-		}
-
-		return tokenResponse.AccessToken, nil
-	}
-
-	return "", fmt.Errorf("no valid token available for user %s", userID)
+	return "", fmt.Errorf("token does not have required scope %s", scope)
 }
 
 // getUserInfo retrieves user information from Globus Auth

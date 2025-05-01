@@ -18,13 +18,14 @@
 
 A Go SDK for interacting with Globus services, providing a simple and idiomatic Go interface to Globus APIs.
 
-> **STATUS**: Version 0.2.0 is now available! See the [CHANGELOG](doc/project/changelog.md) for details on the latest features and improvements.
+> **STATUS**: Version 0.8.0 is now available! See the [CHANGELOG](doc/project/changelog.md) for details on the latest features and improvements.
 
 > **DISCLAIMER**: The Globus Go SDK is an independent, community-developed project and is not officially affiliated with, endorsed by, or supported by Globus, the University of Chicago, or their affiliated organizations. This SDK is maintained by independent contributors and is not a product of Globus or the University of Chicago.
 
 ## Features
 
 - **Authentication**: OAuth2 flows with token management and automatic refreshing
+- **Token Management**: Complete token lifecycle management with automatic refreshing
 - **Token Storage**: Persistent token storage (memory and file-based implementations)
 - **Groups**: Group management and membership operations
 - **Transfer**: File transfer with recursive directory support and resumable transfers
@@ -34,7 +35,7 @@ A Go SDK for interacting with Globus services, providing a simple and idiomatic 
 - **Observability**: Structured logging and distributed tracing
 - **Reliability**: Comprehensive error handling with retries and circuit breakers
 - **Integration**: Extensive testing infrastructure
-- **Examples**: CLI and web application examples
+- **Examples**: CLI, token management, and web application examples
 - **Utilities**: Verification tools to test credentials
 
 ## Installation
@@ -75,7 +76,22 @@ go build
 ./verify-credentials
 ```
 
-For full integration testing:
+### Comprehensive Testing
+
+For complete SDK testing, including all services with real credentials:
+
+```bash
+# After setting up your .env.test file
+./scripts/comprehensive_testing.sh  # Run all tests with real credentials
+```
+
+This script runs all unit tests, examples, integration tests, and verifies all services work with your real credentials. Results are logged to `comprehensive_testing.log`.
+
+See [doc/COMPREHENSIVE_TESTING.md](doc/COMPREHENSIVE_TESTING.md) for detailed testing guidelines.
+
+### Integration Testing
+
+For targeted integration testing:
 
 ```bash
 # After setting up your .env.test file
@@ -83,7 +99,7 @@ For full integration testing:
 ./scripts/run_integration_tests.sh           # Run all integration tests
 ```
 
-See [doc/INTEGRATION_TESTING.md](doc/INTEGRATION_TESTING.md) for more details on testing with credentials.
+See [doc/INTEGRATION_TESTING.md](doc/INTEGRATION_TESTING.md) for more details on integration testing with credentials.
 
 ## SDK Organization
 
@@ -99,6 +115,7 @@ This SDK follows the structure and patterns established by the official Globus P
 ### Services
 
 - `pkg/services/auth`: OAuth2 authentication and authorization
+- `pkg/services/tokens`: Token management with storage and automatic refreshing
 - `pkg/services/groups`: Group management
 - `pkg/services/transfer`: File transfer and endpoint management
 - `pkg/services/search`: Data search and discovery
@@ -121,12 +138,13 @@ import (
     "time"
 
     "github.com/scttfrdmn/globus-go-sdk/pkg"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
+    "github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
+    "github.com/scttfrdmn/globus-go-sdk/pkg/services/tokens"
 )
 
 func main() {
     // Create a token storage for persisting tokens
-    storage, err := auth.NewFileTokenStorage("~/.globus-tokens")
+    storage, err := tokens.NewFileStorage("~/.globus-tokens")
     if err != nil {
         log.Fatalf("Failed to create token storage: %v", err)
     }
@@ -141,19 +159,20 @@ func main() {
     authClient.SetRedirectURL("http://localhost:8080/callback")
     
     // Create a token manager for automatic refresh
-    tokenManager := &auth.TokenManager{
-        Storage:          storage,
-        RefreshThreshold: 5 * time.Minute,
-        RefreshFunc: func(ctx context.Context, token auth.TokenInfo) (auth.TokenInfo, error) {
-            return authClient.RefreshToken(ctx, token.RefreshToken)
-        },
-    }
+    tokenManager := tokens.NewManager(storage, authClient)
+    
+    // Configure token refresh settings
+    tokenManager.SetRefreshThreshold(5 * time.Minute)
+    
+    // Start background refresh
+    stopRefresh := tokenManager.StartBackgroundRefresh(15 * time.Minute)
+    defer stopRefresh() // Stop background refresh when done
     
     // Check if we already have tokens
-    token, err := tokenManager.GetToken(context.Background(), "default")
-    if err == nil && !token.IsExpired() {
+    entry, err := tokenManager.GetToken(context.Background(), "default")
+    if err == nil && !entry.TokenSet.IsExpired() {
         // We have valid tokens, use them
-        fmt.Printf("Using existing token (expires in %v)\n", token.Lifetime())
+        fmt.Printf("Using existing token (expires at: %s)\n", entry.TokenSet.ExpiresAt.Format(time.RFC3339))
         return
     }
     
@@ -173,8 +192,19 @@ func main() {
             return
         }
         
+        // Create a token entry
+        entry := &tokens.Entry{
+            Resource: "default",
+            TokenSet: &tokens.TokenSet{
+                AccessToken:  tokenResponse.AccessToken,
+                RefreshToken: tokenResponse.RefreshToken,
+                ExpiresAt:    time.Now().Add(time.Duration(tokenResponse.ExpiresIn) * time.Second),
+                Scope:        tokenResponse.Scope,
+            },
+        }
+        
         // Store the tokens
-        err = tokenManager.StoreToken(context.Background(), "default", tokenResponse)
+        err = storage.Store(entry)
         if err != nil {
             log.Fatalf("Failed to store token: %v", err)
             http.Error(w, "Failed to store token", http.StatusInternalServerError)
@@ -439,6 +469,8 @@ For detailed documentation, see:
 
 - [GoDoc Reference](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/)
 - [User Guide](doc/user-guide.md)
+- [Token Management Example](examples/token-management/README.md)
+- [Tokens Package Guide](doc/tokens-package.md)
 - [Token Storage Guide](doc/token-storage.md)
 - [Recursive Transfers Guide](doc/recursive-transfers.md)
 - [Resumable Transfers Guide](doc/resumable-transfers.md)
@@ -459,7 +491,7 @@ For detailed documentation, see:
 
 ## Development Status
 
-This SDK is under active development. Current version: **v0.1.0-pre**
+This SDK is under active development. Current version: **v0.8.0**
 
 | Component | Status | Details |
 |-----------|--------|---------|
@@ -467,6 +499,7 @@ This SDK is under active development. Current version: **v0.1.0-pre**
 | Auth Client | ✅ Complete | OAuth flows, token management, validation utilities |
 | Token Storage | ✅ Complete | Interface with memory and file-based implementations |
 | Token Manager | ✅ Complete | Automatic token refreshing and management |
+| Tokens Package | ✅ Complete | Unified token management package with storage and refresh |
 | Groups Client | ✅ Complete | Group management, membership operations |
 | Transfer Client | ✅ Complete | Basic operations, recursive directory transfers, resumable transfers |
 | Search Client | ✅ Complete | Advanced queries, batch operations, pagination |

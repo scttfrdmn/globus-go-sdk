@@ -1,0 +1,194 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
+package tokens
+
+import (
+	"context"
+	"fmt"
+	"testing"
+	"time"
+
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
+)
+
+// MockRefreshHandler implements RefreshHandler for testing
+type MockRefreshHandler struct {
+	response *auth.TokenResponse
+	err      error
+	calls    int
+}
+
+func (m *MockRefreshHandler) RefreshToken(ctx context.Context, refreshToken string) (*auth.TokenResponse, error) {
+	m.calls++
+	if m.response != nil && m.response.ExpiryTime.IsZero() {
+		m.response.ExpiryTime = time.Now().Add(time.Hour)
+	}
+	return m.response, m.err
+}
+
+func TestManagerGetToken(t *testing.T) {
+	// Create a mock storage
+	storage := NewMemoryStorage()
+
+	// Create a mock refresh handler
+	mockHandler := &MockRefreshHandler{
+		response: &auth.TokenResponse{
+			AccessToken:  "new-access-token",
+			RefreshToken: "new-refresh-token",
+			ExpiresIn:    3600,
+		},
+	}
+
+	// Create a manager
+	manager := NewManager(storage, mockHandler)
+
+	// Create a test entry
+	now := time.Now()
+	entry := &Entry{
+		Resource: "test-resource",
+		TokenSet: &TokenSet{
+			AccessToken:  "test-access-token",
+			RefreshToken: "test-refresh-token",
+			ExpiresAt:    now.Add(1 * time.Hour),
+			Scope:        "test-scope",
+		},
+	}
+
+	// Store the entry
+	err := storage.Store(entry)
+	if err != nil {
+		t.Fatalf("Failed to store entry: %v", err)
+	}
+
+	// Test getting a non-expired token (should not refresh)
+	got, err := manager.GetToken(context.Background(), "test-resource")
+	if err != nil {
+		t.Fatalf("Manager.GetToken() error = %v", err)
+	}
+	if got.TokenSet.AccessToken != "test-access-token" {
+		t.Errorf("Manager.GetToken().TokenSet.AccessToken = %v, want %v", got.TokenSet.AccessToken, "test-access-token")
+	}
+	if mockHandler.calls != 0 {
+		t.Errorf("RefreshHandler.RefreshToken() was called %v times, want 0", mockHandler.calls)
+	}
+
+	// Create a nearly expired entry
+	expiredEntry := &Entry{
+		Resource: "expired-resource",
+		TokenSet: &TokenSet{
+			AccessToken:  "expired-access-token",
+			RefreshToken: "expired-refresh-token",
+			ExpiresAt:    now.Add(1 * time.Minute), // Very close to expiry
+			Scope:        "test-scope",
+		},
+	}
+
+	// Store the entry
+	err = storage.Store(expiredEntry)
+	if err != nil {
+		t.Fatalf("Failed to store entry: %v", err)
+	}
+
+	// Test getting a nearly expired token (should refresh)
+	manager.RefreshThreshold = 5 * time.Minute // Set threshold higher than token expiry
+	got, err = manager.GetToken(context.Background(), "expired-resource")
+	if err != nil {
+		t.Fatalf("Manager.GetToken() error = %v", err)
+	}
+	if got.TokenSet.AccessToken != "new-access-token" {
+		t.Errorf("Manager.GetToken().TokenSet.AccessToken = %v, want %v", got.TokenSet.AccessToken, "new-access-token")
+	}
+	if mockHandler.calls != 1 {
+		t.Errorf("RefreshHandler.RefreshToken() was called %v times, want 1", mockHandler.calls)
+	}
+
+	// Test refresh error handling
+	mockHandler.err = fmt.Errorf("refresh error")
+	mockHandler.calls = 0
+
+	// Should still return the token even if refresh fails, as long as it's valid
+	got, err = manager.GetToken(context.Background(), "expired-resource")
+	if err != nil {
+		t.Fatalf("Manager.GetToken() error = %v", err)
+	}
+	if got.TokenSet.AccessToken != "new-access-token" {
+		t.Errorf("Manager.GetToken().TokenSet.AccessToken = %v, want %v", got.TokenSet.AccessToken, "new-access-token")
+	}
+
+	// Create a fully expired entry with no refresh token
+	fullyExpiredEntry := &Entry{
+		Resource: "fully-expired-resource",
+		TokenSet: &TokenSet{
+			AccessToken: "fully-expired-access-token",
+			ExpiresAt:   now.Add(-1 * time.Hour), // Fully expired
+			Scope:       "test-scope",
+		},
+	}
+
+	// Store the entry
+	err = storage.Store(fullyExpiredEntry)
+	if err != nil {
+		t.Fatalf("Failed to store entry: %v", err)
+	}
+
+	// Test getting a fully expired token with no refresh token (should return error)
+	_, err = manager.GetToken(context.Background(), "fully-expired-resource")
+	if err == nil {
+		t.Fatalf("Manager.GetToken() error = nil, want error")
+	}
+}
+
+func TestManagerRefreshToken(t *testing.T) {
+	// Create a mock storage
+	storage := NewMemoryStorage()
+
+	// Create a mock refresh handler
+	mockHandler := &MockRefreshHandler{
+		response: &auth.TokenResponse{
+			AccessToken:  "new-access-token",
+			RefreshToken: "new-refresh-token",
+			ExpiresIn:    3600,
+		},
+	}
+
+	// Create a manager
+	manager := NewManager(storage, mockHandler)
+
+	// Create a test entry
+	entry := &Entry{
+		Resource: "test-resource",
+		TokenSet: &TokenSet{
+			AccessToken:  "test-access-token",
+			RefreshToken: "test-refresh-token",
+			ExpiresAt:    time.Now().Add(1 * time.Hour),
+			Scope:        "test-scope",
+		},
+	}
+
+	// Store the entry
+	err := storage.Store(entry)
+	if err != nil {
+		t.Fatalf("Failed to store entry: %v", err)
+	}
+
+	// Test explicit refresh
+	refreshed, err := manager.refreshToken(context.Background(), "test-resource", entry)
+	if err != nil {
+		t.Fatalf("Manager.refreshToken() error = %v", err)
+	}
+	if refreshed.TokenSet.AccessToken != "new-access-token" {
+		t.Errorf("Manager.refreshToken().TokenSet.AccessToken = %v, want %v", refreshed.TokenSet.AccessToken, "new-access-token")
+	}
+	if mockHandler.calls != 1 {
+		t.Errorf("RefreshHandler.RefreshToken() was called %v times, want 1", mockHandler.calls)
+	}
+
+	// Verify the token was updated in storage
+	stored, err := storage.Lookup("test-resource")
+	if err != nil {
+		t.Fatalf("Storage.Lookup() error = %v", err)
+	}
+	if stored.AccessToken != "new-access-token" {
+		t.Errorf("Storage.Lookup().AccessToken = %v, want %v", stored.AccessToken, "new-access-token")
+	}
+}
