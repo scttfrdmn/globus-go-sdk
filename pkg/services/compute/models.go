@@ -320,6 +320,223 @@ type SecretResponse struct {
 	ModifiedAt  time.Time `json:"modified_at,omitempty"`
 }
 
+// WorkflowCreateRequest represents a request to create a workflow
+type WorkflowCreateRequest struct {
+	Name        string                      `json:"name"`
+	Description string                      `json:"description,omitempty"`
+	Tasks       []WorkflowTask              `json:"tasks"`
+	Dependencies map[string][]string        `json:"dependencies,omitempty"`
+	ErrorHandling string                    `json:"error_handling,omitempty"`
+	RetryPolicy *RetryPolicy                `json:"retry_policy,omitempty"`
+	Metadata    map[string]string           `json:"metadata,omitempty"`
+	Public      bool                        `json:"public,omitempty"`
+}
+
+// WorkflowTask represents a task in a workflow
+type WorkflowTask struct {
+	ID          string                      `json:"id"`
+	Name        string                      `json:"name,omitempty"`
+	FunctionID  string                      `json:"function_id"`
+	EndpointID  string                      `json:"endpoint_id"`
+	Args        []any                       `json:"args,omitempty"`
+	Kwargs      map[string]any              `json:"kwargs,omitempty"`
+	Environment string                      `json:"environment,omitempty"`
+	RetryPolicy *RetryPolicy                `json:"retry_policy,omitempty"`
+	Timeout     int                         `json:"timeout,omitempty"`
+}
+
+// RetryPolicy represents a retry policy for tasks or workflows
+type RetryPolicy struct {
+	MaxRetries      int       `json:"max_retries"`
+	RetryInterval   int       `json:"retry_interval,omitempty"`
+	BackoffFactor   float64   `json:"backoff_factor,omitempty"`
+	MaxInterval     int       `json:"max_interval,omitempty"`
+	RetryConditions []string  `json:"retry_conditions,omitempty"`
+}
+
+// WorkflowResponse represents a workflow
+type WorkflowResponse struct {
+	ID          string                      `json:"id,omitempty"`
+	Name        string                      `json:"name,omitempty"`
+	Description string                      `json:"description,omitempty"`
+	Owner       string                      `json:"owner,omitempty"`
+	Tasks       []WorkflowTask              `json:"tasks,omitempty"`
+	Dependencies map[string][]string        `json:"dependencies,omitempty"`
+	ErrorHandling string                    `json:"error_handling,omitempty"`
+	RetryPolicy *RetryPolicy                `json:"retry_policy,omitempty"`
+	Metadata    map[string]string           `json:"metadata,omitempty"`
+	Public      bool                        `json:"public,omitempty"`
+	CreatedAt   time.Time                   `json:"created_at,omitempty"`
+	ModifiedAt  time.Time                   `json:"modified_at,omitempty"`
+}
+
+// WorkflowRunRequest represents a request to run a workflow
+type WorkflowRunRequest struct {
+	GlobalArgs  map[string]any              `json:"global_args,omitempty"`
+	TaskArgs    map[string]map[string]any   `json:"task_args,omitempty"`
+	Priority    int                         `json:"priority,omitempty"`
+	Description string                      `json:"description,omitempty"`
+	RunLabel    string                      `json:"run_label,omitempty"`
+}
+
+// WorkflowRunResponse represents the response from a workflow run request
+type WorkflowRunResponse struct {
+	RunID       string                      `json:"run_id,omitempty"`
+	WorkflowID  string                      `json:"workflow_id,omitempty"`
+	Status      string                      `json:"status,omitempty"`
+	Message     string                      `json:"message,omitempty"`
+	StartedAt   time.Time                   `json:"started_at,omitempty"`
+}
+
+// WorkflowStatusResponse represents the status of a workflow run
+type WorkflowStatusResponse struct {
+	RunID       string                      `json:"run_id,omitempty"`
+	WorkflowID  string                      `json:"workflow_id,omitempty"`
+	Status      string                      `json:"status,omitempty"`
+	TaskStatus  map[string]TaskStatusInfo   `json:"task_status,omitempty"`
+	StartedAt   time.Time                   `json:"started_at,omitempty"`
+	CompletedAt time.Time                   `json:"completed_at,omitempty"`
+	Error       string                      `json:"error,omitempty"`
+	Progress    WorkflowProgressInfo        `json:"progress,omitempty"`
+}
+
+// TaskStatusInfo represents the status info of a task in a workflow
+type TaskStatusInfo struct {
+	Status      string                      `json:"status,omitempty"`
+	TaskID      string                      `json:"task_id,omitempty"`
+	StartedAt   time.Time                   `json:"started_at,omitempty"`
+	CompletedAt time.Time                   `json:"completed_at,omitempty"`
+	Error       string                      `json:"error,omitempty"`
+	Result      interface{}                 `json:"result,omitempty"`
+}
+
+// WorkflowProgressInfo represents progress information for a workflow
+type WorkflowProgressInfo struct {
+	TotalTasks   int                        `json:"total_tasks,omitempty"`
+	Completed    int                        `json:"completed,omitempty"`
+	Running      int                        `json:"running,omitempty"`
+	Pending      int                        `json:"pending,omitempty"`
+	Failed       int                        `json:"failed,omitempty"`
+	PercentDone  float64                    `json:"percent_done,omitempty"`
+}
+
+// TaskGroupCreateRequest represents a request to create a task group
+type TaskGroupCreateRequest struct {
+	Name        string                      `json:"name"`
+	Description string                      `json:"description,omitempty"`
+	Tasks       []TaskRequest               `json:"tasks"`
+	Concurrency int                         `json:"concurrency,omitempty"`
+	RetryPolicy *RetryPolicy                `json:"retry_policy,omitempty"`
+	Public      bool                        `json:"public,omitempty"`
+}
+
+// TaskGroupResponse represents a task group
+type TaskGroupResponse struct {
+	ID          string                      `json:"id,omitempty"`
+	Name        string                      `json:"name,omitempty"`
+	Description string                      `json:"description,omitempty"`
+	Owner       string                      `json:"owner,omitempty"`
+	Tasks       []TaskRequest               `json:"tasks,omitempty"`
+	Concurrency int                         `json:"concurrency,omitempty"`
+	RetryPolicy *RetryPolicy                `json:"retry_policy,omitempty"`
+	Public      bool                        `json:"public,omitempty"`
+	CreatedAt   time.Time                   `json:"created_at,omitempty"`
+	ModifiedAt  time.Time                   `json:"modified_at,omitempty"`
+}
+
+// TaskGroupRunRequest represents a request to run a task group
+type TaskGroupRunRequest struct {
+	Priority    int                         `json:"priority,omitempty"`
+	Description string                      `json:"description,omitempty"`
+	RunLabel    string                      `json:"run_label,omitempty"`
+}
+
+// TaskGroupRunResponse represents the response from a task group run request
+type TaskGroupRunResponse struct {
+	RunID       string                      `json:"run_id,omitempty"`
+	TaskGroupID string                      `json:"task_group_id,omitempty"`
+	Status      string                      `json:"status,omitempty"`
+	Message     string                      `json:"message,omitempty"`
+	TaskIDs     []string                    `json:"task_ids,omitempty"`
+	StartedAt   time.Time                   `json:"started_at,omitempty"`
+}
+
+// TaskGroupStatusResponse represents the status of a task group run
+type TaskGroupStatusResponse struct {
+	RunID       string                      `json:"run_id,omitempty"`
+	TaskGroupID string                      `json:"task_group_id,omitempty"`
+	Status      string                      `json:"status,omitempty"`
+	TaskStatus  map[string]TaskStatusInfo   `json:"task_status,omitempty"`
+	StartedAt   time.Time                   `json:"started_at,omitempty"`
+	CompletedAt time.Time                   `json:"completed_at,omitempty"`
+	Error       string                      `json:"error,omitempty"`
+	Progress    TaskGroupProgressInfo       `json:"progress,omitempty"`
+}
+
+// TaskGroupProgressInfo represents progress information for a task group
+type TaskGroupProgressInfo struct {
+	TotalTasks   int                        `json:"total_tasks,omitempty"`
+	Completed    int                        `json:"completed,omitempty"`
+	Running      int                        `json:"running,omitempty"`
+	Pending      int                        `json:"pending,omitempty"`
+	Failed       int                        `json:"failed,omitempty"`
+	PercentDone  float64                    `json:"percent_done,omitempty"`
+}
+
+// DependencyGraphNode represents a node in a dependency graph
+type DependencyGraphNode struct {
+	Task         TaskRequest                `json:"task"`
+	Dependencies []string                   `json:"dependencies,omitempty"`
+	Condition    string                     `json:"condition,omitempty"`
+	RetryPolicy  *RetryPolicy               `json:"retry_policy,omitempty"`
+	ErrorHandler *ErrorHandler              `json:"error_handler,omitempty"`
+}
+
+// ErrorHandler represents an error handler for a node in a dependency graph
+type ErrorHandler struct {
+	Strategy    string                      `json:"strategy"`
+	FallbackID  string                      `json:"fallback_id,omitempty"`
+	RetryPolicy *RetryPolicy                `json:"retry_policy,omitempty"`
+}
+
+// DependencyGraphRequest represents a request to run a dependency graph
+type DependencyGraphRequest struct {
+	Nodes       map[string]DependencyGraphNode `json:"nodes"`
+	Description string                      `json:"description,omitempty"`
+	ErrorPolicy string                      `json:"error_policy,omitempty"`
+	RunLabel    string                      `json:"run_label,omitempty"`
+}
+
+// DependencyGraphResponse represents the response from a dependency graph run request
+type DependencyGraphResponse struct {
+	RunID       string                      `json:"run_id,omitempty"`
+	Status      string                      `json:"status,omitempty"`
+	Message     string                      `json:"message,omitempty"`
+	StartedAt   time.Time                   `json:"started_at,omitempty"`
+}
+
+// DependencyGraphStatusResponse represents the status of a dependency graph run
+type DependencyGraphStatusResponse struct {
+	RunID       string                      `json:"run_id,omitempty"`
+	Status      string                      `json:"status,omitempty"`
+	NodeStatus  map[string]TaskStatusInfo   `json:"node_status,omitempty"`
+	StartedAt   time.Time                   `json:"started_at,omitempty"`
+	CompletedAt time.Time                   `json:"completed_at,omitempty"`
+	Error       string                      `json:"error,omitempty"`
+	Progress    DependencyGraphProgressInfo `json:"progress,omitempty"`
+}
+
+// DependencyGraphProgressInfo represents progress information for a dependency graph
+type DependencyGraphProgressInfo struct {
+	TotalNodes   int                        `json:"total_nodes,omitempty"`
+	Completed    int                        `json:"completed,omitempty"`
+	Running      int                        `json:"running,omitempty"`
+	Pending      int                        `json:"pending,omitempty"`
+	Failed       int                        `json:"failed,omitempty"`
+	Skipped      int                        `json:"skipped,omitempty"`
+	PercentDone  float64                    `json:"percent_done,omitempty"`
+}
+
 // TaskRequest represents a request to execute a function
 type TaskRequest struct {
 	FunctionID string         `json:"function_id"`

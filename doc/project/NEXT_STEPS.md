@@ -36,10 +36,10 @@ This document outlines the prioritized next steps for the Globus Go SDK project 
   - [x] Support for secrets and environment variables
   - [x] Runtime parameter configuration
   - [x] Resource allocation settings
-- [ ] Create sophisticated batch execution patterns
-  - [ ] Dependency graphs for task execution
-  - [ ] Workflow orchestration capabilities
-  - [ ] Error handling and recovery strategies
+- [x] Create sophisticated batch execution patterns
+  - [x] Dependency graphs for task execution
+  - [x] Workflow orchestration capabilities
+  - [x] Error handling and recovery strategies
 
 ### 3. Interactive CLI Application
 
