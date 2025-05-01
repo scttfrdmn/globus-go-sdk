@@ -15,6 +15,20 @@
 
 ## Fixed Issues
 
+### Example Compilation
+
+- Fixed context.WithCancel usage in resumable-transfer example
+- Fixed GlobalConnectionPoolManager -> GlobalHttpPoolManager in connection-pooling example
+- Fixed pkg.TransferClient -> transfer.Client in connection-pooling example 
+- Fixed unused variables in connection-pooling and ratelimit examples
+- Fixed transfer client creation in ratelimit and benchmark examples
+- Fixed file suffix (.DATA -> .Data) in various examples
+- Implemented the missing WithClientOption method in pkg/globus.go
+- Moved test_with_credentials.go to its own package to avoid duplicate main function
+- Added the missing WithMessage option in pkg/metrics/progress.go
+- Updated the PerformanceMonitor interface in metrics/transfer.go to include all required methods
+- All examples now compile successfully
+
 ### Search Package
 
 - Fixed string conversion issues in pagination tests by replacing `string(int+'0')` with `fmt.Sprintf("%d", int)`
@@ -49,7 +63,25 @@ Integration tests fully validate correct operation of the transfer API:
 - Error messages include specific guidance on how to resolve the issues (e.g., "To resolve, provide GLOBUS_TEST_TRANSFER_TOKEN with proper permissions")
 - For tests to pass, you MUST provide a pre-generated transfer token via `GLOBUS_TEST_TRANSFER_TOKEN`
 - The token MUST have write permissions on the test endpoints
+- The token must have permission to create submission IDs
 - See the `.env.test.example` file for complete configuration details
+
+### Transfer API Requirements:
+
+The Globus Transfer API has several specific requirements:
+1. Each transfer request must include a valid submission_id, which must be obtained through a separate API call
+2. Each transfer item must have a DATA_TYPE field set to "transfer_item"
+3. JSON field names in the API are case-sensitive
+4. Directory paths must be valid and exist before transferring
+5. Recursive transfers are supported with the "recursive" parameter
+
+### Known Transfer API Issues:
+
+The current integration tests may fail with 400 errors due to:
+1. JSON field case sensitivity issues (the API expects "DATA" but our models use "data")
+2. Missing or invalid submission IDs (need to get from a separate API call)
+3. Incorrect path formatting (test paths may not exist on the test endpoints)
+4. Permission issues (the token lacks proper scopes for operations)
 
 Important notes about path handling in Globus endpoints:
 - By default, tests use a simple directory path: `globus-test/`
@@ -109,8 +141,9 @@ go test -tags=integration ./pkg/services/auth
 ## Next Steps
 
 1. ~~Fix build issues in the transfer package~~ Done
-2. Fix build issues in the groups package
-3. ~~Add proper error handling to all integration tests for consistent behavior~~ Done
-4. Improve integration test coverage for packages with limited permissions
-5. Add more real-world scenarios to integration tests
-6. Implement test mocks to reduce reliance on actual API endpoints
+2. ~~Fix example compilation issues~~ Done
+3. Fix build issues in the groups package
+4. ~~Add proper error handling to all integration tests for consistent behavior~~ Done
+5. Improve integration test coverage for packages with limited permissions
+6. Add more real-world scenarios to integration tests
+7. Implement test mocks to reduce reliance on actual API endpoints

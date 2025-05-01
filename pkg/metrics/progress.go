@@ -87,6 +87,13 @@ func WithHideAfterComplete(hide bool) ProgressBarOption {
 	}
 }
 
+// WithMessage sets a message to display alongside the progress bar
+func WithMessage(message string) ProgressBarOption {
+	return func(p *ProgressBar) {
+		p.message = message
+	}
+}
+
 // NewProgressBar creates a new progress bar
 func NewProgressBar(writer io.Writer, total int64, opts ...ProgressBarOption) *ProgressBar {
 	bar := &ProgressBar{

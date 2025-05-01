@@ -123,7 +123,7 @@ func runDemoMode(accessToken string, concurrency int, duration time.Duration, re
 		go func(workerID int) {
 			defer wg.Done()
 
-			for task := range tasks {
+			for _ = range tasks {
 				// Track request
 				mu.Lock()
 				totalRequests++
@@ -267,7 +267,12 @@ func runRateLimitTest(accessToken string, concurrency int, duration time.Duratio
 
 			// Create Globus transfer client (would normally use this for API calls)
 			// Not making actual transfer calls to avoid modifying user data
-			client := transfer.NewClient(accessToken)
+			authorizer := &simpleAuthorizer{token: accessToken}
+			client, err := transfer.NewClient(transfer.WithAuthorizer(authorizer))
+			if err != nil {
+				fmt.Printf("Error creating transfer client: %v\n", err)
+				return
+			}
 
 			for {
 				select {
@@ -293,9 +298,9 @@ func runRateLimitTest(accessToken string, concurrency int, duration time.Duratio
 					mu.Unlock()
 
 					// Make a safe API call that won't modify anything
-					// Here we're just getting the local endpoint ID
+					// Here we're just listing endpoints (limited to 1 result)
 					start := time.Now()
-					_, err = client.GetEndpointByDisplayName(ctx, "My Computer")
+					_, err = client.ListEndpoints(ctx, &transfer.ListEndpointsOptions{Limit: 1})
 					callDuration := time.Since(start)
 
 					mu.Lock()
@@ -628,4 +633,17 @@ func formatDuration(d time.Duration) string {
 		return fmt.Sprintf("%dm%02ds", minutes, seconds)
 	}
 	return fmt.Sprintf("%ds", seconds)
+}
+
+// simpleAuthorizer is a simple implementation of the auth.Authorizer interface
+type simpleAuthorizer struct {
+	token string
+}
+
+// GetAuthorizationHeader returns the authorization header value
+func (a *simpleAuthorizer) GetAuthorizationHeader(_ ...context.Context) (string, error) {
+	if a.token == "" {
+		return "", nil
+	}
+	return "Bearer " + a.token, nil
 }

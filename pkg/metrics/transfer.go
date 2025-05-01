@@ -71,6 +71,21 @@ type PerformanceMonitor interface {
 	
 	// ListActiveTransfers lists all active transfers being monitored
 	ListActiveTransfers() []string
+    
+	// SetTotalBytes sets the total bytes expected for a transfer
+	SetTotalBytes(transferID string, totalBytes int64)
+	
+	// SetTotalFiles sets the total files expected for a transfer
+	SetTotalFiles(transferID string, totalFiles int64)
+	
+	// RecordError records an error for a transfer
+	RecordError(transferID string, err error)
+	
+	// RecordRetry records a retry for a transfer
+	RecordRetry(transferID string)
+	
+	// SetStatus sets the status for a transfer
+	SetStatus(transferID string, status string)
 }
 
 // DefaultPerformanceMonitor implements the PerformanceMonitor interface

@@ -9,7 +9,6 @@ import (
 	"log"
 	"os"
 	"os/signal"
-	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
@@ -25,7 +24,7 @@ func main() {
 	resumeID := flag.String("resume", "", "Checkpoint ID to resume")
 	batchSize := flag.Int("batch-size", 100, "Batch size for transfers")
 	list := flag.Bool("list", false, "List available checkpoints")
-	cancel := flag.String("cancel", "", "Cancel transfer with the given checkpoint ID")
+	cancelID := flag.String("cancel", "", "Cancel transfer with the given checkpoint ID")
 	flag.Parse()
 
 	// Set up logger
@@ -47,7 +46,7 @@ func main() {
 	transferClient := config.NewTransferClient(*accessToken)
 
 	// Create context with cancellation
-	ctx, cancel := context.WithCancel(context.Background())
+	ctx, cancelCtx := context.WithCancel(context.Background())
 
 	// Handle OS signals for graceful shutdown
 	sigChan := make(chan os.Signal, 1)
@@ -55,7 +54,7 @@ func main() {
 	go func() {
 		<-sigChan
 		log.Println("Received interrupt signal, shutting down gracefully...")
-		cancel()
+		cancelCtx()
 	}()
 
 	// List checkpoints
@@ -93,11 +92,11 @@ func main() {
 	}
 
 	// Cancel a transfer
-	if *cancel != "" {
-		if err := transferClient.CancelResumableTransfer(ctx, *cancel); err != nil {
+	if *cancelID != "" {
+		if err := transferClient.CancelResumableTransfer(ctx, *cancelID); err != nil {
 			log.Fatalf("Failed to cancel transfer: %v", err)
 		}
-		fmt.Printf("Transfer with checkpoint ID %s has been cancelled.\n", *cancel)
+		fmt.Printf("Transfer with checkpoint ID %s has been cancelled.\n", *cancelID)
 		return
 	}
 

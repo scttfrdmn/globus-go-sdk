@@ -10,6 +10,7 @@ import (
 	
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/http"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
 )
 
 // This example demonstrates the connection pooling functionality
@@ -51,9 +52,9 @@ func usingDefaultPool() {
 	config := pkg.NewConfigFromEnvironment()
 	
 	// Create multiple service clients
-	authClient := config.NewAuthClient()
-	transferClient := config.NewTransferClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
-	searchClient := config.NewSearchClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+	_ = config.NewAuthClient()
+	_ = config.NewTransferClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+	_ = config.NewSearchClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
 	
 	// The clients now share connection pools based on service type
 	fmt.Println("Created Auth, Transfer, and Search clients with connection pooling")
@@ -131,7 +132,7 @@ func monitorPoolStats(ctx context.Context, accessToken string) {
 	fmt.Printf("  Idle Conn Timeout:      %s\n", stats.Config.IdleConnTimeout)
 	
 	// Get global statistics
-	allStats := http.GlobalConnectionPoolManager.GetAllStats()
+	allStats := http.GlobalHttpPoolManager.GetAllStats()
 	fmt.Println("\nAll Connection Pools:")
 	for service, stat := range allStats {
 		fmt.Printf("  %s: %d active connection(s)\n", service, stat.TotalActive)
@@ -139,11 +140,11 @@ func monitorPoolStats(ctx context.Context, accessToken string) {
 }
 
 // Helper function to list endpoints
-func listEndpoints(ctx context.Context, client *pkg.TransferClient) {
+func listEndpoints(ctx context.Context, client *transfer.Client) {
 	endpoints, err := client.ListEndpoints(ctx, nil)
 	if err != nil {
 		fmt.Printf("Error listing endpoints: %v\n", err)
 		return
 	}
-	fmt.Printf("Found %d endpoints\n", len(endpoints.DATA))
+	fmt.Printf("Found %d endpoints\n", len(endpoints.Data))
 }

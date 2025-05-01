@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg/benchmark"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
 )
@@ -56,8 +55,12 @@ func main() {
 		accessTokenStr = token
 	}
 
-	// Create transfer client
-	client := transfer.NewClient(accessTokenStr, core.WithLogging(true))
+	// Create transfer client with proper authorizer
+	authorizer := &simpleAuthorizer{token: accessTokenStr}
+	client, err := transfer.NewClient(transfer.WithAuthorizer(authorizer))
+	if err != nil {
+		log.Fatalf("Error creating transfer client: %v", err)
+	}
 
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 4*time.Hour)
@@ -289,4 +292,17 @@ func runParallelismBenchmarkSuite(ctx context.Context, client *transfer.Client, 
 			result.ElapsedTime.Round(time.Millisecond),
 			result.TransferSpeedMBs, result.MemoryPeakMB)
 	}
+}
+
+// simpleAuthorizer is a simple implementation of the auth.Authorizer interface
+type simpleAuthorizer struct {
+	token string
+}
+
+// GetAuthorizationHeader returns the authorization header value
+func (a *simpleAuthorizer) GetAuthorizationHeader(_ ...context.Context) (string, error) {
+	if a.token == "" {
+		return "", nil
+	}
+	return "Bearer " + a.token, nil
 }

@@ -51,7 +51,7 @@ func textExample(accessToken string) {
 	}
 
 	// Display the results
-	fmt.Printf("Found %d endpoints\n", len(endpoints.DATA))
+	fmt.Printf("Found %d endpoints\n", len(endpoints.Data))
 }
 
 func jsonExample(accessToken string) {
@@ -74,7 +74,7 @@ func jsonExample(accessToken string) {
 	}
 
 	// Display the results
-	fmt.Printf("Found %d endpoints\n", len(endpoints.DATA))
+	fmt.Printf("Found %d endpoints\n", len(endpoints.Data))
 }
 
 func tracingExample(accessToken string) {
@@ -97,7 +97,7 @@ func tracingExample(accessToken string) {
 	}
 
 	// Display the results
-	fmt.Printf("Found %d endpoints\n", len(endpoints.DATA))
+	fmt.Printf("Found %d endpoints\n", len(endpoints.Data))
 
 	// You can now trace the entire operation using the trace ID "example-trace-id"
 	// In a real application, you might pass this trace ID to other components

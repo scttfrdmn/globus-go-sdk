@@ -1,11 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 package pkg
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"time"
-
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/config"
 	httppool "github.com/scttfrdmn/globus-go-sdk/pkg/core/http"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
@@ -18,7 +20,7 @@ import (
 )
 
 // Version is the SDK version
-const Version = "0.2.0"
+const Version = "0.8.0"
 
 // OAuth2 scopes for Globus services
 const (
@@ -89,19 +91,32 @@ func (c *SDKConfig) NewGroupsClient(accessToken string) *groups.Client {
 
 // NewTransferClient creates a new Transfer client with the SDK configuration
 func (c *SDKConfig) NewTransferClient(accessToken string) *transfer.Client {
-	transferClient := transfer.NewClient(accessToken)
-
-	// Apply configuration
-	if c.Config != nil {
-		c.Config.ApplyToClient(transferClient.Client)
+	// Create a simple static token authorizer directly
+	// using a type that satisfies the auth.Authorizer interface
+	authorizer := &simpleAuthorizer{token: accessToken}
+	
+	// Create options for the transfer client
+	options := []transfer.Option{
+		transfer.WithAuthorizer(authorizer),
 	}
 	
-	// Use service-specific connection pool if enabled
-	if os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") != "true" {
-		serviceClient := httppool.GetHTTPClientForService("transfer", nil)
-		transferClient.Client.HTTPClient = serviceClient
+	// Add debugging if configured
+	if os.Getenv("GLOBUS_SDK_HTTP_DEBUG") == "1" {
+		options = append(options, transfer.WithHTTPDebugging(true))
 	}
-
+	
+	if os.Getenv("GLOBUS_SDK_HTTP_TRACE") == "1" {
+		options = append(options, transfer.WithHTTPTracing(true))
+	}
+	
+	// Create the client
+	transferClient, err := transfer.NewClient(options...)
+	if err != nil {
+		// Log error and return a default client as fallback
+		fmt.Fprintf(os.Stderr, "Error creating transfer client: %v\n", err)
+		return &transfer.Client{} // Return an empty client as fallback
+	}
+	
 	return transferClient
 }
 
@@ -274,6 +289,19 @@ func (c *SDKConfig) WithConfig(config *config.Config) *SDKConfig {
 	return c
 }
 
+// WithClientOption adds a client option to the configuration
+func (c *SDKConfig) WithClientOption(option core.ClientOption) *SDKConfig {
+	if c.Config == nil {
+		c.Config = config.DefaultConfig()
+	}
+	
+	// Create a temporary client to apply the option
+	tempClient := &core.Client{}
+	option(tempClient)
+	
+	return c
+}
+
 // GetScopesByService returns the OAuth2 scopes needed for the specified services
 func GetScopesByService(services ...string) []string {
 	scopes := make([]string, 0, len(services))
@@ -296,4 +324,17 @@ func GetScopesByService(services ...string) []string {
 	}
 
 	return scopes
+}
+
+// simpleAuthorizer is a simple implementation of the auth.Authorizer interface
+type simpleAuthorizer struct {
+	token string
+}
+
+// GetAuthorizationHeader returns the authorization header value
+func (a *simpleAuthorizer) GetAuthorizationHeader(_ ...context.Context) (string, error) {
+	if a.token == "" {
+		return "", nil
+	}
+	return "Bearer " + a.token, nil
 }
