@@ -36,30 +36,6 @@ func (c *Client) ValidateToken(ctx context.Context, token string) error {
 	return nil
 }
 
-// GetTokenExpiry extracts the expiry time for a token
-// Returns the expiry time and whether the token is valid
-func (c *Client) GetTokenExpiry(ctx context.Context, token string) (time.Time, bool, error) {
-	// Introspect the token
-	info, err := c.IntrospectToken(ctx, token)
-	if err != nil {
-		return time.Time{}, false, err
-	}
-
-	// Check if the token is active
-	if !info.Active {
-		return time.Time{}, false, nil
-	}
-
-	return info.ExpiresAt(), true, nil
-}
-
-// IsTokenValid checks if a token is valid
-// A convenience wrapper around ValidateToken
-func (c *Client) IsTokenValid(ctx context.Context, token string) bool {
-	err := c.ValidateToken(ctx, token)
-	return err == nil
-}
-
 // GetRemainingValidity returns the duration until a token expires
 // Returns 0 if the token is already expired or invalid
 func (c *Client) GetRemainingValidity(ctx context.Context, token string) (time.Duration, error) {
@@ -81,17 +57,4 @@ func (c *Client) GetRemainingValidity(ctx context.Context, token string) (time.D
 	}
 
 	return remaining, nil
-}
-
-// ShouldRefresh checks if a token should be refreshed based on a threshold
-// Returns true if the token will expire within the given threshold
-func (c *Client) ShouldRefresh(ctx context.Context, token string, threshold time.Duration) (bool, error) {
-	// Get remaining validity
-	remaining, err := c.GetRemainingValidity(ctx, token)
-	if err != nil {
-		return false, err
-	}
-
-	// If already expired or will expire within threshold, it should be refreshed
-	return remaining <= threshold, nil
 }

@@ -4,7 +4,7 @@ package auth
 
 import (
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
 )
 
 // ClientOption configures an Auth client
@@ -40,9 +40,11 @@ func WithRedirectURL(redirectURL string) ClientOption {
 }
 
 // WithAuthorizer sets the authorizer for the client
-func WithAuthorizer(authorizer authorizers.CoreAuthorizer) ClientOption {
+func WithAuthorizer(authorizer interfaces.Authorizer) ClientOption {
 	return func(o *clientOptions) {
-		o.coreOptions = append(o.coreOptions, core.WithAuthorizer(authorizer))
+		// Create an adapter to bridge between the two authorizer interfaces
+		adapter := NewAuthorizerAdapter(authorizer)
+		o.coreOptions = append(o.coreOptions, core.WithAuthorizer(adapter))
 	}
 }
 
@@ -79,7 +81,6 @@ func defaultOptions() *clientOptions {
 	return &clientOptions{
 		coreOptions: []core.ClientOption{
 			core.WithBaseURL(DefaultBaseURL),
-			core.WithAuthorizer(authorizers.NullCoreAuthorizer()),
 		},
 	}
 }

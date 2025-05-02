@@ -17,17 +17,29 @@ import (
 func setupMockServer(handler http.HandlerFunc) (*httptest.Server, *Client) {
 	server := httptest.NewServer(handler)
 
-	// Create a client that uses the test server
-	client := NewClient("test-client-id", "test-client-secret",
-		core.WithBaseURL(server.URL+"/"),
+	// Create a client that uses the test server using the new options pattern
+	client, err := NewClient(
+		WithClientID("test-client-id"),
+		WithClientSecret("test-client-secret"),
+		WithCoreOption(core.WithBaseURL(server.URL+"/")),
 	)
+	if err != nil {
+		panic(err) // This would fail the test if it happens
+	}
 
 	return server, client
 }
 
 func TestGetAuthorizationURL(t *testing.T) {
-	client := NewClient("test-client-id", "test-client-secret")
-	client.SetRedirectURL("https://example.com/callback")
+	// Create client with new options pattern
+	client, err := NewClient(
+		WithClientID("test-client-id"),
+		WithClientSecret("test-client-secret"),
+		WithRedirectURL("https://example.com/callback"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create auth client: %v", err)
+	}
 
 	// Test with default scope
 	url := client.GetAuthorizationURL("test-state")
@@ -346,15 +358,213 @@ func TestGetClientCredentialsToken(t *testing.T) {
 	}
 
 	// Test with empty client secret
-	emptyClient := NewClient("test-client-id", "")
+	emptyClient, err := NewClient(
+		WithClientID("test-client-id"),
+		// No client secret
+	)
+	if err != nil {
+		t.Fatalf("Failed to create auth client: %v", err)
+	}
+
 	_, err = emptyClient.GetClientCredentialsToken(context.Background())
 	if err == nil {
 		t.Error("GetClientCredentialsToken() with empty client secret should return error")
 	}
 }
 
+func TestIsTokenValid(t *testing.T) {
+	// Setup test server for token validation
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		// Check request method and path
+		if r.Method != http.MethodPost || r.URL.Path != "/oauth2/token/introspect" {
+			t.Errorf("Expected POST /oauth2/token/introspect, got %s %s", r.Method, r.URL.Path)
+		}
+
+		// Parse form
+		err := r.ParseForm()
+		if err != nil {
+			t.Errorf("Failed to parse form: %v", err)
+		}
+
+		// Return different responses based on token value
+		token := r.Form.Get("token")
+		
+		var response TokenInfo
+		if token == "valid-token" {
+			response = TokenInfo{
+				Active:      true,
+				Scope:       "openid profile email",
+				ClientID:    "test-client-id",
+				Username:    "test-user",
+				Exp:         time.Now().Add(time.Hour).Unix(),
+				Subject:     "test-subject",
+				SubjectType: "user",
+			}
+		} else if token == "invalid-token" {
+			response = TokenInfo{
+				Active: false,
+			}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
+	}
+
+	server, client := setupMockServer(handler)
+	defer server.Close()
+
+	// Test valid token
+	valid, err := client.IsTokenValid(context.Background(), "valid-token")
+	if err != nil {
+		t.Fatalf("IsTokenValid() error = %v", err)
+	}
+	if !valid {
+		t.Error("IsTokenValid() returned false for valid token")
+	}
+
+	// Test invalid token
+	valid, err = client.IsTokenValid(context.Background(), "invalid-token")
+	if err != nil {
+		t.Fatalf("IsTokenValid() error = %v", err)
+	}
+	if valid {
+		t.Error("IsTokenValid() returned true for invalid token")
+	}
+}
+
+func TestGetTokenExpiry(t *testing.T) {
+	// Setup test server for token expiry
+	expiryTime := time.Now().Add(time.Hour).Unix()
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		// Check request method and path
+		if r.Method != http.MethodPost || r.URL.Path != "/oauth2/token/introspect" {
+			t.Errorf("Expected POST /oauth2/token/introspect, got %s %s", r.Method, r.URL.Path)
+		}
+
+		// Parse form and check token
+		r.ParseForm()
+		token := r.Form.Get("token")
+		
+		var response TokenInfo
+		if token == "valid-token" {
+			response = TokenInfo{
+				Active: true,
+				Exp:    expiryTime,
+			}
+		} else {
+			response = TokenInfo{
+				Active: false,
+			}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
+	}
+
+	server, client := setupMockServer(handler)
+	defer server.Close()
+
+	// Test with valid token
+	expiry, valid, err := client.GetTokenExpiry(context.Background(), "valid-token")
+	if err != nil {
+		t.Fatalf("GetTokenExpiry() error = %v", err)
+	}
+	if !valid {
+		t.Error("GetTokenExpiry() returned not valid for valid token")
+	}
+	if expiry.Unix() != expiryTime {
+		t.Errorf("GetTokenExpiry() returned wrong expiry time: got %v, want %v", 
+			expiry.Unix(), expiryTime)
+	}
+
+	// Test with invalid token
+	_, valid, err = client.GetTokenExpiry(context.Background(), "invalid-token")
+	if err != nil {
+		t.Fatalf("GetTokenExpiry() error = %v", err)
+	}
+	if valid {
+		t.Error("GetTokenExpiry() returned valid for invalid token")
+	}
+}
+
+func TestShouldRefresh(t *testing.T) {
+	// Setup test server for should refresh
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		// Check request method and path
+		if r.Method != http.MethodPost || r.URL.Path != "/oauth2/token/introspect" {
+			t.Errorf("Expected POST /oauth2/token/introspect, got %s %s", r.Method, r.URL.Path)
+		}
+
+		// Parse form and check token
+		r.ParseForm()
+		token := r.Form.Get("token")
+		
+		var response TokenInfo
+		if token == "expiring-soon-token" {
+			// Token expires in 30 seconds
+			response = TokenInfo{
+				Active: true,
+				Exp:    time.Now().Add(30 * time.Second).Unix(),
+			}
+		} else if token == "valid-token" {
+			// Token expires in 1 hour
+			response = TokenInfo{
+				Active: true,
+				Exp:    time.Now().Add(1 * time.Hour).Unix(),
+			}
+		} else {
+			response = TokenInfo{
+				Active: false,
+			}
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
+	}
+
+	server, client := setupMockServer(handler)
+	defer server.Close()
+
+	// Test with expiring soon token and 1 minute threshold
+	shouldRefresh, err := client.ShouldRefresh(context.Background(), "expiring-soon-token", 1*time.Minute)
+	if err != nil {
+		t.Fatalf("ShouldRefresh() error = %v", err)
+	}
+	if !shouldRefresh {
+		t.Error("ShouldRefresh() returned false for token expiring soon")
+	}
+
+	// Test with valid token and 1 minute threshold
+	shouldRefresh, err = client.ShouldRefresh(context.Background(), "valid-token", 1*time.Minute)
+	if err != nil {
+		t.Fatalf("ShouldRefresh() error = %v", err)
+	}
+	if shouldRefresh {
+		t.Error("ShouldRefresh() returned true for valid token not expiring soon")
+	}
+
+	// Test with invalid token
+	shouldRefresh, err = client.ShouldRefresh(context.Background(), "invalid-token", 1*time.Minute)
+	if err != nil {
+		t.Fatalf("ShouldRefresh() error = %v", err)
+	}
+	if !shouldRefresh {
+		t.Error("ShouldRefresh() returned false for invalid token")
+	}
+}
+
 func TestCreateClientCredentialsAuthorizer(t *testing.T) {
-	client := NewClient("test-client-id", "test-client-secret")
+	client, err := NewClient(
+		WithClientID("test-client-id"),
+		WithClientSecret("test-client-secret"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create auth client: %v", err)
+	}
+
 	authorizer := client.CreateClientCredentialsAuthorizer("scope1", "scope2")
 
 	if authorizer.ClientID != "test-client-id" {
@@ -372,7 +582,14 @@ func TestCreateClientCredentialsAuthorizer(t *testing.T) {
 }
 
 func TestCreateRefreshableTokenAuthorizer(t *testing.T) {
-	client := NewClient("test-client-id", "test-client-secret")
+	client, err := NewClient(
+		WithClientID("test-client-id"),
+		WithClientSecret("test-client-secret"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create auth client: %v", err)
+	}
+	
 	authorizer := client.CreateRefreshableTokenAuthorizer("test-access-token", "test-refresh-token", 3600)
 
 	if authorizer.AccessToken != "test-access-token" {
@@ -394,7 +611,14 @@ func TestCreateRefreshableTokenAuthorizer(t *testing.T) {
 }
 
 func TestCreateStaticTokenAuthorizer(t *testing.T) {
-	client := NewClient("test-client-id", "test-client-secret")
+	client, err := NewClient(
+		WithClientID("test-client-id"),
+		WithClientSecret("test-client-secret"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create auth client: %v", err)
+	}
+	
 	authorizer := client.CreateStaticTokenAuthorizer("test-access-token")
 
 	if authorizer.Token != "test-access-token" {

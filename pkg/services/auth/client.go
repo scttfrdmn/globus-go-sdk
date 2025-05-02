@@ -33,25 +33,30 @@ type Client struct {
 }
 
 // NewClient creates a new Auth client
-func NewClient(clientID, clientSecret string, options ...core.ClientOption) *Client {
-	// Apply default options specific to Auth
-	defaultOptions := []core.ClientOption{
-		core.WithBaseURL(DefaultBaseURL),
-		core.WithAuthorizer(authorizers.NullCoreAuthorizer()),
+func NewClient(opts ...ClientOption) (*Client, error) {
+	// Apply default options
+	options := defaultOptions()
+	
+	// Apply user options
+	for _, opt := range opts {
+		opt(options)
 	}
-
-	// Merge with user options, letting user options override defaults
-	options = append(defaultOptions, options...)
-
-	// Create the base client
-	baseClient := core.NewClient(options...)
-
-	return &Client{
+	
+	// Create the base client with core options
+	baseClient := core.NewClient(options.coreOptions...)
+	
+	// Create the transport
+	transportClient := transport.NewTransport(baseClient, &transport.Options{})
+	
+	client := &Client{
 		Client:       baseClient,
-		Transport:    transport.NewTransport(baseClient),
-		ClientID:     clientID,
-		ClientSecret: clientSecret,
+		Transport:    transportClient,
+		ClientID:     options.clientID,
+		ClientSecret: options.clientSecret,
+		RedirectURL:  options.redirectURL,
 	}
+	
+	return client, nil
 }
 
 // SetRedirectURL sets the redirect URL for OAuth flows
@@ -293,11 +298,62 @@ func (c *Client) GetClientCredentialsToken(ctx context.Context, scopes ...string
 	return c.tokenRequest(ctx, form)
 }
 
+// IsTokenValid checks if a token is valid
+func (c *Client) IsTokenValid(ctx context.Context, token string) (bool, error) {
+	// Introspect the token
+	tokenInfo, err := c.IntrospectToken(ctx, token)
+	if err != nil {
+		return false, fmt.Errorf("failed to introspect token: %w", err)
+	}
+	
+	return tokenInfo.Active, nil
+}
+
+// GetTokenExpiry gets the expiry time of a token
+func (c *Client) GetTokenExpiry(ctx context.Context, token string) (time.Time, bool, error) {
+	// Introspect the token
+	tokenInfo, err := c.IntrospectToken(ctx, token)
+	if err != nil {
+		return time.Time{}, false, fmt.Errorf("failed to introspect token: %w", err)
+	}
+	
+	if !tokenInfo.Active {
+		return time.Time{}, false, nil
+	}
+	
+	// Calculate expiry time
+	expiry := time.Unix(tokenInfo.Exp, 0)
+	return expiry, true, nil
+}
+
+// ShouldRefresh determines if a token should be refreshed
+func (c *Client) ShouldRefresh(ctx context.Context, token string, threshold time.Duration) (bool, error) {
+	// Get token expiry
+	expiry, valid, err := c.GetTokenExpiry(ctx, token)
+	if err != nil {
+		return false, fmt.Errorf("failed to get token expiry: %w", err)
+	}
+	
+	if !valid {
+		// Token is not valid, it should be refreshed
+		return true, nil
+	}
+	
+	// Check if token will expire within the threshold
+	return time.Until(expiry) < threshold, nil
+}
+
 // CreateClientCredentialsAuthorizer creates an authorizer that uses client credentials
 func (c *Client) CreateClientCredentialsAuthorizer(scopes ...string) *authorizers.ClientCredentialsAuthorizer {
 	authFunc := func(ctx context.Context, clientID, clientSecret string, scopes []string) (string, time.Time, error) {
 		// Create a temporary client for this request
-		tempClient := NewClient(clientID, clientSecret)
+		tempClient, err := NewClient(
+			WithClientID(clientID),
+			WithClientSecret(clientSecret),
+		)
+		if err != nil {
+			return "", time.Time{}, err
+		}
 
 		// Get the token
 		tokenResp, err := tempClient.GetClientCredentialsToken(ctx, scopes...)
