@@ -18,7 +18,7 @@
 
 A Go SDK for interacting with Globus services, providing a simple and idiomatic Go interface to Globus APIs.
 
-> **STATUS**: Version 0.8.0 is now available! See the [CHANGELOG](doc/project/changelog.md) for details on the latest features and improvements.
+> **STATUS**: Version 0.8.0 is now available! This version introduces a new client initialization pattern using options, improved error handling, and robust rate limiting. See the [Migration Guide](doc/V0.8.0_MIGRATION_GUIDE.md) for details on updating your code and the [CHANGELOG](doc/project/changelog.md) for information on all features and improvements.
 
 > **DISCLAIMER**: The Globus Go SDK is an independent, community-developed project and is not officially affiliated with, endorsed by, or supported by Globus, the University of Chicago, or their affiliated organizations. This SDK is maintained by independent contributors and is not a product of Globus or the University of Chicago.
 
@@ -469,6 +469,10 @@ For detailed documentation, see:
 
 - [GoDoc Reference](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/)
 - [User Guide](doc/user-guide.md)
+- [Quick Start Examples](doc/QUICK_START_EXAMPLES.md) ← Updated for v0.8.0
+- [v0.8.0 Migration Guide](doc/V0.8.0_MIGRATION_GUIDE.md) ← New
+- [Client Initialization](doc/CLIENT_INITIALIZATION.md) ← New
+- [Error Handling](doc/ERROR_HANDLING.md) ← Updated for v0.8.0
 - [Token Management Example](examples/token-management/README.md)
 - [Tokens Package Guide](doc/tokens-package.md)
 - [Token Storage Guide](doc/token-storage.md)
@@ -485,7 +489,6 @@ For detailed documentation, see:
 - [Security Guidelines](doc/SECURITY_GUIDELINES.md)
 - [Security Audit Plan](doc/SECURITY_AUDIT_PLAN.md)
 - [Data Schemas](doc/data-schemas.md)
-- [Error Handling](doc/error-handling.md)
 - [Extending the SDK](doc/extending-the-sdk.md)
 - [CLI Example](cmd/globus-cli/README.md)
 
