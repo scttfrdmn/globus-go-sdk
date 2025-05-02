@@ -322,14 +322,43 @@ type SecretResponse struct {
 
 // WorkflowCreateRequest represents a request to create a workflow
 type WorkflowCreateRequest struct {
-	Name        string                      `json:"name"`
-	Description string                      `json:"description,omitempty"`
-	Tasks       []WorkflowTask              `json:"tasks"`
-	Dependencies map[string][]string        `json:"dependencies,omitempty"`
-	ErrorHandling string                    `json:"error_handling,omitempty"`
-	RetryPolicy *RetryPolicy                `json:"retry_policy,omitempty"`
-	Metadata    map[string]string           `json:"metadata,omitempty"`
-	Public      bool                        `json:"public,omitempty"`
+	Name         string                `json:"name"`
+	Description  string                `json:"description,omitempty"`
+	Tasks        []WorkflowTask        `json:"tasks"`
+	Dependencies map[string][]string   `json:"dependencies,omitempty"`
+	ErrorHandling string               `json:"error_handling,omitempty"`
+	RetryPolicy  *RetryPolicy          `json:"retry_policy,omitempty"`
+	Metadata     map[string]string     `json:"metadata,omitempty"`
+	Public       bool                  `json:"public,omitempty"`
+}
+
+// WorkflowUpdateRequest represents a request to update a workflow
+type WorkflowUpdateRequest struct {
+	Name         string                `json:"name,omitempty"`
+	Description  string                `json:"description,omitempty"`
+	Tasks        []WorkflowTask        `json:"tasks,omitempty"`
+	Dependencies map[string][]string   `json:"dependencies,omitempty"`
+	ErrorHandling string               `json:"error_handling,omitempty"`
+	RetryPolicy  *RetryPolicy          `json:"retry_policy,omitempty"`
+	Metadata     map[string]string     `json:"metadata,omitempty"`
+	Public       *bool                 `json:"public,omitempty"`
+}
+
+// WorkflowList represents a list of workflows
+type WorkflowList struct {
+	Workflows    []WorkflowResponse   `json:"workflows,omitempty"`
+	Total        int                  `json:"total,omitempty"`
+	HasNextPage  bool                 `json:"has_next_page,omitempty"`
+	Offset       int                  `json:"offset,omitempty"`
+	Limit        int                  `json:"limit,omitempty"`
+}
+
+// ListWorkflowsOptions are options for listing workflows
+type ListWorkflowsOptions struct {
+	PerPage     int    `url:"per_page,omitempty"`
+	Marker      string `url:"marker,omitempty"`
+	Search      string `url:"search,omitempty"`
+	FilterScope string `url:"filter_scope,omitempty"`
 }
 
 // WorkflowTask represents a task in a workflow
@@ -442,6 +471,33 @@ type TaskGroupResponse struct {
 	Public      bool                        `json:"public,omitempty"`
 	CreatedAt   time.Time                   `json:"created_at,omitempty"`
 	ModifiedAt  time.Time                   `json:"modified_at,omitempty"`
+}
+
+// TaskGroupUpdateRequest represents a request to update a task group
+type TaskGroupUpdateRequest struct {
+	Name        string                      `json:"name,omitempty"`
+	Description string                      `json:"description,omitempty"`
+	Tasks       []TaskRequest               `json:"tasks,omitempty"`
+	Concurrency int                         `json:"concurrency,omitempty"`
+	RetryPolicy *RetryPolicy                `json:"retry_policy,omitempty"`
+	Public      *bool                       `json:"public,omitempty"`
+}
+
+// TaskGroupList represents a list of task groups
+type TaskGroupList struct {
+	TaskGroups   []TaskGroupResponse       `json:"task_groups,omitempty"`
+	Total        int                       `json:"total,omitempty"`
+	HasNextPage  bool                      `json:"has_next_page,omitempty"`
+	Offset       int                       `json:"offset,omitempty"`
+	Limit        int                       `json:"limit,omitempty"`
+}
+
+// ListTaskGroupsOptions are options for listing task groups
+type ListTaskGroupsOptions struct {
+	PerPage     int    `url:"per_page,omitempty"`
+	Marker      string `url:"marker,omitempty"`
+	Search      string `url:"search,omitempty"`
+	FilterScope string `url:"filter_scope,omitempty"`
 }
 
 // TaskGroupRunRequest represents a request to run a task group

@@ -18,7 +18,7 @@
 
 A Go SDK for interacting with Globus services, providing a simple and idiomatic Go interface to Globus APIs.
 
-> **STATUS**: Version 0.8.0 is now available! This version introduces a new client initialization pattern using options, improved error handling, and robust rate limiting. See the [Migration Guide](doc/V0.8.0_MIGRATION_GUIDE.md) for details on updating your code and the [CHANGELOG](doc/project/changelog.md) for information on all features and improvements.
+> **STATUS**: Version 0.9.0 is now available! This version enhances the Compute client with workflow and task group capabilities, improves API version compatibility checking, and expands HTTP debugging. See the [CHANGELOG](doc/project/changelog.md) for information on all features and improvements. If you're upgrading from a version before 0.8.0, also check the [Migration Guide](doc/V0.8.0_MIGRATION_GUIDE.md).
 
 > **DISCLAIMER**: The Globus Go SDK is an independent, community-developed project and is not officially affiliated with, endorsed by, or supported by Globus, the University of Chicago, or their affiliated organizations. This SDK is maintained by independent contributors and is not a product of Globus or the University of Chicago.
 
@@ -31,11 +31,13 @@ A Go SDK for interacting with Globus services, providing a simple and idiomatic 
 - **Transfer**: File transfer with recursive directory support and resumable transfers
 - **Search**: Advanced search capabilities with query building and pagination
 - **Flows**: Automation workflows with batch operations
+- **Compute**: Function execution, endpoint management, workflows, and task groups
 - **Performance**: Connection pooling, rate limiting, and backoff strategies
 - **Observability**: Structured logging and distributed tracing
 - **Reliability**: Comprehensive error handling with retries and circuit breakers
+- **Compatibility**: API version compatibility checking and management
 - **Integration**: Extensive testing infrastructure
-- **Examples**: CLI, token management, and web application examples
+- **Examples**: CLI, token management, compute workflows, and web application examples
 - **Utilities**: Verification tools to test credentials
 
 ## Installation
@@ -469,10 +471,10 @@ For detailed documentation, see:
 
 - [GoDoc Reference](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/)
 - [User Guide](doc/user-guide.md)
-- [Quick Start Examples](doc/QUICK_START_EXAMPLES.md) ← Updated for v0.8.0
-- [v0.8.0 Migration Guide](doc/V0.8.0_MIGRATION_GUIDE.md) ← New
-- [Client Initialization](doc/CLIENT_INITIALIZATION.md) ← New
-- [Error Handling](doc/ERROR_HANDLING.md) ← Updated for v0.8.0
+- [Quick Start Examples](doc/QUICK_START_EXAMPLES.md)
+- [v0.8.0 Migration Guide](doc/V0.8.0_MIGRATION_GUIDE.md)
+- [Client Initialization](doc/CLIENT_INITIALIZATION.md)
+- [Error Handling](doc/ERROR_HANDLING.md)
 - [Token Management Example](examples/token-management/README.md)
 - [Tokens Package Guide](doc/tokens-package.md)
 - [Token Storage Guide](doc/token-storage.md)
@@ -491,10 +493,12 @@ For detailed documentation, see:
 - [Data Schemas](doc/data-schemas.md)
 - [Extending the SDK](doc/extending-the-sdk.md)
 - [CLI Example](cmd/globus-cli/README.md)
+- [Compute Workflows Example](examples/compute-workflow/main.go) ← New for v0.9.0
+- [Compute Workflows Guide](doc/compute-workflows.md) ← New for v0.9.0
 
 ## Development Status
 
-This SDK is under active development. Current version: **v0.8.0**
+This SDK is under active development. Current version: **v0.9.0**
 
 | Component | Status | Details |
 |-----------|--------|---------|
@@ -509,7 +513,7 @@ This SDK is under active development. Current version: **v0.8.0**
 | Flows Client | ✅ Complete | Flow discovery, execution, management |
 | Timers Client | ✅ Complete | Creating and managing scheduled tasks |
 | CLI Example | ✅ Complete | Command-line application showcasing SDK features |
-| Compute Client | 📅 Planned | Initial structure defined |
+| Compute Client | ✅ Complete | Function execution, endpoint management, workflows, task groups |
 
 See [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) for detailed status, [KNOWN_ISSUES.md](doc/KNOWN_ISSUES.md) for current limitations, and [ROADMAP.md](doc/ROADMAP.md) for upcoming features.
 

@@ -7,7 +7,30 @@ All notable changes to the Globus Go SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.9.0] - 2025-05-10
+
+### Added
+- Enhanced Compute client with workflow and task group capabilities:
+  - Added workflow management (creation, execution, status tracking)
+  - Implemented dependency graph support for complex compute workflows
+  - Added task group functionality for parallel execution
+  - Expanded container management capabilities
+  - Added environment and secret management
+- Improved API version compatibility checking:
+  - Added version extraction from URLs
+  - Implemented service-specific version compatibility rules
+  - Added version checking toggles and custom version support
+- Enhanced HTTP debugging with more detailed request/response logging
+- Added new example for Compute workflows and task groups
+
+### Fixed
+- Improved error handling in transport layer
+- Enhanced connection pool management for better stability
+- Fixed integration tests for all service clients
+- Standardized error reporting formats across services
+- Improved thread safety in concurrent operations
+
+## [0.8.0] - 2025-05-01
 
 ### Added
 - Full Compute service client implementation with:
@@ -16,12 +39,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Execution operations with status monitoring
   - Batch task processing
   - Comprehensive models and error handling
+- Version checking system with API compatibility verification
+- Improved HTTP debugging capabilities
+- Additional CLI examples demonstrating SDK features
+- Expanded documentation on API version compatibility
   
 ### Fixed
 - Fixed integration tests for recursive transfers by adding proper mock submission ID endpoints
 - Improved test infrastructure with better error handling
 - Enhanced mock server implementation for more realistic API behavior simulation
 - Updated integration testing documentation with Compute service information
+- Standardized SPDX license headers across all files
+- Fixed various linting issues throughout the codebase
+
+### Changed
+- Updated version number to 0.8.0 to better reflect project maturity
+- Reorganized project documentation for better discoverability
+- Improved error handling with additional helper functions
+- Enhanced README with current project status
 
 ## [0.2.0] - 2025-04-28
 
