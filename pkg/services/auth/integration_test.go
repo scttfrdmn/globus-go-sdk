@@ -1,20 +1,39 @@
+//go:build integration
+// +build integration
+
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 package auth
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 	"time"
+
+	"github.com/joho/godotenv"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
 )
+
+func init() {
+	// Load environment variables from .env.test file
+	_ = godotenv.Load("../../../.env.test")
+	_ = godotenv.Load("../../.env.test")
+	_ = godotenv.Load(".env.test")
+}
 
 func skipIfMissingCredentials(t *testing.T) (string, string) {
 	clientID := os.Getenv("GLOBUS_TEST_CLIENT_ID")
 	clientSecret := os.Getenv("GLOBUS_TEST_CLIENT_SECRET")
 
-	if clientID == "" || clientSecret == "" {
-		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_ID and GLOBUS_TEST_CLIENT_SECRET")
+	if clientID == "" {
+		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_ID environment variable")
+	}
+	
+	if clientSecret == "" {
+		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_SECRET environment variable")
 	}
 
 	return clientID, clientSecret
@@ -23,12 +42,30 @@ func skipIfMissingCredentials(t *testing.T) (string, string) {
 func TestIntegration_ClientCredentialsFlow(t *testing.T) {
 	clientID, clientSecret := skipIfMissingCredentials(t)
 
-	// Create client
-	client := NewClient(clientID, clientSecret)
+	// Create client with the new pattern
+	client, err := NewClient(
+		WithClientID(clientID),
+		WithClientSecret(clientSecret),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
 	ctx := context.Background()
 
-	// Test getting token with client credentials
-	tokenResp, err := client.GetClientCredentialsToken(ctx, AuthScope)
+	// Test getting token with client credentials with retry for rate limiting
+	var tokenResp *TokenResponse
+	err = ratelimit.RetryWithBackoff(
+		ctx,
+		func(ctx context.Context) error {
+			var tokenErr error
+			tokenResp, tokenErr = client.GetClientCredentialsToken(ctx, []string{AuthScope})
+			return tokenErr
+		},
+		ratelimit.DefaultBackoff(),
+		ratelimit.IsRetryableError,
+	)
+
 	if err != nil {
 		t.Fatalf("GetClientCredentialsToken failed: %v", err)
 	}
@@ -44,8 +81,19 @@ func TestIntegration_ClientCredentialsFlow(t *testing.T) {
 		t.Errorf("Expected positive expires_in, got %d", tokenResp.ExpiresIn)
 	}
 
-	// Test token is valid
-	tokenInfo, err := client.IntrospectToken(ctx, tokenResp.AccessToken)
+	// Test token is valid with retry for rate limiting
+	var tokenInfo *TokenIntrospectionResponse
+	err = ratelimit.RetryWithBackoff(
+		ctx,
+		func(ctx context.Context) error {
+			var introspectErr error
+			tokenInfo, introspectErr = client.IntrospectToken(ctx, tokenResp.AccessToken)
+			return introspectErr
+		},
+		ratelimit.DefaultBackoff(),
+		ratelimit.IsRetryableError,
+	)
+	
 	if err != nil {
 		t.Fatalf("IntrospectToken failed: %v", err)
 	}
@@ -61,27 +109,61 @@ func TestIntegration_ClientCredentialsFlow(t *testing.T) {
 func TestIntegration_TokenUtils(t *testing.T) {
 	clientID, clientSecret := skipIfMissingCredentials(t)
 
-	// Create client
-	client := NewClient(clientID, clientSecret)
+	// Create client with the new pattern
+	client, err := NewClient(
+		WithClientID(clientID),
+		WithClientSecret(clientSecret),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
 	ctx := context.Background()
 
 	// Get a token to validate
-	tokenResp, err := client.GetClientCredentialsToken(ctx, AuthScope)
+	tokenResp, err := client.GetClientCredentialsToken(ctx, []string{AuthScope})
 	if err != nil {
 		t.Fatalf("GetClientCredentialsToken failed: %v", err)
 	}
 
 	// Test IsTokenValid
-	valid := client.IsTokenValid(ctx, tokenResp.AccessToken)
-	if !valid {
-		t.Error("Expected token to be valid")
+	// Test token validity with retry
+	var valid bool
+	err = ratelimit.RetryWithBackoff(
+		ctx,
+		func(ctx context.Context) error {
+			valid = client.IsTokenValid(ctx, tokenResp.AccessToken)
+			if !valid {
+				return fmt.Errorf("token validity check failed")
+			}
+			return nil
+		},
+		ratelimit.DefaultBackoff(),
+		ratelimit.IsRetryableError,
+	)
+	
+	if err != nil {
+		t.Errorf("Expected token to be valid: %v", err)
 	}
 
-	// Test GetTokenExpiry
-	expiry, valid, err := client.GetTokenExpiry(ctx, tokenResp.AccessToken)
+	// Test GetTokenExpiry with retry
+	var expiry time.Time
+	var expiryValid bool
+	err = ratelimit.RetryWithBackoff(
+		ctx,
+		func(ctx context.Context) error {
+			var expiryErr error
+			expiry, expiryValid, expiryErr = client.GetTokenExpiry(ctx, tokenResp.AccessToken)
+			return expiryErr
+		},
+		ratelimit.DefaultBackoff(),
+		ratelimit.IsRetryableError,
+	)
+	
 	if err != nil {
 		t.Fatalf("GetTokenExpiry failed: %v", err)
 	}
+	valid = expiryValid // Update the valid flag with expiry result
 	if !valid {
 		t.Error("Expected token to be valid")
 	}
@@ -89,11 +171,23 @@ func TestIntegration_TokenUtils(t *testing.T) {
 		t.Errorf("Expected expiry to be in the future, got %v", expiry)
 	}
 
-	// Test ShouldRefresh with minimum threshold
-	shouldRefresh, err := client.ShouldRefresh(ctx, tokenResp.AccessToken, 5*time.Second)
+	// Test ShouldRefresh with minimum threshold with retry
+	var shouldRefresh bool
+	err = ratelimit.RetryWithBackoff(
+		ctx,
+		func(ctx context.Context) error {
+			var refreshErr error
+			shouldRefresh, refreshErr = client.ShouldRefresh(ctx, tokenResp.AccessToken, 5*time.Second)
+			return refreshErr
+		},
+		ratelimit.DefaultBackoff(),
+		ratelimit.IsRetryableError,
+	)
+	
 	if err != nil {
 		t.Fatalf("ShouldRefresh failed: %v", err)
 	}
+	
 	// Token should be fresh since we just got it
 	if shouldRefresh {
 		t.Error("Expected token to not need refresh with short threshold")
@@ -116,15 +210,36 @@ func TestIntegration_TokenUtils(t *testing.T) {
 func TestIntegration_ClientCredentialsAuthorizer(t *testing.T) {
 	clientID, clientSecret := skipIfMissingCredentials(t)
 
-	// Create client
-	client := NewClient(clientID, clientSecret)
+	// Create client with the new pattern
+	client, err := NewClient(
+		WithClientID(clientID),
+		WithClientSecret(clientSecret),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
 	ctx := context.Background()
 
 	// Create client credentials authorizer
-	authorizer := client.CreateClientCredentialsAuthorizer(AuthScope)
+	authorizer, err := client.CreateClientCredentialsAuthorizer(ctx, []string{AuthScope})
+	if err != nil {
+		t.Fatalf("Failed to create client credentials authorizer: %v", err)
+	}
 
-	// Test getting an authorization header
-	authorizationHeader, err := authorizer.GetAuthorizationHeader(ctx)
+	// Test getting an authorization header with retry
+	var authorizationHeader string
+	err = ratelimit.RetryWithBackoff(
+		ctx,
+		func(ctx context.Context) error {
+			var authErr error
+			authorizationHeader, authErr = authorizer.GetAuthorizationHeader(ctx)
+			return authErr
+		},
+		ratelimit.DefaultBackoff(),
+		ratelimit.IsRetryableError,
+	)
+	
 	if err != nil {
 		t.Fatalf("Authorizer.GetAuthorizationHeader failed: %v", err)
 	}
@@ -144,19 +259,37 @@ func TestIntegration_StaticTokenAuthorizer(t *testing.T) {
 	clientID, clientSecret := skipIfMissingCredentials(t)
 
 	// Create client and get a token to use
-	client := NewClient(clientID, clientSecret)
+	client, err := NewClient(
+		WithClientID(clientID),
+		WithClientSecret(clientSecret),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
+
 	ctx := context.Background()
 
-	tokenResp, err := client.GetClientCredentialsToken(ctx, AuthScope)
+	tokenResp, err := client.GetClientCredentialsToken(ctx, []string{AuthScope})
 	if err != nil {
 		t.Fatalf("GetClientCredentialsToken failed: %v", err)
 	}
 
 	// Create static token authorizer
-	authorizer := client.CreateStaticTokenAuthorizer(tokenResp.AccessToken)
+	authorizer := authorizers.NewStaticTokenAuthorizer(tokenResp.AccessToken)
 
-	// Test getting an authorization header
-	authorizationHeader, err := authorizer.GetAuthorizationHeader(ctx)
+	// Test getting an authorization header with retry
+	var authorizationHeader string
+	err = ratelimit.RetryWithBackoff(
+		ctx,
+		func(ctx context.Context) error {
+			var authErr error
+			authorizationHeader, authErr = authorizer.GetAuthorizationHeader(ctx)
+			return authErr
+		},
+		ratelimit.DefaultBackoff(),
+		ratelimit.IsRetryableError,
+	)
+	
 	if err != nil {
 		t.Fatalf("Authorizer.GetAuthorizationHeader failed: %v", err)
 	}

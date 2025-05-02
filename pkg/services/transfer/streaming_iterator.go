@@ -4,8 +4,10 @@ package transfer
 
 import (
 	"context"
+	"fmt"
 	"path"
 	"sync"
+	"time"
 )
 
 // FileIterator provides a memory-efficient way to iterate through files
@@ -238,8 +240,17 @@ func (s *StreamingFileIterator) processDirectory(ctx context.Context, dir string
 		ShowHidden: s.showHidden,
 	}
 	
-	listing, err := s.client.ListFiles(ctx, s.endpointID, dir, listOptions)
+	// Debug print
+	fmt.Printf("DEBUG: Listing directory: %s (depth %d)\n", dir, depth)
+	
+	var listing *FileList
+	var err error
+	
+	// Just use the real client directly
+	listing, err = s.client.ListFiles(ctx, s.endpointID, dir, listOptions)
+	
 	if err != nil {
+		fmt.Printf("DEBUG: Error listing directory %s: %v\n", dir, err)
 		select {
 		case s.errorChan <- err:
 		default:
@@ -248,8 +259,13 @@ func (s *StreamingFileIterator) processDirectory(ctx context.Context, dir string
 		return
 	}
 	
+	// Debug print
+	fmt.Printf("DEBUG: Got %d items in directory %s\n", len(listing.Data), dir)
+	
 	// Process files
 	for _, file := range listing.Data {
+		fmt.Printf("DEBUG: Processing file: %s (type: %s)\n", file.Name, file.Type)
+		
 		select {
 		case <-ctx.Done():
 			return
@@ -257,15 +273,18 @@ func (s *StreamingFileIterator) processDirectory(ctx context.Context, dir string
 			return
 		case s.resultChan <- file:
 			// Successfully sent file
+			fmt.Printf("DEBUG: Sent file to channel: %s\n", file.Name)
 		}
 		
 		// If it's a directory and we're recursive, add it to the queue
 		if file.Type == "dir" && s.recursive && (s.maxDepth < 0 || depth < s.maxDepth) {
 			dirPath := path.Join(dir, file.Name)
+			fmt.Printf("DEBUG: Adding directory to queue: %s\n", dirPath)
 			
 			s.mu.Lock()
 			if !s.listedDirs[dirPath] {
 				s.queue = append(s.queue, dirPath)
+				fmt.Printf("DEBUG: Queue length is now %d\n", len(s.queue))
 			}
 			s.mu.Unlock()
 		}
@@ -324,6 +343,9 @@ func drainErrorChannel(ch chan error) {
 // the number of files is known to be reasonably small
 func CollectFiles(iterator FileIterator) ([]FileListItem, error) {
 	var files []FileListItem
+	
+	// Add a small delay to let the iterator process the directory queue
+	time.Sleep(50 * time.Millisecond)
 	
 	for {
 		file, ok := iterator.Next()
