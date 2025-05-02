@@ -24,7 +24,7 @@ func TestGroup(t *testing.T) {
 		PublicGroup:           true,
 		RequiresSignAgreement: false,
 		SignAgreementMessage:  "",
-		Policies: map[string]string{
+		Policies: map[string]interface{}{
 			"policy1": "value1",
 		},
 		EnforceProvisionRules: true,
@@ -66,7 +66,7 @@ func TestGroup(t *testing.T) {
 	if group.RequiresSignAgreement {
 		t.Errorf("Group.RequiresSignAgreement = %v, want %v", group.RequiresSignAgreement, false)
 	}
-	if value, ok := group.Policies["policy1"]; !ok || value != "value1" {
+	if value, ok := group.Policies["policy1"]; !ok || value.(string) != "value1" {
 		t.Errorf("Group.Policies[\"policy1\"] = %v, want %v", value, "value1")
 	}
 	if !group.EnforceProvisionRules {
@@ -91,7 +91,7 @@ func TestGroupCreate(t *testing.T) {
 		ParentID:              "parent-group-id",
 		PublicGroup:           true,
 		RequiresSignAgreement: false,
-		Policies: map[string]string{
+		Policies: map[string]interface{}{
 			"policy1": "value1",
 		},
 		EnforceProvisionRules: true,
@@ -113,7 +113,7 @@ func TestGroupCreate(t *testing.T) {
 	if groupCreate.RequiresSignAgreement {
 		t.Errorf("GroupCreate.RequiresSignAgreement = %v, want %v", groupCreate.RequiresSignAgreement, false)
 	}
-	if value, ok := groupCreate.Policies["policy1"]; !ok || value != "value1" {
+	if value, ok := groupCreate.Policies["policy1"]; !ok || value.(string) != "value1" {
 		t.Errorf("GroupCreate.Policies[\"policy1\"] = %v, want %v", value, "value1")
 	}
 	if !groupCreate.EnforceProvisionRules {
@@ -134,7 +134,7 @@ func TestGroupUpdate(t *testing.T) {
 		PublicGroup:           &publicGroupTrue,
 		RequiresSignAgreement: &requiresSignAgreementFalse,
 		EnforceProvisionRules: &enforceProvisionRulesTrue,
-		Policies: map[string]string{
+		Policies: map[string]interface{}{
 			"policy1": "new-value",
 		},
 	}
@@ -158,7 +158,7 @@ func TestGroupUpdate(t *testing.T) {
 	if *groupUpdate.EnforceProvisionRules != true {
 		t.Errorf("*GroupUpdate.EnforceProvisionRules = %v, want %v", *groupUpdate.EnforceProvisionRules, true)
 	}
-	if value, ok := groupUpdate.Policies["policy1"]; !ok || value != "new-value" {
+	if value, ok := groupUpdate.Policies["policy1"]; !ok || value.(string) != "new-value" {
 		t.Errorf("GroupUpdate.Policies[\"policy1\"] = %v, want %v", value, "new-value")
 	}
 }

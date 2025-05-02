@@ -17,6 +17,15 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 )
 
+// testAuthorizer implements auth.Authorizer for testing
+type testAuthorizer struct {
+	token string
+}
+
+func (a *testAuthorizer) GetAuthorizationHeader(ctx ...context.Context) (string, error) {
+	return "Bearer " + a.token, nil
+}
+
 func init() {
 	// Load environment variables from .env.test file
 	_ = godotenv.Load("../../../.env.test")
@@ -80,7 +89,11 @@ func TestIntegration_ListGroups(t *testing.T) {
 	accessToken := getAccessToken(t, clientID, clientSecret)
 
 	// Create Groups client
-	client := NewClient(accessToken)
+	authorizer := &testAuthorizer{token: accessToken}
+	client, err := NewClient(WithAuthorizer(authorizer))
+	if err != nil {
+		t.Fatalf("Failed to create groups client: %v", err)
+	}
 	ctx := context.Background()
 
 	// List groups
@@ -132,7 +145,11 @@ func TestIntegration_GroupLifecycle(t *testing.T) {
 	accessToken := getAccessToken(t, clientID, clientSecret)
 
 	// Create Groups client
-	client := NewClient(accessToken)
+	authorizer := &testAuthorizer{token: accessToken}
+	client, err := NewClient(WithAuthorizer(authorizer))
+	if err != nil {
+		t.Fatalf("Failed to create groups client: %v", err)
+	}
 	ctx := context.Background()
 
 	// 1. Create a new group
@@ -268,7 +285,11 @@ func TestIntegration_ExistingGroup(t *testing.T) {
 	accessToken := getAccessToken(t, clientID, clientSecret)
 
 	// Create Groups client
-	client := NewClient(accessToken)
+	authorizer := &testAuthorizer{token: accessToken}
+	client, err := NewClient(WithAuthorizer(authorizer))
+	if err != nil {
+		t.Fatalf("Failed to create groups client: %v", err)
+	}
 	ctx := context.Background()
 
 	// Verify we can get the group

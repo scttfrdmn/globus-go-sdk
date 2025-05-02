@@ -17,7 +17,10 @@ func main() {
 	config := pkg.NewConfigFromEnvironment()
 
 	// Create a new Groups client with an access token
-	groupsClient := config.NewGroupsClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+	groupsClient, err := config.NewGroupsClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+	if err != nil {
+		log.Fatalf("Failed to create groups client: %v", err)
+	}
 	
 	// List groups the user is a member of
 	groupList, err := groupsClient.ListGroups(context.Background(), &groups.ListGroupsOptions{
@@ -28,11 +31,9 @@ func main() {
 		log.Fatalf("Failed to list groups: %v", err)
 	}
 	
-	fmt.Printf("You are a member of %d groups:
-", len(groupList.Groups))
+	fmt.Printf("You are a member of %d groups:\n", len(groupList.Groups))
 	for _, group := range groupList.Groups {
-		fmt.Printf("- %s (%s)
-", group.Name, group.ID)
+		fmt.Printf("- %s (%s)\n", group.Name, group.ID)
 	}
 	
 	// Create a new group
@@ -47,9 +48,7 @@ func main() {
 		log.Fatalf("Failed to create group: %v", err)
 	}
 	
-	fmt.Printf("
-Created group: %s (%s)
-", createdGroup.Name, createdGroup.ID)
+	fmt.Printf("\nCreated group: %s (%s)\n", createdGroup.Name, createdGroup.ID)
 	
 	// Add a member to the group
 	err = groupsClient.AddMember(context.Background(), createdGroup.ID, "user@example.com", "member")

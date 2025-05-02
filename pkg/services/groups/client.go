@@ -13,7 +13,7 @@ import (
 	"strconv"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
 )
 
 // Constants for Globus Groups
@@ -27,30 +27,99 @@ type Client struct {
 	Client *core.Client
 }
 
+// Option is a function that configures a clientConfig
+type Option func(*clientConfig)
+
+// clientConfig holds the configuration for the client
+type clientConfig struct {
+	authorizer  auth.Authorizer
+	debug       bool
+	trace       bool
+	logger      core.Logger
+	coreOptions []core.ClientOption
+}
+
+// WithAuthorizer sets the authorizer for the client
+func WithAuthorizer(authorizer auth.Authorizer) Option {
+	return func(c *clientConfig) {
+		c.authorizer = authorizer
+	}
+}
+
+// WithHTTPDebugging enables HTTP debugging
+func WithHTTPDebugging(enable bool) Option {
+	return func(c *clientConfig) {
+		c.debug = enable
+	}
+}
+
+// WithHTTPTracing enables HTTP tracing
+func WithHTTPTracing(enable bool) Option {
+	return func(c *clientConfig) {
+		c.trace = enable
+	}
+}
+
+// WithLogger sets the logger for the client
+func WithLogger(logger core.Logger) Option {
+	return func(c *clientConfig) {
+		c.logger = logger
+	}
+}
+
+// WithCoreOptions adds core client options
+func WithCoreOptions(options ...core.ClientOption) Option {
+	return func(c *clientConfig) {
+		c.coreOptions = append(c.coreOptions, options...)
+	}
+}
+
 // NewClient creates a new Groups client
-func NewClient(accessToken string, options ...core.ClientOption) *Client {
-	// Create the authorizer with the access token
-	authorizer := authorizers.StaticTokenCoreAuthorizer(accessToken)
+func NewClient(options ...Option) (*Client, error) {
+	// Apply the options to create the client configuration
+	cfg := &clientConfig{}
+	for _, option := range options {
+		option(cfg)
+	}
+
+	// Validate configuration
+	if cfg.authorizer == nil {
+		return nil, fmt.Errorf("authorizer is required")
+	}
 
 	// Apply default options specific to Groups
 	defaultOptions := []core.ClientOption{
 		core.WithBaseURL(DefaultBaseURL),
-		core.WithAuthorizer(authorizer),
+		core.WithAuthorizer(cfg.authorizer),
 	}
 
-	// Merge with user options
-	options = append(defaultOptions, options...)
+	// Apply debug options if enabled
+	if cfg.debug {
+		defaultOptions = append(defaultOptions, core.WithHTTPDebugging(true))
+	}
+	if cfg.trace {
+		defaultOptions = append(defaultOptions, core.WithHTTPTracing(true))
+	}
+	if cfg.logger != nil {
+		defaultOptions = append(defaultOptions, core.WithLogger(cfg.logger))
+	}
+
+	// Apply any additional core options
+	if cfg.coreOptions != nil {
+		defaultOptions = append(defaultOptions, cfg.coreOptions...)
+	}
 
 	// Create the base client
-	baseClient := core.NewClient(options...)
+	baseClient := core.NewClient(defaultOptions...)
 
 	return &Client{
 		Client: baseClient,
-	}
+	}, nil
 }
 
-// buildURL builds a URL for the groups API
-func (c *Client) buildURL(path string, query url.Values) string {
+// buildURLLowLevel builds a URL for the groups API
+// This is an internal method used by the client.
+func (c *Client) buildURLLowLevel(path string, query url.Values) string {
 	baseURL := c.Client.BaseURL
 	if baseURL[len(baseURL)-1] != '/' {
 		baseURL += "/"
@@ -64,9 +133,10 @@ func (c *Client) buildURL(path string, query url.Values) string {
 	return url
 }
 
-// doRequest performs an HTTP request and decodes the JSON response
-func (c *Client) doRequest(ctx context.Context, method, path string, query url.Values, body, response interface{}) error {
-	url := c.buildURL(path, query)
+// doRequestLowLevel performs an HTTP request and decodes the JSON response
+// This is an internal method used by higher-level API methods.
+func (c *Client) doRequestLowLevel(ctx context.Context, method, path string, query url.Values, body, response interface{}) error {
+	url := c.buildURLLowLevel(path, query)
 
 	var bodyReader io.Reader
 	if body != nil {
@@ -146,9 +216,16 @@ func (c *Client) ListGroups(ctx context.Context, options *ListGroupsOptions) (*G
 	}
 
 	var groupList GroupList
-	err := c.doRequest(ctx, http.MethodGet, "groups", query, nil, &groupList)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups", query, nil, &groupList)
 	if err != nil {
 		return nil, err
+	}
+	
+	// Ensure all returned group objects have the DATA_TYPE set
+	for i := range groupList.Groups {
+		if groupList.Groups[i].DATA_TYPE == "" {
+			groupList.Groups[i].DATA_TYPE = "group"
+		}
 	}
 
 	return &groupList, nil
@@ -161,9 +238,14 @@ func (c *Client) GetGroup(ctx context.Context, groupID string) (*Group, error) {
 	}
 
 	var group Group
-	err := c.doRequest(ctx, http.MethodGet, "groups/"+groupID, nil, nil, &group)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups/"+groupID, nil, nil, &group)
 	if err != nil {
 		return nil, err
+	}
+	
+	// Ensure the returned object has the DATA_TYPE set
+	if group.DATA_TYPE == "" {
+		group.DATA_TYPE = "group"
 	}
 
 	return &group, nil
@@ -178,11 +260,21 @@ func (c *Client) CreateGroup(ctx context.Context, group *GroupCreate) (*Group, e
 	if group.Name == "" {
 		return nil, fmt.Errorf("group name is required")
 	}
+	
+	// Set the DATA_TYPE field if not already set
+	if group.DATA_TYPE == "" {
+		group.DATA_TYPE = "group_create"
+	}
 
 	var createdGroup Group
-	err := c.doRequest(ctx, http.MethodPost, "groups", nil, group, &createdGroup)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "groups", nil, group, &createdGroup)
 	if err != nil {
 		return nil, err
+	}
+	
+	// Ensure the returned object has the DATA_TYPE set
+	if createdGroup.DATA_TYPE == "" {
+		createdGroup.DATA_TYPE = "group"
 	}
 
 	return &createdGroup, nil
@@ -197,11 +289,21 @@ func (c *Client) UpdateGroup(ctx context.Context, groupID string, update *GroupU
 	if update == nil {
 		return nil, fmt.Errorf("update data is required")
 	}
+	
+	// Set the DATA_TYPE field if not already set
+	if update.DATA_TYPE == "" {
+		update.DATA_TYPE = "group_update"
+	}
 
 	var updatedGroup Group
-	err := c.doRequest(ctx, http.MethodPatch, "groups/"+groupID, nil, update, &updatedGroup)
+	err := c.doRequestLowLevel(ctx, http.MethodPatch, "groups/"+groupID, nil, update, &updatedGroup)
 	if err != nil {
 		return nil, err
+	}
+	
+	// Ensure the returned object has the DATA_TYPE set
+	if updatedGroup.DATA_TYPE == "" {
+		updatedGroup.DATA_TYPE = "group"
 	}
 
 	return &updatedGroup, nil
@@ -213,7 +315,7 @@ func (c *Client) DeleteGroup(ctx context.Context, groupID string) error {
 		return fmt.Errorf("group ID is required")
 	}
 
-	return c.doRequest(ctx, http.MethodDelete, "groups/"+groupID, nil, nil, nil)
+	return c.doRequestLowLevel(ctx, http.MethodDelete, "groups/"+groupID, nil, nil, nil)
 }
 
 // ListMembers retrieves members of a group
@@ -240,9 +342,19 @@ func (c *Client) ListMembers(ctx context.Context, groupID string, options *ListM
 	}
 
 	var memberList MemberList
-	err := c.doRequest(ctx, http.MethodGet, "groups/"+groupID+"/members", query, nil, &memberList)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups/"+groupID+"/members", query, nil, &memberList)
 	if err != nil {
 		return nil, err
+	}
+	
+	// Ensure all returned member objects have the DATA_TYPE set
+	for i := range memberList.Members {
+		if memberList.Members[i].DATA_TYPE == "" {
+			memberList.Members[i].DATA_TYPE = "member"
+		}
+		if memberList.Members[i].Role.DATA_TYPE == "" {
+			memberList.Members[i].Role.DATA_TYPE = "role"
+		}
 	}
 
 	return &memberList, nil
@@ -268,7 +380,7 @@ func (c *Client) AddMember(ctx context.Context, groupID, userID, roleID string) 
 		"role_id":     roleID,
 	}
 
-	return c.doRequest(ctx, http.MethodPost, "groups/"+groupID+"/members", nil, body, nil)
+	return c.doRequestLowLevel(ctx, http.MethodPost, "groups/"+groupID+"/members", nil, body, nil)
 }
 
 // RemoveMember removes a user from a group
@@ -281,7 +393,7 @@ func (c *Client) RemoveMember(ctx context.Context, groupID, userID string) error
 		return fmt.Errorf("user ID is required")
 	}
 
-	return c.doRequest(ctx, http.MethodDelete, "groups/"+groupID+"/members/"+userID, nil, nil, nil)
+	return c.doRequestLowLevel(ctx, http.MethodDelete, "groups/"+groupID+"/members/"+userID, nil, nil, nil)
 }
 
 // UpdateMemberRole updates a member's role in a group
@@ -303,7 +415,7 @@ func (c *Client) UpdateMemberRole(ctx context.Context, groupID, userID, roleID s
 		"role_id": roleID,
 	}
 
-	return c.doRequest(ctx, http.MethodPatch, "groups/"+groupID+"/members/"+userID, nil, body, nil)
+	return c.doRequestLowLevel(ctx, http.MethodPatch, "groups/"+groupID+"/members/"+userID, nil, body, nil)
 }
 
 // ListRoles retrieves roles defined for a group
@@ -313,9 +425,16 @@ func (c *Client) ListRoles(ctx context.Context, groupID string) (*RoleList, erro
 	}
 
 	var roleList RoleList
-	err := c.doRequest(ctx, http.MethodGet, "groups/"+groupID+"/roles", nil, nil, &roleList)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups/"+groupID+"/roles", nil, nil, &roleList)
 	if err != nil {
 		return nil, err
+	}
+	
+	// Ensure all returned role objects have the DATA_TYPE set
+	for i := range roleList.Roles {
+		if roleList.Roles[i].DATA_TYPE == "" {
+			roleList.Roles[i].DATA_TYPE = "role"
+		}
 	}
 
 	return &roleList, nil
@@ -332,9 +451,14 @@ func (c *Client) GetRole(ctx context.Context, groupID, roleID string) (*Role, er
 	}
 
 	var role Role
-	err := c.doRequest(ctx, http.MethodGet, "groups/"+groupID+"/roles/"+roleID, nil, nil, &role)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups/"+groupID+"/roles/"+roleID, nil, nil, &role)
 	if err != nil {
 		return nil, err
+	}
+	
+	// Ensure the returned object has the DATA_TYPE set
+	if role.DATA_TYPE == "" {
+		role.DATA_TYPE = "role"
 	}
 
 	return &role, nil
@@ -353,11 +477,21 @@ func (c *Client) CreateRole(ctx context.Context, groupID string, role *RoleCreat
 	if role.Name == "" {
 		return nil, fmt.Errorf("role name is required")
 	}
+	
+	// Set the DATA_TYPE field if not already set
+	if role.DATA_TYPE == "" {
+		role.DATA_TYPE = "role_create"
+	}
 
 	var createdRole Role
-	err := c.doRequest(ctx, http.MethodPost, "groups/"+groupID+"/roles", nil, role, &createdRole)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "groups/"+groupID+"/roles", nil, role, &createdRole)
 	if err != nil {
 		return nil, err
+	}
+	
+	// Ensure the returned object has the DATA_TYPE set
+	if createdRole.DATA_TYPE == "" {
+		createdRole.DATA_TYPE = "role"
 	}
 
 	return &createdRole, nil
@@ -376,11 +510,21 @@ func (c *Client) UpdateRole(ctx context.Context, groupID, roleID string, update 
 	if update == nil {
 		return nil, fmt.Errorf("update data is required")
 	}
+	
+	// Set the DATA_TYPE field if not already set
+	if update.DATA_TYPE == "" {
+		update.DATA_TYPE = "role_update"
+	}
 
 	var updatedRole Role
-	err := c.doRequest(ctx, http.MethodPatch, "groups/"+groupID+"/roles/"+roleID, nil, update, &updatedRole)
+	err := c.doRequestLowLevel(ctx, http.MethodPatch, "groups/"+groupID+"/roles/"+roleID, nil, update, &updatedRole)
 	if err != nil {
 		return nil, err
+	}
+	
+	// Ensure the returned object has the DATA_TYPE set
+	if updatedRole.DATA_TYPE == "" {
+		updatedRole.DATA_TYPE = "role"
 	}
 
 	return &updatedRole, nil
@@ -396,5 +540,5 @@ func (c *Client) DeleteRole(ctx context.Context, groupID, roleID string) error {
 		return fmt.Errorf("role ID is required")
 	}
 
-	return c.doRequest(ctx, http.MethodDelete, "groups/"+groupID+"/roles/"+roleID, nil, nil, nil)
+	return c.doRequestLowLevel(ctx, http.MethodDelete, "groups/"+groupID+"/roles/"+roleID, nil, nil, nil)
 }

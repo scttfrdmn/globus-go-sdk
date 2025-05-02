@@ -10,6 +10,11 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/groups"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/search"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/flows"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/compute"
 )
 
 func main() {
@@ -35,48 +40,44 @@ func main() {
 	}
 
 	accessToken := tokenResp.AccessToken
-	fmt.Printf("Obtained access token (expires in %d seconds)
-", tokenResp.ExpiresIn)
+	fmt.Printf("Obtained access token (expires in %d seconds)\n", tokenResp.ExpiresIn)
 
 	// Create service clients using the access token
-	groupsClient := config.NewGroupsClient(accessToken)
+	groupsClient, err := config.NewGroupsClient(accessToken)
+	if err != nil {
+		log.Fatalf("Failed to create groups client: %v", err)
+	}
 	transferClient := config.NewTransferClient(accessToken)
 	searchClient := config.NewSearchClient(accessToken)
 	flowsClient := config.NewFlowsClient(accessToken)
 	computeClient := config.NewComputeClient(accessToken)
 
 	// Demonstrate Groups API - List groups
-	fmt.Println("
-=== Groups API ===")
-	groups, err := groupsClient.ListGroups(ctx, &pkg.ListGroupsOptions{
+	fmt.Println("\n=== Groups API ===")
+	groupsList, err := groupsClient.ListGroups(ctx, &groups.ListGroupsOptions{
 		MyGroups: true,
 		PageSize: 5,
 	})
 	if err != nil {
 		log.Printf("Failed to list groups: %v", err)
 	} else {
-		fmt.Printf("Found %d groups:
-", len(groups.Groups))
-		for i, group := range groups.Groups {
-			fmt.Printf("%d. %s (%s)
-", i+1, group.Name, group.ID)
+		fmt.Printf("Found %d groups:\n", len(groupsList.Groups))
+		for i, group := range groupsList.Groups {
+			fmt.Printf("%d. %s (%s)\n", i+1, group.Name, group.ID)
 		}
 	}
 
 	// Demonstrate Transfer API - List endpoints
-	fmt.Println("
-=== Transfer API ===")
-	endpoints, err := transferClient.ListEndpoints(ctx, &pkg.ListEndpointsOptions{
+	fmt.Println("\n=== Transfer API ===")
+	endpoints, err := transferClient.ListEndpoints(ctx, &transfer.ListEndpointsOptions{
 		Limit: 5,
 	})
 	if err != nil {
 		log.Printf("Failed to list endpoints: %v", err)
 	} else {
-		fmt.Printf("Found %d endpoints:
-", len(endpoints.DATA))
-		for i, endpoint := range endpoints.DATA {
-			fmt.Printf("%d. %s (%s)
-", i+1, endpoint.DisplayName, endpoint.ID)
+		fmt.Printf("Found %d endpoints:\n", len(endpoints.Data))
+		for i, endpoint := range endpoints.Data {
+			fmt.Printf("%d. %s (%s)\n", i+1, endpoint.DisplayName, endpoint.ID)
 		}
 	}
 
@@ -85,15 +86,13 @@ func main() {
 	destEndpointID := os.Getenv("DEST_ENDPOINT_ID")
 	
 	if sourceEndpointID != "" && destEndpointID != "" {
-		fmt.Println("
-=== Transfer Demonstration ===")
+		fmt.Println("\n=== Transfer Demonstration ===")
 		
 		// Create a test file at the source
 		sourcePath := "/~/test_transfer_" + time.Now().Format("20060102_150405") + ".txt"
 		destPath := "/~/received_test_file.txt"
 		
-		fmt.Printf("Starting transfer from %s to %s
-", sourcePath, destPath)
+		fmt.Printf("Starting transfer from %s to %s\n", sourcePath, destPath)
 		
 		// NOTE: Explicit endpoint activation has been removed.
 		// Modern Globus endpoints (v0.10+) automatically activate with properly scoped tokens.
@@ -116,65 +115,53 @@ func main() {
 		if err != nil {
 			log.Printf("Failed to submit transfer: %v", err)
 		} else {
-			fmt.Printf("Transfer submitted successfully, task ID: %s
-", taskResponse.TaskID)
-			fmt.Printf("You can monitor this task using the Globus web interface
-")
+			fmt.Printf("Transfer submitted successfully, task ID: %s\n", taskResponse.TaskID)
+			fmt.Printf("You can monitor this task using the Globus web interface\n")
 		}
 	}
 	
 	// Demonstrate Search API - List indexes
-	fmt.Println("
-=== Search API ===")
-	indexes, err := searchClient.ListIndexes(ctx, &pkg.ListIndexesOptions{
+	fmt.Println("\n=== Search API ===")
+	indexes, err := searchClient.ListIndexes(ctx, &search.ListIndexesOptions{
 		Limit: 5,
 	})
 	if err != nil {
 		log.Printf("Failed to list search indexes: %v", err)
 	} else {
-		fmt.Printf("Found %d search indexes:
-", len(indexes.Indexes))
+		fmt.Printf("Found %d search indexes:\n", len(indexes.Indexes))
 		for i, index := range indexes.Indexes {
-			fmt.Printf("%d. %s (%s)
-", i+1, index.DisplayName, index.ID)
+			fmt.Printf("%d. %s (%s)\n", i+1, index.DisplayName, index.ID)
 		}
 	}
 	
 	// Demonstrate Flows API - List flows
-	fmt.Println("
-=== Flows API ===")
-	flows, err := flowsClient.ListFlows(ctx, &pkg.ListFlowsOptions{
+	fmt.Println("\n=== Flows API ===")
+	flowsList, err := flowsClient.ListFlows(ctx, &flows.ListFlowsOptions{
 		Limit: 5,
 	})
 	if err != nil {
 		log.Printf("Failed to list flows: %v", err)
 	} else {
-		fmt.Printf("Found %d flows:
-", len(flows.Flows))
-		for i, flow := range flows.Flows {
-			fmt.Printf("%d. %s (%s)
-", i+1, flow.Title, flow.ID)
+		fmt.Printf("Found %d flows:\n", len(flowsList.Flows))
+		for i, flow := range flowsList.Flows {
+			fmt.Printf("%d. %s (%s)\n", i+1, flow.Title, flow.ID)
 		}
 	}
 	
 	// Demonstrate Compute API - List endpoints
-	fmt.Println("
-=== Compute API ===")
-	compEndpoints, err := computeClient.ListEndpoints(ctx, &pkg.ListEndpointsOptions{
+	fmt.Println("\n=== Compute API ===")
+	compEndpoints, err := computeClient.ListEndpoints(ctx, &compute.ListEndpointsOptions{
 		PerPage: 5,
 	})
 	if err != nil {
 		log.Printf("Failed to list compute endpoints: %v", err)
 	} else {
-		fmt.Printf("Found %d compute endpoints:
-", len(compEndpoints.Endpoints))
+		fmt.Printf("Found %d compute endpoints:\n", len(compEndpoints.Endpoints))
 		for i, endpoint := range compEndpoints.Endpoints {
-			fmt.Printf("%d. %s (%s) - Status: %s
-", 
+			fmt.Printf("%d. %s (%s) - Status: %s\n", 
 				i+1, endpoint.Name, endpoint.ID, endpoint.Status)
 		}
 	}
 	
-	fmt.Println("
-SDK showcase complete!")
+	fmt.Println("\nSDK showcase complete!")
 }

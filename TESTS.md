@@ -10,7 +10,7 @@
 | search        | ✅ Pass    | ⚠️ Partial        | Integration tests work with limitations |
 | flows         | ✅ Pass    | ⚠️ Partial        | Integration tests work with limited permissions |
 | compute       | ✅ Pass    | ⚠️ Partial        | Integration tests work with limited permissions |
-| groups        | ❌ Failing | ❌ Failing        | Build issues need fixing |
+| groups        | ✅ Pass    | ✅ Pass           | All tests passing |
 | transfer      | ✅ Pass    | ⚠️ Partial        | Integration tests work with some limitations |
 
 ## Fixed Issues
@@ -27,7 +27,17 @@
 - Moved test_with_credentials.go to its own package to avoid duplicate main function
 - Added the missing WithMessage option in pkg/metrics/progress.go
 - Updated the PerformanceMonitor interface in metrics/transfer.go to include all required methods
+- Fixed formatting issues in various examples with newlines in string literals
 - All examples now compile successfully
+
+### Groups Package
+
+- Added `DATA_TYPE` field to all model structs to ensure proper JSON serialization
+- Restructured client initialization to use a modern options pattern with `WithAuthorizer`, etc.
+- Updated client methods to properly set `DATA_TYPE` field values
+- Removed direct transport usage in favor of using the core client
+- Fixed integration tests to work with the proper authorizer interface
+- Updated dependent code in the SDK to handle the new client creation pattern
 
 ### Search Package
 
@@ -109,10 +119,14 @@ GLOBUS_TEST_DIRECTORY_PATH=~/globus-test-directory
 
 ### Groups Package
 
-The groups tests need fixes to address build issues:
+The groups package has been fixed:
 
-1. Unknown field references in struct literals
-2. Undefined struct fields
+1. ~~Unknown field references in struct literals~~ Fixed
+2. ~~Undefined struct fields~~ Fixed
+3. Added proper `DATA_TYPE` fields to all model structs
+4. Updated client initialization to use modern options pattern
+5. Refactored client code to use core client consistently
+6. Updated integration tests to work with proper authorization
 
 ## Running Tests
 
@@ -142,7 +156,7 @@ go test -tags=integration ./pkg/services/auth
 
 1. ~~Fix build issues in the transfer package~~ Done
 2. ~~Fix example compilation issues~~ Done
-3. Fix build issues in the groups package
+3. ~~Fix build issues in the groups package~~ Done
 4. ~~Add proper error handling to all integration tests for consistent behavior~~ Done
 5. Improve integration test coverage for packages with limited permissions
 6. Add more real-world scenarios to integration tests

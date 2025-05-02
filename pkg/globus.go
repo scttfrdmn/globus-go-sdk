@@ -72,21 +72,31 @@ func (c *SDKConfig) NewAuthClient() *auth.Client {
 }
 
 // NewGroupsClient creates a new Groups client with the SDK configuration
-func (c *SDKConfig) NewGroupsClient(accessToken string) *groups.Client {
-	groupsClient := groups.NewClient(accessToken)
-
-	// Apply configuration
-	if c.Config != nil {
-		c.Config.ApplyToClient(groupsClient.Client)
+func (c *SDKConfig) NewGroupsClient(accessToken string) (*groups.Client, error) {
+	// Create a simple static token authorizer directly
+	authorizer := &simpleAuthorizer{token: accessToken}
+	
+	// Create options for the groups client
+	options := []groups.Option{
+		groups.WithAuthorizer(authorizer),
 	}
 	
-	// Use service-specific connection pool if enabled
-	if os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") != "true" {
-		serviceClient := httppool.GetHTTPClientForService("groups", nil)
-		groupsClient.Client.HTTPClient = serviceClient
+	// Add debugging if configured
+	if os.Getenv("GLOBUS_SDK_HTTP_DEBUG") == "1" {
+		options = append(options, groups.WithHTTPDebugging(true))
 	}
-
-	return groupsClient
+	
+	if os.Getenv("GLOBUS_SDK_HTTP_TRACE") == "1" {
+		options = append(options, groups.WithHTTPTracing(true))
+	}
+	
+	// Create the client
+	groupsClient, err := groups.NewClient(options...)
+	if err != nil {
+		return nil, fmt.Errorf("error creating groups client: %w", err)
+	}
+	
+	return groupsClient, nil
 }
 
 // NewTransferClient creates a new Transfer client with the SDK configuration

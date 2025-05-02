@@ -11,27 +11,37 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
 )
 
 // Test helper to set up a mock server and client
 func setupMockServer(handler http.HandlerFunc) (*httptest.Server, *Client) {
 	server := httptest.NewServer(handler)
 
+	// Create an authorizer
+	authorizer := authorizers.StaticTokenCoreAuthorizer("test-access-token")
+	
 	// Create a client that uses the test server
-	client := NewClient("test-access-token",
-		core.WithBaseURL(server.URL+"/"),
+	client, _ := NewClient(
+		WithAuthorizer(authorizer),
+		WithCoreOptions(core.WithBaseURL(server.URL+"/")),
 	)
 
 	return server, client
 }
 
-func TestBuildURL(t *testing.T) {
-	client := NewClient("test-access-token",
-		core.WithBaseURL("https://example.com"),
+func TestBuildURLLowLevel(t *testing.T) {
+	// Create an authorizer
+	authorizer := authorizers.StaticTokenCoreAuthorizer("test-access-token")
+	
+	// Create a client that uses the base URL
+	client, _ := NewClient(
+		WithAuthorizer(authorizer),
+		WithCoreOptions(core.WithBaseURL("https://example.com")),
 	)
 
 	// Test with no query parameters
-	url := client.buildURL("test/path", nil)
+	url := client.buildURLLowLevel("test/path", nil)
 	if url != "https://example.com/test/path" {
 		t.Errorf("buildURL() = %v, want %v", url, "https://example.com/test/path")
 	}
@@ -41,16 +51,17 @@ func TestBuildURL(t *testing.T) {
 		"param1": {"value1"},
 		"param2": {"value2"},
 	}
-	url = client.buildURL("test/path", query)
+	url = client.buildURLLowLevel("test/path", query)
 	if url != "https://example.com/test/path?param1=value1&param2=value2" {
 		t.Errorf("buildURL() with query = %v, want %v", url, "https://example.com/test/path?param1=value1&param2=value2")
 	}
 
 	// Test with trailing slash in base URL
-	client = NewClient("test-access-token",
-		core.WithBaseURL("https://example.com/"),
+	client, _ = NewClient(
+		WithAuthorizer(authorizer),
+		WithCoreOptions(core.WithBaseURL("https://example.com/")),
 	)
-	url = client.buildURL("test/path", nil)
+	url = client.buildURLLowLevel("test/path", nil)
 	if url != "https://example.com/test/path" {
 		t.Errorf("buildURL() with trailing slash = %v, want %v", url, "https://example.com/test/path")
 	}
