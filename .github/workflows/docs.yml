@@ -1,14 +1,13 @@
 name: Documentation
 
 on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
-    paths:
-      - '**.md'
-      - 'doc/**'
-      - '.github/workflows/docs.yml'
+  workflow_dispatch:
+    inputs:
+      run_docs:
+        description: 'Run documentation checks'
+        default: 'true'
+        required: false
+        type: boolean
 
 jobs:
   markdown-lint:
