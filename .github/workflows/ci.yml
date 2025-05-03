@@ -11,31 +11,31 @@ jobs:
     name: Lint
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.21'
           cache: true
 
-      - name: Install golangci-lint
-        run: go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
-
-      - name: Lint
-        run: golangci-lint run
+      - name: Lint with golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: latest
+          args: --timeout 5m
 
   test:
     name: Test
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ['1.20', '1.21']
+        go-version: ['1.21', '1.22']
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Go ${{ matrix.go-version }}
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: ${{ matrix.go-version }}
           cache: true
@@ -44,10 +44,11 @@ jobs:
         run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v4
         with:
           file: ./coverage.txt
           fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   integration-test:
     name: Integration Tests
@@ -61,10 +62,10 @@ jobs:
       GLOBUS_TEST_DEST_ENDPOINT_ID: ${{ secrets.GLOBUS_TEST_DEST_ENDPOINT_ID }}
       GLOBUS_TEST_GROUP_ID: ${{ secrets.GLOBUS_TEST_GROUP_ID }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.21'
           cache: true
@@ -88,3 +89,7 @@ jobs:
         run: |
           echo "Skipping integration tests because required secrets are not available"
           echo "Integration tests require GLOBUS_TEST_CLIENT_ID and GLOBUS_TEST_CLIENT_SECRET to be set as secrets"
+          
+      - name: Generate test summary
+        if: steps.check-secrets.outputs.secrets_available == 'true'
+        run: ./scripts/test_summary.sh

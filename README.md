@@ -10,7 +10,8 @@
 <p align="center">
   <a href="https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk"><img src="https://pkg.go.dev/badge/github.com/scttfrdmn/globus-go-sdk.svg" alt="Go Reference"></a>
   <a href="https://goreportcard.com/report/github.com/scttfrdmn/globus-go-sdk"><img src="https://goreportcard.com/badge/github.com/scttfrdmn/globus-go-sdk" alt="Go Report Card"></a>
-  <a href="https://github.com/scttfrdmn/globus-go-sdk/actions"><img src="https://github.com/scttfrdmn/globus-go-sdk/workflows/Go/badge.svg" alt="Build Status"></a>
+  <a href="https://github.com/scttfrdmn/globus-go-sdk/actions/workflows/go.yml"><img src="https://github.com/scttfrdmn/globus-go-sdk/actions/workflows/go.yml/badge.svg" alt="Build Status"></a>
+  <a href="https://github.com/scttfrdmn/globus-go-sdk/actions/workflows/docs.yml"><img src="https://github.com/scttfrdmn/globus-go-sdk/actions/workflows/docs.yml/badge.svg" alt="Documentation Status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/scttfrdmn/globus-go-sdk" alt="License"></a>
   <a href="https://github.com/scttfrdmn/globus-go-sdk/releases"><img src="https://img.shields.io/github/v/release/scttfrdmn/globus-go-sdk" alt="Release"></a>
   <a href="https://codecov.io/gh/scttfrdmn/globus-go-sdk"><img src="https://codecov.io/gh/scttfrdmn/globus-go-sdk/branch/main/graph/badge.svg" alt="Coverage"></a>

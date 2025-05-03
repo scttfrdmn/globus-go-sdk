@@ -1,0 +1,27 @@
+# Default state for all rules
+default: true
+
+# Line length
+MD013:
+  # Number of characters
+  line_length: 120
+  # Allow longer lines in code blocks
+  code_blocks: false
+  # Allow longer lines in tables
+  tables: false
+
+# Inline HTML - this is necessary for GitHub flavored markdown
+MD033: false
+
+# Fenced code blocks should have a language specified
+MD040: true
+
+# First line in a file should be a top-level heading
+MD041: false
+
+# Required headings
+MD043: false
+
+# Allow multiple headings with the same content
+MD024:
+  allow_different_nesting: true
