@@ -8,15 +8,21 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
 )
 
 // Client defines the base client used by all service-specific clients
 type Client struct {
-	BaseURL    string
-	HTTPClient *http.Client
-	UserAgent  string
-	Logger     Logger
-	Authorizer auth.Authorizer
+	BaseURL     string
+	HTTPClient  *http.Client
+	UserAgent   string
+	Logger      interfaces.Logger
+	Authorizer  auth.Authorizer
+	RateLimiter ratelimit.RateLimiter
+	Transport   interfaces.Transport
+	Debug       bool
+	Trace       bool
 }
 
 // NewClient creates a new base client with default settings
@@ -28,11 +34,19 @@ func NewClient(options ...ClientOption) *Client {
 		},
 		UserAgent: "globus-go-sdk/1.0",
 		Logger:    NewDefaultLogger(nil, LogLevelNone),
+		Debug:     false,
+		Trace:     false,
 	}
 
 	// Apply options
 	for _, option := range options {
 		option(client)
+	}
+
+	// Create Transport if it hasn't been created yet
+	if client.Transport == nil {
+		// Use the helper function to initialize the transport
+		client.Transport = InitTransport(client, client.Debug, client.Trace)
 	}
 
 	return client
@@ -62,6 +76,33 @@ func WithAuthorizer(authorizer auth.Authorizer) ClientOption {
 	}
 }
 
+// WithRateLimiter sets the rate limiter to use for API requests
+func WithRateLimiter(limiter ratelimit.RateLimiter) ClientOption {
+	return func(c *Client) {
+		c.RateLimiter = limiter
+	}
+}
+
+// WithHTTPDebugging enables HTTP request/response logging
+func WithHTTPDebugging(enable bool) ClientOption {
+	return func(c *Client) {
+		c.Debug = enable
+		// Transport will be initialized in NewClient if it's nil
+	}
+}
+
+// WithHTTPTracing enables detailed HTTP tracing including headers and bodies
+func WithHTTPTracing(enable bool) ClientOption {
+	return func(c *Client) {
+		c.Trace = enable
+		// Transport will be initialized in NewClient if it's nil
+		// Make sure debug is also enabled if tracing is
+		if enable {
+			c.Debug = true // Tracing requires debug mode
+		}
+	}
+}
+
 // Do performs an HTTP request and handles common error cases
 func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, error) {
 	// Set common headers
@@ -75,6 +116,14 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 		}
 		if header != "" {
 			req.Header.Set("Authorization", header)
+		}
+	}
+
+	// Apply rate limiting if configured
+	if c.RateLimiter != nil {
+		if err := c.RateLimiter.Wait(ctx); err != nil {
+			c.Logger.Error("Rate limiting failed: %v", err)
+			return nil, err
 		}
 	}
 
@@ -97,3 +146,4 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 
 	return resp, nil
 }
+
