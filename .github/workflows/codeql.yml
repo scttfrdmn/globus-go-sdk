@@ -1,10 +1,13 @@
 name: "CodeQL"
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      run_all:
+        description: 'Run all jobs'
+        default: 'false'
+        required: false
+        type: boolean
   schedule:
     - cron: '15 10 * * 1'
 
