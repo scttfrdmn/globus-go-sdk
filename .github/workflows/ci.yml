@@ -18,6 +18,11 @@ jobs:
         with:
           go-version: '1.21'
           cache: true
+          
+      - name: Get dependencies
+        run: |
+          go mod download
+          go mod verify
 
       - name: Lint with golangci-lint
         uses: golangci/golangci-lint-action@v4
@@ -40,8 +45,13 @@ jobs:
           go-version: ${{ matrix.go-version }}
           cache: true
 
+      - name: Get dependencies
+        run: |
+          go mod download
+          go mod verify
+          
       - name: Test
-        run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./...
+        run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./pkg/...
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -69,6 +79,11 @@ jobs:
         with:
           go-version: '1.21'
           cache: true
+          
+      - name: Get dependencies
+        run: |
+          go mod download
+          go mod verify
 
       # Only run integration tests if secrets are available
       - name: Check for credentials

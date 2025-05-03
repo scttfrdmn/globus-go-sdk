@@ -19,8 +19,10 @@ jobs:
           go-version: '1.21'
           cache: true
 
-      - name: Verify dependencies
-        run: go mod verify
+      - name: Get dependencies
+        run: |
+          go mod download
+          go mod verify
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v4
@@ -42,6 +44,11 @@ jobs:
         with:
           go-version: '1.21'
           cache: true
+          
+      - name: Get dependencies
+        run: |
+          go mod download
+          go mod verify
 
       - name: Run govulncheck
         uses: golang/govulncheck-action@v1
@@ -96,6 +103,11 @@ jobs:
         with:
           go-version: '1.21'
           cache: true
+          
+      - name: Get dependencies
+        run: |
+          go mod download
+          go mod verify
 
       - name: Run tests with coverage
         run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
@@ -122,8 +134,13 @@ jobs:
           go-version: ${{ matrix.go-version }}
           cache: true
 
+      - name: Get dependencies
+        run: |
+          go mod download
+          go mod verify
+
       - name: Build
-        run: go build -v ./...
+        run: go build -v ./pkg/...
 
   integration:
     name: Integration Tests
@@ -137,6 +154,11 @@ jobs:
         with:
           go-version: '1.21'
           cache: true
+          
+      - name: Get dependencies
+        run: |
+          go mod download
+          go mod verify
 
       - name: Run integration tests
         run: ./scripts/run_integration_tests.sh
