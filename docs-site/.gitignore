@@ -1,0 +1,13 @@
+# Hugo build output
+/public/
+/resources/
+/.hugo_build.lock
+
+# Hugo theme (should be cloned separately)
+/themes/hugo-book/
+
+# macOS
+.DS_Store
+
+# Node.js
+node_modules/

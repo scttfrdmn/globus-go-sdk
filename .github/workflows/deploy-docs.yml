@@ -1,0 +1,70 @@
+name: Deploy Documentation
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'docs-site/**'
+      - 'doc/**'
+      - '.github/workflows/deploy-docs.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+        with:
+          submodules: true
+          fetch-depth: 0
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: 'latest'
+          extended: true
+
+      - name: Install Hugo Book Theme
+        run: git clone https://github.com/alex-shpak/hugo-book.git docs-site/themes/hugo-book
+
+      - name: Sync Reference Documentation
+        run: |
+          mkdir -p docs-site/content/docs/reference/{auth,compute,flows,groups,search,timers,tokens,transfer}
+          cp -r doc/reference/auth/*.md docs-site/content/docs/reference/auth/
+          cp -r doc/reference/compute/*.md docs-site/content/docs/reference/compute/
+          cp -r doc/reference/flows/*.md docs-site/content/docs/reference/flows/
+          cp -r doc/reference/groups/*.md docs-site/content/docs/reference/groups/
+          cp -r doc/reference/search/*.md docs-site/content/docs/reference/search/
+          cp -r doc/reference/timers/*.md docs-site/content/docs/reference/timers/
+          cp -r doc/reference/tokens/*.md docs-site/content/docs/reference/tokens/
+          cp -r doc/reference/transfer/*.md docs-site/content/docs/reference/transfer/
+          
+          # Convert each MD file to have proper Hugo front matter
+          find docs-site/content -name "*.md" -type f -exec sh -c '
+            if ! grep -q "^---" "$1"; then
+              title=$(head -n1 "$1" | sed "s/^# //")
+              temp_file=$(mktemp)
+              echo "---" > "$temp_file"
+              echo "title: \"$title\"" >> "$temp_file"
+              echo "---" >> "$temp_file"
+              cat "$1" >> "$temp_file"
+              mv "$temp_file" "$1"
+            fi
+          ' sh {} \;
+
+      - name: Copy Logo
+        run: |
+          if [ -f "doc/images/globus-go-sdk-logo.png" ]; then
+            mkdir -p docs-site/static
+            cp doc/images/globus-go-sdk-logo.png docs-site/static/logo.png
+          fi
+
+      - name: Build Site
+        run: cd docs-site && hugo --minify
+
+      - name: Deploy to GitHub Pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./docs-site/public

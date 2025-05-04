@@ -11,10 +11,11 @@
   <a href="https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk"><img src="https://pkg.go.dev/badge/github.com/scttfrdmn/globus-go-sdk.svg" alt="Go Reference"></a>
   <a href="https://goreportcard.com/report/github.com/scttfrdmn/globus-go-sdk"><img src="https://goreportcard.com/badge/github.com/scttfrdmn/globus-go-sdk" alt="Go Report Card"></a>
   <a href="https://github.com/scttfrdmn/globus-go-sdk/actions/workflows/go.yml"><img src="https://github.com/scttfrdmn/globus-go-sdk/actions/workflows/go.yml/badge.svg" alt="Build Status"></a>
-  <a href="https://github.com/scttfrdmn/globus-go-sdk/actions/workflows/docs.yml"><img src="https://github.com/scttfrdmn/globus-go-sdk/actions/workflows/docs.yml/badge.svg" alt="Documentation Status"></a>
+  <a href="https://github.com/scttfrdmn/globus-go-sdk/actions/workflows/deploy-docs.yml"><img src="https://github.com/scttfrdmn/globus-go-sdk/actions/workflows/deploy-docs.yml/badge.svg" alt="Documentation Status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/scttfrdmn/globus-go-sdk" alt="License"></a>
   <a href="https://github.com/scttfrdmn/globus-go-sdk/releases"><img src="https://img.shields.io/github/v/release/scttfrdmn/globus-go-sdk" alt="Release"></a>
   <a href="https://codecov.io/gh/scttfrdmn/globus-go-sdk"><img src="https://codecov.io/gh/scttfrdmn/globus-go-sdk/branch/main/graph/badge.svg" alt="Coverage"></a>
+  <a href="https://scttfrdmn.github.io/globus-go-sdk/"><img src="https://img.shields.io/badge/docs-online-blue" alt="Documentation"></a>
 </p>
 
 A Go SDK for interacting with Globus services, providing a simple and idiomatic Go interface to Globus APIs.
@@ -491,6 +492,7 @@ func main() {
 
 For detailed documentation, see:
 
+- [Online Documentation](https://scttfrdmn.github.io/globus-go-sdk/) ← New for v0.9.0! Comprehensive documentation hosted on GitHub Pages
 - [GoDoc Reference](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/)
 - [User Guide](doc/user-guide.md)
 - [Quick Start Examples](doc/QUICK_START_EXAMPLES.md)
@@ -499,6 +501,50 @@ For detailed documentation, see:
 - [Client Initialization](doc/CLIENT_INITIALIZATION.md)
 - [Functional Options Pattern Best Practices](doc/functional-options-guide.md)
 - [Error Handling](doc/ERROR_HANDLING.md)
+
+### API Reference Documentation
+- [API Reference Overview](doc/reference/README.md) ← New for v0.9.0
+- **Auth Service:**
+  - [Auth Client](doc/reference/auth/client.md) ← New for v0.9.0
+  - [OAuth2 Flows](doc/reference/auth/oauth2.md) ← New for v0.9.0
+  - [Token Validation](doc/reference/auth/token.md) ← New for v0.9.0
+  - [MFA Support](doc/reference/auth/mfa.md) ← New for v0.9.0
+- **Tokens Package:**
+  - [Token Manager](doc/reference/tokens/manager.md) ← New for v0.9.0
+  - [Token Storage](doc/reference/tokens/storage.md) ← New for v0.9.0
+  - [Token Refresh](doc/reference/tokens/refresh.md) ← New for v0.9.0
+- **Transfer Service:**
+  - [Transfer Client](doc/reference/transfer/client.md) ← New for v0.9.0
+  - [Endpoint Operations](doc/reference/transfer/endpoints.md) ← New for v0.9.0
+  - [Transfer Operations](doc/reference/transfer/transfers.md) ← New for v0.9.0
+  - [Recursive Transfers](doc/reference/transfer/recursive.md) ← New for v0.9.0
+  - [Resumable Transfers](doc/reference/transfer/resumable.md) ← New for v0.9.0
+- **Search Service:**
+  - [Search Client](doc/reference/search/client.md) ← New for v0.9.0
+  - [Query Operations](doc/reference/search/queries.md) ← New for v0.9.0
+  - [Advanced Queries](doc/reference/search/advanced.md) ← New for v0.9.0
+  - [Batch Operations](doc/reference/search/batch.md) ← New for v0.9.0
+- **Flows Service:**
+  - [Flows Client](doc/reference/flows/client.md) ← New for v0.9.0
+  - [Flow Operations](doc/reference/flows/flows.md) ← New for v0.9.0
+  - [Run Operations](doc/reference/flows/runs.md) ← New for v0.9.0
+  - [Batch Operations](doc/reference/flows/batch.md) ← New for v0.9.0
+- **Compute Service:**
+  - [Compute Client](doc/reference/compute/client.md) ← New for v0.9.0
+  - [Container Operations](doc/reference/compute/containers.md) ← New for v0.9.0
+  - [Batch Operations](doc/reference/compute/batch.md) ← New for v0.9.0
+  - [Environment Operations](doc/reference/compute/environments.md) ← New for v0.9.0
+- **Groups Service:**
+  - [Groups Client](doc/reference/groups/client.md) ← New for v0.9.0
+  - [Group Operations](doc/reference/groups/groups.md) ← New for v0.9.0
+  - [Membership Operations](doc/reference/groups/members.md) ← New for v0.9.0
+  - [Role Operations](doc/reference/groups/roles.md) ← New for v0.9.0
+- **Timers Service:**
+  - [Timers Client](doc/reference/timers/client.md) ← New for v0.9.0
+  - [Timer Operations](doc/reference/timers/timers.md) ← New for v0.9.0
+  - [Run Operations](doc/reference/timers/jobs.md) ← New for v0.9.0
+
+### Guides and Examples
 - [Token Management Example](examples/token-management/README.md)
 - [Tokens Package Guide](doc/tokens-package.md)
 - [Token Storage Guide](doc/token-storage.md)

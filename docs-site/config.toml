@@ -1,0 +1,56 @@
+baseURL = "https://scttfrdmn.github.io/globus-go-sdk/"
+languageCode = "en-us"
+title = "Globus Go SDK"
+theme = "hugo-book"
+
+# Book theme options
+[params]
+  # (Optional, default light) Sets color theme: light, dark or auto.
+  # Theme 'auto' switches between dark and light modes based on browser/os preferences
+  BookTheme = "light"
+
+  # (Optional, default true) Controls table of contents visibility on right side of pages.
+  # Start and end levels can be controlled with markup.tableOfContents setting.
+  BookToC = true
+
+  # (Optional, default none) Set the path to a logo for the book.
+  # If the logo is in your static folder, set as "/static/logo.png"
+  BookLogo = "/logo.png"
+
+  # (Optional, default docs) Specify section of content to render as menu
+  # You can also set value to "*" to render all sections to menu
+  BookSection = "docs"
+
+  # Set source repository location.
+  # Used for 'Last Modified' and 'Edit this page' links.
+  BookRepo = "https://github.com/scttfrdmn/globus-go-sdk"
+
+  # (Optional, default 'commit') Specifies commit option for Last Modified.
+  # 'commit' - last git commit
+  # 'date' - file modification date 
+  BookDateFormat = "Jan 2, 2006"
+
+  # (Optional, default true) Enables search function in the site.
+  BookSearch = true
+
+  # (Optional, default true) Enables comments template on pages
+  # By default, comments are enabled only for 'blog' section
+  BookComments = false
+
+  # /!\ This is an experimental feature, might be removed or changed at any time
+  # (Optional, experimental, default false) Enables portable links and link checks in markdown pages.
+  # Portable links meant to work with text editors and let you write external links that work
+  # with pages that exist within the site.
+  BookPortableLinks = true
+
+[menu]
+# [[menu.before]]
+[[menu.after]]
+  name = "GitHub"
+  url = "https://github.com/scttfrdmn/globus-go-sdk"
+  weight = 10
+
+[[menu.after]]
+  name = "Globus"
+  url = "https://www.globus.org/"
+  weight = 20
