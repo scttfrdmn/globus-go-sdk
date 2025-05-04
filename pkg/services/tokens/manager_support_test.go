@@ -68,8 +68,14 @@ func TestManagerBasic(t *testing.T) {
 	storage := NewMemoryStorage()
 	mockHandler := NewMockRefreshHandler()
 
-	// Create manager
-	manager := NewManager(storage, mockHandler)
+	// Create manager with options
+	manager, err := NewManager(
+		WithStorage(storage),
+		WithRefreshHandler(mockHandler),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create manager: %v", err)
+	}
 
 	// Create test entries
 	entry := &Entry{
@@ -88,13 +94,14 @@ func TestManagerBasic(t *testing.T) {
 	}
 
 	// Store the entry
-	err := storage.Store(entry)
+	err = storage.Store(entry)
 	if err != nil {
 		t.Fatalf("Storage.Store() error = %v", err)
 	}
 
 	// Get the token (should not refresh)
-	got, err := manager.GetToken(context.Background(), entry.Resource)
+	var got *Entry
+	got, err = manager.GetToken(context.Background(), entry.Resource)
 	if err != nil {
 		t.Fatalf("Manager.GetToken() error = %v", err)
 	}
@@ -145,8 +152,14 @@ func TestManagerRefreshToken(t *testing.T) {
 	storage := NewMemoryStorage()
 	mockHandler := NewMockRefreshHandler()
 
-	// Create manager
-	manager := NewManager(storage, mockHandler)
+	// Create manager with options
+	manager, err := NewManager(
+		WithStorage(storage),
+		WithRefreshHandler(mockHandler),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create manager: %v", err)
+	}
 
 	// Create test entries
 	entry := &Entry{
@@ -165,13 +178,14 @@ func TestManagerRefreshToken(t *testing.T) {
 	}
 
 	// Store the entry
-	err := storage.Store(entry)
+	err = storage.Store(entry)
 	if err != nil {
 		t.Fatalf("Storage.Store() error = %v", err)
 	}
 
 	// Explicitly refresh the token
-	got, err := manager.refreshToken(context.Background(), entry.Resource, entry)
+	var got *Entry
+	got, err = manager.refreshToken(context.Background(), entry.Resource, entry)
 	if err != nil {
 		t.Fatalf("Manager.refreshToken() error = %v", err)
 	}
@@ -202,11 +216,17 @@ func TestManagerGetTokenErrors(t *testing.T) {
 	storage := NewMemoryStorage()
 	mockHandler := NewMockRefreshHandler()
 
-	// Create manager
-	manager := NewManager(storage, mockHandler)
+	// Create manager with options
+	manager, err := NewManager(
+		WithStorage(storage),
+		WithRefreshHandler(mockHandler),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create manager: %v", err)
+	}
 
 	// Get non-existent token
-	_, err := manager.GetToken(context.Background(), "non-existent")
+	_, err = manager.GetToken(context.Background(), "non-existent")
 	if err == nil {
 		t.Fatalf("Manager.GetToken() error = nil, want error")
 	}
@@ -244,8 +264,14 @@ func TestManagerBackgroundRefresh(t *testing.T) {
 	storage := NewMemoryStorage()
 	mockHandler := NewMockRefreshHandler()
 
-	// Create manager
-	manager := NewManager(storage, mockHandler)
+	// Create manager with options
+	manager, err := NewManager(
+		WithStorage(storage),
+		WithRefreshHandler(mockHandler),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create manager: %v", err)
+	}
 
 	// Set a short refresh threshold to trigger refreshes
 	manager.SetRefreshThreshold(30 * time.Minute)
@@ -282,7 +308,7 @@ func TestManagerBackgroundRefresh(t *testing.T) {
 	}
 
 	// Store the entries
-	err := storage.Store(entry1)
+	err = storage.Store(entry1)
 	if err != nil {
 		t.Fatalf("Storage.Store() error = %v", err)
 	}
@@ -307,7 +333,8 @@ func TestManagerBackgroundRefresh(t *testing.T) {
 	}
 
 	// Verify entry1 was refreshed
-	refreshed1, err := storage.Lookup("resource-1")
+	var refreshed1 *Entry
+	refreshed1, err = storage.Lookup("resource-1")
 	if err != nil {
 		t.Fatalf("Storage.Lookup() error = %v", err)
 	}
@@ -316,7 +343,8 @@ func TestManagerBackgroundRefresh(t *testing.T) {
 	}
 
 	// Verify entry2 was not refreshed
-	refreshed2, err := storage.Lookup("resource-2")
+	var refreshed2 *Entry
+	refreshed2, err = storage.Lookup("resource-2")
 	if err != nil {
 		t.Fatalf("Storage.Lookup() error = %v", err)
 	}
@@ -348,8 +376,14 @@ func TestManagerConcurrency(t *testing.T) {
 		}, nil
 	})
 
-	// Create manager
-	manager := NewManager(storage, mockHandler)
+	// Create manager with options
+	manager, err := NewManager(
+		WithStorage(storage),
+		WithRefreshHandler(mockHandler),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create manager: %v", err)
+	}
 
 	// Create test entry
 	entry := &Entry{
@@ -368,7 +402,7 @@ func TestManagerConcurrency(t *testing.T) {
 	}
 
 	// Store the entry
-	err := storage.Store(entry)
+	err = storage.Store(entry)
 	if err != nil {
 		t.Fatalf("Storage.Store() error = %v", err)
 	}

@@ -4,8 +4,7 @@ package compute
 
 import (
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
 )
 
 // ClientOption configures a Compute client
@@ -34,7 +33,7 @@ func WithBaseURL(baseURL string) ClientOption {
 }
 
 // WithAuthorizer sets the authorizer for the client
-func WithAuthorizer(authorizer interfaces.Authorizer) ClientOption {
+func WithAuthorizer(authorizer auth.Authorizer) ClientOption {
 	return func(o *clientOptions) {
 		o.coreOptions = append(o.coreOptions, core.WithAuthorizer(authorizer))
 	}

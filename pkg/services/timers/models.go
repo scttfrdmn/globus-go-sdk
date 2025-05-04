@@ -6,10 +6,7 @@ import (
 	"time"
 )
 
-const (
-	// TimersScope is the scope for the Timers API
-	TimersScope = "https://auth.globus.org/scopes/b2b8f087-7a70-480c-9480-da1c3d3f8c86/timer"
-)
+// Timer-related constants are defined in client.go
 
 // Timer represents a Globus timer
 type Timer struct {

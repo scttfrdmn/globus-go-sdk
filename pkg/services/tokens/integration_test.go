@@ -298,7 +298,7 @@ func TestTokenManagerSDKIntegration(t *testing.T) {
 		auth.WithClientID(clientID),
 		auth.WithClientSecret(clientSecret),
 	)
-	if err \!= nil {
+	if err != nil {
 		t.Fatalf("Failed to create auth client: %v", err)
 	}
 	
@@ -307,7 +307,7 @@ func TestTokenManagerSDKIntegration(t *testing.T) {
 		WithStorage(storage),
 		WithAuthClient(authClient),
 	)
-	if err \!= nil {
+	if err != nil {
 		t.Fatalf("Failed to create token manager: %v", err)
 	}
 	
@@ -322,4 +322,3 @@ func TestTokenManagerSDKIntegration(t *testing.T) {
 	
 	_ = sdkConfig // Suppress unused variable warning
 }
-EOF < /dev/null
