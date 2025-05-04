@@ -497,6 +497,7 @@ For detailed documentation, see:
 - [v0.9.0 Migration Guide](doc/V0.9.0_MIGRATION_GUIDE.md)
 - [v0.8.0 Migration Guide](doc/V0.8.0_MIGRATION_GUIDE.md)
 - [Client Initialization](doc/CLIENT_INITIALIZATION.md)
+- [Functional Options Pattern Best Practices](doc/functional-options-guide.md)
 - [Error Handling](doc/ERROR_HANDLING.md)
 - [Token Management Example](examples/token-management/README.md)
 - [Tokens Package Guide](doc/tokens-package.md)
