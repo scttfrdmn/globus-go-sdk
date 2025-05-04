@@ -53,11 +53,16 @@ func DemonstrateWithMockHandler() {
 	// Create a mock refresh handler
 	mockHandler := NewMockRefreshHandler()
 
-	// Create a token manager with the mock handler
-	manager := tokens.NewManager(storage, mockHandler)
-
-	// Set a refresh threshold that will trigger immediate refresh
-	manager.SetRefreshThreshold(30 * time.Minute)
+	// Create a token manager with the mock handler using options
+	manager, err := tokens.NewManager(
+		tokens.WithStorage(storage),
+		tokens.WithRefreshHandler(mockHandler),
+		tokens.WithRefreshThreshold(30 * time.Minute),
+	)
+	if err != nil {
+		fmt.Printf("Failed to create token manager: %v\n", err)
+		return
+	}
 	fmt.Printf("Set refresh threshold to %s\n", manager.RefreshThreshold)
 
 	// Create an example token that's about to expire

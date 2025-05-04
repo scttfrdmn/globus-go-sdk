@@ -16,6 +16,7 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/groups"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/search"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/timers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/tokens"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
 )
 
@@ -44,6 +45,9 @@ const (
 
 	// TimersScope is the scope for the Timers service
 	TimersScope = timers.TimersScope
+
+	// TokensScope is the scope for token management (uses AuthScope)
+	TokensScope = auth.AuthScope
 )
 
 // SDKConfig holds configuration for all services
@@ -291,6 +295,39 @@ func (c *SDKConfig) NewTimersClient(accessToken string) (*timers.Client, error) 
 	}
 
 	return timersClient, nil
+}
+
+// NewTokenManager creates a new Token Manager with the SDK configuration
+func (c *SDKConfig) NewTokenManager(opts ...tokens.ClientOption) (*tokens.Manager, error) {
+	// Create a new token manager with the provided options
+	tokenManager, err := tokens.NewManager(opts...)
+	if err != nil {
+		return nil, fmt.Errorf("error creating token manager: %w", err)
+	}
+	
+	return tokenManager, nil
+}
+
+// NewTokenManagerWithAuth creates a new Token Manager using an Auth client for token refreshing
+func (c *SDKConfig) NewTokenManagerWithAuth(storageDirectory string) (*tokens.Manager, error) {
+	// Create an auth client
+	authClient, err := c.NewAuthClient()
+	if err != nil {
+		return nil, fmt.Errorf("error creating auth client for token manager: %w", err)
+	}
+	
+	// Create token manager options
+	options := []tokens.ClientOption{
+		tokens.WithAuthClient(authClient),
+	}
+	
+	// If a storage directory is provided, use file storage
+	if storageDirectory != "" {
+		options = append(options, tokens.WithFileStorage(storageDirectory))
+	}
+	
+	// Create the token manager
+	return c.NewTokenManager(options...)
 }
 
 // NewConfig creates a new SDK configuration
