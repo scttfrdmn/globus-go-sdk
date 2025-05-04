@@ -6,6 +6,8 @@ bookCollapseSection: true
 
 # Quick Start Guides
 
+*Get up and running with the Globus Go SDK services quickly and easily.*
+
 Welcome to the Globus Go SDK Quick Start Guides. These guides are designed to help you get up and running with the SDK's services as quickly as possible. Each guide focuses on a single service and provides step-by-step instructions for common tasks.
 
 ## Available Quick Start Guides
