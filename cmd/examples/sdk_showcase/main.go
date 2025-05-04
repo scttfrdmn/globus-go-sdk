@@ -24,7 +24,10 @@ func main() {
 		WithClientSecret(os.Getenv("GLOBUS_CLIENT_SECRET"))
 
 	// Create clients
-	authClient := config.NewAuthClient()
+	authClient, err := config.NewAuthClient()
+	if err != nil {
+		log.Fatalf("Failed to create auth client: %v", err)
+	}
 
 	// Get access tokens (using client credentials for simplicity in this example)
 	// In a real application, you would likely use the authorization code flow
@@ -47,10 +50,22 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create groups client: %v", err)
 	}
-	transferClient := config.NewTransferClient(accessToken)
-	searchClient := config.NewSearchClient(accessToken)
-	flowsClient := config.NewFlowsClient(accessToken)
-	computeClient := config.NewComputeClient(accessToken)
+	transferClient, err := config.NewTransferClient(accessToken)
+	if err != nil {
+		log.Fatalf("Failed to create transfer client: %v", err)
+	}
+	searchClient, err := config.NewSearchClient(accessToken)
+	if err != nil {
+		log.Fatalf("Failed to create search client: %v", err)
+	}
+	flowsClient, err := config.NewFlowsClient(accessToken)
+	if err != nil {
+		log.Fatalf("Failed to create flows client: %v", err)
+	}
+	computeClient, err := config.NewComputeClient(accessToken)
+	if err != nil {
+		log.Fatalf("Failed to create compute client: %v", err)
+	}
 
 	// Demonstrate Groups API - List groups
 	fmt.Println("\n=== Groups API ===")

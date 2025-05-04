@@ -38,7 +38,10 @@ func main() {
 	accessToken := tokenResp.AccessToken
 
 	// Create Flows client
-	flowsClient := config.NewFlowsClient(accessToken)
+	flowsClient, err := config.NewFlowsClient(accessToken)
+	if err != nil {
+		log.Fatalf("Failed to create flows client: %v", err)
+	}
 
 	// Check if flow ID is provided
 	flowID := os.Getenv("GLOBUS_FLOW_ID")

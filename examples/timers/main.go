@@ -30,7 +30,11 @@ func main() {
 	config := pkg.NewConfigFromEnvironment()
 
 	// Create a new Timers client with the access token
-	timersClient := config.NewTimersClient(accessToken)
+	timersClient, err := config.NewTimersClient(accessToken)
+	if err != nil {
+		fmt.Printf("Error creating timers client: %v\n", err)
+		os.Exit(1)
+	}
 
 	// Create context
 	ctx := context.Background()

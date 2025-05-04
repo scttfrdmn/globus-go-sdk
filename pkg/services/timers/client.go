@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
@@ -19,35 +20,41 @@ import (
 // DefaultBaseURL is the default base URL for the Timers service
 const DefaultBaseURL = "https://timer.automate.globus.org/api/v1/"
 
+// TimersScope is the required scope for accessing the Timers service
+const TimersScope = "https://auth.globus.org/scopes/a1a171d5-48fb-4c77-a7ba-b8c628c20fd5/timers.api"
+
 // Client provides methods for interacting with the Globus Timers service
 type Client struct {
 	Client *core.Client
 }
 
 // NewClient creates a new Timers client
-func NewClient(accessToken string, options ...core.ClientOption) *Client {
-	// Create an authorizer with the access token
-	authorizer := authorizers.StaticTokenCoreAuthorizer(accessToken)
-
-	// Default options for the Timers service
-	defaultOptions := []core.ClientOption{
-		core.WithBaseURL(DefaultBaseURL),
-		core.WithAuthorizer(authorizer),
+func NewClient(opts ...ClientOption) (*Client, error) {
+	// Apply default options
+	options := defaultOptions()
+	
+	// Apply user options
+	for _, opt := range opts {
+		opt(options)
 	}
-
-	// Merge with user options
-	options = append(defaultOptions, options...)
-
+	
+	// If an access token was provided, create a static token authorizer
+	if options.accessToken != "" {
+		authorizer := authorizers.StaticTokenCoreAuthorizer(options.accessToken)
+		options.coreOptions = append(options.coreOptions, core.WithAuthorizer(authorizer))
+	}
+	
 	// Create the base client
-	baseClient := core.NewClient(options...)
-
+	baseClient := core.NewClient(options.coreOptions...)
+	
 	return &Client{
 		Client: baseClient,
-	}
+	}, nil
 }
 
-// buildURL builds a URL for the Timers API
-func (c *Client) buildURL(path string, query url.Values) string {
+// buildURLLowLevel builds a URL for the Timers API
+// This is an internal method used by the client.
+func (c *Client) buildURLLowLevel(path string, query url.Values) string {
 	baseURL := c.Client.BaseURL
 	if baseURL[len(baseURL)-1] != '/' {
 		baseURL += "/"
@@ -61,9 +68,10 @@ func (c *Client) buildURL(path string, query url.Values) string {
 	return url
 }
 
-// doRequest performs an HTTP request and decodes the JSON response
-func (c *Client) doRequest(ctx context.Context, method, path string, query url.Values, body, response interface{}) error {
-	url := c.buildURL(path, query)
+// doRequestLowLevel performs an HTTP request and decodes the JSON response
+// This is an internal method used by higher-level API methods.
+func (c *Client) doRequestLowLevel(ctx context.Context, method, path string, query url.Values, body, response interface{}) error {
+	url := c.buildURLLowLevel(path, query)
 
 	var bodyReader io.Reader
 	if body != nil {
@@ -124,7 +132,7 @@ func (c *Client) CreateTimer(ctx context.Context, request *CreateTimerRequest) (
 	}
 
 	var timer Timer
-	err := c.doRequest(ctx, http.MethodPost, "timers", nil, request, &timer)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "timers", nil, request, &timer)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +147,7 @@ func (c *Client) GetTimer(ctx context.Context, timerID string) (*Timer, error) {
 	}
 
 	var timer Timer
-	err := c.doRequest(ctx, http.MethodGet, fmt.Sprintf("timers/%s", timerID), nil, nil, &timer)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, fmt.Sprintf("timers/%s", timerID), nil, nil, &timer)
 	if err != nil {
 		return nil, err
 	}
@@ -157,7 +165,7 @@ func (c *Client) UpdateTimer(ctx context.Context, timerID string, request *Updat
 	}
 
 	var timer Timer
-	err := c.doRequest(ctx, http.MethodPatch, fmt.Sprintf("timers/%s", timerID), nil, request, &timer)
+	err := c.doRequestLowLevel(ctx, http.MethodPatch, fmt.Sprintf("timers/%s", timerID), nil, request, &timer)
 	if err != nil {
 		return nil, err
 	}
@@ -171,7 +179,7 @@ func (c *Client) DeleteTimer(ctx context.Context, timerID string) error {
 		return fmt.Errorf("timer ID is required")
 	}
 
-	err := c.doRequest(ctx, http.MethodDelete, fmt.Sprintf("timers/%s", timerID), nil, nil, nil)
+	err := c.doRequestLowLevel(ctx, http.MethodDelete, fmt.Sprintf("timers/%s", timerID), nil, nil, nil)
 	if err != nil {
 		return err
 	}
@@ -201,7 +209,7 @@ func (c *Client) ListTimers(ctx context.Context, options *ListTimersOptions) (*T
 	}
 
 	var timerList TimerList
-	err := c.doRequest(ctx, http.MethodGet, "timers", query, nil, &timerList)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "timers", query, nil, &timerList)
 	if err != nil {
 		return nil, err
 	}
@@ -216,7 +224,7 @@ func (c *Client) PauseTimer(ctx context.Context, timerID string) (*Timer, error)
 	}
 
 	var timer Timer
-	err := c.doRequest(ctx, http.MethodPost, fmt.Sprintf("timers/%s/pause", timerID), nil, nil, &timer)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, fmt.Sprintf("timers/%s/pause", timerID), nil, nil, &timer)
 	if err != nil {
 		return nil, err
 	}
@@ -231,7 +239,7 @@ func (c *Client) ResumeTimer(ctx context.Context, timerID string) (*Timer, error
 	}
 
 	var timer Timer
-	err := c.doRequest(ctx, http.MethodPost, fmt.Sprintf("timers/%s/resume", timerID), nil, nil, &timer)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, fmt.Sprintf("timers/%s/resume", timerID), nil, nil, &timer)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +254,7 @@ func (c *Client) RunTimer(ctx context.Context, timerID string) (*TimerRun, error
 	}
 
 	var run TimerRun
-	err := c.doRequest(ctx, http.MethodPost, fmt.Sprintf("timers/%s/run", timerID), nil, nil, &run)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, fmt.Sprintf("timers/%s/run", timerID), nil, nil, &run)
 	if err != nil {
 		return nil, err
 	}
@@ -280,7 +288,7 @@ func (c *Client) ListRuns(ctx context.Context, timerID string, options *ListRuns
 	}
 
 	var runList TimerRunList
-	err := c.doRequest(ctx, http.MethodGet, fmt.Sprintf("timers/%s/runs", timerID), query, nil, &runList)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, fmt.Sprintf("timers/%s/runs", timerID), query, nil, &runList)
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +306,7 @@ func (c *Client) GetRun(ctx context.Context, timerID, runID string) (*TimerRun, 
 	}
 
 	var run TimerRun
-	err := c.doRequest(ctx, http.MethodGet, fmt.Sprintf("timers/%s/runs/%s", timerID, runID), nil, nil, &run)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, fmt.Sprintf("timers/%s/runs/%s", timerID, runID), nil, nil, &run)
 	if err != nil {
 		return nil, err
 	}
@@ -309,7 +317,7 @@ func (c *Client) GetRun(ctx context.Context, timerID, runID string) (*TimerRun, 
 // GetCurrentUser retrieves information about the current user
 func (c *Client) GetCurrentUser(ctx context.Context) (*CurrentUserInfo, error) {
 	var user CurrentUserInfo
-	err := c.doRequest(ctx, http.MethodGet, "user", nil, nil, &user)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "user", nil, nil, &user)
 	if err != nil {
 		return nil, err
 	}

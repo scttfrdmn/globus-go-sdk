@@ -110,7 +110,7 @@ func (c *SDKConfig) NewGroupsClient(accessToken string) (*groups.Client, error) 
 }
 
 // NewTransferClient creates a new Transfer client with the SDK configuration
-func (c *SDKConfig) NewTransferClient(accessToken string) *transfer.Client {
+func (c *SDKConfig) NewTransferClient(accessToken string) (*transfer.Client, error) {
 	// Create a simple static token authorizer directly
 	// using a type that satisfies the auth.Authorizer interface
 	authorizer := &simpleAuthorizer{token: accessToken}
@@ -132,18 +132,45 @@ func (c *SDKConfig) NewTransferClient(accessToken string) *transfer.Client {
 	// Create the client
 	transferClient, err := transfer.NewClient(options...)
 	if err != nil {
-		// Log error and return a default client as fallback
-		fmt.Fprintf(os.Stderr, "Error creating transfer client: %v\n", err)
-		return &transfer.Client{} // Return an empty client as fallback
+		return nil, fmt.Errorf("error creating transfer client: %w", err)
 	}
 	
-	return transferClient
+	// Apply configuration
+	if c.Config != nil {
+		c.Config.ApplyToClient(transferClient.Client)
+	}
+	
+	// Use service-specific connection pool if enabled
+	if os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") != "true" {
+		serviceClient := httppool.GetHTTPClientForService("transfer", nil)
+		transferClient.Client.HTTPClient = serviceClient
+	}
+	
+	return transferClient, nil
 }
 
 // NewSearchClient creates a new Search client with the SDK configuration
-func (c *SDKConfig) NewSearchClient(accessToken string) *search.Client {
-	searchClient := search.NewClient(accessToken)
-
+func (c *SDKConfig) NewSearchClient(accessToken string) (*search.Client, error) {
+	// Create options for the search client
+	options := []search.ClientOption{
+		search.WithAccessToken(accessToken),
+	}
+	
+	// Add debugging if configured
+	if os.Getenv("GLOBUS_SDK_HTTP_DEBUG") == "1" {
+		options = append(options, search.WithHTTPDebugging(true))
+	}
+	
+	if os.Getenv("GLOBUS_SDK_HTTP_TRACE") == "1" {
+		options = append(options, search.WithHTTPTracing(true))
+	}
+	
+	// Create the client
+	searchClient, err := search.NewClient(options...)
+	if err != nil {
+		return nil, fmt.Errorf("error creating search client: %w", err)
+	}
+	
 	// Apply configuration
 	if c.Config != nil {
 		c.Config.ApplyToClient(searchClient.Client)
@@ -155,13 +182,31 @@ func (c *SDKConfig) NewSearchClient(accessToken string) *search.Client {
 		searchClient.Client.HTTPClient = serviceClient
 	}
 
-	return searchClient
+	return searchClient, nil
 }
 
 // NewFlowsClient creates a new Flows client with the SDK configuration
-func (c *SDKConfig) NewFlowsClient(accessToken string) *flows.Client {
-	flowsClient := flows.NewClient(accessToken)
-
+func (c *SDKConfig) NewFlowsClient(accessToken string) (*flows.Client, error) {
+	// Create options for the flows client
+	options := []flows.ClientOption{
+		flows.WithAccessToken(accessToken),
+	}
+	
+	// Add debugging if configured
+	if os.Getenv("GLOBUS_SDK_HTTP_DEBUG") == "1" {
+		options = append(options, flows.WithHTTPDebugging(true))
+	}
+	
+	if os.Getenv("GLOBUS_SDK_HTTP_TRACE") == "1" {
+		options = append(options, flows.WithHTTPTracing(true))
+	}
+	
+	// Create the client
+	flowsClient, err := flows.NewClient(options...)
+	if err != nil {
+		return nil, fmt.Errorf("error creating flows client: %w", err)
+	}
+	
 	// Apply configuration
 	if c.Config != nil {
 		c.Config.ApplyToClient(flowsClient.Client)
@@ -173,13 +218,31 @@ func (c *SDKConfig) NewFlowsClient(accessToken string) *flows.Client {
 		flowsClient.Client.HTTPClient = serviceClient
 	}
 
-	return flowsClient
+	return flowsClient, nil
 }
 
 // NewComputeClient creates a new Compute client with the SDK configuration
-func (c *SDKConfig) NewComputeClient(accessToken string) *compute.Client {
-	computeClient := compute.NewClient(accessToken)
-
+func (c *SDKConfig) NewComputeClient(accessToken string) (*compute.Client, error) {
+	// Create options for the compute client
+	options := []compute.ClientOption{
+		compute.WithAccessToken(accessToken),
+	}
+	
+	// Add debugging if configured
+	if os.Getenv("GLOBUS_SDK_HTTP_DEBUG") == "1" {
+		options = append(options, compute.WithHTTPDebugging(true))
+	}
+	
+	if os.Getenv("GLOBUS_SDK_HTTP_TRACE") == "1" {
+		options = append(options, compute.WithHTTPTracing(true))
+	}
+	
+	// Create the client
+	computeClient, err := compute.NewClient(options...)
+	if err != nil {
+		return nil, fmt.Errorf("error creating compute client: %w", err)
+	}
+	
 	// Apply configuration
 	if c.Config != nil {
 		c.Config.ApplyToClient(computeClient.Client)
@@ -191,13 +254,31 @@ func (c *SDKConfig) NewComputeClient(accessToken string) *compute.Client {
 		computeClient.Client.HTTPClient = serviceClient
 	}
 
-	return computeClient
+	return computeClient, nil
 }
 
 // NewTimersClient creates a new Timers client with the SDK configuration
-func (c *SDKConfig) NewTimersClient(accessToken string) *timers.Client {
-	timersClient := timers.NewClient(accessToken)
-
+func (c *SDKConfig) NewTimersClient(accessToken string) (*timers.Client, error) {
+	// Create options for the timers client
+	options := []timers.ClientOption{
+		timers.WithAccessToken(accessToken),
+	}
+	
+	// Add debugging if configured
+	if os.Getenv("GLOBUS_SDK_HTTP_DEBUG") == "1" {
+		options = append(options, timers.WithHTTPDebugging(true))
+	}
+	
+	if os.Getenv("GLOBUS_SDK_HTTP_TRACE") == "1" {
+		options = append(options, timers.WithHTTPTracing(true))
+	}
+	
+	// Create the client
+	timersClient, err := timers.NewClient(options...)
+	if err != nil {
+		return nil, fmt.Errorf("error creating timers client: %w", err)
+	}
+	
 	// Apply configuration
 	if c.Config != nil {
 		c.Config.ApplyToClient(timersClient.Client)
@@ -209,7 +290,7 @@ func (c *SDKConfig) NewTimersClient(accessToken string) *timers.Client {
 		timersClient.Client.HTTPClient = serviceClient
 	}
 
-	return timersClient
+	return timersClient, nil
 }
 
 // NewConfig creates a new SDK configuration

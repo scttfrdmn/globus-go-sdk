@@ -112,7 +112,10 @@ func main() {
 		WithClientSecret(os.Getenv("GLOBUS_CLIENT_SECRET"))
 
 	// Create a new Auth client
-	authClient := config.NewAuthClient()
+	authClient, err := config.NewAuthClient()
+	if err != nil {
+		log.Fatalf("Failed to create auth client: %v", err)
+	}
 
 	// Get token using client credentials
 	ctx := context.Background()
@@ -125,7 +128,10 @@ func main() {
 	accessToken := tokenResp.AccessToken
 
 	// Create Compute client
-	computeClient := config.NewComputeClient(accessToken)
+	computeClient, err := config.NewComputeClient(accessToken)
+	if err != nil {
+		log.Fatalf("Failed to create compute client: %v", err)
+	}
 
 	// List available endpoints
 	fmt.Println("\n=== Available Compute Endpoints ===")

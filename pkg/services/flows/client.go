@@ -29,29 +29,32 @@ type Client struct {
 }
 
 // NewClient creates a new Flows client
-func NewClient(accessToken string, options ...core.ClientOption) *Client {
-	// Create the authorizer with the access token
-	authorizer := authorizers.StaticTokenCoreAuthorizer(accessToken)
-
-	// Apply default options specific to Flows
-	defaultOptions := []core.ClientOption{
-		core.WithBaseURL(DefaultBaseURL),
-		core.WithAuthorizer(authorizer),
+func NewClient(opts ...ClientOption) (*Client, error) {
+	// Apply default options
+	options := defaultOptions()
+	
+	// Apply user options
+	for _, opt := range opts {
+		opt(options)
 	}
-
-	// Merge with user options
-	options = append(defaultOptions, options...)
-
+	
+	// If an access token was provided, create a static token authorizer
+	if options.accessToken != "" {
+		authorizer := authorizers.StaticTokenCoreAuthorizer(options.accessToken)
+		options.coreOptions = append(options.coreOptions, core.WithAuthorizer(authorizer))
+	}
+	
 	// Create the base client
-	baseClient := core.NewClient(options...)
-
+	baseClient := core.NewClient(options.coreOptions...)
+	
 	return &Client{
 		Client: baseClient,
-	}
+	}, nil
 }
 
-// buildURL builds a URL for the flows API
-func (c *Client) buildURL(path string, query url.Values) string {
+// buildURLLowLevel builds a URL for the flows API
+// This is an internal method used by the client.
+func (c *Client) buildURLLowLevel(path string, query url.Values) string {
 	baseURL := c.Client.BaseURL
 	if baseURL[len(baseURL)-1] != '/' {
 		baseURL += "/"
@@ -65,9 +68,10 @@ func (c *Client) buildURL(path string, query url.Values) string {
 	return url
 }
 
-// doRequest performs an HTTP request and decodes the JSON response
-func (c *Client) doRequest(ctx context.Context, method, path string, query url.Values, body, response interface{}) error {
-	url := c.buildURL(path, query)
+// doRequestLowLevel performs an HTTP request and decodes the JSON response
+// This is an internal method used by higher-level API methods.
+func (c *Client) doRequestLowLevel(ctx context.Context, method, path string, query url.Values, body, response interface{}) error {
+	url := c.buildURLLowLevel(path, query)
 
 	var bodyReader io.Reader
 	if body != nil {
@@ -150,6 +154,10 @@ func (c *Client) doRequest(ctx context.Context, method, path string, query url.V
 			}
 		}
 
+		// Print debug information during tests
+		fmt.Printf("Error response status: %d, body: %s, resourceID: %s, resourceType: %s\n", 
+			resp.StatusCode, string(respBody), resourceID, resourceType)
+
 		return ParseErrorResponse(respBody, resp.StatusCode, resourceID, resourceType)
 	}
 
@@ -208,7 +216,7 @@ func (c *Client) ListFlows(ctx context.Context, options *ListFlowsOptions) (*Flo
 	}
 
 	var flowList FlowList
-	err := c.doRequest(ctx, http.MethodGet, "flows", query, nil, &flowList)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "flows", query, nil, &flowList)
 	if err != nil {
 		return nil, err
 	}
@@ -223,7 +231,7 @@ func (c *Client) GetFlow(ctx context.Context, flowID string) (*Flow, error) {
 	}
 
 	var flow Flow
-	err := c.doRequest(ctx, http.MethodGet, "flows/"+flowID, nil, nil, &flow)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "flows/"+flowID, nil, nil, &flow)
 	if err != nil {
 		return nil, err
 	}
@@ -246,7 +254,7 @@ func (c *Client) CreateFlow(ctx context.Context, request *FlowCreateRequest) (*F
 	}
 
 	var flow Flow
-	err := c.doRequest(ctx, http.MethodPost, "flows", nil, request, &flow)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "flows", nil, request, &flow)
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +273,7 @@ func (c *Client) UpdateFlow(ctx context.Context, flowID string, request *FlowUpd
 	}
 
 	var flow Flow
-	err := c.doRequest(ctx, http.MethodPut, "flows/"+flowID, nil, request, &flow)
+	err := c.doRequestLowLevel(ctx, http.MethodPut, "flows/"+flowID, nil, request, &flow)
 	if err != nil {
 		return nil, err
 	}
@@ -279,7 +287,7 @@ func (c *Client) DeleteFlow(ctx context.Context, flowID string) error {
 		return fmt.Errorf("flow ID is required")
 	}
 
-	return c.doRequest(ctx, http.MethodDelete, "flows/"+flowID, nil, nil, nil)
+	return c.doRequestLowLevel(ctx, http.MethodDelete, "flows/"+flowID, nil, nil, nil)
 }
 
 // RunFlow starts a new flow run
@@ -297,7 +305,7 @@ func (c *Client) RunFlow(ctx context.Context, request *RunRequest) (*RunResponse
 	}
 
 	var run RunResponse
-	err := c.doRequest(ctx, http.MethodPost, "runs", nil, request, &run)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "runs", nil, request, &run)
 	if err != nil {
 		return nil, err
 	}
@@ -342,7 +350,7 @@ func (c *Client) ListRuns(ctx context.Context, options *ListRunsOptions) (*RunLi
 	}
 
 	var runList RunList
-	err := c.doRequest(ctx, http.MethodGet, "runs", query, nil, &runList)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "runs", query, nil, &runList)
 	if err != nil {
 		return nil, err
 	}
@@ -357,7 +365,7 @@ func (c *Client) GetRun(ctx context.Context, runID string) (*RunResponse, error)
 	}
 
 	var run RunResponse
-	err := c.doRequest(ctx, http.MethodGet, "runs/"+runID, nil, nil, &run)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "runs/"+runID, nil, nil, &run)
 	if err != nil {
 		return nil, err
 	}
@@ -371,7 +379,7 @@ func (c *Client) CancelRun(ctx context.Context, runID string) error {
 		return fmt.Errorf("run ID is required")
 	}
 
-	return c.doRequest(ctx, http.MethodPost, "runs/"+runID+"/cancel", nil, nil, nil)
+	return c.doRequestLowLevel(ctx, http.MethodPost, "runs/"+runID+"/cancel", nil, nil, nil)
 }
 
 // UpdateRun updates a flow run's metadata
@@ -385,7 +393,7 @@ func (c *Client) UpdateRun(ctx context.Context, runID string, request *RunUpdate
 	}
 
 	var run RunResponse
-	err := c.doRequest(ctx, http.MethodPatch, "runs/"+runID, nil, request, &run)
+	err := c.doRequestLowLevel(ctx, http.MethodPatch, "runs/"+runID, nil, request, &run)
 	if err != nil {
 		return nil, err
 	}
@@ -408,7 +416,7 @@ func (c *Client) GetRunLogs(ctx context.Context, runID string, limit, offset int
 	}
 
 	var logs RunLogList
-	err := c.doRequest(ctx, http.MethodGet, "runs/"+runID+"/log", query, nil, &logs)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "runs/"+runID+"/log", query, nil, &logs)
 	if err != nil {
 		return nil, err
 	}
@@ -450,7 +458,7 @@ func (c *Client) ListActionProviders(ctx context.Context, options *ListActionPro
 	}
 
 	var providerList ActionProviderList
-	err := c.doRequest(ctx, http.MethodGet, "action_providers", query, nil, &providerList)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "action_providers", query, nil, &providerList)
 	if err != nil {
 		return nil, err
 	}
@@ -465,7 +473,7 @@ func (c *Client) GetActionProvider(ctx context.Context, providerID string) (*Act
 	}
 
 	var provider ActionProvider
-	err := c.doRequest(ctx, http.MethodGet, "action_providers/"+providerID, nil, nil, &provider)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "action_providers/"+providerID, nil, nil, &provider)
 	if err != nil {
 		return nil, err
 	}
@@ -488,7 +496,7 @@ func (c *Client) ListActionRoles(ctx context.Context, providerID string, limit, 
 	}
 
 	var roleList ActionRoleList
-	err := c.doRequest(ctx, http.MethodGet, "action_providers/"+providerID+"/roles", query, nil, &roleList)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "action_providers/"+providerID+"/roles", query, nil, &roleList)
 	if err != nil {
 		return nil, err
 	}
@@ -507,7 +515,7 @@ func (c *Client) GetActionRole(ctx context.Context, providerID, roleID string) (
 	}
 
 	var role ActionRole
-	err := c.doRequest(ctx, http.MethodGet, "action_providers/"+providerID+"/roles/"+roleID, nil, nil, &role)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "action_providers/"+providerID+"/roles/"+roleID, nil, nil, &role)
 	if err != nil {
 		return nil, err
 	}

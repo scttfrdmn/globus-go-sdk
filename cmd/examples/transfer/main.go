@@ -21,8 +21,11 @@ func main() {
 	}
 
 	// Create a transfer client with the access token
-	transferClient := pkg.NewConfig().
+	transferClient, err := pkg.NewConfig().
 		NewTransferClient(accessToken)
+	if err != nil {
+		log.Fatalf("Failed to create transfer client: %v", err)
+	}
 
 	// Create a context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)

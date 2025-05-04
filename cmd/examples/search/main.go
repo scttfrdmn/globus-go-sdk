@@ -38,7 +38,10 @@ func main() {
 	accessToken := tokenResp.AccessToken
 
 	// Create Search client
-	searchClient := config.NewSearchClient(accessToken)
+	searchClient, err := config.NewSearchClient(accessToken)
+	if err != nil {
+		log.Fatalf("Failed to create search client: %v", err)
+	}
 
 	// Check if index ID is provided
 	indexID := os.Getenv("GLOBUS_SEARCH_INDEX_ID")
