@@ -2,7 +2,7 @@
 // +build integration
 
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 package pkg
 
 import (
@@ -11,17 +11,28 @@ import (
 	"testing"
 	"time"
 
+	"github.com/joho/godotenv"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/flows"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/search"
 )
 
+func init() {
+	// Load environment variables from .env.test file
+	_ = godotenv.Load("../.env.test")
+	_ = godotenv.Load(".env.test")
+}
+
 func skipIfMissingCredentials(t *testing.T) (string, string) {
 	clientID := os.Getenv("GLOBUS_TEST_CLIENT_ID")
 	clientSecret := os.Getenv("GLOBUS_TEST_CLIENT_SECRET")
 
-	if clientID == "" || clientSecret == "" {
-		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_ID and GLOBUS_TEST_CLIENT_SECRET")
+	if clientID == "" {
+		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_ID environment variable")
+	}
+	
+	if clientSecret == "" {
+		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_SECRET environment variable")
 	}
 
 	return clientID, clientSecret
@@ -44,7 +55,10 @@ func TestIntegration_SDKConfig(t *testing.T) {
 	}
 
 	// Create Auth client
-	authClient := config.NewAuthClient()
+	authClient, err := config.NewAuthClient()
+	if err != nil {
+		t.Fatalf("Failed to create auth client: %v", err)
+	}
 
 	// Test client credentials flow to verify client works
 	ctx := context.Background()
@@ -58,7 +72,10 @@ func TestIntegration_SDKConfig(t *testing.T) {
 	}
 
 	// Create Groups client
-	groupsClient := config.NewGroupsClient(tokenResp.AccessToken)
+	groupsClient, err := config.NewGroupsClient(tokenResp.AccessToken)
+	if err != nil {
+		t.Fatalf("Failed to create groups client: %v", err)
+	}
 
 	// Test list groups to verify client works
 	groups, err := groupsClient.ListGroups(ctx, nil)
@@ -170,7 +187,10 @@ func TestIntegration_AuthClientFlow(t *testing.T) {
 		WithClientID(clientID).
 		WithClientSecret(clientSecret)
 
-	authClient := config.NewAuthClient()
+	authClient, err := config.NewAuthClient()
+	if err != nil {
+		t.Fatalf("Failed to create auth client: %v", err)
+	}
 	ctx := context.Background()
 
 	// Get all scopes
@@ -235,7 +255,11 @@ func TestIntegration_TokenManager(t *testing.T) {
 	scopesKey := "integration_test_scopes"
 
 	// Store a token
-	tokenResp, err := config.NewAuthClient().GetClientCredentialsToken(ctx, allScopes...)
+	authClient, err := config.NewAuthClient()
+	if err != nil {
+		t.Fatalf("Failed to create auth client: %v", err)
+	}
+	tokenResp, err := authClient.GetClientCredentialsToken(ctx, allScopes...)
 	if err != nil {
 		t.Fatalf("GetClientCredentialsToken failed: %v", err)
 	}
@@ -283,7 +307,10 @@ func TestIntegration_RateLimiting(t *testing.T) {
 		WithRateLimiting(true, 5) // 5 requests per second
 
 	// Create Auth client
-	authClient := config.NewAuthClient()
+	authClient, err := config.NewAuthClient()
+	if err != nil {
+		t.Fatalf("Failed to create auth client: %v", err)
+	}
 	ctx := context.Background()
 
 	// Make a series of requests to test rate limiting
@@ -316,7 +343,10 @@ func TestIntegration_CircuitBreaker(t *testing.T) {
 		WithCircuitBreaker(true, 5, 10*time.Second) // Trip after 5 failures, 10 second reset
 
 	// Create Auth client
-	authClient := config.NewAuthClient()
+	authClient, err := config.NewAuthClient()
+	if err != nil {
+		t.Fatalf("Failed to create auth client: %v", err)
+	}
 	ctx := context.Background()
 
 	// Make a request to a valid endpoint with invalid token to trigger 401s, not circuit breaking

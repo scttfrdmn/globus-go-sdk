@@ -38,7 +38,10 @@ func TestIntegration_VerifySetup(t *testing.T) {
 
 	// Verify Auth credentials
 	fmt.Println("Verifying authentication credentials...")
-	authClient := config.NewAuthClient()
+	authClient, err := config.NewAuthClient()
+	if err != nil {
+		t.Fatalf("Failed to create auth client: %v", err)
+	}
 	ctx := context.Background()
 
 	// Try to get client credentials token
@@ -65,7 +68,7 @@ func TestIntegration_VerifySetup(t *testing.T) {
 
 	// Check for transfer endpoints if specified
 	sourceEndpointID := os.Getenv("GLOBUS_TEST_SOURCE_ENDPOINT_ID")
-	destEndpointID := os.Getenv("GLOBUS_TEST_DEST_ENDPOINT_ID")
+	destEndpointID := os.Getenv("GLOBUS_TEST_DESTINATION_ENDPOINT_ID")
 
 	if sourceEndpointID != "" && destEndpointID != "" {
 		fmt.Println("Verifying transfer endpoints...")
@@ -100,7 +103,10 @@ func verifyTransferEndpoints(t *testing.T, config *Config, sourceEndpointID, des
 	ctx := context.Background()
 
 	// We need a token with transfer scope
-	authClient := config.NewAuthClient()
+	authClient, err := config.NewAuthClient()
+	if err != nil {
+		t.Fatalf("Failed to create auth client: %v", err)
+	}
 	token, err := authClient.GetClientCredentialsToken(ctx, TransferScope)
 	if err != nil {
 		t.Fatalf("Failed to get token with transfer scope: %v", err)

@@ -26,4 +26,5 @@ type Transport interface {
 	Put(ctx context.Context, path string, body interface{}, query url.Values, headers http.Header) (*http.Response, error)
 	Delete(ctx context.Context, path string, query url.Values, headers http.Header) (*http.Response, error)
 	Patch(ctx context.Context, path string, body interface{}, query url.Values, headers http.Header) (*http.Response, error)
+	RoundTrip(req *http.Request) (*http.Response, error)
 }

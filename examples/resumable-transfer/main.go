@@ -43,7 +43,10 @@ func main() {
 	config := pkg.NewConfigFromEnvironment()
 
 	// Create transfer client
-	transferClient := config.NewTransferClient(*accessToken)
+	transferClient, err := config.NewTransferClient(*accessToken)
+	if err != nil {
+		log.Fatalf("Failed to create transfer client: %v", err)
+	}
 
 	// Create context with cancellation
 	ctx, cancelCtx := context.WithCancel(context.Background())

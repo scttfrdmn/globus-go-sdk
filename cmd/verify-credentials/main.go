@@ -59,7 +59,10 @@ func VerifyCredentialsSDK() error {
 		WithClientSecret(clientSecret)
 
 	// Create auth client
-	authClient := config.NewAuthClient()
+	authClient, err := config.NewAuthClient()
+	if err != nil {
+		return fmt.Errorf("failed to create auth client: %w", err)
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -101,7 +104,11 @@ func VerifyCredentialsSDK() error {
 			fmt.Println("  Integration tests that use transfer will need tokens from another flow")
 		} else {
 			// Create transfer client
-			transferClient := config.NewTransferClient(transferToken.AccessToken)
+			transferClient, err := config.NewTransferClient(transferToken.AccessToken)
+			if err != nil {
+				fmt.Printf("❌ Failed to create transfer client: %v\n", err)
+				return fmt.Errorf("failed to create transfer client: %w", err)
+			}
 
 			// Check source endpoint
 			sourceEndpoint, err := transferClient.GetEndpoint(ctx, sourceEndpointID)
@@ -139,7 +146,11 @@ func VerifyCredentialsSDK() error {
 			fmt.Println("  Integration tests that use groups will need tokens from another flow")
 		} else {
 			// Create groups client
-			groupsClient := config.NewGroupsClient(groupsToken.AccessToken)
+			groupsClient, err := config.NewGroupsClient(groupsToken.AccessToken)
+			if err != nil {
+				fmt.Printf("❌ Failed to create groups client: %v\n", err)
+				return fmt.Errorf("failed to create groups client: %w", err)
+			}
 
 			// Check group
 			group, err := groupsClient.GetGroup(ctx, groupID)
@@ -166,7 +177,11 @@ func VerifyCredentialsSDK() error {
 			fmt.Println("  Integration tests that use search will need tokens from another flow")
 		} else {
 			// Create search client
-			searchClient := config.NewSearchClient(searchToken.AccessToken)
+			searchClient, err := config.NewSearchClient(searchToken.AccessToken)
+			if err != nil {
+				fmt.Printf("❌ Failed to create search client: %v\n", err)
+				return fmt.Errorf("failed to create search client: %w", err)
+			}
 
 			// Check search index
 			// Note: Using a simple query to test the index access

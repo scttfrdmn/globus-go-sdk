@@ -24,7 +24,13 @@ func main() {
 
 	if clientID != "" && clientSecret != "" {
 		// Initialize the Globus Auth client
-		authClient := auth.NewClient(clientID, clientSecret)
+		authClient, err := auth.NewClient(
+			auth.WithClientID(clientID),
+			auth.WithClientSecret(clientSecret),
+		)
+		if err != nil {
+			log.Fatalf("Failed to create auth client: %v", err)
+		}
 		fmt.Println("Found Globus credentials, demonstrating with real auth client")
 		
 		// Demonstration of different token storage mechanisms
@@ -201,11 +207,15 @@ func demonstrateTokenManager(ctx context.Context, authClient *auth.Client) {
 	// Create a memory storage
 	storage := tokens.NewMemoryStorage()
 
-	// Create a token manager
-	manager := tokens.NewManager(storage, authClient)
-
-	// Set refresh threshold (when to refresh tokens)
-	manager.SetRefreshThreshold(30 * time.Minute)
+	// Create a token manager with options
+	manager, err := tokens.NewManager(
+		tokens.WithStorage(storage),
+		tokens.WithAuthClient(authClient),
+		tokens.WithRefreshThreshold(30 * time.Minute),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create token manager: %v", err)
+	}
 	fmt.Printf("Set refresh threshold to %s\n", manager.RefreshThreshold)
 
 	// Create an example token that's about to expire

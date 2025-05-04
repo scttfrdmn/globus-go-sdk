@@ -8,22 +8,121 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
+	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
 )
 
 // Transport handles HTTP communication with the API
 type Transport struct {
-	Client *core.Client
+	Client interfaces.ClientInterface
+	Debug  bool
+	Trace  bool
+	Logger *log.Logger
+}
+
+// Options for configuring the transport
+type Options struct {
+	// Debug enables HTTP request/response logging
+	Debug bool
+	
+	// Trace enables detailed HTTP tracing (including bodies)
+	Trace bool
+	
+	// Logger is the logger to use for debug output
+	Logger *log.Logger
 }
 
 // NewTransport creates a new Transport
-func NewTransport(client *core.Client) *Transport {
+func NewTransport(client interfaces.ClientInterface, options *Options) *Transport {
+	// Check environment variables for debug settings
+	envDebug := os.Getenv("GLOBUS_SDK_HTTP_DEBUG") == "1"
+	envTrace := os.Getenv("GLOBUS_SDK_HTTP_TRACE") == "1"
+	
+	debug := envDebug
+	trace := envTrace
+	logger := log.New(os.Stderr, "", log.LstdFlags)
+	
+	// Override with options if provided
+	if options != nil {
+		if options.Debug {
+			debug = true
+		}
+		if options.Trace {
+			trace = true
+		}
+		if options.Logger != nil {
+			logger = options.Logger
+		}
+	}
+	
+	// If trace is enabled, debug is also enabled
+	if trace {
+		debug = true
+	}
+	
 	return &Transport{
 		Client: client,
+		Debug:  debug,
+		Trace:  trace,
+		Logger: logger,
+	}
+}
+
+// DeferredTransport holds the transport configuration until a client is available
+type DeferredTransport struct {
+	Debug  bool
+	Trace  bool
+	Logger *log.Logger
+}
+
+// NewDeferredTransport creates a configuration for a transport that can be attached to a client later
+func NewDeferredTransport(options *Options) *DeferredTransport {
+	// Check environment variables for debug settings
+	envDebug := os.Getenv("GLOBUS_SDK_HTTP_DEBUG") == "1"
+	envTrace := os.Getenv("GLOBUS_SDK_HTTP_TRACE") == "1"
+	
+	debug := envDebug
+	trace := envTrace
+	logger := log.New(os.Stderr, "", log.LstdFlags)
+	
+	// Override with options if provided
+	if options != nil {
+		if options.Debug {
+			debug = true
+		}
+		if options.Trace {
+			trace = true
+		}
+		if options.Logger != nil {
+			logger = options.Logger
+		}
+	}
+	
+	// If trace is enabled, debug is also enabled
+	if trace {
+		debug = true
+	}
+	
+	return &DeferredTransport{
+		Debug:  debug,
+		Trace:  trace,
+		Logger: logger,
+	}
+}
+
+// AttachClient creates a Transport by attaching a client to a DeferredTransport
+func (dt *DeferredTransport) AttachClient(client interfaces.ClientInterface) *Transport {
+	return &Transport{
+		Client: client,
+		Debug:  dt.Debug,
+		Trace:  dt.Trace,
+		Logger: dt.Logger,
 	}
 }
 
@@ -37,7 +136,7 @@ func (t *Transport) Request(
 	headers http.Header,
 ) (*http.Response, error) {
 	// Build the full URL
-	urlStr := t.Client.BaseURL
+	urlStr := t.Client.GetBaseURL()
 	if !strings.HasSuffix(urlStr, "/") {
 		urlStr += "/"
 	}
@@ -48,9 +147,11 @@ func (t *Transport) Request(
 	}
 
 	// Prepare the request body
+	var bodyBytes []byte
 	var bodyReader io.Reader
 	if body != nil {
-		bodyBytes, err := json.Marshal(body)
+		var err error
+		bodyBytes, err = json.Marshal(body)
 		if err != nil {
 			return nil, fmt.Errorf("failed to marshal request body: %w", err)
 		}
@@ -82,10 +183,27 @@ func (t *Transport) Request(
 		req.Header.Set("Accept", "application/json")
 	}
 
+	// Log the request if debug is enabled
+	if t.Debug {
+		t.logRequest(method, urlStr, req.Header, bodyBytes)
+	}
+
 	// Send the request
+	startTime := time.Now()
 	resp, err := t.Client.Do(ctx, req)
+	duration := time.Since(startTime)
+
+	// Log the error if there is one
 	if err != nil {
+		if t.Debug {
+			t.Logger.Printf("HTTP Error: %v (%s)", err, duration.Round(time.Millisecond))
+		}
 		return nil, err
+	}
+
+	// Log the response if debug is enabled
+	if t.Debug {
+		t.logResponse(resp, duration)
 	}
 
 	return resp, nil
@@ -142,6 +260,44 @@ func (t *Transport) Patch(
 	headers http.Header,
 ) (*http.Response, error) {
 	return t.Request(ctx, http.MethodPatch, path, body, query, headers)
+}
+
+// RoundTrip implements the http.RoundTripper interface, allowing the Transport to be used
+// directly with low-level HTTP operations. This is useful for debugging and testing.
+func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
+	// Use the context from the request
+	ctx := req.Context()
+	
+	// Log the request if debug is enabled
+	if t.Debug {
+		var bodyBytes []byte
+		if req.Body != nil {
+			// Read the body and replace it
+			bodyBytes, _ = io.ReadAll(req.Body)
+			req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		}
+		t.logRequest(req.Method, req.URL.String(), req.Header, bodyBytes)
+	}
+	
+	// Send the request
+	startTime := time.Now()
+	resp, err := t.Client.Do(ctx, req)
+	duration := time.Since(startTime)
+	
+	// Log the error if there is one
+	if err != nil {
+		if t.Debug {
+			t.Logger.Printf("HTTP Error: %v (%s)", err, duration.Round(time.Millisecond))
+		}
+		return nil, err
+	}
+	
+	// Log the response if debug is enabled
+	if t.Debug {
+		t.logResponse(resp, duration)
+	}
+	
+	return resp, nil
 }
 
 // DecodeResponse decodes the response body into the specified type

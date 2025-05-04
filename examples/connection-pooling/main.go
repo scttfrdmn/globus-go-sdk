@@ -52,9 +52,21 @@ func usingDefaultPool() {
 	config := pkg.NewConfigFromEnvironment()
 	
 	// Create multiple service clients
-	_ = config.NewAuthClient()
-	_ = config.NewTransferClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
-	_ = config.NewSearchClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+	authClient, err := config.NewAuthClient()
+	if err != nil {
+		fmt.Printf("Failed to create auth client: %v\n", err)
+		return
+	}
+	transferClient, err := config.NewTransferClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+	if err != nil {
+		fmt.Printf("Failed to create transfer client: %v\n", err)
+		return
+	}
+	searchClient, err := config.NewSearchClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+	if err != nil {
+		fmt.Printf("Failed to create search client: %v\n", err)
+		return
+	}
 	
 	// The clients now share connection pools based on service type
 	fmt.Println("Created Auth, Transfer, and Search clients with connection pooling")
@@ -87,7 +99,11 @@ func usingCustomPool(ctx context.Context, accessToken string) {
 		WithClientSecret(os.Getenv("GLOBUS_CLIENT_SECRET"))
 	
 	// Create a Transfer client
-	transferClient := sdkConfig.NewTransferClient(accessToken)
+	transferClient, err := sdkConfig.NewTransferClient(accessToken)
+	if err != nil {
+		fmt.Printf("Failed to create transfer client: %v\n", err)
+		return
+	}
 	
 	// Override the HTTP client with our custom pooled client
 	transferClient.Client.HTTPClient = httpClient
@@ -111,7 +127,11 @@ func monitorPoolStats(ctx context.Context, accessToken string) {
 	config := pkg.NewConfigFromEnvironment()
 	
 	// Create a Transfer client
-	transferClient := config.NewTransferClient(accessToken)
+	transferClient, err := config.NewTransferClient(accessToken)
+	if err != nil {
+		fmt.Printf("Failed to create transfer client: %v\n", err)
+		return
+	}
 	
 	// Make some requests to generate connections
 	for i := 0; i < 5; i++ {

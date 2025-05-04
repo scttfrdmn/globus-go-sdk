@@ -27,13 +27,26 @@ type Manager struct {
 	refreshMutex     sync.Mutex
 }
 
-// NewManager creates a new token manager
-func NewManager(storage Storage, refreshHandler RefreshHandler) *Manager {
-	return &Manager{
-		Storage:          storage,
-		RefreshThreshold: 5 * time.Minute, // Default refresh threshold
-		RefreshHandler:   refreshHandler,
+// NewManager creates a new token manager with the provided options
+func NewManager(opts ...ClientOption) (*Manager, error) {
+	// Apply default options
+	options := defaultOptions()
+	
+	// Apply user options
+	for _, opt := range opts {
+		opt(options)
 	}
+	
+	// Validate required options
+	if options.storage == nil {
+		return nil, fmt.Errorf("no storage provided")
+	}
+
+	return &Manager{
+		Storage:          options.storage,
+		RefreshThreshold: options.refreshThreshold,
+		RefreshHandler:   options.refreshHandler,
+	}, nil
 }
 
 // GetToken retrieves a token, automatically refreshing it if needed

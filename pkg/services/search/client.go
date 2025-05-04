@@ -28,29 +28,32 @@ type Client struct {
 }
 
 // NewClient creates a new Search client
-func NewClient(accessToken string, options ...core.ClientOption) *Client {
-	// Create the authorizer with the access token
-	authorizer := authorizers.StaticTokenCoreAuthorizer(accessToken)
-
-	// Apply default options specific to Search
-	defaultOptions := []core.ClientOption{
-		core.WithBaseURL(DefaultBaseURL),
-		core.WithAuthorizer(authorizer),
+func NewClient(opts ...ClientOption) (*Client, error) {
+	// Apply default options
+	options := defaultOptions()
+	
+	// Apply user options
+	for _, opt := range opts {
+		opt(options)
 	}
-
-	// Merge with user options
-	options = append(defaultOptions, options...)
-
+	
+	// If an access token was provided, create a static token authorizer
+	if options.accessToken != "" {
+		authorizer := authorizers.StaticTokenCoreAuthorizer(options.accessToken)
+		options.coreOptions = append(options.coreOptions, core.WithAuthorizer(authorizer))
+	}
+	
 	// Create the base client
-	baseClient := core.NewClient(options...)
-
+	baseClient := core.NewClient(options.coreOptions...)
+	
 	return &Client{
 		Client: baseClient,
-	}
+	}, nil
 }
 
-// buildURL builds a URL for the search API
-func (c *Client) buildURL(path string, query url.Values) string {
+// buildURLLowLevel builds a URL for the search API
+// This is an internal method used by the client.
+func (c *Client) buildURLLowLevel(path string, query url.Values) string {
 	baseURL := c.Client.BaseURL
 	if baseURL[len(baseURL)-1] != '/' {
 		baseURL += "/"
@@ -64,9 +67,10 @@ func (c *Client) buildURL(path string, query url.Values) string {
 	return url
 }
 
-// doRequest performs an HTTP request and decodes the JSON response
-func (c *Client) doRequest(ctx context.Context, method, path string, query url.Values, body, response interface{}) error {
-	url := c.buildURL(path, query)
+// doRequestLowLevel performs an HTTP request and decodes the JSON response
+// This is an internal method used by higher-level API methods.
+func (c *Client) doRequestLowLevel(ctx context.Context, method, path string, query url.Values, body, response interface{}) error {
+	url := c.buildURLLowLevel(path, query)
 
 	var bodyReader io.Reader
 	if body != nil {
@@ -171,7 +175,7 @@ func (c *Client) ListIndexes(ctx context.Context, options *ListIndexesOptions) (
 	}
 
 	var indexList IndexList
-	err := c.doRequest(ctx, http.MethodGet, "index_list", query, nil, &indexList)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "index_list", query, nil, &indexList)
 	if err != nil {
 		return nil, err
 	}
@@ -186,7 +190,7 @@ func (c *Client) GetIndex(ctx context.Context, indexID string) (*Index, error) {
 	}
 
 	var index Index
-	err := c.doRequest(ctx, http.MethodGet, "index/"+indexID, nil, nil, &index)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "index/"+indexID, nil, nil, &index)
 	if err != nil {
 		return nil, err
 	}
@@ -205,7 +209,7 @@ func (c *Client) CreateIndex(ctx context.Context, request *IndexCreateRequest) (
 	}
 
 	var index Index
-	err := c.doRequest(ctx, http.MethodPost, "index", nil, request, &index)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "index", nil, request, &index)
 	if err != nil {
 		return nil, err
 	}
@@ -224,7 +228,7 @@ func (c *Client) UpdateIndex(ctx context.Context, indexID string, request *Index
 	}
 
 	var index Index
-	err := c.doRequest(ctx, http.MethodPatch, "index/"+indexID, nil, request, &index)
+	err := c.doRequestLowLevel(ctx, http.MethodPatch, "index/"+indexID, nil, request, &index)
 	if err != nil {
 		return nil, err
 	}
@@ -238,7 +242,7 @@ func (c *Client) DeleteIndex(ctx context.Context, indexID string) error {
 		return fmt.Errorf("index ID is required")
 	}
 
-	return c.doRequest(ctx, http.MethodDelete, "index/"+indexID, nil, nil, nil)
+	return c.doRequestLowLevel(ctx, http.MethodDelete, "index/"+indexID, nil, nil, nil)
 }
 
 // IngestDocuments ingests documents into an index
@@ -256,7 +260,7 @@ func (c *Client) IngestDocuments(ctx context.Context, request *IngestRequest) (*
 	}
 
 	var response IngestResponse
-	err := c.doRequest(ctx, http.MethodPost, "ingest", nil, request, &response)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "ingest", nil, request, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -275,7 +279,7 @@ func (c *Client) Search(ctx context.Context, request *SearchRequest) (*SearchRes
 	}
 
 	var response SearchResponse
-	err := c.doRequest(ctx, http.MethodPost, "search", nil, request, &response)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "search", nil, request, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -298,7 +302,7 @@ func (c *Client) StructuredSearch(ctx context.Context, request *StructuredSearch
 	}
 
 	var response SearchResponse
-	err := c.doRequest(ctx, http.MethodPost, "search", nil, request, &response)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "search", nil, request, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -321,7 +325,7 @@ func (c *Client) DeleteDocuments(ctx context.Context, request *DeleteDocumentsRe
 	}
 
 	var response DeleteDocumentsResponse
-	err := c.doRequest(ctx, http.MethodPost, "delete", nil, request, &response)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "delete", nil, request, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -336,7 +340,7 @@ func (c *Client) GetTaskStatus(ctx context.Context, taskID string) (*TaskStatusR
 	}
 
 	var response TaskStatusResponse
-	err := c.doRequest(ctx, http.MethodGet, "task/"+taskID, nil, nil, &response)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "task/"+taskID, nil, nil, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -402,6 +406,7 @@ func (c *Client) NewStructuredSearchIterator(ctx context.Context, request *Struc
 
 // Next fetches the next page of results
 func (it *SearchIterator) Next() bool {
+	// Don't proceed if we're already at the end or have an error
 	if !it.hasMore || it.err != nil {
 		return false
 	}
@@ -425,7 +430,7 @@ func (it *SearchIterator) Next() bool {
 	it.currentResp = resp
 	it.hasMore = resp.HasMore
 
-	// Update the page token for the next request
+	// Update the page token for the next request only if there are more pages
 	if it.hasMore {
 		if it.structRequest != nil {
 			if it.structRequest.Options == nil {
