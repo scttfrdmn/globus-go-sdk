@@ -262,6 +262,44 @@ func (t *Transport) Patch(
 	return t.Request(ctx, http.MethodPatch, path, body, query, headers)
 }
 
+// RoundTrip implements the http.RoundTripper interface, allowing the Transport to be used
+// directly with low-level HTTP operations. This is useful for debugging and testing.
+func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
+	// Use the context from the request
+	ctx := req.Context()
+	
+	// Log the request if debug is enabled
+	if t.Debug {
+		var bodyBytes []byte
+		if req.Body != nil {
+			// Read the body and replace it
+			bodyBytes, _ = io.ReadAll(req.Body)
+			req.Body = io.NopCloser(bytes.NewReader(bodyBytes))
+		}
+		t.logRequest(req.Method, req.URL.String(), req.Header, bodyBytes)
+	}
+	
+	// Send the request
+	startTime := time.Now()
+	resp, err := t.Client.Do(ctx, req)
+	duration := time.Since(startTime)
+	
+	// Log the error if there is one
+	if err != nil {
+		if t.Debug {
+			t.Logger.Printf("HTTP Error: %v (%s)", err, duration.Round(time.Millisecond))
+		}
+		return nil, err
+	}
+	
+	// Log the response if debug is enabled
+	if t.Debug {
+		t.logResponse(resp, duration)
+	}
+	
+	return resp, nil
+}
+
 // DecodeResponse decodes the response body into the specified type
 func DecodeResponse(resp *http.Response, v interface{}) error {
 	defer resp.Body.Close()

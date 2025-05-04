@@ -46,18 +46,15 @@ func main() {
 	}
 
 	// Print endpoints
-	fmt.Printf("Found %d endpoints:
-", len(endpoints.Data))
+	fmt.Printf("Found %d endpoints:\n", len(endpoints.Data))
 	for i, ep := range endpoints.Data {
-		fmt.Printf("%d. %s (%s) - %s
-", i+1, ep.DisplayName, ep.ID, 
+		fmt.Printf("%d. %s (%s) - %s\n", i+1, ep.DisplayName, ep.ID, 
 			map[bool]string{true: "Activated", false: "Not Activated"}[ep.Activated])
 	}
 
 	// Ask user to select source and destination endpoints
 	var sourceIdx, destIdx int
-	fmt.Print("
-Select source endpoint (enter number): ")
+	fmt.Print("\nSelect source endpoint (enter number): ")
 	fmt.Scanln(&sourceIdx)
 	sourceIdx-- // Adjust for 0-based indexing
 
@@ -94,9 +91,9 @@ Select source endpoint (enter number): ")
 	// Submit transfer
 	fmt.Println("Submitting transfer task...")
 	options2 := map[string]interface{}{
-		"recursive":      true,
+		"recursive":       true,
 		"verify_checksum": true,
-		"preserve_mtime": true,
+		"preserve_mtime":  true,
 	}
 
 	taskResponse, err := transferClient.SubmitTransfer(
@@ -111,7 +108,6 @@ Select source endpoint (enter number): ")
 		log.Fatalf("Failed to submit transfer: %v", err)
 	}
 
-	fmt.Printf("Transfer submitted! Task ID: %s
-", taskResponse.TaskID)
+	fmt.Printf("Transfer submitted! Task ID: %s\n", taskResponse.TaskID)
 	fmt.Println("You can monitor this transfer task in the Globus web interface.")
 }

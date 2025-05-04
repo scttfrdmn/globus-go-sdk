@@ -24,7 +24,13 @@ func main() {
 
 	if clientID != "" && clientSecret != "" {
 		// Initialize the Globus Auth client
-		authClient := auth.NewClient(clientID, clientSecret)
+		authClient, err := auth.NewClient(
+			auth.WithClientID(clientID),
+			auth.WithClientSecret(clientSecret),
+		)
+		if err != nil {
+			log.Fatalf("Failed to create auth client: %v", err)
+		}
 		fmt.Println("Found Globus credentials, demonstrating with real auth client")
 		
 		// Demonstration of different token storage mechanisms

@@ -54,8 +54,18 @@ type SDKConfig struct {
 }
 
 // NewAuthClient creates a new Auth client with the SDK configuration
-func (c *SDKConfig) NewAuthClient() *auth.Client {
-	authClient := auth.NewClient(c.ClientID, c.ClientSecret)
+func (c *SDKConfig) NewAuthClient() (*auth.Client, error) {
+	// Create auth client options
+	options := []auth.ClientOption{
+		auth.WithClientID(c.ClientID),
+		auth.WithClientSecret(c.ClientSecret),
+	}
+	
+	// Create the auth client
+	authClient, err := auth.NewClient(options...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create auth client: %w", err)
+	}
 
 	// Apply configuration
 	if c.Config != nil {
@@ -68,7 +78,7 @@ func (c *SDKConfig) NewAuthClient() *auth.Client {
 		authClient.Client.HTTPClient = serviceClient
 	}
 
-	return authClient
+	return authClient, nil
 }
 
 // NewGroupsClient creates a new Groups client with the SDK configuration

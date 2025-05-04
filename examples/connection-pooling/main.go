@@ -52,9 +52,13 @@ func usingDefaultPool() {
 	config := pkg.NewConfigFromEnvironment()
 	
 	// Create multiple service clients
-	_ = config.NewAuthClient()
-	_ = config.NewTransferClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
-	_ = config.NewSearchClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+	authClient, err := config.NewAuthClient()
+	if err != nil {
+		fmt.Printf("Failed to create auth client: %v\n", err)
+		return
+	}
+	transferClient := config.NewTransferClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+	searchClient := config.NewSearchClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
 	
 	// The clients now share connection pools based on service type
 	fmt.Println("Created Auth, Transfer, and Search clients with connection pooling")
