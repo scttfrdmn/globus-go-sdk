@@ -19,7 +19,7 @@
 
 A Go SDK for interacting with Globus services, providing a simple and idiomatic Go interface to Globus APIs.
 
-> **STATUS**: Version 0.9.0 is now available! This version enhances the Compute client with workflow and task group capabilities, improves API version compatibility checking, and expands HTTP debugging. See the [CHANGELOG](doc/project/changelog.md) for information on all features and improvements. If you're upgrading from a version before 0.8.0, also check the [Migration Guide](doc/V0.8.0_MIGRATION_GUIDE.md).
+> **STATUS**: Version 0.9.0 is now available! This version introduces a consistent API pattern across all service clients using the functional options pattern, provides comprehensive token management capabilities, improves error handling, and enhances the Compute client with workflow and task group capabilities. See the [CHANGELOG](doc/project/changelog.md) for information on all features and improvements. If you're upgrading from v0.8.0, check the [Migration Guide](doc/V0.9.0_MIGRATION_GUIDE.md).
 
 > **DISCLAIMER**: The Globus Go SDK is an independent, community-developed project and is not officially affiliated with, endorsed by, or supported by Globus, the University of Chicago, or their affiliated organizations. This SDK is maintained by independent contributors and is not a product of Globus or the University of Chicago.
 
@@ -158,11 +158,20 @@ func main() {
         WithClientSecret(os.Getenv("GLOBUS_CLIENT_SECRET"))
 
     // Create a new Auth client
-    authClient := config.NewAuthClient()
+    authClient, err := config.NewAuthClient()
+    if err != nil {
+        log.Fatalf("Failed to create auth client: %v", err)
+    }
     authClient.SetRedirectURL("http://localhost:8080/callback")
     
-    // Create a token manager for automatic refresh
-    tokenManager := tokens.NewManager(storage, authClient)
+    // Create a token manager for automatic refresh using the functional options pattern
+    tokenManager, err := tokens.NewManager(
+        tokens.WithStorage(storage),
+        tokens.WithRefreshHandler(authClient),
+    )
+    if err != nil {
+        log.Fatalf("Failed to create token manager: %v", err)
+    }
     
     // Configure token refresh settings
     tokenManager.SetRefreshThreshold(5 * time.Minute)
@@ -240,8 +249,11 @@ func main() {
     // Create a new SDK configuration
     config := pkg.NewConfigFromEnvironment()
 
-    // Create a new Groups client with an access token
-    groupsClient := config.NewGroupsClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+    // Create a new Groups client with an access token using the functional options pattern
+    groupsClient, err := config.NewGroupsClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+    if err != nil {
+        log.Fatalf("Failed to create groups client: %v", err)
+    }
     
     // List groups the user is a member of
     groupList, err := groupsClient.ListGroups(context.Background(), nil)
@@ -276,8 +288,11 @@ func main() {
     // Create a new SDK configuration
     config := pkg.NewConfigFromEnvironment()
 
-    // Create a new Transfer client with an access token
-    transferClient := config.NewTransferClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+    // Create a new Transfer client with an access token using the functional options pattern
+    transferClient, err := config.NewTransferClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+    if err != nil {
+        log.Fatalf("Failed to create transfer client: %v", err)
+    }
     
     // List endpoints the user has access to
     endpoints, err := transferClient.ListEndpoints(context.Background(), nil)
@@ -374,8 +389,11 @@ func main() {
     // Create a new SDK configuration
     config := pkg.NewConfigFromEnvironment()
 
-    // Create a new Search client with an access token
-    searchClient := config.NewSearchClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+    // Create a new Search client with an access token using the functional options pattern
+    searchClient, err := config.NewSearchClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+    if err != nil {
+        log.Fatalf("Failed to create search client: %v", err)
+    }
     
     // List indexes the user has access to
     indexes, err := searchClient.ListIndexes(context.Background(), nil)
@@ -431,8 +449,11 @@ func main() {
     // Create a new SDK configuration
     config := pkg.NewConfigFromEnvironment()
 
-    // Create a new Flows client with an access token
-    flowsClient := config.NewFlowsClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+    // Create a new Flows client with an access token using the functional options pattern
+    flowsClient, err := config.NewFlowsClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
+    if err != nil {
+        log.Fatalf("Failed to create flows client: %v", err)
+    }
     
     // List flows the user has access to
     flows, err := flowsClient.ListFlows(context.Background(), nil)
@@ -473,6 +494,7 @@ For detailed documentation, see:
 - [GoDoc Reference](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/)
 - [User Guide](doc/user-guide.md)
 - [Quick Start Examples](doc/QUICK_START_EXAMPLES.md)
+- [v0.9.0 Migration Guide](doc/V0.9.0_MIGRATION_GUIDE.md)
 - [v0.8.0 Migration Guide](doc/V0.8.0_MIGRATION_GUIDE.md)
 - [Client Initialization](doc/CLIENT_INITIALIZATION.md)
 - [Error Handling](doc/ERROR_HANDLING.md)
