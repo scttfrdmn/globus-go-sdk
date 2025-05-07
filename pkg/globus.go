@@ -5,8 +5,6 @@ package pkg
 import (
 	"context"
 	"fmt"
-	"os"
-	"time"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/config"
 	httppool "github.com/scttfrdmn/globus-go-sdk/pkg/core/http"
@@ -18,10 +16,12 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/timers"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/tokens"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+	"os"
+	"time"
 )
 
 // Version is the SDK version
-const Version = "0.9.0"
+const Version = "0.9.7"
 
 // OAuth2 scopes for Globus services
 const (
@@ -64,7 +64,7 @@ func (c *SDKConfig) NewAuthClient() (*auth.Client, error) {
 		auth.WithClientID(c.ClientID),
 		auth.WithClientSecret(c.ClientSecret),
 	}
-	
+
 	// Create the auth client
 	authClient, err := auth.NewClient(options...)
 	if err != nil {
@@ -75,7 +75,7 @@ func (c *SDKConfig) NewAuthClient() (*auth.Client, error) {
 	if c.Config != nil {
 		c.Config.ApplyToClient(authClient.Client)
 	}
-	
+
 	// Use service-specific connection pool if enabled
 	if os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") != "true" {
 		serviceClient := httppool.GetHTTPClientForService("auth", nil)
@@ -89,27 +89,27 @@ func (c *SDKConfig) NewAuthClient() (*auth.Client, error) {
 func (c *SDKConfig) NewGroupsClient(accessToken string) (*groups.Client, error) {
 	// Create a simple static token authorizer directly
 	authorizer := &simpleAuthorizer{token: accessToken}
-	
+
 	// Create options for the groups client
 	options := []groups.Option{
 		groups.WithAuthorizer(authorizer),
 	}
-	
+
 	// Add debugging if configured
 	if os.Getenv("GLOBUS_SDK_HTTP_DEBUG") == "1" {
 		options = append(options, groups.WithHTTPDebugging(true))
 	}
-	
+
 	if os.Getenv("GLOBUS_SDK_HTTP_TRACE") == "1" {
 		options = append(options, groups.WithHTTPTracing(true))
 	}
-	
+
 	// Create the client
 	groupsClient, err := groups.NewClient(options...)
 	if err != nil {
 		return nil, fmt.Errorf("error creating groups client: %w", err)
 	}
-	
+
 	return groupsClient, nil
 }
 
@@ -118,38 +118,38 @@ func (c *SDKConfig) NewTransferClient(accessToken string) (*transfer.Client, err
 	// Create a simple static token authorizer directly
 	// using a type that satisfies the auth.Authorizer interface
 	authorizer := &simpleAuthorizer{token: accessToken}
-	
+
 	// Create options for the transfer client
 	options := []transfer.Option{
 		transfer.WithAuthorizer(authorizer),
 	}
-	
+
 	// Add debugging if configured
 	if os.Getenv("GLOBUS_SDK_HTTP_DEBUG") == "1" {
 		options = append(options, transfer.WithHTTPDebugging(true))
 	}
-	
+
 	if os.Getenv("GLOBUS_SDK_HTTP_TRACE") == "1" {
 		options = append(options, transfer.WithHTTPTracing(true))
 	}
-	
+
 	// Create the client
 	transferClient, err := transfer.NewClient(options...)
 	if err != nil {
 		return nil, fmt.Errorf("error creating transfer client: %w", err)
 	}
-	
+
 	// Apply configuration
 	if c.Config != nil {
 		c.Config.ApplyToClient(transferClient.Client)
 	}
-	
+
 	// Use service-specific connection pool if enabled
 	if os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") != "true" {
 		serviceClient := httppool.GetHTTPClientForService("transfer", nil)
 		transferClient.Client.HTTPClient = serviceClient
 	}
-	
+
 	return transferClient, nil
 }
 
@@ -159,27 +159,27 @@ func (c *SDKConfig) NewSearchClient(accessToken string) (*search.Client, error) 
 	options := []search.ClientOption{
 		search.WithAccessToken(accessToken),
 	}
-	
+
 	// Add debugging if configured
 	if os.Getenv("GLOBUS_SDK_HTTP_DEBUG") == "1" {
 		options = append(options, search.WithHTTPDebugging(true))
 	}
-	
+
 	if os.Getenv("GLOBUS_SDK_HTTP_TRACE") == "1" {
 		options = append(options, search.WithHTTPTracing(true))
 	}
-	
+
 	// Create the client
 	searchClient, err := search.NewClient(options...)
 	if err != nil {
 		return nil, fmt.Errorf("error creating search client: %w", err)
 	}
-	
+
 	// Apply configuration
 	if c.Config != nil {
 		c.Config.ApplyToClient(searchClient.Client)
 	}
-	
+
 	// Use service-specific connection pool if enabled
 	if os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") != "true" {
 		serviceClient := httppool.GetHTTPClientForService("search", nil)
@@ -195,27 +195,27 @@ func (c *SDKConfig) NewFlowsClient(accessToken string) (*flows.Client, error) {
 	options := []flows.ClientOption{
 		flows.WithAccessToken(accessToken),
 	}
-	
+
 	// Add debugging if configured
 	if os.Getenv("GLOBUS_SDK_HTTP_DEBUG") == "1" {
 		options = append(options, flows.WithHTTPDebugging(true))
 	}
-	
+
 	if os.Getenv("GLOBUS_SDK_HTTP_TRACE") == "1" {
 		options = append(options, flows.WithHTTPTracing(true))
 	}
-	
+
 	// Create the client
 	flowsClient, err := flows.NewClient(options...)
 	if err != nil {
 		return nil, fmt.Errorf("error creating flows client: %w", err)
 	}
-	
+
 	// Apply configuration
 	if c.Config != nil {
 		c.Config.ApplyToClient(flowsClient.Client)
 	}
-	
+
 	// Use service-specific connection pool if enabled
 	if os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") != "true" {
 		serviceClient := httppool.GetHTTPClientForService("flows", nil)
@@ -231,27 +231,27 @@ func (c *SDKConfig) NewComputeClient(accessToken string) (*compute.Client, error
 	options := []compute.ClientOption{
 		compute.WithAccessToken(accessToken),
 	}
-	
+
 	// Add debugging if configured
 	if os.Getenv("GLOBUS_SDK_HTTP_DEBUG") == "1" {
 		options = append(options, compute.WithHTTPDebugging(true))
 	}
-	
+
 	if os.Getenv("GLOBUS_SDK_HTTP_TRACE") == "1" {
 		options = append(options, compute.WithHTTPTracing(true))
 	}
-	
+
 	// Create the client
 	computeClient, err := compute.NewClient(options...)
 	if err != nil {
 		return nil, fmt.Errorf("error creating compute client: %w", err)
 	}
-	
+
 	// Apply configuration
 	if c.Config != nil {
 		c.Config.ApplyToClient(computeClient.Client)
 	}
-	
+
 	// Use service-specific connection pool if enabled
 	if os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") != "true" {
 		serviceClient := httppool.GetHTTPClientForService("compute", nil)
@@ -267,27 +267,27 @@ func (c *SDKConfig) NewTimersClient(accessToken string) (*timers.Client, error) 
 	options := []timers.ClientOption{
 		timers.WithAccessToken(accessToken),
 	}
-	
+
 	// Add debugging if configured
 	if os.Getenv("GLOBUS_SDK_HTTP_DEBUG") == "1" {
 		options = append(options, timers.WithHTTPDebugging(true))
 	}
-	
+
 	if os.Getenv("GLOBUS_SDK_HTTP_TRACE") == "1" {
 		options = append(options, timers.WithHTTPTracing(true))
 	}
-	
+
 	// Create the client
 	timersClient, err := timers.NewClient(options...)
 	if err != nil {
 		return nil, fmt.Errorf("error creating timers client: %w", err)
 	}
-	
+
 	// Apply configuration
 	if c.Config != nil {
 		c.Config.ApplyToClient(timersClient.Client)
 	}
-	
+
 	// Use service-specific connection pool if enabled
 	if os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") != "true" {
 		serviceClient := httppool.GetHTTPClientForService("timers", nil)
@@ -304,7 +304,7 @@ func (c *SDKConfig) NewTokenManager(opts ...tokens.ClientOption) (*tokens.Manage
 	if err != nil {
 		return nil, fmt.Errorf("error creating token manager: %w", err)
 	}
-	
+
 	return tokenManager, nil
 }
 
@@ -315,17 +315,17 @@ func (c *SDKConfig) NewTokenManagerWithAuth(storageDirectory string) (*tokens.Ma
 	if err != nil {
 		return nil, fmt.Errorf("error creating auth client for token manager: %w", err)
 	}
-	
+
 	// Create token manager options
 	options := []tokens.ClientOption{
 		tokens.WithAuthClient(authClient),
 	}
-	
+
 	// If a storage directory is provided, use file storage
 	if storageDirectory != "" {
 		options = append(options, tokens.WithFileStorage(storageDirectory))
 	}
-	
+
 	// Create the token manager
 	return c.NewTokenManager(options...)
 }
@@ -344,15 +344,15 @@ func NewConfigFromEnvironment() *SDKConfig {
 	if useConnectionPool {
 		initializeConnectionPools()
 	}
-	
+
 	config := config.FromEnvironment()
-	
+
 	// If connection pooling is enabled, override HTTP clients
 	if useConnectionPool {
 		httpClient := httppool.GetHTTPClientForService("default", nil)
 		config.HTTPClient = httpClient
 	}
-	
+
 	return &SDKConfig{
 		Config: config,
 	}
@@ -362,7 +362,7 @@ func NewConfigFromEnvironment() *SDKConfig {
 func initializeConnectionPools() {
 	// Create the global pool manager if not already created
 	httpPoolManager := httppool.NewHttpConnectionPoolManager(nil)
-	
+
 	// Create pools for each service with optimized settings
 	serviceConfigs := map[string]*httppool.ConnectionPoolConfig{
 		"auth": {
@@ -393,7 +393,7 @@ func initializeConnectionPools() {
 		"compute": {
 			MaxIdleConnsPerHost: 6,
 			MaxConnsPerHost:     16,
-			IdleConnTimeout:     120 * time.Second, 
+			IdleConnTimeout:     120 * time.Second,
 		},
 		"timers": {
 			MaxIdleConnsPerHost: 4,
@@ -402,7 +402,7 @@ func initializeConnectionPools() {
 		},
 		"default": nil, // Use defaults for the default pool
 	}
-	
+
 	// Initialize all service pools using the HTTP adapter manager
 	for service, poolConfig := range serviceConfigs {
 		httpPoolManager.GetPool(service, poolConfig)
@@ -432,11 +432,11 @@ func (c *SDKConfig) WithClientOption(option core.ClientOption) *SDKConfig {
 	if c.Config == nil {
 		c.Config = config.DefaultConfig()
 	}
-	
+
 	// Create a temporary client to apply the option
 	tempClient := &core.Client{}
 	option(tempClient)
-	
+
 	return c
 }
 

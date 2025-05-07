@@ -14,28 +14,30 @@ import (
 
 // Client defines the base client used by all service-specific clients
 type Client struct {
-	BaseURL     string
-	HTTPClient  *http.Client
-	UserAgent   string
-	Logger      interfaces.Logger
-	Authorizer  auth.Authorizer
-	RateLimiter ratelimit.RateLimiter
-	Transport   interfaces.Transport
-	Debug       bool
-	Trace       bool
+	BaseURL      string
+	HTTPClient   *http.Client
+	UserAgent    string
+	Logger       interfaces.Logger
+	Authorizer   auth.Authorizer
+	RateLimiter  ratelimit.RateLimiter
+	Transport    interfaces.Transport
+	Debug        bool
+	Trace        bool
+	VersionCheck *VersionCheck
 }
 
 // NewClient creates a new base client with default settings
 func NewClient(options ...ClientOption) *Client {
 	// Initialize with defaults
 	client := &Client{
-		HTTPClient: &http.Client{
+		HTTPClient:   &http.Client{
 			Timeout: time.Second * 30,
 		},
-		UserAgent: "globus-go-sdk/1.0",
-		Logger:    NewDefaultLogger(nil, LogLevelNone),
-		Debug:     false,
-		Trace:     false,
+		UserAgent:    "globus-go-sdk/1.0",
+		Logger:       NewDefaultLogger(nil, LogLevelNone),
+		Debug:        false,
+		Trace:        false,
+		VersionCheck: NewVersionCheck(),
 	}
 
 	// Apply options
@@ -100,6 +102,13 @@ func WithHTTPTracing(enable bool) ClientOption {
 		if enable {
 			c.Debug = true // Tracing requires debug mode
 		}
+	}
+}
+
+// WithVersionCheck sets the version check manager
+func WithVersionCheck(versionCheck *VersionCheck) ClientOption {
+	return func(c *Client) {
+		c.VersionCheck = versionCheck
 	}
 }
 

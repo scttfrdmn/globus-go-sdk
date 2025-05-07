@@ -35,15 +35,18 @@ type Config struct {
 
 	// RetryWaitMax is the maximum time to wait between retries
 	RetryWaitMax time.Duration
+
+	// VersionCheck manages API version checking
+	VersionCheck *core.VersionCheck
 }
 
 // DefaultConfig returns the default configuration
 func DefaultConfig() *Config {
 	// Check if connection pooling is disabled
 	disablePooling := os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") == "true"
-	
+
 	var httpClient *http.Client
-	
+
 	if !disablePooling {
 		// Use connection pooling by default
 		// Import indirectly to avoid circular imports
@@ -63,6 +66,7 @@ func DefaultConfig() *Config {
 		RetryMax:     3,
 		RetryWaitMin: time.Second,
 		RetryWaitMax: time.Second * 5,
+		VersionCheck: core.NewVersionCheck(),
 	}
 }
 
@@ -97,5 +101,10 @@ func (c *Config) ApplyToClient(client *core.Client) {
 
 	if c.LogLevel != core.LogLevelNone {
 		client.Logger = core.NewDefaultLogger(nil, c.LogLevel)
+	}
+	
+	// Apply VersionCheck if set
+	if client.VersionCheck == nil && c.VersionCheck != nil {
+		client.VersionCheck = c.VersionCheck
 	}
 }
