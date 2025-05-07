@@ -21,7 +21,7 @@ import (
 )
 
 // Version is the SDK version
-const Version = "0.9.9"
+const Version = "0.9.10"
 
 // OAuth2 scopes for Globus services
 const (
@@ -360,9 +360,6 @@ func NewConfigFromEnvironment() *SDKConfig {
 
 // initializeConnectionPools sets up connection pools for all services
 func initializeConnectionPools() {
-	// Create the global pool manager if not already created
-	httpPoolManager := httppool.NewHttpConnectionPoolManager(nil)
-
 	// Create pools for each service with optimized settings
 	serviceConfigs := map[string]*httppool.ConnectionPoolConfig{
 		"auth": {
@@ -403,9 +400,9 @@ func initializeConnectionPools() {
 		"default": nil, // Use defaults for the default pool
 	}
 
-	// Initialize all service pools using the HTTP adapter manager
+	// Initialize all service pools using the global HTTP pool manager
 	for service, poolConfig := range serviceConfigs {
-		httpPoolManager.GetPool(service, poolConfig)
+		httppool.GetServicePool(service, poolConfig)
 	}
 }
 
