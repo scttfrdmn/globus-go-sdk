@@ -50,7 +50,7 @@ func TestIntegration_VerifySetup(t *testing.T) {
 		t.Fatalf("Failed to get client credentials token: %v", err)
 	}
 
-	fmt.Printf("✅ Successfully obtained client credentials token (expires: %s)\n", 
+	fmt.Printf("✅ Successfully obtained client credentials token (expires: %s)\n",
 		token.ExpiresAt().Format(time.RFC3339))
 
 	// Introspect the token

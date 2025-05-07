@@ -20,8 +20,8 @@ func (c *Client) RegisterDependency(ctx context.Context, request *DependencyRegi
 	}
 
 	// At least one type of dependency specification is required
-	if request.PythonRequirements == "" && len(request.PythonPackages) == 0 && 
-	   len(request.CustomDependencies) == 0 && request.GitRepo == "" {
+	if request.PythonRequirements == "" && len(request.PythonPackages) == 0 &&
+		len(request.CustomDependencies) == 0 && request.GitRepo == "" {
 		return nil, fmt.Errorf("at least one dependency specification is required")
 	}
 

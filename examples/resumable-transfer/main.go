@@ -86,7 +86,7 @@ func main() {
 			fmt.Printf("   From: %s:%s\n", state.TaskInfo.SourceEndpointID, state.TaskInfo.SourceBasePath)
 			fmt.Printf("   To: %s:%s\n", state.TaskInfo.DestinationEndpointID, state.TaskInfo.DestinationBasePath)
 			fmt.Printf("   Started: %s (Running for %s)\n", state.TaskInfo.StartTime.Format("2006-01-02 15:04:05"), duration)
-			fmt.Printf("   Status: %d/%d files completed, %d failed, %d pending\n", 
+			fmt.Printf("   Status: %d/%d files completed, %d failed, %d pending\n",
 				state.Stats.CompletedItems, state.Stats.TotalItems, state.Stats.FailedItems, state.Stats.RemainingItems)
 			fmt.Println()
 		}
@@ -111,8 +111,8 @@ func main() {
 		options := transfer.DefaultResumableTransferOptions()
 		options.BatchSize = *batchSize
 		options.ProgressCallback = func(state *transfer.CheckpointState) {
-			fmt.Printf("\rProgress: %d/%d files completed (%d%%), %d failed", 
-				state.Stats.CompletedItems, 
+			fmt.Printf("\rProgress: %d/%d files completed (%d%%), %d failed",
+				state.Stats.CompletedItems,
 				state.Stats.TotalItems,
 				int(float64(state.Stats.CompletedItems)/float64(state.Stats.TotalItems)*100),
 				state.Stats.FailedItems)
@@ -138,7 +138,7 @@ func main() {
 		log.Fatal("Source endpoint, source path, destination endpoint, and destination path are required for new transfers.")
 	}
 
-	fmt.Printf("Starting new resumable transfer from %s:%s to %s:%s\n", 
+	fmt.Printf("Starting new resumable transfer from %s:%s to %s:%s\n",
 		*sourceEndpointID, *sourcePath, *destEndpointID, *destPath)
 
 	// Set up options
@@ -165,8 +165,8 @@ func main() {
 
 	// Start the transfer immediately
 	options.ProgressCallback = func(state *transfer.CheckpointState) {
-		fmt.Printf("\rProgress: %d/%d files completed (%d%%), %d failed", 
-			state.Stats.CompletedItems, 
+		fmt.Printf("\rProgress: %d/%d files completed (%d%%), %d failed",
+			state.Stats.CompletedItems,
 			state.Stats.TotalItems,
 			int(float64(state.Stats.CompletedItems)/float64(state.Stats.TotalItems)*100),
 			state.Stats.FailedItems)

@@ -66,18 +66,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create auth client: %v", err)
 	}
-	
+
 	fmt.Printf("Auth client created successfully: %T\n", authClient)
-	
+
 	// Example 2: Create Auth client using SDK config
 	fmt.Println("\n2. Creating Auth client using SDK config")
 	authClient2, err := config.NewAuthClient()
 	if err != nil {
 		log.Fatalf("Failed to create auth client: %v", err)
 	}
-	
+
 	fmt.Printf("Auth client created successfully via SDK config: %T\n", authClient2)
-	
+
 	// Example 3: Create Flows client with functional options
 	fmt.Println("\n3. Creating Flows client with functional options")
 	flowsClient, err := flows.NewClient(
@@ -88,24 +88,24 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create flows client: %v", err)
 	}
-	
+
 	fmt.Printf("Flows client created successfully: %T\n", flowsClient)
-	
+
 	// Example 4: Create Flows client using SDK config
 	fmt.Println("\n4. Creating Flows client using SDK config")
 	flowsClient2, err := config.NewFlowsClient(accessToken)
 	if err != nil {
 		log.Fatalf("Failed to create flows client: %v", err)
 	}
-	
+
 	fmt.Printf("Flows client created successfully via SDK config: %T\n", flowsClient2)
-	
+
 	// Example 5: Create Transfer client with functional options
 	fmt.Println("\n5. Creating Transfer client with functional options")
-	
+
 	// Create an authorizer from the access token
 	authorizer := authorizers.StaticTokenAuthorizerWithCoreAuthorizer(accessToken)
-	
+
 	transferClient, err := transfer.NewClient(
 		transfer.WithAuthorizer(authorizer),
 		transfer.WithHTTPDebugging(enableDebug),
@@ -114,18 +114,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create transfer client: %v", err)
 	}
-	
+
 	fmt.Printf("Transfer client created successfully: %T\n", transferClient)
-	
+
 	// Example 6: Create Transfer client using SDK config
 	fmt.Println("\n6. Creating Transfer client using SDK config")
 	transferClient2, err := config.NewTransferClient(accessToken)
 	if err != nil {
 		log.Fatalf("Failed to create transfer client: %v", err)
 	}
-	
+
 	fmt.Printf("Transfer client created successfully via SDK config: %T\n", transferClient2)
-	
+
 	// Example 7: Create Search client with functional options
 	fmt.Println("\n7. Creating Search client with functional options")
 	searchClient, err := search.NewClient(
@@ -136,18 +136,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create search client: %v", err)
 	}
-	
+
 	fmt.Printf("Search client created successfully: %T\n", searchClient)
-	
+
 	// Example 8: Create Search client using SDK config
 	fmt.Println("\n8. Creating Search client using SDK config")
 	searchClient2, err := config.NewSearchClient(accessToken)
 	if err != nil {
 		log.Fatalf("Failed to create search client: %v", err)
 	}
-	
+
 	fmt.Printf("Search client created successfully via SDK config: %T\n", searchClient2)
-	
+
 	// Example 9: Create Groups client with functional options
 	fmt.Println("\n9. Creating Groups client with functional options")
 	groupsClient, err := groups.NewClient(
@@ -158,18 +158,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create groups client: %v", err)
 	}
-	
+
 	fmt.Printf("Groups client created successfully: %T\n", groupsClient)
-	
+
 	// Example 10: Create Groups client using SDK config
 	fmt.Println("\n10. Creating Groups client using SDK config")
 	groupsClient2, err := config.NewGroupsClient(accessToken)
 	if err != nil {
 		log.Fatalf("Failed to create groups client: %v", err)
 	}
-	
+
 	fmt.Printf("Groups client created successfully via SDK config: %T\n", groupsClient2)
-	
+
 	// Example 11: Create Compute client with functional options
 	fmt.Println("\n11. Creating Compute client with functional options")
 	computeClient, err := compute.NewClient(
@@ -180,18 +180,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create compute client: %v", err)
 	}
-	
+
 	fmt.Printf("Compute client created successfully: %T\n", computeClient)
-	
+
 	// Example 12: Create Compute client using SDK config
 	fmt.Println("\n12. Creating Compute client using SDK config")
 	computeClient2, err := config.NewComputeClient(accessToken)
 	if err != nil {
 		log.Fatalf("Failed to create compute client: %v", err)
 	}
-	
+
 	fmt.Printf("Compute client created successfully via SDK config: %T\n", computeClient2)
-	
+
 	// Example 13: Create Timers client with functional options
 	fmt.Println("\n13. Creating Timers client with functional options")
 	timersClient, err := timers.NewClient(
@@ -202,33 +202,33 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create timers client: %v", err)
 	}
-	
+
 	fmt.Printf("Timers client created successfully: %T\n", timersClient)
-	
+
 	// Example 14: Create Timers client using SDK config
 	fmt.Println("\n14. Creating Timers client using SDK config")
 	timersClient2, err := config.NewTimersClient(accessToken)
 	if err != nil {
 		log.Fatalf("Failed to create timers client: %v", err)
 	}
-	
+
 	fmt.Printf("Timers client created successfully via SDK config: %T\n", timersClient2)
-	
+
 	// Example 15: Create Token Manager with functional options
 	fmt.Println("\n15. Creating Token Manager with functional options")
 	storage := tokens.NewMemoryStorage()
-	
+
 	tokenManager, err := tokens.NewManager(
 		tokens.WithStorage(storage),
 		tokens.WithAuthClient(authClient),
-		tokens.WithRefreshThreshold(15 * time.Minute),
+		tokens.WithRefreshThreshold(15*time.Minute),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create token manager: %v", err)
 	}
-	
+
 	fmt.Printf("Token manager created successfully: %T\n", tokenManager)
-	
+
 	// Example 16: Create Token Manager using SDK config
 	fmt.Println("\n16. Creating Token Manager using SDK config")
 	tokenManager2, err := config.NewTokenManager(
@@ -238,19 +238,19 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create token manager: %v", err)
 	}
-	
+
 	fmt.Printf("Token manager created successfully via SDK config: %T\n", tokenManager2)
-	
+
 	// Example 17: Advanced configuration with core client options
 	fmt.Println("\n17. Advanced configuration with core client options")
-	
+
 	// Create custom core client options
 	coreOptions := []core.ClientOption{
 		core.WithAuthorizer(authorizer),
 		core.WithUserAgent("globus-go-sdk-example/1.0"),
 		core.WithRequestTimeout(30 * time.Second),
 	}
-	
+
 	// Apply core options to flows client
 	advancedFlowsClient, err := flows.NewClient(
 		flows.WithCoreOptions(coreOptions...),
@@ -259,9 +259,9 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create advanced flows client: %v", err)
 	}
-	
+
 	fmt.Printf("Advanced flows client created successfully: %T\n", advancedFlowsClient)
-	
+
 	fmt.Println("\n=== Functional Options Pattern Demonstration Complete ===")
 	fmt.Println("All service clients in the Globus Go SDK now use a consistent")
 	fmt.Println("functional options pattern for configuration and initialization.")

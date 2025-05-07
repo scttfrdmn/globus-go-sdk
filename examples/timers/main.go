@@ -49,26 +49,26 @@ func main() {
 
 	// Example 1: Create a one-time timer with a web callback
 	fmt.Println("\n=== Example 1: One-Time Timer with Web Callback ===")
-	
+
 	// Create the timer to run 5 minutes from now
 	startTime := time.Now().Add(5 * time.Minute)
-	
+
 	// Set up a webhook URL where the timer will send a notification
 	// In a real application, this would be your server's URL
 	webhookURL := "https://httpbin.org/post"
 	webhookMethod := "POST"
 	webhookBody := `{"message": "Timer triggered"}`
-	
+
 	// Create callback configuration
 	webCallback := timers.CreateWebCallback(
-		webhookURL, 
-		webhookMethod, 
+		webhookURL,
+		webhookMethod,
 		map[string]string{
 			"Content-Type": "application/json",
 		},
 		&webhookBody,
 	)
-	
+
 	// Create the timer
 	webTimer, err := timersClient.CreateOnceTimer(
 		ctx,
@@ -77,16 +77,16 @@ func main() {
 		webCallback,
 		map[string]interface{}{
 			"description": "This timer sends a POST request to httpbin.org",
-			"created_by": "Globus Go SDK Example",
+			"created_by":  "Globus Go SDK Example",
 		},
 	)
-	
+
 	if err != nil {
 		fmt.Printf("Error creating one-time timer: %v\n", err)
 	} else {
 		fmt.Printf("Created one-time timer with ID: %s\n", webTimer.ID)
 		fmt.Printf("Timer will run at: %s\n", webTimer.NextDue.Format(time.RFC3339))
-		
+
 		// Clean up the timer after demo
 		defer func() {
 			fmt.Printf("Cleaning up timer: %s\n", webTimer.ID)
@@ -96,14 +96,14 @@ func main() {
 			}
 		}()
 	}
-	
+
 	// Example 2: Create a recurring timer
 	fmt.Println("\n=== Example 2: Recurring Timer ===")
-	
+
 	// Create a recurring timer that runs every hour
 	recurringStartTime := time.Now().Add(1 * time.Hour)
 	endTime := time.Now().Add(24 * time.Hour) // Runs for 24 hours
-	
+
 	// Create the webhook callback
 	recurringCallback := timers.CreateWebCallback(
 		"https://httpbin.org/post",
@@ -113,7 +113,7 @@ func main() {
 		},
 		nil,
 	)
-	
+
 	// Create the timer
 	recurringTimer, err := timersClient.CreateRecurringTimer(
 		ctx,
@@ -126,14 +126,14 @@ func main() {
 			"description": "This timer runs every hour for one day",
 		},
 	)
-	
+
 	if err != nil {
 		fmt.Printf("Error creating recurring timer: %v\n", err)
 	} else {
 		fmt.Printf("Created recurring timer with ID: %s\n", recurringTimer.ID)
 		fmt.Printf("Timer will first run at: %s\n", recurringTimer.NextDue.Format(time.RFC3339))
 		fmt.Printf("Timer will end at: %s\n", endTime.Format(time.RFC3339))
-		
+
 		// Clean up the timer after demo
 		defer func() {
 			fmt.Printf("Cleaning up timer: %s\n", recurringTimer.ID)
@@ -143,24 +143,24 @@ func main() {
 			}
 		}()
 	}
-	
+
 	// Example 3: Create a timer with flow callback (if flow ID provided)
 	if flowID != "" {
 		fmt.Println("\n=== Example 3: Flow Callback Timer ===")
-		
+
 		// Create a timer to run a flow
 		flowStartTime := time.Now().Add(10 * time.Minute)
-		
+
 		// Create flow callback
 		flowCallback := timers.CreateFlowCallback(
 			flowID,
 			"Triggered by Globus Go SDK", // Label for the flow run
 			map[string]interface{}{ // Flow input
 				"message": "Hello from Timers API",
-				"source": "Globus Go SDK Example",
+				"source":  "Globus Go SDK Example",
 			},
 		)
-		
+
 		// Create the timer
 		flowTimer, err := timersClient.CreateOnceTimer(
 			ctx,
@@ -169,13 +169,13 @@ func main() {
 			flowCallback,
 			nil,
 		)
-		
+
 		if err != nil {
 			fmt.Printf("Error creating flow timer: %v\n", err)
 		} else {
 			fmt.Printf("Created flow timer with ID: %s\n", flowTimer.ID)
 			fmt.Printf("Flow will run at: %s\n", flowTimer.NextDue.Format(time.RFC3339))
-			
+
 			// Clean up the timer after demo
 			defer func() {
 				fmt.Printf("Cleaning up timer: %s\n", flowTimer.ID)
@@ -186,23 +186,23 @@ func main() {
 			}()
 		}
 	}
-	
+
 	// Example 4: List timers
 	fmt.Println("\n=== Example 4: List Timers ===")
-	
+
 	// Set options to limit results
 	limit := 10
 	listOptions := &timers.ListTimersOptions{
 		Limit: &limit,
 	}
-	
+
 	// List timers
 	timerList, err := timersClient.ListTimers(ctx, listOptions)
 	if err != nil {
 		fmt.Printf("Error listing timers: %v\n", err)
 	} else {
 		fmt.Printf("Found %d timers (total: %d)\n", len(timerList.Timers), timerList.Total)
-		
+
 		// Print timer details
 		for i, timer := range timerList.Timers {
 			fmt.Printf("%d. %s (ID: %s)\n", i+1, timer.Name, timer.ID)
@@ -215,11 +215,11 @@ func main() {
 			fmt.Println()
 		}
 	}
-	
+
 	// Example 5: Pause and resume timer
 	if webTimer != nil {
 		fmt.Println("\n=== Example 5: Pause and Resume Timer ===")
-		
+
 		// Pause the timer
 		pausedTimer, err := timersClient.PauseTimer(ctx, webTimer.ID)
 		if err != nil {
@@ -228,7 +228,7 @@ func main() {
 			fmt.Printf("Paused timer %s\n", pausedTimer.ID)
 			fmt.Printf("Timer status: %s\n", pausedTimer.Status)
 		}
-		
+
 		// Get the timer to verify status
 		timer, err := timersClient.GetTimer(ctx, webTimer.ID)
 		if err != nil {
@@ -236,7 +236,7 @@ func main() {
 		} else {
 			fmt.Printf("Timer status after pause: %s\n", timer.Status)
 		}
-		
+
 		// Resume the timer
 		resumedTimer, err := timersClient.ResumeTimer(ctx, webTimer.ID)
 		if err != nil {
@@ -246,6 +246,6 @@ func main() {
 			fmt.Printf("Timer status: %s\n", resumedTimer.Status)
 		}
 	}
-	
+
 	fmt.Println("\nCleanup will happen now...")
 }

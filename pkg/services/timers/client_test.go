@@ -70,7 +70,13 @@ func TestCreateTimer(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := NewClient("test-token", WithBaseURL(server.URL+"/"))
+	client, err := NewClient(
+		WithAccessToken("test-token"),
+		WithBaseURL(server.URL+"/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 
 	// Create a test timer request
 	flowID := "test-flow-id"
@@ -161,7 +167,13 @@ func TestGetTimer(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := NewClient("test-token", WithBaseURL(server.URL+"/"))
+	client, err := NewClient(
+		WithAccessToken("test-token"),
+		WithBaseURL(server.URL+"/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 
 	// Get timer
 	timer, err := client.GetTimer(context.Background(), "test-timer-id")
@@ -207,12 +219,12 @@ func TestListTimers(t *testing.T) {
 		flowID := "test-flow-id"
 		flowLabel := "Test Flow"
 		nextPage := "next-page-token"
-		
+
 		// Create two timers
 		timer1 := Timer{
-			ID:         "test-timer-id-1",
-			Name:       "Test Timer 1",
-			Owner:      "test-user",
+			ID:    "test-timer-id-1",
+			Name:  "Test Timer 1",
+			Owner: "test-user",
 			Schedule: &Schedule{
 				Type:      string(ScheduleTypeOnce),
 				StartTime: &future,
@@ -227,11 +239,11 @@ func TestListTimers(t *testing.T) {
 			NextDue:    &future,
 			CreateTime: now,
 		}
-		
+
 		timer2 := Timer{
-			ID:         "test-timer-id-2",
-			Name:       "Test Timer 2",
-			Owner:      "test-user",
+			ID:    "test-timer-id-2",
+			Name:  "Test Timer 2",
+			Owner: "test-user",
 			Schedule: &Schedule{
 				Type:      string(ScheduleTypeRecurring),
 				StartTime: &now,
@@ -246,7 +258,7 @@ func TestListTimers(t *testing.T) {
 			NextDue:    &future,
 			CreateTime: now,
 		}
-		
+
 		// Create timer list
 		timerList := TimerList{
 			Timers:      []Timer{timer1, timer2},
@@ -262,7 +274,13 @@ func TestListTimers(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := NewClient("test-token", WithBaseURL(server.URL+"/"))
+	client, err := NewClient(
+		WithAccessToken("test-token"),
+		WithBaseURL(server.URL+"/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 
 	// Set up list options
 	limit := 10

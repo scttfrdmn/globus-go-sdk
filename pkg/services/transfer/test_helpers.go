@@ -32,8 +32,8 @@ type DeleteItemOptions struct {
 func (c *Client) DeleteItem(ctx context.Context, options *DeleteItemOptions) error {
 	// Create a delete task with just one item
 	request := &DeleteTaskRequest{
-		DataType: "delete",
-		Label:    "Delete item " + options.Path,
+		DataType:   "delete",
+		Label:      "Delete item " + options.Path,
 		EndpointID: options.EndpointID,
 		Items: []DeleteItem{
 			{
@@ -105,7 +105,7 @@ func (c *Client) GetTaskEvents(ctx context.Context, taskID string, options *GetT
 	}
 
 	var eventList TaskEventList
-	err := c.doRequest(ctx, "GET", "task/"+taskID+"/event_list", query, nil, &eventList)
+	err := c.doRequestLowLevel(ctx, "GET", "task/"+taskID+"/event_list", query, nil, &eventList)
 	if err != nil {
 		return nil, err
 	}
@@ -139,7 +139,7 @@ func (c *Client) UpdateTaskLabel(ctx context.Context, options *UpdateTaskLabelOp
 	}
 
 	var result OperationResult
-	err := c.doRequest(ctx, "POST", "task/"+options.TaskID, nil, body, &result)
+	err := c.doRequestLowLevel(ctx, "POST", "task/"+options.TaskID, nil, body, &result)
 	if err != nil {
 		return err
 	}

@@ -50,10 +50,10 @@ func main() {
 	state := fmt.Sprintf("state-%d", time.Now().UnixNano())
 
 	// Get the authorization URL
-	authURL := authClient.GetAuthorizationURL(state, 
-		pkg.AuthScope,           // Basic authentication
-		pkg.TransferScope,       // Transfer service access
-		pkg.GroupsScope,         // Groups service access
+	authURL := authClient.GetAuthorizationURL(state,
+		pkg.AuthScope,     // Basic authentication
+		pkg.TransferScope, // Transfer service access
+		pkg.GroupsScope,   // Groups service access
 	)
 
 	fmt.Printf("Please visit the following URL to log in:\n\n%s\n\n", authURL)
@@ -172,7 +172,7 @@ func mfaHandler(challenge *auth.MFAChallenge) (*auth.MFAResponse, error) {
 	fmt.Printf("Challenge ID: %s\n", challenge.ChallengeID)
 	fmt.Printf("Type: %s\n", challenge.Type)
 	fmt.Printf("Prompt: %s\n", challenge.Prompt)
-	
+
 	fmt.Printf("Allowed types: %s\n\n", strings.Join(challenge.AllowedTypes, ", "))
 
 	// Ask the user for the MFA code

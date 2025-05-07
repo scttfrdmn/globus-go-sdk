@@ -108,7 +108,7 @@ func TestMFAChallenge(t *testing.T) {
 	client, err := NewClient(
 		WithClientID("test_client_id"),
 		WithClientSecret("test_client_secret"),
-		WithCoreOption(core.WithBaseURL(server.URL + "/")),
+		WithCoreOption(core.WithBaseURL(server.URL+"/")),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create auth client: %v", err)

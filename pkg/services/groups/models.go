@@ -24,8 +24,8 @@ type Group struct {
 	SignAgreementMessage  string    `json:"sign_agreement_message,omitempty"`
 	// Additional fields
 	Policies              map[string]interface{} `json:"policies,omitempty"`
-	EnforceProvisionRules bool              `json:"enforce_provision_rules,omitempty"`
-	ProvisionRules        []ProvisionRule   `json:"provision_rules,omitempty"`
+	EnforceProvisionRules bool                   `json:"enforce_provision_rules,omitempty"`
+	ProvisionRules        []ProvisionRule        `json:"provision_rules,omitempty"`
 }
 
 // ProvisionRule represents a rule for provisioning group membership
@@ -39,27 +39,27 @@ type ProvisionRule struct {
 
 // GroupCreate represents the data needed to create a new group
 type GroupCreate struct {
-	DATA_TYPE             string            `json:"DATA_TYPE"`
-	Name                  string            `json:"name"`
-	Description           string            `json:"description,omitempty"`
-	ParentID              string            `json:"parent_id,omitempty"`
-	PublicGroup           bool              `json:"public_group,omitempty"`
-	RequiresSignAgreement bool              `json:"requires_sign_agreement,omitempty"`
-	SignAgreementMessage  string            `json:"sign_agreement_message,omitempty"`
-	EnforceProvisionRules bool              `json:"enforce_provision_rules,omitempty"`
+	DATA_TYPE             string                 `json:"DATA_TYPE"`
+	Name                  string                 `json:"name"`
+	Description           string                 `json:"description,omitempty"`
+	ParentID              string                 `json:"parent_id,omitempty"`
+	PublicGroup           bool                   `json:"public_group,omitempty"`
+	RequiresSignAgreement bool                   `json:"requires_sign_agreement,omitempty"`
+	SignAgreementMessage  string                 `json:"sign_agreement_message,omitempty"`
+	EnforceProvisionRules bool                   `json:"enforce_provision_rules,omitempty"`
 	Policies              map[string]interface{} `json:"policies,omitempty"`
 }
 
 // GroupUpdate represents the data to update in a group
 type GroupUpdate struct {
-	DATA_TYPE             string            `json:"DATA_TYPE"`
-	Name                  string            `json:"name,omitempty"`
-	Description           string            `json:"description,omitempty"`
-	ParentID              string            `json:"parent_id,omitempty"`
-	PublicGroup           *bool             `json:"public_group,omitempty"`
-	RequiresSignAgreement *bool             `json:"requires_sign_agreement,omitempty"`
-	SignAgreementMessage  string            `json:"sign_agreement_message,omitempty"`
-	EnforceProvisionRules *bool             `json:"enforce_provision_rules,omitempty"`
+	DATA_TYPE             string                 `json:"DATA_TYPE"`
+	Name                  string                 `json:"name,omitempty"`
+	Description           string                 `json:"description,omitempty"`
+	ParentID              string                 `json:"parent_id,omitempty"`
+	PublicGroup           *bool                  `json:"public_group,omitempty"`
+	RequiresSignAgreement *bool                  `json:"requires_sign_agreement,omitempty"`
+	SignAgreementMessage  string                 `json:"sign_agreement_message,omitempty"`
+	EnforceProvisionRules *bool                  `json:"enforce_provision_rules,omitempty"`
 	Policies              map[string]interface{} `json:"policies,omitempty"`
 }
 
@@ -82,13 +82,13 @@ type ListGroupsOptions struct {
 
 // Member represents a group member
 type Member struct {
-	DATA_TYPE         string    `json:"DATA_TYPE"`
-	IdentityID        string    `json:"identity_id"`
-	Username          string    `json:"username"`
-	Email             string    `json:"email"`
-	Status            string    `json:"status"`
-	RoleID            string    `json:"role_id"`
-	Role              Role      `json:"role"`
+	DATA_TYPE  string `json:"DATA_TYPE"`
+	IdentityID string `json:"identity_id"`
+	Username   string `json:"username"`
+	Email      string `json:"email"`
+	Status     string `json:"status"`
+	RoleID     string `json:"role_id"`
+	Role       Role   `json:"role"`
 	// Additional fields
 	Name              string    `json:"name,omitempty"`
 	Organization      string    `json:"organization,omitempty"`

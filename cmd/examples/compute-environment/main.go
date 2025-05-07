@@ -309,24 +309,24 @@ func main() {
 	maxAttempts := 10
 	for i := 0; i < maxAttempts; i++ {
 		time.Sleep(3 * time.Second)
-		
+
 		taskStatus, err := computeClient.GetTaskStatus(ctx, task.TaskID)
 		if err != nil {
 			log.Printf("Error checking task status: %v", err)
 			continue
 		}
-		
+
 		fmt.Printf("Task status: %s\n", taskStatus.Status)
-		
+
 		if taskStatus.Status == "SUCCESS" {
 			fmt.Println("\n=== Function Execution Results ===")
 			fmt.Printf("Task ID: %s\n", taskStatus.TaskID)
-			
+
 			// Extract and display environment information
 			result, ok := taskStatus.Result.(map[string]interface{})
 			if ok {
 				fmt.Println("\nExecution Status:", result["status"])
-				
+
 				// Show environment variables used
 				if env, ok := result["environment"].(map[string]interface{}); ok {
 					if vars, ok := env["available_vars"].(map[string]interface{}); ok {
@@ -335,7 +335,7 @@ func main() {
 							fmt.Printf("  %s: %v\n", k, v)
 						}
 					}
-					
+
 					// Show resource information
 					if res, ok := env["resource_info"].(map[string]interface{}); ok {
 						fmt.Println("\nResource Information:")
@@ -344,7 +344,7 @@ func main() {
 						}
 					}
 				}
-				
+
 				// Show data processing results
 				if proc, ok := result["data_processing"].(map[string]interface{}); ok {
 					fmt.Println("\nData Processing Results:")
@@ -355,13 +355,13 @@ func main() {
 			} else {
 				fmt.Printf("Result: %v\n", taskStatus.Result)
 			}
-			
+
 			break
 		} else if taskStatus.Status == "FAILED" {
 			fmt.Printf("Task failed: %s\n", taskStatus.Exception)
 			break
 		}
-		
+
 		if i == maxAttempts-1 {
 			fmt.Println("Task is still running. Check the status manually later.")
 		}
@@ -385,7 +385,7 @@ func main() {
 		log.Printf("Failed to update environment: %v", err)
 	} else {
 		fmt.Printf("Environment updated: %s\n", updatedEnv.ID)
-		fmt.Printf("Updated variables - LOG_LEVEL: %s, DEBUG: %s\n", 
+		fmt.Printf("Updated variables - LOG_LEVEL: %s, DEBUG: %s\n",
 			updatedEnv.Variables["LOG_LEVEL"], updatedEnv.Variables["DEBUG"])
 	}
 

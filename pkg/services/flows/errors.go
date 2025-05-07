@@ -2,10 +2,19 @@
 // SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 package flows
 
+// This file defines error types specific to the Flows service, as well as
+// methods for checking error types. The error handling is designed to work
+// with both service-specific errors (like FlowNotFoundError) and generic
+// core.Error instances that might be returned from the underlying HTTP client.
+// This robust error handling enables consistent error checking regardless of
+// whether errors are created by the service client or by the core HTTP layer.
+
 import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 )
 
 // ErrorResponse represents an error response from the Globus Flows API.
@@ -159,36 +168,92 @@ func parseResourceIDs(resourceID string) (string, string) {
 
 // IsFlowNotFoundError checks if an error is a FlowNotFoundError.
 func IsFlowNotFoundError(err error) bool {
-	_, ok := err.(*FlowNotFoundError)
-	return ok
+	// Direct type check
+	if _, ok := err.(*FlowNotFoundError); ok {
+		return true
+	}
+
+	// Check if it's a core.Error with 404 status
+	if core.IsNotFound(err) {
+		return true
+	}
+
+	return false
 }
 
 // IsRunNotFoundError checks if an error is a RunNotFoundError.
 func IsRunNotFoundError(err error) bool {
-	_, ok := err.(*RunNotFoundError)
-	return ok
+	// Direct type check
+	if _, ok := err.(*RunNotFoundError); ok {
+		return true
+	}
+
+	// Check if it's a core.Error with 404 status
+	if core.IsNotFound(err) {
+		return true
+	}
+
+	return false
 }
 
 // IsActionProviderNotFoundError checks if an error is an ActionProviderNotFoundError.
 func IsActionProviderNotFoundError(err error) bool {
-	_, ok := err.(*ActionProviderNotFoundError)
-	return ok
+	// Direct type check
+	if _, ok := err.(*ActionProviderNotFoundError); ok {
+		return true
+	}
+
+	// Check if it's a core.Error with 404 status
+	if core.IsNotFound(err) {
+		return true
+	}
+
+	return false
 }
 
 // IsActionRoleNotFoundError checks if an error is an ActionRoleNotFoundError.
 func IsActionRoleNotFoundError(err error) bool {
-	_, ok := err.(*ActionRoleNotFoundError)
-	return ok
+	// Direct type check
+	if _, ok := err.(*ActionRoleNotFoundError); ok {
+		return true
+	}
+
+	// Check if it's a core.Error with 404 status
+	if core.IsNotFound(err) {
+		return true
+	}
+
+	return false
 }
 
 // IsForbiddenError checks if an error is a ForbiddenError.
 func IsForbiddenError(err error) bool {
-	_, ok := err.(*ForbiddenError)
-	return ok
+	// Direct type check
+	if _, ok := err.(*ForbiddenError); ok {
+		return true
+	}
+
+	// Check if it's a core.Error with 403 status
+	coreErr, ok := err.(*core.Error)
+	if ok && coreErr.StatusCode == http.StatusForbidden {
+		return true
+	}
+
+	return false
 }
 
 // IsValidationError checks if an error is a ValidationError.
 func IsValidationError(err error) bool {
-	_, ok := err.(*ValidationError)
-	return ok
+	// Direct type check
+	if _, ok := err.(*ValidationError); ok {
+		return true
+	}
+
+	// Check if it's a core.Error with 400 status
+	coreErr, ok := err.(*core.Error)
+	if ok && coreErr.StatusCode == http.StatusBadRequest {
+		return true
+	}
+
+	return false
 }

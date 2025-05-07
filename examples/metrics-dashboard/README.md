@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors -->
 # Metrics Dashboard Example
 
 This example demonstrates the performance monitoring and metrics capabilities of the Globus Go SDK.

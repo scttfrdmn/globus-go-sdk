@@ -33,12 +33,12 @@ func (t *TokenSet) CanRefresh() bool {
 
 // Entry represents a token entry in the storage
 type Entry struct {
-	Resource    string    `json:"resource"`
-	AccessToken string    `json:"access_token"`
-	RefreshToken string   `json:"refresh_token,omitempty"`
-	ExpiresAt   time.Time `json:"expires_at"`
-	Scope       string    `json:"scope,omitempty"`
-	TokenSet    *TokenSet `json:"-"` // Used for convenience, not serialized
+	Resource     string    `json:"resource"`
+	AccessToken  string    `json:"access_token"`
+	RefreshToken string    `json:"refresh_token,omitempty"`
+	ExpiresAt    time.Time `json:"expires_at"`
+	Scope        string    `json:"scope,omitempty"`
+	TokenSet     *TokenSet `json:"-"` // Used for convenience, not serialized
 }
 
 // Storage defines the interface for storing and retrieving tokens
@@ -86,7 +86,7 @@ func (s *MemoryStorage) Store(entry *Entry) error {
 		ExpiresAt:    entry.ExpiresAt,
 		Scope:        entry.Scope,
 	}
-	
+
 	// If TokenSet is available, use its values
 	if entry.TokenSet != nil {
 		newEntry.AccessToken = entry.TokenSet.AccessToken
@@ -94,7 +94,7 @@ func (s *MemoryStorage) Store(entry *Entry) error {
 		newEntry.ExpiresAt = entry.TokenSet.ExpiresAt
 		newEntry.Scope = entry.TokenSet.Scope
 	}
-	
+
 	// Create a TokenSet for the new entry
 	newEntry.TokenSet = &TokenSet{
 		AccessToken:  newEntry.AccessToken,
@@ -103,7 +103,7 @@ func (s *MemoryStorage) Store(entry *Entry) error {
 		Scope:        newEntry.Scope,
 		ResourceID:   newEntry.Resource,
 	}
-	
+
 	s.entries[entry.Resource] = newEntry
 
 	return nil
@@ -127,7 +127,7 @@ func (s *MemoryStorage) Lookup(resource string) (*Entry, error) {
 		ExpiresAt:    entry.ExpiresAt,
 		Scope:        entry.Scope,
 	}
-	
+
 	// Create a TokenSet for the new entry
 	newEntry.TokenSet = &TokenSet{
 		AccessToken:  newEntry.AccessToken,
@@ -136,7 +136,7 @@ func (s *MemoryStorage) Lookup(resource string) (*Entry, error) {
 		Scope:        newEntry.Scope,
 		ResourceID:   newEntry.Resource,
 	}
-	
+
 	return newEntry, nil
 }
 

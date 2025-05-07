@@ -74,7 +74,7 @@ func TestConnectionPool(t *testing.T) {
 
 		// Check that connections are reused
 		stats := pool.GetStats()
-		t.Logf("Connection stats after concurrent requests: active=%d, hosts=%d", 
+		t.Logf("Connection stats after concurrent requests: active=%d, hosts=%d",
 			stats.TotalActive, stats.ActiveHosts)
 	})
 
@@ -95,12 +95,12 @@ func TestConnectionPool(t *testing.T) {
 
 		// Verify stats match configuration
 		if stats.Config.MaxIdleConnsPerHost != config.MaxIdleConnsPerHost {
-			t.Errorf("Expected MaxIdleConnsPerHost %d, got %d", 
+			t.Errorf("Expected MaxIdleConnsPerHost %d, got %d",
 				config.MaxIdleConnsPerHost, stats.Config.MaxIdleConnsPerHost)
 		}
 
 		if stats.Config.MaxConnsPerHost != config.MaxConnsPerHost {
-			t.Errorf("Expected MaxConnsPerHost %d, got %d", 
+			t.Errorf("Expected MaxConnsPerHost %d, got %d",
 				config.MaxConnsPerHost, stats.Config.MaxConnsPerHost)
 		}
 	})
@@ -174,13 +174,13 @@ func TestConnectionPoolManager(t *testing.T) {
 		if pool != poolAgain {
 			t.Error("Expected same pool from global manager")
 		}
-		
+
 		// Test GetHTTPClientForService
 		client := GetHTTPClientForService("clientTest", nil)
 		if client == nil {
 			t.Error("Expected non-nil HTTP client")
 		}
-		
+
 		// Client should be from a connection pool
 		if client.Transport == nil {
 			t.Error("Expected client to have transport from pool")

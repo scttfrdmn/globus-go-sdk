@@ -19,7 +19,7 @@ func (m *mockIterator) Next() (FileListItem, bool) {
 	if m.hasError || m.index >= len(m.files) {
 		return FileListItem{}, false
 	}
-	
+
 	// Get the current file and advance the index
 	file := m.files[m.index]
 	m.index++
@@ -52,14 +52,14 @@ func TestFileIteratorInterface(t *testing.T) {
 		{DataType: "file", Name: "file2.txt", Type: "file", Size: 2048, LastModified: "2021-01-01T00:00:00Z"},
 		{DataType: "file", Name: "file3.txt", Type: "file", Size: 3072, LastModified: "2021-01-01T00:00:00Z"},
 	}
-	
+
 	t.Run("Basic iteration", func(t *testing.T) {
 		// Create mock iterator
 		iterator := &mockIterator{
 			files: files,
 			index: 0,
 		}
-		
+
 		// Collect files from the iterator
 		var collected []FileListItem
 		for {
@@ -72,12 +72,12 @@ func TestFileIteratorInterface(t *testing.T) {
 			}
 			collected = append(collected, file)
 		}
-		
+
 		// Verify count
 		if len(collected) != len(files) {
 			t.Errorf("Expected %d files, got %d", len(files), len(collected))
 		}
-		
+
 		// Verify content
 		for i, file := range collected {
 			if file.Name != files[i].Name {
@@ -85,14 +85,14 @@ func TestFileIteratorInterface(t *testing.T) {
 			}
 		}
 	})
-	
+
 	t.Run("Reset functionality", func(t *testing.T) {
 		// Create mock iterator
 		iterator := &mockIterator{
 			files: files,
 			index: 0,
 		}
-		
+
 		// Read half the files
 		var firstHalf []FileListItem
 		halfCount := len(files) / 2
@@ -103,13 +103,13 @@ func TestFileIteratorInterface(t *testing.T) {
 			}
 			firstHalf = append(firstHalf, file)
 		}
-		
+
 		// Reset the iterator
 		err := iterator.Reset()
 		if err != nil {
 			t.Fatalf("Failed to reset iterator: %v", err)
 		}
-		
+
 		// Read all files
 		var allFiles []FileListItem
 		for {
@@ -119,13 +119,13 @@ func TestFileIteratorInterface(t *testing.T) {
 			}
 			allFiles = append(allFiles, file)
 		}
-		
+
 		// Verify we got all files after reset
 		if len(allFiles) != len(files) {
 			t.Errorf("Expected %d files after reset, got %d", len(files), len(allFiles))
 		}
 	})
-	
+
 	t.Run("Error handling", func(t *testing.T) {
 		// Create mock iterator with error
 		mockError := fmt.Errorf("test error")
@@ -135,13 +135,13 @@ func TestFileIteratorInterface(t *testing.T) {
 			hasError:  true,
 			mockError: mockError,
 		}
-		
+
 		// Try to get a file
 		_, ok := iterator.Next()
 		if ok {
 			t.Errorf("Expected Next() to return false when iterator has error")
 		}
-		
+
 		// Check error
 		err := iterator.Error()
 		if err == nil {
@@ -161,24 +161,24 @@ func TestCollectFiles(t *testing.T) {
 		{DataType: "dir", Name: "dir1", Type: "dir", LastModified: "2021-01-01T00:00:00Z"},
 		{DataType: "file", Name: "file2.txt", Type: "file", Size: 2048, LastModified: "2021-01-01T00:00:00Z"},
 	}
-	
+
 	// Create mock iterator
 	iterator := &mockIterator{
 		files: files,
 		index: 0,
 	}
-	
+
 	// Use CollectFiles to collect the files
 	collected, err := CollectFiles(iterator)
 	if err != nil {
 		t.Fatalf("CollectFiles failed: %v", err)
 	}
-	
+
 	// Verify count
 	if len(collected) != len(files) {
 		t.Errorf("Expected %d files, got %d", len(files), len(collected))
 	}
-	
+
 	// Verify content
 	for i, file := range collected {
 		if file.Name != files[i].Name {

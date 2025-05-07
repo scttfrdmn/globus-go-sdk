@@ -48,29 +48,29 @@ func main() {
 	if indexID == "" {
 		// List available indexes if no index ID is provided
 		fmt.Println("\n=== Available Indexes ===")
-		
+
 		indexes, err := searchClient.ListIndexes(ctx, nil)
 		if err != nil {
 			log.Fatalf("Failed to list indexes: %v", err)
 		}
-		
+
 		if len(indexes.Indexes) == 0 {
 			fmt.Println("No indexes found. Create an index first.")
-			
+
 			// Create a new index
 			fmt.Println("\n=== Creating New Index ===")
-			
+
 			timestamp := time.Now().Format("20060102_150405")
 			createRequest := &search.IndexCreateRequest{
 				DisplayName: fmt.Sprintf("SDK Example Index %s", timestamp),
 				Description: "An example index created by the Globus Go SDK",
 			}
-			
+
 			newIndex, err := searchClient.CreateIndex(ctx, createRequest)
 			if err != nil {
 				log.Fatalf("Failed to create index: %v", err)
 			}
-			
+
 			fmt.Printf("Created new index: %s (%s)\n", newIndex.DisplayName, newIndex.ID)
 			indexID = newIndex.ID
 		} else {
@@ -79,7 +79,7 @@ func main() {
 			for i, index := range indexes.Indexes {
 				fmt.Printf("%d. %s (%s)\n", i+1, index.DisplayName, index.ID)
 			}
-			
+
 			indexID = indexes.Indexes[0].ID
 			fmt.Printf("\nUsing first index: %s\n", indexID)
 		}
@@ -89,7 +89,7 @@ func main() {
 		if err != nil {
 			log.Fatalf("Failed to get index: %v", err)
 		}
-		
+
 		fmt.Printf("\n=== Index Details ===\n")
 		fmt.Printf("ID: %s\n", index.ID)
 		fmt.Printf("Name: %s\n", index.DisplayName)
@@ -100,7 +100,7 @@ func main() {
 
 	// Ingest some sample documents
 	fmt.Println("\n=== Ingesting Documents ===")
-	
+
 	timestamp := time.Now().Format("20060102_150405")
 	documents := []search.SearchDocument{
 		{
@@ -126,25 +126,25 @@ func main() {
 			VisibleTo: []string{"public"},
 		},
 	}
-	
+
 	ingestRequest := &search.IngestRequest{
 		IndexID:   indexID,
 		Documents: documents,
 	}
-	
+
 	ingestResponse, err := searchClient.IngestDocuments(ctx, ingestRequest)
 	if err != nil {
 		log.Fatalf("Failed to ingest documents: %v", err)
 	}
-	
+
 	fmt.Printf("Ingest task ID: %s\n", ingestResponse.Task.TaskID)
 	fmt.Printf("Documents: %d succeeded, %d failed, %d total\n",
 		ingestResponse.Succeeded, ingestResponse.Failed, ingestResponse.Total)
-	
+
 	// Wait for indexing to complete
 	fmt.Println("\nWaiting for indexing to complete...")
 	time.Sleep(3 * time.Second)
-	
+
 	// Get task status
 	taskStatus, err := searchClient.GetTaskStatus(ctx, ingestResponse.Task.TaskID)
 	if err != nil {
@@ -155,7 +155,7 @@ func main() {
 
 	// Search for documents
 	fmt.Println("\n=== Searching Documents ===")
-	
+
 	// First search using a general term
 	searchRequest := &search.SearchRequest{
 		IndexID: indexID,
@@ -164,22 +164,22 @@ func main() {
 			Limit: 10,
 		},
 	}
-	
+
 	searchResponse, err := searchClient.Search(ctx, searchRequest)
 	if err != nil {
 		log.Fatalf("Failed to search: %v", err)
 	}
-	
+
 	fmt.Printf("Found %d documents for query 'example'\n", searchResponse.Count)
-	
+
 	if len(searchResponse.Results) > 0 {
 		fmt.Println("\nResults:")
 		for i, result := range searchResponse.Results {
 			title := result.Content["title"]
-			fmt.Printf("%d. %s (Subject: %s, Score: %.2f)\n", 
+			fmt.Printf("%d. %s (Subject: %s, Score: %.2f)\n",
 				i+1, title, result.Subject, result.Score)
 		}
-		
+
 		// Print the first result as JSON for demonstration
 		firstResult := searchResponse.Results[0]
 		resultJSON, _ := json.MarshalIndent(firstResult, "", "  ")
@@ -190,7 +190,7 @@ func main() {
 
 	// Search with a more specific query
 	fmt.Println("\n=== Advanced Search ===")
-	
+
 	advancedRequest := &search.SearchRequest{
 		IndexID: indexID,
 		Query:   "tags:go",
@@ -198,13 +198,13 @@ func main() {
 			Limit: 10,
 		},
 	}
-	
+
 	advancedResponse, err := searchClient.Search(ctx, advancedRequest)
 	if err != nil {
 		log.Printf("Failed to perform advanced search: %v", err)
 	} else {
 		fmt.Printf("Found %d documents for query 'tags:go'\n", advancedResponse.Count)
-		
+
 		if len(advancedResponse.Results) > 0 {
 			fmt.Println("\nResults:")
 			for i, result := range advancedResponse.Results {

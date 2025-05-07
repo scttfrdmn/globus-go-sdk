@@ -87,7 +87,7 @@ func (t *Transport) logBody(body []byte) {
 	maxLen := 2048
 	bodyStr := string(body)
 	if len(bodyStr) > maxLen {
-		t.Logger.Printf("%s... [truncated %d/%d bytes]", 
+		t.Logger.Printf("%s... [truncated %d/%d bytes]",
 			bodyStr[:maxLen], maxLen, len(bodyStr))
 	} else {
 		t.Logger.Printf("%s", bodyStr)

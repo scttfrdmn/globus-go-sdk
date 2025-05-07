@@ -36,18 +36,18 @@ type Client struct {
 func NewClient(opts ...ClientOption) (*Client, error) {
 	// Apply default options
 	options := defaultOptions()
-	
+
 	// Apply user options
 	for _, opt := range opts {
 		opt(options)
 	}
-	
+
 	// Create the base client with core options
 	baseClient := core.NewClient(options.coreOptions...)
-	
+
 	// Create the transport
 	transportClient := transport.NewTransport(baseClient, &transport.Options{})
-	
+
 	client := &Client{
 		Client:       baseClient,
 		Transport:    transportClient,
@@ -55,7 +55,7 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 		ClientSecret: options.clientSecret,
 		RedirectURL:  options.redirectURL,
 	}
-	
+
 	return client, nil
 }
 
@@ -305,7 +305,7 @@ func (c *Client) IsTokenValid(ctx context.Context, token string) (bool, error) {
 	if err != nil {
 		return false, fmt.Errorf("failed to introspect token: %w", err)
 	}
-	
+
 	return tokenInfo.Active, nil
 }
 
@@ -316,11 +316,11 @@ func (c *Client) GetTokenExpiry(ctx context.Context, token string) (time.Time, b
 	if err != nil {
 		return time.Time{}, false, fmt.Errorf("failed to introspect token: %w", err)
 	}
-	
+
 	if !tokenInfo.Active {
 		return time.Time{}, false, nil
 	}
-	
+
 	// Calculate expiry time
 	expiry := time.Unix(tokenInfo.Exp, 0)
 	return expiry, true, nil
@@ -333,12 +333,12 @@ func (c *Client) ShouldRefresh(ctx context.Context, token string, threshold time
 	if err != nil {
 		return false, fmt.Errorf("failed to get token expiry: %w", err)
 	}
-	
+
 	if !valid {
 		// Token is not valid, it should be refreshed
 		return true, nil
 	}
-	
+
 	// Check if token will expire within the threshold
 	return time.Until(expiry) < threshold, nil
 }

@@ -30,36 +30,36 @@ func (t *TracingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 		}
 		req.Header.Set("X-Trace-ID", traceID)
 	}
-	
+
 	// Get logger with trace ID
 	logger := t.Logger
 	if logger != nil {
 		logger = logger.WithTraceID(traceID)
 	}
-	
+
 	// Log the request
 	if logger != nil && logger.HasTraceEnabled() {
 		logger.LogHTTPRequest(req.Method, req.URL.String(), req.Header)
 	}
-	
+
 	// Call pre-request hook if provided
 	if t.RequestHook != nil {
 		t.RequestHook(req)
 	}
-	
+
 	// Record start time
 	start := time.Now()
-	
+
 	// Send the request using the base transport
 	base := t.Base
 	if base == nil {
 		base = http.DefaultTransport
 	}
 	resp, err := base.RoundTrip(req)
-	
+
 	// Record elapsed time
 	elapsed := time.Since(start)
-	
+
 	if err != nil {
 		// Log error
 		if logger != nil {
@@ -69,24 +69,24 @@ func (t *TracingTransport) RoundTrip(req *http.Request) (*http.Response, error) 
 		}
 		return resp, err
 	}
-	
+
 	// Add trace ID to response
 	if resp != nil && resp.Header != nil {
 		resp.Header.Set("X-Trace-ID", traceID)
 	}
-	
+
 	// Log the response
 	if logger != nil && logger.HasTraceEnabled() {
 		if resp != nil {
 			logger.LogHTTPResponse(resp.StatusCode, resp.Header, elapsed)
 		}
 	}
-	
+
 	// Call post-response hook if provided
 	if t.ResponseHook != nil && resp != nil {
 		t.ResponseHook(resp, elapsed)
 	}
-	
+
 	return resp, err
 }
 

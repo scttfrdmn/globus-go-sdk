@@ -30,7 +30,7 @@ type Client struct {
 func NewClient(options ...ClientOption) *Client {
 	// Initialize with defaults
 	client := &Client{
-		HTTPClient:   &http.Client{
+		HTTPClient: &http.Client{
 			Timeout: time.Second * 30,
 		},
 		UserAgent:    "globus-go-sdk/1.0",

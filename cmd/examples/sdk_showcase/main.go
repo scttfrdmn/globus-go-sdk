@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/compute"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/flows"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/groups"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/search"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/flows"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/compute"
 )
 
 func main() {
@@ -32,10 +32,10 @@ func main() {
 	// Get access tokens (using client credentials for simplicity in this example)
 	// In a real application, you would likely use the authorization code flow
 	ctx := context.Background()
-	
+
 	// Get required scopes for all services
 	allScopes := pkg.GetScopesByService("auth", "groups", "transfer", "search", "flows", "compute")
-	
+
 	// Get token using client credentials
 	tokenResp, err := authClient.GetClientCredentialsToken(ctx, allScopes...)
 	if err != nil {
@@ -99,34 +99,34 @@ func main() {
 	// Demonstrate a file transfer (only if the user provided endpoint IDs)
 	sourceEndpointID := os.Getenv("SOURCE_ENDPOINT_ID")
 	destEndpointID := os.Getenv("DEST_ENDPOINT_ID")
-	
+
 	if sourceEndpointID != "" && destEndpointID != "" {
 		fmt.Println("\n=== Transfer Demonstration ===")
-		
+
 		// Create a test file at the source
 		sourcePath := "/~/test_transfer_" + time.Now().Format("20060102_150405") + ".txt"
 		destPath := "/~/received_test_file.txt"
-		
+
 		fmt.Printf("Starting transfer from %s to %s\n", sourcePath, destPath)
-		
+
 		// NOTE: Explicit endpoint activation has been removed.
 		// Modern Globus endpoints (v0.10+) automatically activate with properly scoped tokens.
 		// Just ensure your token has the proper permissions for the endpoints you're using.
-		
+
 		// Submit the transfer
 		options := map[string]interface{}{
 			"notify_on_succeeded": true,
 			"verify_checksum":     true,
 		}
-		
+
 		taskResponse, err := transferClient.SubmitTransfer(
-			ctx, 
+			ctx,
 			sourceEndpointID, sourcePath,
 			destEndpointID, destPath,
 			"SDK Example Transfer",
 			options,
 		)
-		
+
 		if err != nil {
 			log.Printf("Failed to submit transfer: %v", err)
 		} else {
@@ -134,7 +134,7 @@ func main() {
 			fmt.Printf("You can monitor this task using the Globus web interface\n")
 		}
 	}
-	
+
 	// Demonstrate Search API - List indexes
 	fmt.Println("\n=== Search API ===")
 	indexes, err := searchClient.ListIndexes(ctx, &search.ListIndexesOptions{
@@ -148,7 +148,7 @@ func main() {
 			fmt.Printf("%d. %s (%s)\n", i+1, index.DisplayName, index.ID)
 		}
 	}
-	
+
 	// Demonstrate Flows API - List flows
 	fmt.Println("\n=== Flows API ===")
 	flowsList, err := flowsClient.ListFlows(ctx, &flows.ListFlowsOptions{
@@ -162,7 +162,7 @@ func main() {
 			fmt.Printf("%d. %s (%s)\n", i+1, flow.Title, flow.ID)
 		}
 	}
-	
+
 	// Demonstrate Compute API - List endpoints
 	fmt.Println("\n=== Compute API ===")
 	compEndpoints, err := computeClient.ListEndpoints(ctx, &compute.ListEndpointsOptions{
@@ -173,10 +173,10 @@ func main() {
 	} else {
 		fmt.Printf("Found %d compute endpoints:\n", len(compEndpoints.Endpoints))
 		for i, endpoint := range compEndpoints.Endpoints {
-			fmt.Printf("%d. %s (%s) - Status: %s\n", 
+			fmt.Printf("%d. %s (%s) - Status: %s\n",
 				i+1, endpoint.Name, endpoint.ID, endpoint.Status)
 		}
 	}
-	
+
 	fmt.Println("\nSDK showcase complete!")
 }

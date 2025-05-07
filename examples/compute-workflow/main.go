@@ -21,7 +21,7 @@ func main() {
 	}
 
 	// Create a compute client
-	client := compute.NewClient(accessToken, 
+	client := compute.NewClient(accessToken,
 		core.WithLogLevel(core.LogLevelDebug),
 		core.WithHTTPTracing(true),
 	)
@@ -120,13 +120,13 @@ func createWorkflow(ctx context.Context, client *compute.Client) (*compute.Workf
 
 	// Create workflow request
 	request := &compute.WorkflowCreateRequest{
-		Name:         "Example Workflow",
-		Description:  "A workflow created by the example application",
-		Tasks:        tasks,
-		Dependencies: dependencies,
+		Name:          "Example Workflow",
+		Description:   "A workflow created by the example application",
+		Tasks:         tasks,
+		Dependencies:  dependencies,
 		ErrorHandling: "continue",
 		RetryPolicy: &compute.RetryPolicy{
-			MaxRetries: 3,
+			MaxRetries:    3,
 			RetryInterval: 5,
 		},
 		Public: false,
@@ -152,19 +152,19 @@ func monitorWorkflow(ctx context.Context, client *compute.Client, runID string) 
 	// Set a timeout context
 	timeout := 5 * time.Minute
 	pollInterval := 5 * time.Second
-	
+
 	// Using the built-in wait method
 	status, err := client.WaitForWorkflowCompletion(ctx, runID, timeout, pollInterval)
 	if err != nil {
 		return err
 	}
-	
+
 	fmt.Printf("Workflow completed with status: %s\n", status.Status)
-	
+
 	if status.Status == "FAILED" {
 		return fmt.Errorf("workflow failed: %s", status.Error)
 	}
-	
+
 	return nil
 }
 
@@ -229,18 +229,18 @@ func monitorTaskGroup(ctx context.Context, client *compute.Client, runID string)
 	// Set a timeout context
 	timeout := 5 * time.Minute
 	pollInterval := 5 * time.Second
-	
+
 	// Using the built-in wait method
 	status, err := client.WaitForTaskGroupCompletion(ctx, runID, timeout, pollInterval)
 	if err != nil {
 		return err
 	}
-	
+
 	fmt.Printf("Task group completed with status: %s\n", status.Status)
-	
+
 	if status.Status == "FAILED" {
 		return fmt.Errorf("task group failed: %s", status.Error)
 	}
-	
+
 	return nil
 }

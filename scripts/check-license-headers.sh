@@ -1,6 +1,6 @@
 #!/bin/bash
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2025 Scott Friedman and Project Contributors
+# SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 
 # This script checks that all source files have proper SPDX license headers
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2025 Scott Friedman and Project Contributors
+# SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 
 # This script standardizes all license headers in the codebase to the SPDX format
 
@@ -43,20 +43,20 @@ find . -name "*.go" -not -path "./vendor/*" | while read file; do
       # Insert after the second line
       sed -i.bak "2a\\
 // SPDX-License-Identifier: Apache-2.0\\
-// Copyright (c) 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 " "$file"
     else
       # Insert after the first line
       sed -i.bak "1a\\
 // SPDX-License-Identifier: Apache-2.0\\
-// Copyright (c) 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 " "$file"
     fi
   else
     # Insert at the beginning of the file
     sed -i.bak "1i\\
 // SPDX-License-Identifier: Apache-2.0\\
-// Copyright (c) 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 " "$file"
   fi
   
@@ -87,13 +87,13 @@ find . -name "*.sh" | while read file; do
     # Insert after shebang
     sed -i.bak "1a\\
 # SPDX-License-Identifier: Apache-2.0\\
-# Copyright (c) 2025 Scott Friedman and Project Contributors
+# SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 " "$file"
   else
     # Insert at the beginning of the file
     sed -i.bak "1i\\
 # SPDX-License-Identifier: Apache-2.0\\
-# Copyright (c) 2025 Scott Friedman and Project Contributors
+# SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 " "$file"
   fi
   
@@ -121,7 +121,7 @@ find . -name "*.md" | while read file; do
   # Insert at the beginning of the file
   sed -i.bak "1i\\
 <!-- SPDX-License-Identifier: Apache-2.0 -->\\
-<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
+<!-- SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors -->
 " "$file"
   
   # Remove backup file

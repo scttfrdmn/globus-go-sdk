@@ -682,6 +682,46 @@ If you identify a false positive:
    ```
 3. Configure the tool to exclude the false positive in future scans
 
+## Local Testing with Git Hooks
+
+Git hooks provide an effective way to run tests locally before code is committed or pushed to the repository.
+
+### Available Git Hooks
+
+The Globus Go SDK provides the following Git hooks:
+
+1. **Pre-commit Hook**:
+   - Runs license header checks
+   - Formats code with `go fmt`
+   - Runs linting with `golint` (if installed)
+   - Performs static analysis with `go vet`
+   - Runs unit tests in short mode
+
+2. **Pre-push Hook**:
+   - Runs all tests (including integration tests)
+   - Checks documentation
+   - Performs security scanning
+
+### Installing Git Hooks
+
+To install all hooks at once:
+
+```bash
+./scripts/install-all-hooks.sh
+```
+
+To install specific hooks:
+
+```bash
+# Install only pre-commit hook
+./scripts/install-hooks.sh
+
+# Install only pre-push hook
+./scripts/install-pre-push-hook.sh
+```
+
+For more details, see [Git Hooks](git-hooks.md).
+
 ## CI/CD Testing
 
 The Globus Go SDK includes comprehensive CI/CD pipelines to automatically test code changes.

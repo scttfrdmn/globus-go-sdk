@@ -1,6 +1,6 @@
 #!/bin/bash
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2025 Scott Friedman and Project Contributors
+# SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 
 # Script to run integration tests for the Globus Go SDK
 # This script checks for required environment variables and runs the tests

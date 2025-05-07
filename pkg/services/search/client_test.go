@@ -9,20 +9,19 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
-
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 )
 
 // Test mock server
-func setupMockServer(handler http.HandlerFunc) (*httptest.Server, *Client) {
+func setupMockServer(handler http.HandlerFunc) (*httptest.Server, *Client, error) {
 	server := httptest.NewServer(handler)
 
 	// Create a client that uses the test server
-	client := NewClient("test-token",
-		core.WithBaseURL(server.URL+"/"),
+	client, err := NewClient(
+		WithAccessToken("test-token"),
+		WithBaseURL(server.URL+"/"),
 	)
 
-	return server, client
+	return server, client, err
 }
 
 func TestListIndexes(t *testing.T) {
@@ -69,7 +68,10 @@ func TestListIndexes(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test list indexes
@@ -127,7 +129,10 @@ func TestGetIndex(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test get index
@@ -191,7 +196,10 @@ func TestCreateIndex(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test create index
@@ -266,7 +274,10 @@ func TestUpdateIndex(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test update index
@@ -318,11 +329,14 @@ func TestDeleteIndex(t *testing.T) {
 		w.WriteHeader(http.StatusNoContent)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test delete index
-	err := client.DeleteIndex(context.Background(), "test-index-id")
+	err = client.DeleteIndex(context.Background(), "test-index-id")
 	if err != nil {
 		t.Fatalf("DeleteIndex() error = %v", err)
 	}
@@ -391,7 +405,10 @@ func TestSearch(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test search
@@ -472,7 +489,10 @@ func TestIngestDocuments(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test ingest documents
@@ -573,7 +593,10 @@ func TestDeleteDocuments(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test delete documents
@@ -649,7 +672,10 @@ func TestGetTaskStatus(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test get task status

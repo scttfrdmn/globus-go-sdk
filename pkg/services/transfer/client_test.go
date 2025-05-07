@@ -29,7 +29,7 @@ func setupMockServer(handlerFunc http.HandlerFunc) (*httptest.Server, *Client) {
 			json.NewEncoder(w).Encode(response)
 			return
 		}
-		
+
 		// Pass other requests to the original handler
 		handlerFunc(w, r)
 	})
@@ -73,7 +73,7 @@ func (a *testAuthorizer) GetToken() string {
 	return a.token
 }
 
-func TestBuildURL(t *testing.T) {
+func TestBuildURLLowLevel(t *testing.T) {
 	client, err := NewClient(
 		WithAuthorizer(mockAuthorizer("test-access-token")),
 		WithCoreOption(core.WithBaseURL("https://example.com")),
@@ -83,7 +83,7 @@ func TestBuildURL(t *testing.T) {
 	}
 
 	// Test with no query parameters
-	url := client.buildURL("test/path", nil)
+	url := client.buildURLLowLevel("test/path", nil)
 	if url != "https://example.com/test/path" {
 		t.Errorf("buildURL() = %v, want %v", url, "https://example.com/test/path")
 	}
@@ -93,7 +93,7 @@ func TestBuildURL(t *testing.T) {
 		"param1": {"value1"},
 		"param2": {"value2"},
 	}
-	url = client.buildURL("test/path", query)
+	url = client.buildURLLowLevel("test/path", query)
 	if url != "https://example.com/test/path?param1=value1&param2=value2" {
 		t.Errorf("buildURL() with query = %v, want %v", url, "https://example.com/test/path?param1=value1&param2=value2")
 	}
@@ -106,7 +106,7 @@ func TestBuildURL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create client: %v", err)
 	}
-	url = client.buildURL("test/path", nil)
+	url = client.buildURLLowLevel("test/path", nil)
 	if url != "https://example.com/test/path" {
 		t.Errorf("buildURL() with trailing slash = %v, want %v", url, "https://example.com/test/path")
 	}

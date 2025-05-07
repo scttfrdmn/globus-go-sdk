@@ -47,7 +47,7 @@ func WithLogLevel(level LogLevel) core.ClientOption {
 		// If we already have an enhanced logger, update its level
 		if logger, ok := c.Logger.(*EnhancedLogger); ok {
 			logger.SetLevel(level)
-		} else if logger, ok := c.Logger.(*core.DefaultLogger); ok {
+		} else if _, ok := c.Logger.(*core.DefaultLogger); ok {
 			// If it's a default logger, set its level
 			c.Logger = core.NewDefaultLogger(nil, core.LogLevel(level))
 		} else {
@@ -105,7 +105,7 @@ func WithTracing(traceID string) core.ClientOption {
 		// Create a tracing transport
 		tracingTransport := NewTracingTransport(transport, logger)
 		c.HTTPClient.Transport = tracingTransport
-		
+
 		// Update the logger
 		c.Logger = logger
 	}

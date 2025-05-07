@@ -8,27 +8,31 @@ import (
 
 // WithAPIVersionCheck configures whether API version checking is enabled
 func (c *Config) WithAPIVersionCheck(enabled bool) *Config {
-	if c.VersionCheck == nil {
-		c.VersionCheck = core.NewVersionCheck()
+	vc := c.GetVersionCheck()
+	if vc == nil {
+		vc = core.NewVersionCheck()
+		c.SetVersionCheck(vc)
 	}
-	
+
 	if enabled {
-		c.VersionCheck.EnableVersionCheck()
+		vc.EnableVersionCheck()
 	} else {
-		c.VersionCheck.DisableVersionCheck()
+		vc.DisableVersionCheck()
 	}
-	
+
 	return c
 }
 
 // WithCustomAPIVersion sets a custom API version for a specific service
 func (c *Config) WithCustomAPIVersion(service, version string) *Config {
-	if c.VersionCheck == nil {
-		c.VersionCheck = core.NewVersionCheck()
+	vc := c.GetVersionCheck()
+	if vc == nil {
+		vc = core.NewVersionCheck()
+		c.SetVersionCheck(vc)
 	}
-	
+
 	// Ignore errors here, they will be caught when the service is used
-	c.VersionCheck.SetCustomVersion(service, version)
-	
+	vc.SetCustomVersion(service, version)
+
 	return c
 }

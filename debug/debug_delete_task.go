@@ -67,7 +67,7 @@ func main() {
 	// Create a test directory to delete
 	timestamp := time.Now().Format("20060102_150405")
 	testPath := fmt.Sprintf("globus-test/debug_delete_%s", timestamp)
-	
+
 	fmt.Printf("Creating test directory: %s\n", testPath)
 	err = client.Mkdir(ctx, endpointID, testPath)
 	if err != nil {
@@ -77,15 +77,15 @@ func main() {
 
 	// Now attempt to delete the directory using DeleteTaskRequest
 	fmt.Println("\nAttempting to delete directory using DeleteTaskRequest...")
-	
+
 	deleteRequest := &transfer.DeleteTaskRequest{
 		DataType:   "delete",
 		Label:      fmt.Sprintf("Debug Delete Task %s", timestamp),
 		EndpointID: endpointID,
 		Items: []transfer.DeleteItem{
 			{
-				Path:      testPath,
-				Recursive: true,
+				DataType: "delete_item",
+				Path:     testPath,
 			},
 		},
 	}
@@ -100,7 +100,7 @@ func main() {
 		fmt.Println("A similar fix might be needed for DeleteItem in CreateDeleteTask")
 	} else {
 		fmt.Printf("SUCCESS: Delete task created with task ID: %s\n", resp.TaskID)
-		
+
 		// Wait a moment and check task status
 		time.Sleep(2 * time.Second)
 		task, err := client.GetTask(ctx, resp.TaskID)

@@ -10,8 +10,6 @@ import (
 	"strconv"
 	"testing"
 	"time"
-
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 )
 
 func TestFlowIterator(t *testing.T) {
@@ -72,7 +70,13 @@ func TestFlowIterator(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := NewClient("test-token", core.WithBaseURL(server.URL+"/"))
+	client, err := NewClient(
+		WithAccessToken("test-token"),
+		WithBaseURL(server.URL+"/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 
 	// Create iterator
 	iterator := client.GetFlowsIterator(&ListFlowsOptions{
@@ -166,7 +170,13 @@ func TestRunIterator(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := NewClient("test-token", core.WithBaseURL(server.URL+"/"))
+	client, err := NewClient(
+		WithAccessToken("test-token"),
+		WithBaseURL(server.URL+"/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 
 	// Create iterator
 	iterator := client.GetRunsIterator(&ListRunsOptions{
@@ -264,7 +274,13 @@ func TestRunLogIterator(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := NewClient("test-token", core.WithBaseURL(server.URL+"/"))
+	client, err := NewClient(
+		WithAccessToken("test-token"),
+		WithBaseURL(server.URL+"/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 
 	// Create iterator
 	iterator := client.GetRunLogsIterator(runID, pageSize)

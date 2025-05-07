@@ -388,7 +388,7 @@ func TestIsTokenValid(t *testing.T) {
 
 		// Return different responses based on token value
 		token := r.Form.Get("token")
-		
+
 		var response TokenInfo
 		if token == "valid-token" {
 			response = TokenInfo{
@@ -445,7 +445,7 @@ func TestGetTokenExpiry(t *testing.T) {
 		// Parse form and check token
 		r.ParseForm()
 		token := r.Form.Get("token")
-		
+
 		var response TokenInfo
 		if token == "valid-token" {
 			response = TokenInfo{
@@ -475,7 +475,7 @@ func TestGetTokenExpiry(t *testing.T) {
 		t.Error("GetTokenExpiry() returned not valid for valid token")
 	}
 	if expiry.Unix() != expiryTime {
-		t.Errorf("GetTokenExpiry() returned wrong expiry time: got %v, want %v", 
+		t.Errorf("GetTokenExpiry() returned wrong expiry time: got %v, want %v",
 			expiry.Unix(), expiryTime)
 	}
 
@@ -500,7 +500,7 @@ func TestShouldRefresh(t *testing.T) {
 		// Parse form and check token
 		r.ParseForm()
 		token := r.Form.Get("token")
-		
+
 		var response TokenInfo
 		if token == "expiring-soon-token" {
 			// Token expires in 30 seconds
@@ -589,7 +589,7 @@ func TestCreateRefreshableTokenAuthorizer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create auth client: %v", err)
 	}
-	
+
 	authorizer := client.CreateRefreshableTokenAuthorizer("test-access-token", "test-refresh-token", 3600)
 
 	if authorizer.AccessToken != "test-access-token" {
@@ -618,7 +618,7 @@ func TestCreateStaticTokenAuthorizer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create auth client: %v", err)
 	}
-	
+
 	authorizer := client.CreateStaticTokenAuthorizer("test-access-token")
 
 	if authorizer.Token != "test-access-token" {

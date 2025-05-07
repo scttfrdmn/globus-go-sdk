@@ -170,7 +170,7 @@ func analyzeToken(token, clientID, clientSecret string) {
 		if tokenInfo.Scope != "" {
 			scopes := strings.Split(tokenInfo.Scope, " ")
 			fmt.Printf("ℹ️  Token has %d scopes: %s\n", len(scopes), tokenInfo.Scope)
-			
+
 			// Check for overly permissive scopes
 			if contains(scopes, "openid email profile") && len(scopes) > 3 {
 				fmt.Println("⚠️  Token has both identity and service scopes (not recommended for service tokens)")

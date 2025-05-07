@@ -4,7 +4,7 @@ package auth
 
 import (
 	"context"
-	
+
 	coreauthlib "github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
 )
@@ -30,7 +30,7 @@ func (a *AuthorizerAdapter) GetAuthorizationHeader(ctx ...context.Context) (stri
 	} else {
 		c = context.Background()
 	}
-	
+
 	return a.authorizer.GetAuthorizationHeader(c)
 }
 

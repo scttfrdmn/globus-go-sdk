@@ -219,7 +219,7 @@ func (l *EnhancedLogger) log(level string, format string, v ...interface{}) {
 	if l.format == FormatText {
 		// Plain text format
 		prefix := fmt.Sprintf("[%s]", level)
-		
+
 		// Add fields if available
 		if len(l.fields) > 0 {
 			prefix += " "
@@ -227,7 +227,7 @@ func (l *EnhancedLogger) log(level string, format string, v ...interface{}) {
 				prefix += fmt.Sprintf("%s=%v ", k, v)
 			}
 		}
-		
+
 		l.logger.Printf("%s %s", prefix, message)
 	} else {
 		// JSON format

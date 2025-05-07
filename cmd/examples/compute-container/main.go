@@ -201,19 +201,19 @@ func main() {
 	maxAttempts := 10
 	for i := 0; i < maxAttempts; i++ {
 		time.Sleep(3 * time.Second)
-		
+
 		taskStatus, err := computeClient.GetTaskStatus(ctx, task.TaskID)
 		if err != nil {
 			log.Printf("Error checking task status: %v", err)
 			continue
 		}
-		
+
 		fmt.Printf("Task status: %s\n", taskStatus.Status)
-		
+
 		if taskStatus.Status == "SUCCESS" {
 			fmt.Println("\n=== Container Task Results ===")
 			fmt.Printf("Task ID: %s\n", taskStatus.TaskID)
-			
+
 			// Pretty print the result (excluding the plot to avoid large output)
 			resultMap, ok := taskStatus.Result.(map[string]interface{})
 			if ok {
@@ -222,7 +222,7 @@ func main() {
 					fmt.Println("Plot: [base64 encoded image - not displayed]")
 					delete(resultMap, "plot")
 				}
-				
+
 				resultJSON, err := json.MarshalIndent(resultMap, "", "  ")
 				if err != nil {
 					fmt.Printf("Result: %v\n", taskStatus.Result)
@@ -237,7 +237,7 @@ func main() {
 			fmt.Printf("Task failed: %s\n", taskStatus.Exception)
 			break
 		}
-		
+
 		if i == maxAttempts-1 {
 			fmt.Println("Task is still running. Check the status manually later.")
 		}
@@ -275,23 +275,23 @@ output = run()
 		log.Printf("Failed to run direct container code: %v", err)
 	} else {
 		fmt.Printf("Direct container task submitted: %s (Status: %s)\n", directTask.TaskID, directTask.Status)
-		
+
 		// Wait for the task to complete
 		fmt.Println("\nWaiting for direct container task to complete...")
 		for i := 0; i < maxAttempts; i++ {
 			time.Sleep(2 * time.Second)
-			
+
 			taskStatus, err := computeClient.GetTaskStatus(ctx, directTask.TaskID)
 			if err != nil {
 				log.Printf("Error checking direct task status: %v", err)
 				continue
 			}
-			
+
 			fmt.Printf("Direct task status: %s\n", taskStatus.Status)
-			
+
 			if taskStatus.Status == "SUCCESS" {
 				fmt.Println("\n=== Direct Container Task Results ===")
-				
+
 				resultJSON, err := json.MarshalIndent(taskStatus.Result, "", "  ")
 				if err != nil {
 					fmt.Printf("Result: %v\n", taskStatus.Result)
@@ -303,7 +303,7 @@ output = run()
 				fmt.Printf("Direct task failed: %s\n", taskStatus.Exception)
 				break
 			}
-			
+
 			if i == maxAttempts-1 {
 				fmt.Println("Direct task is still running. Check the status manually later.")
 			}

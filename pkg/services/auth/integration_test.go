@@ -11,7 +11,7 @@ import (
 	"os"
 	"testing"
 	"time"
-	
+
 	"github.com/joho/godotenv"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
@@ -31,7 +31,7 @@ func skipIfMissingCredentials(t *testing.T) (string, string) {
 	if clientID == "" {
 		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_ID environment variable")
 	}
-	
+
 	if clientSecret == "" {
 		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_SECRET environment variable")
 	}
@@ -50,7 +50,7 @@ func TestIntegration_ClientCredentialsFlow(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create auth client: %v", err)
 	}
-	
+
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -73,7 +73,7 @@ func TestIntegration_ClientCredentialsFlow(t *testing.T) {
 			return true // Retry all errors for this test
 		},
 	)
-	
+
 	if err != nil {
 		t.Fatalf("GetClientCredentialsToken failed: %v", err)
 	}
@@ -107,7 +107,7 @@ func TestIntegration_ClientCredentialsFlow(t *testing.T) {
 			return true
 		},
 	)
-	
+
 	if err != nil {
 		t.Fatalf("IntrospectToken failed: %v", err)
 	}
@@ -118,7 +118,7 @@ func TestIntegration_ClientCredentialsFlow(t *testing.T) {
 	if tokenInfo.ClientID != clientID {
 		t.Errorf("Expected client_id=%s, got %s", clientID, tokenInfo.ClientID)
 	}
-	
+
 	t.Logf("Successfully validated client credentials flow with token access")
 }
 
@@ -133,7 +133,7 @@ func TestIntegration_TokenUtils(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create auth client: %v", err)
 	}
-	
+
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -155,7 +155,7 @@ func TestIntegration_TokenUtils(t *testing.T) {
 			return true
 		},
 	)
-	
+
 	if err != nil {
 		t.Fatalf("GetClientCredentialsToken failed: %v", err)
 	}
@@ -183,7 +183,7 @@ func TestIntegration_TokenUtils(t *testing.T) {
 			return true
 		},
 	)
-	
+
 	if err != nil {
 		t.Errorf("Expected token to be valid: %v", err)
 	}
@@ -205,11 +205,11 @@ func TestIntegration_TokenUtils(t *testing.T) {
 			return true
 		},
 	)
-	
+
 	if err != nil {
 		t.Fatalf("GetTokenExpiry failed: %v", err)
 	}
-	
+
 	if !isValid {
 		t.Error("Expected token to be valid")
 	}
@@ -234,11 +234,11 @@ func TestIntegration_TokenUtils(t *testing.T) {
 			return true
 		},
 	)
-	
+
 	if err != nil {
 		t.Fatalf("ShouldRefresh failed: %v", err)
 	}
-	
+
 	// Token should be fresh since we just got it
 	if shouldRefresh {
 		t.Error("Expected token to not need refresh with short threshold")
@@ -261,7 +261,7 @@ func TestIntegration_ClientCredentialsAuthorizer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create auth client: %v", err)
 	}
-	
+
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -286,7 +286,7 @@ func TestIntegration_ClientCredentialsAuthorizer(t *testing.T) {
 			return true
 		},
 	)
-	
+
 	if err != nil {
 		t.Fatalf("Authorizer.GetAuthorizationHeader failed: %v", err)
 	}
@@ -300,7 +300,7 @@ func TestIntegration_ClientCredentialsAuthorizer(t *testing.T) {
 	if len(authorizationHeader) < 8 || authorizationHeader[:7] != "Bearer " {
 		t.Errorf("Expected authorization header to start with 'Bearer ', got: %s", authorizationHeader)
 	}
-	
+
 	t.Logf("Successfully validated client credentials authorizer")
 }
 
@@ -315,7 +315,7 @@ func TestIntegration_StaticTokenAuthorizer(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create auth client: %v", err)
 	}
-	
+
 	// Create context with timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
@@ -337,7 +337,7 @@ func TestIntegration_StaticTokenAuthorizer(t *testing.T) {
 			return true
 		},
 	)
-	
+
 	if err != nil {
 		t.Fatalf("GetClientCredentialsToken failed: %v", err)
 	}
@@ -361,6 +361,6 @@ func TestIntegration_StaticTokenAuthorizer(t *testing.T) {
 	if authorizationHeader != expectedHeader {
 		t.Errorf("Expected header %s, got: %s", expectedHeader[:15]+"...", authorizationHeader[:15]+"...")
 	}
-	
+
 	t.Logf("Successfully validated static token authorizer")
 }

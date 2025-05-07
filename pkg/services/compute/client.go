@@ -31,21 +31,21 @@ type Client struct {
 func NewClient(opts ...ClientOption) (*Client, error) {
 	// Apply default options
 	options := defaultOptions()
-	
+
 	// Apply user options
 	for _, opt := range opts {
 		opt(options)
 	}
-	
+
 	// If an access token was provided, create a static token authorizer
 	if options.accessToken != "" {
 		authorizer := authorizers.StaticTokenCoreAuthorizer(options.accessToken)
 		options.coreOptions = append(options.coreOptions, core.WithAuthorizer(authorizer))
 	}
-	
+
 	// Create the base client
 	baseClient := core.NewClient(options.coreOptions...)
-	
+
 	return &Client{
 		Client: baseClient,
 	}, nil

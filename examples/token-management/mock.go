@@ -28,7 +28,7 @@ func NewMockRefreshHandler() *MockRefreshHandler {
 // This is a mock implementation that simulates token refreshing.
 func (m *MockRefreshHandler) RefreshToken(_ context.Context, refreshToken string) (*auth.TokenResponse, error) {
 	m.refreshCount++
-	
+
 	// For demonstration purposes, we just generate a new token
 	return &auth.TokenResponse{
 		AccessToken:  fmt.Sprintf("refreshed-access-token-%d", m.refreshCount),
@@ -57,7 +57,7 @@ func DemonstrateWithMockHandler() {
 	manager, err := tokens.NewManager(
 		tokens.WithStorage(storage),
 		tokens.WithRefreshHandler(mockHandler),
-		tokens.WithRefreshThreshold(30 * time.Minute),
+		tokens.WithRefreshThreshold(30*time.Minute),
 	)
 	if err != nil {
 		fmt.Printf("Failed to create token manager: %v\n", err)

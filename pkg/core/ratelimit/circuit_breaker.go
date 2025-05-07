@@ -95,8 +95,8 @@ func (cb *CircuitBreaker) Execute(ctx context.Context, fn func(context.Context) 
 
 // AllowRequest checks if a request should be allowed
 func (cb *CircuitBreaker) AllowRequest() bool {
-	cb.mu.RLock()
-	defer cb.mu.RUnlock()
+	cb.mu.Lock()
+	defer cb.mu.Unlock()
 
 	now := time.Now()
 
@@ -107,23 +107,9 @@ func (cb *CircuitBreaker) AllowRequest() bool {
 	case CircuitOpen:
 		// Check if the timeout has elapsed
 		if now.After(cb.lastStateChange.Add(cb.options.Timeout)) {
-			// Transition to half-open state outside of read lock
-			cb.mu.RUnlock()
-			cb.mu.Lock()
-			defer cb.mu.Unlock()
-
-			// Re-check conditions after acquiring write lock
-			if cb.state == CircuitOpen && now.After(cb.lastStateChange.Add(cb.options.Timeout)) {
-				cb.transitionState(CircuitHalfOpen)
-				return true
-			}
-
-			// Get a new read lock for the re-evaluation
-			cb.mu.Lock()
-			defer cb.mu.Unlock()
-
-			// Re-evaluate with updated state
-			return cb.state == CircuitClosed
+			// Transition to half-open state
+			cb.transitionState(CircuitHalfOpen)
+			return true
 		}
 		return false
 

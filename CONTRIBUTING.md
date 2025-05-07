@@ -33,33 +33,40 @@ This project follows the [Contributor Covenant](https://www.contributor-covenant
    git checkout -b feature/your-feature-name
    ```
 
-2. **Write code** following Go best practices:
+2. **Install Git hooks** for local testing:
+   ```bash
+   ./scripts/install-all-hooks.sh
+   ```
+   These hooks will run tests and checks locally before commits and pushes.
+
+3. **Write code** following Go best practices:
    - Follow [Effective Go](https://golang.org/doc/effective_go)
    - Adhere to [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments)
    - Run `gofmt -s -w .` to format your code
 
-3. **Write tests** for your code:
+4. **Write tests** for your code:
    - Unit tests are required for all new code
    - Aim for >80% code coverage
    - Use Go's standard testing package
 
-4. **Document your code**:
+5. **Document your code**:
    - Add comments for exported functions, types, and constants
    - Follow [godoc](https://blog.golang.org/godoc) conventions
    - Update project documentation if needed
 
-5. **Commit your changes**:
+6. **Commit your changes**:
    - Use descriptive commit messages
    - Reference issue numbers in commit messages if applicable
    - SPDX license identifier and copyright headers must be preserved
+   - Git hooks will run tests before each commit
 
-6. **Keep your branch updated**:
+7. **Keep your branch updated**:
    ```bash
    git fetch upstream
    git rebase upstream/main
    ```
 
-7. **Submit a pull request**:
+8. **Submit a pull request**:
    - Clearly describe what the PR does
    - Mention any related issues
    - Request reviews from maintainers

@@ -43,3 +43,4 @@ build/
 
 # Debug logs
 debug.log
+**/.claude/settings.local.json

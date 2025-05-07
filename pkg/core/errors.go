@@ -73,3 +73,11 @@ func IsNotFound(err error) bool {
 	}
 	return false
 }
+
+// IsForbidden checks if the error is a forbidden error
+func IsForbidden(err error) bool {
+	if apiErr, ok := err.(*Error); ok {
+		return apiErr.StatusCode == http.StatusForbidden
+	}
+	return false
+}

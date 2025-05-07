@@ -21,8 +21,18 @@ fi
 
 # Check for required variables in .env.test
 source "${SDK_ROOT}/.env.test"
+
+# Support both prefixed and non-prefixed variables
+if [ -n "${GLOBUS_TEST_CLIENT_ID}" ]; then
+    export GLOBUS_CLIENT_ID="${GLOBUS_TEST_CLIENT_ID}"
+fi
+if [ -n "${GLOBUS_TEST_CLIENT_SECRET}" ]; then
+    export GLOBUS_CLIENT_SECRET="${GLOBUS_TEST_CLIENT_SECRET}"
+fi
+
 if [ -z "${GLOBUS_CLIENT_ID}" ] || [ -z "${GLOBUS_CLIENT_SECRET}" ]; then
     echo "Error: GLOBUS_CLIENT_ID and/or GLOBUS_CLIENT_SECRET missing from .env.test file."
+    echo "Make sure you have either GLOBUS_CLIENT_ID or GLOBUS_TEST_CLIENT_ID set."
     exit 1
 fi
 

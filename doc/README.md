@@ -57,6 +57,7 @@ For SDK contributors and developers:
 - [Architecture](development/architecture.md) - Design patterns and principles
 - [Contributing](development/contributing.md) - How to contribute to the SDK
 - [Testing](development/testing.md) - Unit and integration testing
+- [Git Hooks](development/git-hooks.md) - Local testing with Git hooks
 - [Security](development/security.md) - Security best practices and guidelines
 - [Benchmarking](development/benchmarking.md) - Performance measurement
 

@@ -30,10 +30,10 @@ type Transport struct {
 type Options struct {
 	// Debug enables HTTP request/response logging
 	Debug bool
-	
+
 	// Trace enables detailed HTTP tracing (including bodies)
 	Trace bool
-	
+
 	// Logger is the logger to use for debug output
 	Logger *log.Logger
 }
@@ -43,11 +43,11 @@ func NewTransport(client interfaces.ClientInterface, options *Options) *Transpor
 	// Check environment variables for debug settings
 	envDebug := os.Getenv("GLOBUS_SDK_HTTP_DEBUG") == "1"
 	envTrace := os.Getenv("GLOBUS_SDK_HTTP_TRACE") == "1"
-	
+
 	debug := envDebug
 	trace := envTrace
 	logger := log.New(os.Stderr, "", log.LstdFlags)
-	
+
 	// Override with options if provided
 	if options != nil {
 		if options.Debug {
@@ -60,12 +60,12 @@ func NewTransport(client interfaces.ClientInterface, options *Options) *Transpor
 			logger = options.Logger
 		}
 	}
-	
+
 	// If trace is enabled, debug is also enabled
 	if trace {
 		debug = true
 	}
-	
+
 	return &Transport{
 		Client: client,
 		Debug:  debug,
@@ -86,11 +86,11 @@ func NewDeferredTransport(options *Options) *DeferredTransport {
 	// Check environment variables for debug settings
 	envDebug := os.Getenv("GLOBUS_SDK_HTTP_DEBUG") == "1"
 	envTrace := os.Getenv("GLOBUS_SDK_HTTP_TRACE") == "1"
-	
+
 	debug := envDebug
 	trace := envTrace
 	logger := log.New(os.Stderr, "", log.LstdFlags)
-	
+
 	// Override with options if provided
 	if options != nil {
 		if options.Debug {
@@ -103,12 +103,12 @@ func NewDeferredTransport(options *Options) *DeferredTransport {
 			logger = options.Logger
 		}
 	}
-	
+
 	// If trace is enabled, debug is also enabled
 	if trace {
 		debug = true
 	}
-	
+
 	return &DeferredTransport{
 		Debug:  debug,
 		Trace:  trace,
@@ -267,7 +267,7 @@ func (t *Transport) Patch(
 func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 	// Use the context from the request
 	ctx := req.Context()
-	
+
 	// Log the request if debug is enabled
 	if t.Debug {
 		var bodyBytes []byte
@@ -278,12 +278,12 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 		t.logRequest(req.Method, req.URL.String(), req.Header, bodyBytes)
 	}
-	
+
 	// Send the request
 	startTime := time.Now()
 	resp, err := t.Client.Do(ctx, req)
 	duration := time.Since(startTime)
-	
+
 	// Log the error if there is one
 	if err != nil {
 		if t.Debug {
@@ -291,12 +291,12 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 		return nil, err
 	}
-	
+
 	// Log the response if debug is enabled
 	if t.Debug {
 		t.logResponse(resp, duration)
 	}
-	
+
 	return resp, nil
 }
 

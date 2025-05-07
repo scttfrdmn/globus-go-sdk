@@ -10,8 +10,6 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
-
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 )
 
 func TestBatchRunFlows(t *testing.T) {
@@ -52,8 +50,18 @@ func TestBatchRunFlows(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// Create client
-	client := NewClient("test-token", core.WithBaseURL(server.URL+"/"))
+	// Create client with trailing slash to avoid double-slashes
+	serverURL := server.URL
+	if serverURL[len(serverURL)-1] != '/' {
+		serverURL += "/"
+	}
+	client, err := NewClient(
+		WithAccessToken("test-token"),
+		WithBaseURL(serverURL),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 
 	// Create batch request
 	const batchSize = 5
@@ -115,10 +123,20 @@ func TestBatchRunFlows(t *testing.T) {
 func TestBatchGetFlows(t *testing.T) {
 	// Setup test server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		// Extract flow ID from path
+		// For debugging
+		t.Logf("Received request: %s %s", r.Method, r.URL.Path)
+
+		// Extract flow ID from path - be more flexible with path matching
 		flowID := ""
-		if len(r.URL.Path) > 6 && r.URL.Path[:6] == "/flows/" {
-			flowID = r.URL.Path[6:]
+		path := r.URL.Path
+		if path == "/flows/flow-1" {
+			flowID = "flow-1"
+		} else if path == "/flows/flow-2" {
+			flowID = "flow-2"
+		} else if path == "/flows/flow-3" {
+			flowID = "flow-3"
+		} else if path == "/flows/error-id" {
+			flowID = "error-id"
 		} else {
 			t.Errorf("Unexpected path: %s", r.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
@@ -128,10 +146,13 @@ func TestBatchGetFlows(t *testing.T) {
 		// Return flow information or error
 		if flowID == "error-id" {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{
-				"code":    "NotFound",
-				"message": "Flow not found",
-			})
+			errorResp := ErrorResponse{
+				Code:     "NotFound",
+				Message:  "Flow not found",
+				Resource: "flow",
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(errorResp)
 			return
 		}
 
@@ -151,8 +172,18 @@ func TestBatchGetFlows(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// Create client
-	client := NewClient("test-token", core.WithBaseURL(server.URL+"/"))
+	// Create client with trailing slash to avoid double-slashes
+	serverURL := server.URL
+	if serverURL[len(serverURL)-1] != '/' {
+		serverURL += "/"
+	}
+	client, err := NewClient(
+		WithAccessToken("test-token"),
+		WithBaseURL(serverURL),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 
 	// Create batch request
 	flowIDs := []string{
@@ -225,10 +256,13 @@ func TestBatchCancelRuns(t *testing.T) {
 		// Return success or error based on run ID
 		if runID == "error-id" {
 			w.WriteHeader(http.StatusNotFound)
-			json.NewEncoder(w).Encode(map[string]string{
-				"code":    "NotFound",
-				"message": "Run not found",
-			})
+			errorResp := ErrorResponse{
+				Code:     "NotFound",
+				Message:  "Run not found",
+				Resource: "run",
+			}
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(errorResp)
 			return
 		}
 
@@ -237,8 +271,18 @@ func TestBatchCancelRuns(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// Create client
-	client := NewClient("test-token", core.WithBaseURL(server.URL+"/"))
+	// Create client with trailing slash to avoid double-slashes
+	serverURL := server.URL
+	if serverURL[len(serverURL)-1] != '/' {
+		serverURL += "/"
+	}
+	client, err := NewClient(
+		WithAccessToken("test-token"),
+		WithBaseURL(serverURL),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 
 	// Create batch request
 	runIDs := []string{

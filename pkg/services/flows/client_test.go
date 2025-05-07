@@ -9,20 +9,19 @@ import (
 	"net/http/httptest"
 	"testing"
 	"time"
-
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 )
 
 // Test mock server
-func setupMockServer(handler http.HandlerFunc) (*httptest.Server, *Client) {
+func setupMockServer(handler http.HandlerFunc) (*httptest.Server, *Client, error) {
 	server := httptest.NewServer(handler)
 
 	// Create a client that uses the test server
-	client := NewClient("test-token",
-		core.WithBaseURL(server.URL+"/"),
+	client, err := NewClient(
+		WithAccessToken("test-token"),
+		WithBaseURL(server.URL+"/"),
 	)
 
-	return server, client
+	return server, client, err
 }
 
 func TestListFlows(t *testing.T) {
@@ -73,7 +72,10 @@ func TestListFlows(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test list flows
@@ -134,7 +136,10 @@ func TestGetFlow(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test get flow
@@ -199,7 +204,10 @@ func TestCreateFlow(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test create flow
@@ -290,7 +298,10 @@ func TestUpdateFlow(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test update flow
@@ -345,11 +356,14 @@ func TestDeleteFlow(t *testing.T) {
 		w.WriteHeader(http.StatusNoContent)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test delete flow
-	err := client.DeleteFlow(context.Background(), "test-flow-id")
+	err = client.DeleteFlow(context.Background(), "test-flow-id")
 	if err != nil {
 		t.Fatalf("DeleteFlow() error = %v", err)
 	}
@@ -404,7 +418,10 @@ func TestRunFlow(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test run flow
@@ -503,7 +520,10 @@ func TestListRuns(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test list runs
@@ -567,7 +587,10 @@ func TestGetRun(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test get run
@@ -608,11 +631,14 @@ func TestCancelRun(t *testing.T) {
 		w.WriteHeader(http.StatusNoContent)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test cancel run
-	err := client.CancelRun(context.Background(), "test-run-id")
+	err = client.CancelRun(context.Background(), "test-run-id")
 	if err != nil {
 		t.Fatalf("CancelRun() error = %v", err)
 	}
@@ -669,7 +695,10 @@ func TestUpdateRun(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test update run
@@ -754,7 +783,10 @@ func TestGetRunLogs(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test get run logs
@@ -823,7 +855,10 @@ func TestListActionProviders(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test list action providers
@@ -882,7 +917,10 @@ func TestGetActionProvider(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test get action provider
@@ -940,7 +978,10 @@ func TestListActionRoles(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test list action roles
@@ -995,7 +1036,10 @@ func TestGetActionRole(t *testing.T) {
 		json.NewEncoder(w).Encode(response)
 	}
 
-	server, client := setupMockServer(handler)
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	defer server.Close()
 
 	// Test get action role

@@ -34,7 +34,7 @@ func main() {
 		fmt.Printf("❌ Error: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	fmt.Println("\n✨ Success! Your Globus credentials are valid.")
 	fmt.Println("   The client credentials can be used for the Auth service.")
 	fmt.Println("   Other services may require different authentication flows.")

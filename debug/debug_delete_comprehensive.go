@@ -36,11 +36,11 @@ func (a *testAuthorizer) GetToken() string {
 	return a.token
 }
 
-// EnhancedDeleteItem adds a DATA_TYPE field to DeleteItem
+// EnhancedDeleteItem version of a delete item
+// Note: In the actual API, delete_item does not support a recursive field
 type EnhancedDeleteItem struct {
-	Path      string `json:"path"`
-	Recursive bool   `json:"recursive,omitempty"`
-	DataType  string `json:"DATA_TYPE,omitempty"`
+	Path     string `json:"path"`
+	DataType string `json:"DATA_TYPE,omitempty"`
 }
 
 // EnhancedDeleteTaskRequest adds DATA_TYPE field to DeleteItem
@@ -127,8 +127,8 @@ func main() {
 		SubmissionID: submissionID,
 		Items: []transfer.DeleteItem{
 			{
-				Path:      testPath1,
-				Recursive: true,
+				DataType: "delete_item",
+				Path:     testPath1,
 			},
 		},
 	}
@@ -140,7 +140,7 @@ func main() {
 	// Try to create the delete task
 	fmt.Println("Sending delete request with SDK...")
 	resp1, err := client.CreateDeleteTask(ctx, deleteRequest1)
-	
+
 	if err != nil {
 		fmt.Printf("ERROR: Original delete task failed: %v\n", err)
 	} else {
@@ -159,9 +159,8 @@ func main() {
 		SubmissionID: submissionID,
 		Items: []EnhancedDeleteItem{
 			{
-				Path:      testPath2,
-				Recursive: true,
-				DataType:  "delete_item", // This is the key difference
+				Path:     testPath2,
+				DataType: "delete_item",
 			},
 		},
 	}
@@ -178,7 +177,7 @@ func main() {
 	}
 
 	// Create an HTTP request
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, 
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost,
 		"https://transfer.api.globus.org/v0.10/delete", bytes.NewReader(reqBody))
 	if err != nil {
 		fmt.Printf("ERROR: Failed to create HTTP request: %v\n", err)

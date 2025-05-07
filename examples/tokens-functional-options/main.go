@@ -51,13 +51,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to get home directory: %v", err)
 	}
-	
+
 	tokenDir := filepath.Join(homeDir, ".globus-token-example")
 	err = os.MkdirAll(tokenDir, 0700)
 	if err != nil {
 		log.Fatalf("Failed to create token directory: %v", err)
 	}
-	
+
 	fmt.Printf("Using token storage directory: %s\n", tokenDir)
 
 	// Example 1: Create token manager with individual options
@@ -65,7 +65,7 @@ func main() {
 	manager1, err := tokens.NewManager(
 		tokens.WithFileStorage(tokenDir),
 		tokens.WithAuthClient(authClient),
-		tokens.WithRefreshThreshold(15 * time.Minute),
+		tokens.WithRefreshThreshold(15*time.Minute),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create token manager: %v", err)
@@ -87,17 +87,17 @@ func main() {
 	// Example 3: In-memory storage with custom options
 	fmt.Println("\n3. Creating token manager with in-memory storage")
 	memoryStorage := tokens.NewMemoryStorage()
-	
+
 	manager3, err := tokens.NewManager(
 		tokens.WithStorage(memoryStorage),
 		tokens.WithAuthClient(authClient),
-		tokens.WithRefreshThreshold(30 * time.Minute),
+		tokens.WithRefreshThreshold(30*time.Minute),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create token manager: %v", err)
 	}
 
-	fmt.Printf("Token manager created with in-memory storage and refresh threshold: %s\n", 
+	fmt.Printf("Token manager created with in-memory storage and refresh threshold: %s\n",
 		manager3.RefreshThreshold)
 
 	// Store a sample token
@@ -151,27 +151,27 @@ func main() {
 // Mock implementation for demonstration without credentials
 func demonstrateWithMock() {
 	ctx := context.Background()
-	
+
 	fmt.Println("=== Token Manager with Mock Implementation ===")
-	
+
 	// Create a mock refresh handler
 	mockHandler := &MockRefreshHandler{refreshCount: 0}
-	
+
 	// Create an in-memory storage
 	storage := tokens.NewMemoryStorage()
-	
+
 	// Create a token manager with options
 	manager, err := tokens.NewManager(
 		tokens.WithStorage(storage),
 		tokens.WithRefreshHandler(mockHandler),
-		tokens.WithRefreshThreshold(15 * time.Minute),
+		tokens.WithRefreshThreshold(15*time.Minute),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create token manager: %v", err)
 	}
-	
+
 	fmt.Printf("Token manager created with refresh threshold: %s\n", manager.RefreshThreshold)
-	
+
 	// Create a sample token that will expire soon
 	sampleToken := &tokens.TokenSet{
 		AccessToken:  "mock-access-token",
@@ -180,7 +180,7 @@ func demonstrateWithMock() {
 		Scope:        "openid profile email",
 		ResourceID:   "mock-resource",
 	}
-	
+
 	entry := &tokens.Entry{
 		Resource:     "mock-resource",
 		AccessToken:  sampleToken.AccessToken,
@@ -189,21 +189,21 @@ func demonstrateWithMock() {
 		Scope:        sampleToken.Scope,
 		TokenSet:     sampleToken,
 	}
-	
+
 	// Store the token
 	err = storage.Store(entry)
 	if err != nil {
 		log.Fatalf("Failed to store token: %v", err)
 	}
-	
+
 	fmt.Println("Token stored successfully")
-	
+
 	// Get the token - this should trigger a refresh since it's close to expiry
 	refreshedEntry, err := manager.GetToken(ctx, "mock-resource")
 	if err != nil {
 		log.Fatalf("Failed to get token: %v", err)
 	}
-	
+
 	// Check if the token was refreshed
 	if refreshedEntry.TokenSet.AccessToken != sampleToken.AccessToken {
 		fmt.Println("✅ Token was automatically refreshed!")
@@ -213,7 +213,7 @@ func demonstrateWithMock() {
 	} else {
 		fmt.Println("❌ Token was not refreshed as expected")
 	}
-	
+
 	fmt.Println("\n=== End of Mock Demonstration ===")
 }
 
@@ -225,7 +225,7 @@ type MockRefreshHandler struct {
 // RefreshToken implements the tokens.RefreshHandler interface
 func (m *MockRefreshHandler) RefreshToken(_ context.Context, refreshToken string) (*auth.TokenResponse, error) {
 	m.refreshCount++
-	
+
 	return &auth.TokenResponse{
 		AccessToken:  fmt.Sprintf("refreshed-token-%d", m.refreshCount),
 		RefreshToken: fmt.Sprintf("refreshed-refresh-token-%d", m.refreshCount),

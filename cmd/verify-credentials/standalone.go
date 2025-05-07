@@ -16,7 +16,7 @@ import (
 	"os"
 	"strings"
 	"time"
-	
+
 	"github.com/joho/godotenv"
 )
 
@@ -24,10 +24,10 @@ import (
 // It doesn't rely on the SDK to avoid build issues while fixing import cycles
 
 const (
-	authBaseURL = "https://auth.globus.org/v2/"
+	authBaseURL     = "https://auth.globus.org/v2/"
 	transferBaseURL = "https://transfer.api.globus.org/v0.10/"
-	groupsBaseURL = "https://groups.api.globus.org/v2/"
-	searchBaseURL = "https://search.api.globus.org/v1/"
+	groupsBaseURL   = "https://groups.api.globus.org/v2/"
+	searchBaseURL   = "https://search.api.globus.org/v1/"
 )
 
 // TokenResponse represents an OAuth2 token response
@@ -82,58 +82,58 @@ func main() {
 	err1 := godotenv.Load("../../.env.test") // When run from cmd/verify-credentials
 	err2 := godotenv.Load("./.env.test")     // When run from project root
 	err3 := godotenv.Load(".env.test")       // Fallback
-	
+
 	if err1 != nil && err2 != nil && err3 != nil {
 		fmt.Println("Warning: No .env.test file found, using environment variables")
 		fmt.Println("Create a .env.test file with GLOBUS_TEST_CLIENT_ID and GLOBUS_TEST_CLIENT_SECRET")
 	} else {
 		fmt.Println("Loaded environment variables from .env.test file")
 	}
-	
+
 	// Get required credentials
 	clientID := os.Getenv("GLOBUS_TEST_CLIENT_ID")
 	clientSecret := os.Getenv("GLOBUS_TEST_CLIENT_SECRET")
-	
+
 	if clientID == "" || clientSecret == "" {
 		log.Fatal("GLOBUS_TEST_CLIENT_ID and GLOBUS_TEST_CLIENT_SECRET environment variables must be set")
 	}
-	
+
 	fmt.Println("✅ Found required credentials")
-	
+
 	// Create HTTP client
 	client := &http.Client{
 		Timeout: 30 * time.Second,
 	}
-	
+
 	// Verify Auth service
 	fmt.Println("\nVerifying Auth service...")
 	token, err := getClientCredentialsToken(client, clientID, clientSecret)
 	if err != nil {
 		log.Fatalf("Failed to get client credentials token: %v", err)
 	}
-	
+
 	fmt.Printf("✅ Successfully obtained client credentials token\n")
-	
+
 	// Verify token introspection
 	tokenInfo, err := introspectToken(client, clientID, clientSecret, token.AccessToken)
 	if err != nil {
 		log.Fatalf("Failed to introspect token: %v", err)
 	}
-	
+
 	if !tokenInfo.Active {
 		log.Fatal("Token is not active")
 	}
-	
+
 	fmt.Println("✅ Token introspection successful")
 	fmt.Printf("   Token scopes: %s\n", tokenInfo.Scope)
-	
+
 	// Check for transfer endpoints if specified
 	sourceEndpointID := os.Getenv("GLOBUS_TEST_SOURCE_ENDPOINT_ID")
 	destEndpointID := os.Getenv("GLOBUS_TEST_DESTINATION_ENDPOINT_ID")
-	
+
 	if sourceEndpointID != "" {
 		fmt.Println("\nVerifying Transfer service...")
-		
+
 		// Get new token with transfer scope
 		fmt.Println("  Getting token with transfer scope...")
 		transferToken, err := getClientCredentialsToken(client, clientID, clientSecret, "urn:globus:auth:scope:transfer.api.globus.org:all")
@@ -147,28 +147,28 @@ func main() {
 			if err != nil {
 				fmt.Printf("❌ Failed to get source endpoint: %v\n", err)
 			} else {
-				fmt.Printf("✅ Source endpoint accessed: %s (owner: %s)\n", 
+				fmt.Printf("✅ Source endpoint accessed: %s (owner: %s)\n",
 					sourceEndpoint.DisplayName, sourceEndpoint.Owner)
-				
+
 				// Check destination endpoint if specified
 				if destEndpointID != "" {
 					destEndpoint, err := getEndpoint(client, transferToken.AccessToken, destEndpointID)
 					if err != nil {
 						fmt.Printf("❌ Failed to get destination endpoint: %v\n", err)
 					} else {
-						fmt.Printf("✅ Destination endpoint accessed: %s (owner: %s)\n", 
+						fmt.Printf("✅ Destination endpoint accessed: %s (owner: %s)\n",
 							destEndpoint.DisplayName, destEndpoint.Owner)
 					}
 				}
 			}
 		}
 	}
-	
+
 	// Check group if specified
 	groupID := os.Getenv("GLOBUS_TEST_GROUP_ID")
 	if groupID != "" {
 		fmt.Println("\nVerifying Groups service...")
-		
+
 		// Get new token with groups scope
 		fmt.Println("  Getting token with groups scope...")
 		groupsToken, err := getClientCredentialsToken(client, clientID, clientSecret, "urn:globus:auth:scope:groups.api.globus.org:all")
@@ -182,17 +182,17 @@ func main() {
 			if err != nil {
 				fmt.Printf("❌ Failed to get group: %v\n", err)
 			} else {
-				fmt.Printf("✅ Group accessed: %s (owner: %s)\n", 
+				fmt.Printf("✅ Group accessed: %s (owner: %s)\n",
 					group.Name, group.Owner)
 			}
 		}
 	}
-	
+
 	// Check for search index if specified
 	searchIndexID := os.Getenv("GLOBUS_TEST_SEARCH_INDEX_ID")
 	if searchIndexID != "" {
 		fmt.Println("\nVerifying Search service...")
-		
+
 		// Get new token with search scope
 		fmt.Println("  Getting token with search scope...")
 		searchToken, err := getClientCredentialsToken(client, clientID, clientSecret, "urn:globus:auth:scope:search.api.globus.org:all")
@@ -213,7 +213,7 @@ func main() {
 			}
 		}
 	}
-	
+
 	fmt.Println("\n✨ Success! Your Globus credentials are valid.")
 	fmt.Println("   The client credentials can be used for the Auth service.")
 	fmt.Println("   Other services may require different authentication flows.")
@@ -226,31 +226,31 @@ func getClientCredentialsToken(client *http.Client, clientID, clientSecret strin
 	if len(scopes) > 0 {
 		data.Set("scope", strings.Join(scopes, " "))
 	}
-	
+
 	req, err := http.NewRequest("POST", authBaseURL+"oauth2/token", strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, err
 	}
-	
+
 	req.SetBasicAuth(clientID, clientSecret)
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("bad status: %s (%s)", resp.Status, string(body))
 	}
-	
+
 	var tokenResp TokenResponse
 	if err := json.NewDecoder(resp.Body).Decode(&tokenResp); err != nil {
 		return nil, err
 	}
-	
+
 	return &tokenResp, nil
 }
 
@@ -258,31 +258,31 @@ func getClientCredentialsToken(client *http.Client, clientID, clientSecret strin
 func introspectToken(client *http.Client, clientID, clientSecret, token string) (*TokenInfo, error) {
 	data := url.Values{}
 	data.Set("token", token)
-	
+
 	req, err := http.NewRequest("POST", authBaseURL+"oauth2/token/introspect", strings.NewReader(data.Encode()))
 	if err != nil {
 		return nil, err
 	}
-	
+
 	req.SetBasicAuth(clientID, clientSecret)
 	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-	
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("bad status: %s (%s)", resp.Status, string(body))
 	}
-	
+
 	var tokenInfo TokenInfo
 	if err := json.NewDecoder(resp.Body).Decode(&tokenInfo); err != nil {
 		return nil, err
 	}
-	
+
 	return &tokenInfo, nil
 }
 
@@ -292,26 +292,26 @@ func getEndpoint(client *http.Client, token, endpointID string) (*EndpointInfo, 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	req.Header.Add("Authorization", "Bearer "+token)
 	req.Header.Add("Accept", "application/json")
-	
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("bad status: %s (%s)", resp.Status, string(body))
 	}
-	
+
 	var endpoint EndpointInfo
 	if err := json.NewDecoder(resp.Body).Decode(&endpoint); err != nil {
 		return nil, err
 	}
-	
+
 	return &endpoint, nil
 }
 
@@ -321,33 +321,33 @@ func getGroup(client *http.Client, token, groupID string) (*GroupInfo, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	req.Header.Add("Authorization", "Bearer "+token)
 	req.Header.Add("Accept", "application/json")
-	
+
 	resp, err := client.Do(req)
 	if err != nil {
 		return nil, err
 	}
 	defer resp.Body.Close()
-	
+
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("bad status: %s (%s)", resp.Status, string(body))
 	}
-	
+
 	var group GroupInfo
 	if err := json.NewDecoder(resp.Body).Decode(&group); err != nil {
 		return nil, err
 	}
-	
+
 	return &group, nil
 }
 
 // SearchResponse represents a simplified response from the Search API
 type SearchResponse struct {
-	Count   int                      `json:"count"`
-	Total   int                      `json:"total"`
+	Count    int                      `json:"count"`
+	Total    int                      `json:"total"`
 	Subjects []map[string]interface{} `json:"subjects"`
 }
 
@@ -355,8 +355,8 @@ type SearchResponse struct {
 func searchIndex(client *http.Client, token, indexID string) (bool, error) {
 	// Construct a simple query to test access
 	query := map[string]interface{}{
-		"q": "*",      // Simple wildcard query to match all documents
-		"limit": 1,    // Only need one result to verify access
+		"q":     "*", // Simple wildcard query to match all documents
+		"limit": 1,   // Only need one result to verify access
 	}
 
 	jsonData, err := json.Marshal(query)

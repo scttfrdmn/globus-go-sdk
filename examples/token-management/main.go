@@ -32,7 +32,7 @@ func main() {
 			log.Fatalf("Failed to create auth client: %v", err)
 		}
 		fmt.Println("Found Globus credentials, demonstrating with real auth client")
-		
+
 		// Demonstration of different token storage mechanisms
 		demonstrateMemoryStorage(ctx, authClient)
 		demonstrateFileStorage(ctx, authClient)
@@ -211,7 +211,7 @@ func demonstrateTokenManager(ctx context.Context, authClient *auth.Client) {
 	manager, err := tokens.NewManager(
 		tokens.WithStorage(storage),
 		tokens.WithAuthClient(authClient),
-		tokens.WithRefreshThreshold(30 * time.Minute),
+		tokens.WithRefreshThreshold(30*time.Minute),
 	)
 	if err != nil {
 		log.Fatalf("Failed to create token manager: %v", err)

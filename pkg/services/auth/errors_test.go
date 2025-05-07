@@ -141,7 +141,9 @@ func TestParseAuthError(t *testing.T) {
 	jsonErr := `{"error":"invalid_grant","error_description":"The authorization code is invalid or expired"}`
 	err := parseAuthError(400, []byte(jsonErr))
 
+	// Verify that IsInvalidGrant identifies this as an invalid grant error
 	if !IsInvalidGrant(err) {
+		t.Logf("Error type: %T, Value: %v", err, err)
 		t.Error("parseAuthError() should return invalid_grant error for invalid_grant JSON")
 	}
 

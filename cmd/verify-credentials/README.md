@@ -1,3 +1,5 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors -->
 # Globus Credentials Verification Tool
 
 This utility verifies Globus credentials and checks access to various Globus services. It helps you confirm that your credentials are valid and have the necessary permissions before running integration tests.

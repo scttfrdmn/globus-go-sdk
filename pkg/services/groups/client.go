@@ -220,7 +220,7 @@ func (c *Client) ListGroups(ctx context.Context, options *ListGroupsOptions) (*G
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Ensure all returned group objects have the DATA_TYPE set
 	for i := range groupList.Groups {
 		if groupList.Groups[i].DATA_TYPE == "" {
@@ -242,7 +242,7 @@ func (c *Client) GetGroup(ctx context.Context, groupID string) (*Group, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Ensure the returned object has the DATA_TYPE set
 	if group.DATA_TYPE == "" {
 		group.DATA_TYPE = "group"
@@ -260,7 +260,7 @@ func (c *Client) CreateGroup(ctx context.Context, group *GroupCreate) (*Group, e
 	if group.Name == "" {
 		return nil, fmt.Errorf("group name is required")
 	}
-	
+
 	// Set the DATA_TYPE field if not already set
 	if group.DATA_TYPE == "" {
 		group.DATA_TYPE = "group_create"
@@ -271,7 +271,7 @@ func (c *Client) CreateGroup(ctx context.Context, group *GroupCreate) (*Group, e
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Ensure the returned object has the DATA_TYPE set
 	if createdGroup.DATA_TYPE == "" {
 		createdGroup.DATA_TYPE = "group"
@@ -289,7 +289,7 @@ func (c *Client) UpdateGroup(ctx context.Context, groupID string, update *GroupU
 	if update == nil {
 		return nil, fmt.Errorf("update data is required")
 	}
-	
+
 	// Set the DATA_TYPE field if not already set
 	if update.DATA_TYPE == "" {
 		update.DATA_TYPE = "group_update"
@@ -300,7 +300,7 @@ func (c *Client) UpdateGroup(ctx context.Context, groupID string, update *GroupU
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Ensure the returned object has the DATA_TYPE set
 	if updatedGroup.DATA_TYPE == "" {
 		updatedGroup.DATA_TYPE = "group"
@@ -346,7 +346,7 @@ func (c *Client) ListMembers(ctx context.Context, groupID string, options *ListM
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Ensure all returned member objects have the DATA_TYPE set
 	for i := range memberList.Members {
 		if memberList.Members[i].DATA_TYPE == "" {
@@ -429,7 +429,7 @@ func (c *Client) ListRoles(ctx context.Context, groupID string) (*RoleList, erro
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Ensure all returned role objects have the DATA_TYPE set
 	for i := range roleList.Roles {
 		if roleList.Roles[i].DATA_TYPE == "" {
@@ -455,7 +455,7 @@ func (c *Client) GetRole(ctx context.Context, groupID, roleID string) (*Role, er
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Ensure the returned object has the DATA_TYPE set
 	if role.DATA_TYPE == "" {
 		role.DATA_TYPE = "role"
@@ -477,7 +477,7 @@ func (c *Client) CreateRole(ctx context.Context, groupID string, role *RoleCreat
 	if role.Name == "" {
 		return nil, fmt.Errorf("role name is required")
 	}
-	
+
 	// Set the DATA_TYPE field if not already set
 	if role.DATA_TYPE == "" {
 		role.DATA_TYPE = "role_create"
@@ -488,7 +488,7 @@ func (c *Client) CreateRole(ctx context.Context, groupID string, role *RoleCreat
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Ensure the returned object has the DATA_TYPE set
 	if createdRole.DATA_TYPE == "" {
 		createdRole.DATA_TYPE = "role"
@@ -510,7 +510,7 @@ func (c *Client) UpdateRole(ctx context.Context, groupID, roleID string, update 
 	if update == nil {
 		return nil, fmt.Errorf("update data is required")
 	}
-	
+
 	// Set the DATA_TYPE field if not already set
 	if update.DATA_TYPE == "" {
 		update.DATA_TYPE = "role_update"
@@ -521,7 +521,7 @@ func (c *Client) UpdateRole(ctx context.Context, groupID, roleID string, update 
 	if err != nil {
 		return nil, err
 	}
-	
+
 	// Ensure the returned object has the DATA_TYPE set
 	if updatedRole.DATA_TYPE == "" {
 		updatedRole.DATA_TYPE = "role"

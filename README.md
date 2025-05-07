@@ -566,6 +566,18 @@ For detailed documentation, see:
 - [Compute Workflows Example](examples/compute-workflow/main.go) ← New for v0.9.0
 - [Compute Workflows Guide](doc/compute-workflows.md) ← New for v0.9.0
 
+## Development
+
+### Git Hooks
+
+The repository includes Git hooks to run tests locally before commits and pushes. Install them with:
+
+```bash
+./scripts/install-all-hooks.sh
+```
+
+For more information, see [Git Hooks](doc/development/git-hooks.md).
+
 ## Development Status
 
 This SDK is under active development. Current version: **v0.9.0**

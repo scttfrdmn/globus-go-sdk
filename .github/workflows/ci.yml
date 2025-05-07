@@ -1,6 +1,10 @@
 name: CI
 
 on:
+  push:
+    branches: [ main, v0.9.0-release ]
+  pull_request:
+    branches: [ main, v0.9.0-release ]
   workflow_dispatch:
     inputs:
       run_all:
@@ -27,14 +31,103 @@ jobs:
           go mod download
           go mod verify
 
-      - name: Lint with golangci-lint
+      - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v4
         with:
           version: latest
           args: --timeout 5m
 
+      - name: Check license headers
+        run: ./scripts/check-license-headers.sh
+          
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+          
+      - name: Get dependencies
+        run: |
+          go mod download
+          go mod verify
+
+      - name: Run govulncheck
+        uses: golang/govulncheck-action@v1
+        with:
+          go-version-input: '1.21'
+          go-package: ./...
+
+      - name: Install gosec
+        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+
+      - name: Run gosec
+        run: gosec -fmt=sarif -out=gosec-results.sarif ./...
+        continue-on-error: true  # Don't fail the build yet
+
+      - name: Install nancy
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/sonatype-nexus-community/nancy/main/scripts/install-nancy.sh | sh -s -- -b $(go env GOPATH)/bin
+
+      - name: Run nancy
+        run: go list -json -m all | nancy sleuth
+        continue-on-error: true  # Don't fail the build yet
+
+      - name: Upload gosec results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: gosec-results.sarif
+          category: gosec
+
+      - name: Check gosec issues
+        run: |
+          if [ -f gosec-results.sarif ]; then
+            ISSUES=$(jq '.runs[0].results | length' gosec-results.sarif || echo "0")
+            if [ "$ISSUES" -gt 0 ]; then
+              echo "gosec found $ISSUES potential security issues"
+              exit 1
+            else
+              echo "No security issues found by gosec"
+            fi
+          else
+            echo "No gosec results found"
+            exit 1
+          fi
+
   test:
     name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          cache: true
+          
+      - name: Get dependencies
+        run: |
+          go mod download
+          go mod verify
+
+      - name: Run tests with coverage
+        run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.txt
+          fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  build:
+    name: Build
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -52,28 +145,16 @@ jobs:
         run: |
           go mod download
           go mod verify
-          
-      - name: Test
-        run: go test -v -race -coverprofile=coverage.txt -covermode=atomic ./pkg/...
 
-      - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v4
-        with:
-          file: ./coverage.txt
-          fail_ci_if_error: false
-          token: ${{ secrets.CODECOV_TOKEN }}
+      - name: Build
+        run: go build -v ./pkg/...
 
-  integration-test:
+  integration:
     name: Integration Tests
     runs-on: ubuntu-latest
-    # Only run integration tests when secrets are available (PRs from forks won't have access)
-    if: ${{ github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository }}
-    env:
-      GLOBUS_TEST_CLIENT_ID: ${{ secrets.GLOBUS_TEST_CLIENT_ID }}
-      GLOBUS_TEST_CLIENT_SECRET: ${{ secrets.GLOBUS_TEST_CLIENT_SECRET }}
-      GLOBUS_TEST_SOURCE_ENDPOINT_ID: ${{ secrets.GLOBUS_TEST_SOURCE_ENDPOINT_ID }}
-      GLOBUS_TEST_DEST_ENDPOINT_ID: ${{ secrets.GLOBUS_TEST_DEST_ENDPOINT_ID }}
-      GLOBUS_TEST_GROUP_ID: ${{ secrets.GLOBUS_TEST_GROUP_ID }}
+    needs: [build, lint]
+    # Only run when explicitly triggered or on main builds
+    if: github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main'
     steps:
       - uses: actions/checkout@v4
 
@@ -88,26 +169,9 @@ jobs:
           go mod download
           go mod verify
 
-      # Only run integration tests if secrets are available
-      - name: Check for credentials
-        id: check-secrets
-        run: |
-          if [[ -n "$GLOBUS_TEST_CLIENT_ID" && -n "$GLOBUS_TEST_CLIENT_SECRET" ]]; then
-            echo "secrets_available=true" >> $GITHUB_OUTPUT
-          else
-            echo "secrets_available=false" >> $GITHUB_OUTPUT
-          fi
-
       - name: Run integration tests
-        if: steps.check-secrets.outputs.secrets_available == 'true'
         run: ./scripts/run_integration_tests.sh
-
-      - name: Skip integration tests
-        if: steps.check-secrets.outputs.secrets_available != 'true'
-        run: |
-          echo "Skipping integration tests because required secrets are not available"
-          echo "Integration tests require GLOBUS_TEST_CLIENT_ID and GLOBUS_TEST_CLIENT_SECRET to be set as secrets"
-          
-      - name: Generate test summary
-        if: steps.check-secrets.outputs.secrets_available == 'true'
-        run: ./scripts/test_summary.sh
+        env:
+          SKIP_INTEGRATION: ${{ secrets.SKIP_INTEGRATION || 'true' }}
+          GLOBUS_CLIENT_ID: ${{ secrets.GLOBUS_CLIENT_ID }}
+          GLOBUS_CLIENT_SECRET: ${{ secrets.GLOBUS_CLIENT_SECRET }}

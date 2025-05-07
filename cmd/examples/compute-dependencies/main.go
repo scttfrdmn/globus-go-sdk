@@ -238,31 +238,31 @@ requests==2.28.2
 	maxAttempts := 10
 	for i := 0; i < maxAttempts; i++ {
 		time.Sleep(3 * time.Second)
-		
+
 		taskStatus, err := computeClient.GetTaskStatus(ctx, task.TaskID)
 		if err != nil {
 			log.Printf("Error checking task status: %v", err)
 			continue
 		}
-		
+
 		fmt.Printf("Task status: %s\n", taskStatus.Status)
-		
+
 		if taskStatus.Status == "SUCCESS" {
 			fmt.Println("\n=== Image Analysis Results ===")
 			fmt.Printf("Task ID: %s\n", taskStatus.TaskID)
-			
+
 			// Pretty print the result
 			fmt.Printf("Image dimensions: %v\n", taskStatus.Result.(map[string]interface{})["dimensions"])
 			fmt.Printf("Image statistics: %v\n", taskStatus.Result.(map[string]interface{})["statistics"])
 			fmt.Printf("Edge analysis: %v\n", taskStatus.Result.(map[string]interface{})["edge_analysis"])
 			fmt.Printf("Color analysis: %v\n", taskStatus.Result.(map[string]interface{})["color_analysis"])
-			
+
 			break
 		} else if taskStatus.Status == "FAILED" {
 			fmt.Printf("Task failed: %s\n", taskStatus.Exception)
 			break
 		}
-		
+
 		if i == maxAttempts-1 {
 			fmt.Println("Task is still running. Check the status manually later.")
 		}

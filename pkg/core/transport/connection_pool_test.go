@@ -74,7 +74,7 @@ func TestConnectionPool(t *testing.T) {
 
 		// Check that connections are reused
 		stats := pool.GetStats()
-		t.Logf("Connection stats after concurrent requests: active=%d, hosts=%d", 
+		t.Logf("Connection stats after concurrent requests: active=%d, hosts=%d",
 			stats.TotalActive, stats.ActiveHosts)
 	})
 
@@ -95,12 +95,12 @@ func TestConnectionPool(t *testing.T) {
 
 		// Verify stats match configuration
 		if stats.Config.MaxIdleConnsPerHost != config.MaxIdleConnsPerHost {
-			t.Errorf("Expected MaxIdleConnsPerHost %d, got %d", 
+			t.Errorf("Expected MaxIdleConnsPerHost %d, got %d",
 				config.MaxIdleConnsPerHost, stats.Config.MaxIdleConnsPerHost)
 		}
 
 		if stats.Config.MaxConnsPerHost != config.MaxConnsPerHost {
-			t.Errorf("Expected MaxConnsPerHost %d, got %d", 
+			t.Errorf("Expected MaxConnsPerHost %d, got %d",
 				config.MaxConnsPerHost, stats.Config.MaxConnsPerHost)
 		}
 	})
@@ -243,7 +243,7 @@ func TestConnectionPoolTransport(t *testing.T) {
 		// Verify the request was tracked
 		stats := pool.GetStats()
 		if host := server.URL[7:]; stats.ActiveByHost[host] != 0 {
-			t.Errorf("Expected 0 active connections for host %s, got %d", 
+			t.Errorf("Expected 0 active connections for host %s, got %d",
 				host, stats.ActiveByHost[host])
 		}
 	})
@@ -272,7 +272,7 @@ func TestConnectionPoolTransport(t *testing.T) {
 		requestMutex.Lock()
 		count := requestCount
 		requestMutex.Unlock()
-		
+
 		if count < numRequests+1 { // +1 for the earlier test
 			t.Errorf("Expected at least %d requests, got %d", numRequests+1, count)
 		}

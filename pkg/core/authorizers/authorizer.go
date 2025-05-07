@@ -170,6 +170,10 @@ func (a *ClientCredentialsAuthorizer) GetAuthorizationHeader(ctx context.Context
 
 // HandleMissingAuthorization refreshes the token
 func (a *ClientCredentialsAuthorizer) HandleMissingAuthorization(ctx context.Context) bool {
+	// If no authFunc, can't handle
+	if a.AuthFunc == nil {
+		return false
+	}
 	err := a.refreshToken(ctx)
 	return err == nil
 }

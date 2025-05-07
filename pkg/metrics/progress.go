@@ -13,13 +13,13 @@ import (
 // ProgressBar represents a progress bar that can be updated over time
 type ProgressBar struct {
 	// Configuration
-	writer       io.Writer
-	width        int
-	refreshRate  time.Duration
-	showSpeed    bool
-	showETA      bool
-	showValues   bool
-	showPercent  bool
+	writer            io.Writer
+	width             int
+	refreshRate       time.Duration
+	showSpeed         bool
+	showETA           bool
+	showValues        bool
+	showPercent       bool
 	hideAfterComplete bool
 
 	// State
@@ -97,18 +97,18 @@ func WithMessage(message string) ProgressBarOption {
 // NewProgressBar creates a new progress bar
 func NewProgressBar(writer io.Writer, total int64, opts ...ProgressBarOption) *ProgressBar {
 	bar := &ProgressBar{
-		writer:       writer,
-		total:        total,
-		width:        40,
-		refreshRate:  200 * time.Millisecond,
-		showSpeed:    true,
-		showETA:      true,
-		showValues:   true,
-		showPercent:  true,
-		startTime:    time.Now(),
-		lastUpdate:   time.Now(),
-		lastRefresh:  time.Now(),
-		done:         make(chan struct{}),
+		writer:      writer,
+		total:       total,
+		width:       40,
+		refreshRate: 200 * time.Millisecond,
+		showSpeed:   true,
+		showETA:     true,
+		showValues:  true,
+		showPercent: true,
+		startTime:   time.Now(),
+		lastUpdate:  time.Now(),
+		lastRefresh: time.Now(),
+		done:        make(chan struct{}),
 	}
 
 	// Apply options
@@ -158,12 +158,12 @@ func (p *ProgressBar) Update(current int64) {
 	p.current = current
 	now := time.Now()
 	elapsed := now.Sub(p.lastUpdate).Seconds()
-	
+
 	// Calculate speed (e.g., bytes per second)
 	if elapsed > 0 && p.lastUpdate != p.startTime {
 		p.speed = float64(current-p.current) / elapsed
 	}
-	
+
 	p.lastUpdate = now
 }
 
@@ -171,7 +171,7 @@ func (p *ProgressBar) Update(current int64) {
 func (p *ProgressBar) SetMessage(message string) {
 	p.mu.Lock()
 	defer p.mu.Unlock()
-	
+
 	p.message = message
 }
 
@@ -182,7 +182,7 @@ func (p *ProgressBar) Complete() {
 	p.current = p.total
 	p.refresh()
 	p.mu.Unlock()
-	
+
 	close(p.done)
 }
 
@@ -198,14 +198,14 @@ func (p *ProgressBar) refresh() {
 	if p.total > 0 {
 		percent = float64(p.current) / float64(p.total) * 100
 	}
-	
+
 	// Draw the progress bar
 	width := p.width
 	completed := int(float64(width) * float64(p.current) / float64(p.total))
 	if completed > width {
 		completed = width
 	}
-	
+
 	// Create the bar
 	bar := "["
 	if completed > 0 {
@@ -218,25 +218,25 @@ func (p *ProgressBar) refresh() {
 	}
 	bar += strings.Repeat(" ", width-completed)
 	bar += "]"
-	
+
 	// Format the output line
 	line := bar
-	
+
 	// Add percentage if enabled
 	if p.showPercent {
 		line += fmt.Sprintf(" %.1f%%", percent)
 	}
-	
+
 	// Add values if enabled
 	if p.showValues {
 		line += fmt.Sprintf(" %s/%s", formatBytes(p.current), formatBytes(p.total))
 	}
-	
+
 	// Add speed if enabled
 	if p.showSpeed && p.speed > 0 {
 		line += fmt.Sprintf(" %s/s", formatBytes(int64(p.speed)))
 	}
-	
+
 	// Add ETA if enabled
 	if p.showETA && p.speed > 0 && p.current < p.total {
 		remaining := float64(p.total-p.current) / p.speed
@@ -245,15 +245,15 @@ func (p *ProgressBar) refresh() {
 			line += fmt.Sprintf(" ETA: %s", formatDuration(eta))
 		}
 	}
-	
+
 	// Add message if present
 	if p.message != "" {
 		line += " " + p.message
 	}
-	
+
 	// Print the line with a carriage return (to stay on the same line)
 	fmt.Fprintf(p.writer, "\r%s", line)
-	
+
 	// Add a newline if completed and not hiding
 	if p.completed && !p.hideAfterComplete {
 		fmt.Fprintln(p.writer)

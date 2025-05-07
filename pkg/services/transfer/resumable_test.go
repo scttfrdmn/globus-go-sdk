@@ -11,6 +11,8 @@ import (
 	"path/filepath"
 	"testing"
 	"time"
+
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 )
 
 func TestCreateResumableTransfer(t *testing.T) {
@@ -53,8 +55,14 @@ func TestCreateResumableTransfer(t *testing.T) {
 	}))
 	defer server.Close()
 
-	// Create client
-	client := NewClient("fake-token", WithBaseURL(server.URL+"/"))
+	// Create client with the new pattern
+	client, err := NewClient(
+		WithAuthorizer(mockAuthorizer("fake-token")),
+		WithCoreOption(core.WithBaseURL(server.URL+"/")),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 
 	// Test creating a resumable transfer
 	options := DefaultResumableTransferOptions()
@@ -99,6 +107,13 @@ func TestCreateResumableTransfer(t *testing.T) {
 		t.Errorf("Expected 2 pending items, got %d", len(state.PendingItems))
 	}
 
+	// Check if DATA_TYPE is properly set for transfer items
+	for i, item := range state.PendingItems {
+		if item.DataType != "transfer_item" {
+			t.Errorf("Pending item %d has incorrect DATA_TYPE: expected 'transfer_item', got '%s'", i, item.DataType)
+		}
+	}
+
 	// Clean up checkpoint
 	if err := storage.DeleteCheckpoint(context.Background(), checkpointID); err != nil {
 		t.Fatalf("Failed to delete checkpoint: %v", err)
@@ -134,10 +149,12 @@ func TestCheckpointStorage(t *testing.T) {
 	// Add some pending items
 	state.PendingItems = []TransferItem{
 		{
+			DataType:        "transfer_item",
 			SourcePath:      "/source/file1.txt",
 			DestinationPath: "/destination/file1.txt",
 		},
 		{
+			DataType:        "transfer_item",
 			SourcePath:      "/source/file2.txt",
 			DestinationPath: "/destination/file2.txt",
 		},
@@ -181,6 +198,13 @@ func TestCheckpointStorage(t *testing.T) {
 
 	if len(loadedState.PendingItems) != 2 {
 		t.Errorf("Expected 2 pending items, got %d", len(loadedState.PendingItems))
+	}
+
+	// Verify DATA_TYPE field in loaded items
+	for i, item := range loadedState.PendingItems {
+		if item.DataType != "transfer_item" {
+			t.Errorf("Loaded pending item %d has incorrect DATA_TYPE: expected 'transfer_item', got '%s'", i, item.DataType)
+		}
 	}
 
 	// Delete checkpoint

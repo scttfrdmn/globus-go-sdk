@@ -31,7 +31,7 @@ func InitTransport(client interfaces.ClientInterface, debug, trace bool) interfa
 func init() {
 	// Initialize the global connection pool manager
 	SetConnectionPoolManager(pool.GlobalPoolManager)
-	
+
 	// Enable connection pooling by default unless disabled by environment variable
 	if os.Getenv("GLOBUS_DISABLE_CONNECTION_POOL") != "true" {
 		EnableDefaultConnectionPool()

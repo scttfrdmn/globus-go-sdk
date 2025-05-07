@@ -29,14 +29,14 @@ func main() {
 	err1 := godotenv.Load("../../.env.test") // When run from cmd/verify-credentials
 	err2 := godotenv.Load("./.env.test")     // When run from project root
 	err3 := godotenv.Load(".env.test")       // Fallback
-	
+
 	if err1 != nil && err2 != nil && err3 != nil {
 		fmt.Println("Warning: No .env.test file found, using environment variables")
 		fmt.Println("Create a .env.test file with GLOBUS_TEST_CLIENT_ID and GLOBUS_TEST_CLIENT_SECRET")
 	} else {
 		fmt.Println("Loaded environment variables from .env.test file")
 	}
-	
+
 	// Check credentials
 	fmt.Println("Verifying Globus credentials...")
 	err := VerifyCredentials()
@@ -44,7 +44,7 @@ func main() {
 		fmt.Printf("❌ Error: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	fmt.Println("\n✨ Success! Your Globus credentials are valid.")
 	fmt.Println("   The client credentials can be used for the Auth service.")
 	fmt.Println("   Other services may require different authentication flows.")
@@ -371,8 +371,8 @@ func getGroup(client *http.Client, token, groupID string) (*GroupInfo, error) {
 
 // SearchResponse represents a simplified response from the Search API
 type SearchResponse struct {
-	Count   int                      `json:"count"`
-	Total   int                      `json:"total"`
+	Count    int                      `json:"count"`
+	Total    int                      `json:"total"`
 	Subjects []map[string]interface{} `json:"subjects"`
 }
 
@@ -380,8 +380,8 @@ type SearchResponse struct {
 func searchIndex(client *http.Client, token, indexID string) (bool, error) {
 	// Construct a simple query to test access
 	query := map[string]interface{}{
-		"q": "*",      // Simple wildcard query to match all documents
-		"limit": 1,    // Only need one result to verify access
+		"q":     "*", // Simple wildcard query to match all documents
+		"limit": 1,   // Only need one result to verify access
 	}
 
 	jsonData, err := json.Marshal(query)

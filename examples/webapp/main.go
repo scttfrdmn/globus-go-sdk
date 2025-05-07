@@ -99,14 +99,14 @@ func main() {
 
 	// Initialize token manager
 	app.TokenManager = tokens.NewManager(app.TokenStorage, app.AuthClient)
-	
+
 	// Configure token refresh to happen when tokens are within 10 minutes of expiry
 	app.TokenManager.SetRefreshThreshold(10 * time.Minute)
-	
+
 	// Start background token refresh (refresh every 15 minutes)
 	stopRefresh := app.TokenManager.StartBackgroundRefresh(15 * time.Minute)
 	defer stopRefresh() // Will be called when the app terminates
-	
+
 	// Set up HTTP routes
 	http.HandleFunc("/", app.handleHome)
 	http.HandleFunc("/login", app.handleLogin)
@@ -698,17 +698,17 @@ func (app *App) handleAPIFlows(w http.ResponseWriter, r *http.Request) {
 
 	// Create a new flows client with the fresh token for this request
 	app.FlowsClient = flows.NewClient(accessToken)
-	
+
 	// Note: In a production implementation, we would use the flows client's method directly
 	// but for this example we're using our own implementation
-	
+
 	// For this example, we'll use our own simple flows implementation
 	flowList, err := app.performSimpleFlowsList(ctx, 10)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Failed to list flows: %v", err), http.StatusInternalServerError)
 		return
 	}
-	
+
 	// Return flows as JSON
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(flowList)
@@ -742,7 +742,7 @@ func (app *App) handleAPISearch(w http.ResponseWriter, r *http.Request) {
 
 	// Note: In a production implementation, we would use the search client's method directly
 	// but for this example we're using our own implementation
-	
+
 	// For this example, we'll use our own simple search implementation
 	searchResults, err := app.performSimpleSearch(ctx, query, 10)
 	if err != nil {

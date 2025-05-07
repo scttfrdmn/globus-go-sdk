@@ -73,7 +73,7 @@ func (c *Config) GetIdleConnTimeout() time.Duration {
 // ForService returns a configuration optimized for a specific service
 func ForService(service string) *Config {
 	config := DefaultConfig()
-	
+
 	switch service {
 	case "transfer":
 		// Transfer service may have higher throughput needs
@@ -103,6 +103,6 @@ func ForService(service string) *Config {
 		config.MaxConnsPerHost = 8
 		config.IdleConnTimeout = 60 * time.Second
 	}
-	
+
 	return config
 }

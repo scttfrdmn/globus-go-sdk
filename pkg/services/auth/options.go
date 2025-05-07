@@ -12,10 +12,10 @@ type ClientOption func(*clientOptions)
 
 // clientOptions represents options for configuring an Auth client
 type clientOptions struct {
-	clientID      string
-	clientSecret  string
-	redirectURL   string
-	coreOptions   []core.ClientOption
+	clientID     string
+	clientSecret string
+	redirectURL  string
+	coreOptions  []core.ClientOption
 }
 
 // WithClientID sets the client ID

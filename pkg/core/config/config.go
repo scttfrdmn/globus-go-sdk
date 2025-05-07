@@ -102,9 +102,19 @@ func (c *Config) ApplyToClient(client *core.Client) {
 	if c.LogLevel != core.LogLevelNone {
 		client.Logger = core.NewDefaultLogger(nil, c.LogLevel)
 	}
-	
+
 	// Apply VersionCheck if set
 	if client.VersionCheck == nil && c.VersionCheck != nil {
 		client.VersionCheck = c.VersionCheck
 	}
+}
+
+// GetVersionCheck returns the version check manager
+func (c *Config) GetVersionCheck() *core.VersionCheck {
+	return c.VersionCheck
+}
+
+// SetVersionCheck sets the version check manager
+func (c *Config) SetVersionCheck(vc *core.VersionCheck) {
+	c.VersionCheck = vc
 }

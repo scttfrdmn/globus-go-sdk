@@ -51,7 +51,7 @@ func main() {
 	// Print endpoints
 	fmt.Printf("Found %d endpoints:\n", len(endpoints.Data))
 	for i, ep := range endpoints.Data {
-		fmt.Printf("%d. %s (%s) - %s\n", i+1, ep.DisplayName, ep.ID, 
+		fmt.Printf("%d. %s (%s) - %s\n", i+1, ep.DisplayName, ep.ID,
 			map[bool]string{true: "Activated", false: "Not Activated"}[ep.Activated])
 	}
 
@@ -79,7 +79,7 @@ func main() {
 	// NOTE: Explicit endpoint activation has been removed.
 	// Modern Globus endpoints (v0.10+) automatically activate with properly scoped tokens.
 	// Just ensure your token has the proper permissions for the endpoints.
-	
+
 	fmt.Println("Using endpoints:")
 	fmt.Printf("  - Source: %s (%s)\n", sourceEndpoint.DisplayName, sourceEndpoint.ID)
 	fmt.Printf("  - Destination: %s (%s)\n", destEndpoint.DisplayName, destEndpoint.ID)

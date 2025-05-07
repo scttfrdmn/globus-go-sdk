@@ -11,16 +11,16 @@ import (
 type ClientInterface interface {
 	// Do performs an HTTP request and handles common error cases
 	Do(ctx context.Context, req *http.Request) (*http.Response, error)
-	
+
 	// GetHTTPClient returns the underlying HTTP client
 	GetHTTPClient() *http.Client
-	
+
 	// GetBaseURL returns the base URL for the client
 	GetBaseURL() string
-	
+
 	// GetUserAgent returns the user agent string for the client
 	GetUserAgent() string
-	
+
 	// GetLogger returns the logger for the client
 	GetLogger() Logger
 }

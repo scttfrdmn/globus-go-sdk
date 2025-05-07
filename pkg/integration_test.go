@@ -30,7 +30,7 @@ func skipIfMissingCredentials(t *testing.T) (string, string) {
 	if clientID == "" {
 		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_ID environment variable")
 	}
-	
+
 	if clientSecret == "" {
 		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_SECRET environment variable")
 	}

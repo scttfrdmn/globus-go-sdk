@@ -41,7 +41,7 @@ func getTestCredentials(t *testing.T) (string, string, string) {
 	if clientID == "" {
 		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_ID environment variable")
 	}
-	
+
 	if clientSecret == "" {
 		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_SECRET environment variable")
 	}
@@ -56,27 +56,27 @@ func getAccessToken(t *testing.T, clientID, clientSecret string) string {
 		t.Log("Using static groups token from environment")
 		return staticToken
 	}
-	
+
 	// If no static token, try to get one via client credentials
 	t.Log("Getting client credentials token for groups")
 	authClient := auth.NewClient(clientID, clientSecret)
-	
+
 	// Try specific scope for groups
 	tokenResp, err := authClient.GetClientCredentialsToken(context.Background(), "urn:globus:auth:scope:groups.api.globus.org:all")
 	if err != nil {
 		t.Logf("Failed to get token with groups scope: %v", err)
 		t.Log("Falling back to default token")
-		
+
 		// Fallback to default token
 		tokenResp, err = authClient.GetClientCredentialsToken(context.Background())
 		if err != nil {
 			t.Fatalf("Failed to get any token: %v", err)
 		}
-		
+
 		t.Log("WARNING: This token may not have groups permissions. Consider providing GLOBUS_TEST_GROUPS_TOKEN")
 	} else {
-		t.Logf("Got token with resource server: %s, scopes: %s", 
-			   tokenResp.ResourceServer, tokenResp.Scope)
+		t.Logf("Got token with resource server: %s, scopes: %s",
+			tokenResp.ResourceServer, tokenResp.Scope)
 	}
 
 	return tokenResp.AccessToken
@@ -295,8 +295,8 @@ func TestIntegration_ExistingGroup(t *testing.T) {
 	// Verify we can get the group
 	group, err := client.GetGroup(ctx, groupID)
 	if err != nil {
-		if strings.Contains(err.Error(), "status code 401") || 
-		   strings.Contains(err.Error(), "status code 403") {
+		if strings.Contains(err.Error(), "status code 401") ||
+			strings.Contains(err.Error(), "status code 403") {
 			t.Logf("PERMISSION ERROR: Cannot access group: %v", err)
 			t.Logf("To resolve, provide GLOBUS_TEST_GROUPS_TOKEN with proper permissions")
 			return
@@ -317,8 +317,8 @@ func TestIntegration_ExistingGroup(t *testing.T) {
 	// List members
 	members, err := client.ListMembers(ctx, groupID, nil)
 	if err != nil {
-		if strings.Contains(err.Error(), "status code 401") || 
-		   strings.Contains(err.Error(), "status code 403") {
+		if strings.Contains(err.Error(), "status code 401") ||
+			strings.Contains(err.Error(), "status code 403") {
 			t.Logf("PERMISSION ERROR: Cannot list members: %v", err)
 			t.Logf("To resolve, provide GLOBUS_TEST_GROUPS_TOKEN with proper permissions")
 			return
@@ -339,9 +339,9 @@ func TestIntegration_ExistingGroup(t *testing.T) {
 		if firstMember.Username == "" && firstMember.Email == "" {
 			t.Error("First member is missing both username and email")
 		}
-		
+
 		// Log info about first member
-		t.Logf("First member: %s (ID: %s)", 
+		t.Logf("First member: %s (ID: %s)",
 			firstMember.Username, firstMember.IdentityID)
 		t.Logf("First member role: %s", firstMember.Role.Name)
 	}
@@ -349,8 +349,8 @@ func TestIntegration_ExistingGroup(t *testing.T) {
 	// List roles
 	roles, err := client.ListRoles(ctx, groupID)
 	if err != nil {
-		if strings.Contains(err.Error(), "status code 401") || 
-		   strings.Contains(err.Error(), "status code 403") {
+		if strings.Contains(err.Error(), "status code 401") ||
+			strings.Contains(err.Error(), "status code 403") {
 			t.Logf("PERMISSION ERROR: Cannot list roles: %v", err)
 			t.Logf("To resolve, provide GLOBUS_TEST_GROUPS_TOKEN with proper permissions")
 			return
@@ -358,9 +358,9 @@ func TestIntegration_ExistingGroup(t *testing.T) {
 			t.Fatalf("Failed to list roles: %v", err)
 		}
 	}
-	
+
 	t.Logf("Group has %d roles", len(roles.Roles))
-	
+
 	// Log info about available roles
 	for i, role := range roles.Roles {
 		t.Logf("Role %d: %s (ID: %s)", i+1, role.Name, role.ID)

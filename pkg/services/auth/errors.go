@@ -151,13 +151,16 @@ func parseAuthError(statusCode int, respBody []byte) error {
 	// Set the status code for later checking
 	authErr.StatusCode = statusCode
 
-	// Map common error codes to standard errors
+	// Map common error codes to standard errors or return the AuthError directly
 	switch authErr.Code {
 	case ErrCodeInvalidGrant:
-		if strings.Contains(authErr.Description, "expired") {
+		// Check specifically for refresh token expiration
+		if strings.Contains(strings.ToLower(authErr.Description), "refresh token") &&
+			strings.Contains(strings.ToLower(authErr.Description), "expired") {
 			return fmt.Errorf("%w: %s", ErrTokenExpired, authErr.Description)
 		}
-		return fmt.Errorf("%w: %s", ErrInvalidGrant, authErr.Description)
+		// Return the AuthError directly to maintain its type for other invalid_grant errors
+		return &authErr
 	case ErrCodeInvalidClient:
 		return fmt.Errorf("%w: %s", ErrInvalidClient, authErr.Description)
 	case ErrCodeInvalidScope:

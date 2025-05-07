@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	
+
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 )
 
@@ -22,26 +22,26 @@ const (
 	ErrCodeRateLimitExceeded      = "RateLimitExceeded"
 	ErrCodeAuthenticationRequired = "AuthenticationRequired"
 	ErrCodeServerError            = "ServerError"
-	
+
 	// Task-specific error codes
-	ErrCodeTaskNotFound           = "TaskNotFound"
-	ErrCodeTaskExpired            = "TaskExpired"
-	ErrCodeTaskCanceled           = "TaskCanceled"
-	ErrCodeTaskCompleted          = "TaskCompleted"
-	
+	ErrCodeTaskNotFound  = "TaskNotFound"
+	ErrCodeTaskExpired   = "TaskExpired"
+	ErrCodeTaskCanceled  = "TaskCanceled"
+	ErrCodeTaskCompleted = "TaskCompleted"
+
 	// Endpoint-specific error codes
-	ErrCodeEndpointNotFound       = "EndpointNotFound"
+	ErrCodeEndpointNotFound = "EndpointNotFound"
 	// Kept for backward compatibility but activation is now automatic in v0.10+
-	ErrCodeEndpointNotActivated   = "EndpointNotActivated"
-	ErrCodeEndpointError          = "EndpointError"
-	
+	ErrCodeEndpointNotActivated = "EndpointNotActivated"
+	ErrCodeEndpointError        = "EndpointError"
+
 	// File operation error codes
-	ErrCodeFileNotFound           = "FileNotFound"
-	ErrCodeDirectoryNotFound      = "DirectoryNotFound"
-	ErrCodeFileExists             = "FileExists"
-	ErrCodeNoSuchPath             = "NoSuchPath"
-	ErrCodeNotADirectory          = "NotADirectory"
-	ErrCodePathCreationFailed     = "PathCreationFailed"
+	ErrCodeFileNotFound       = "FileNotFound"
+	ErrCodeDirectoryNotFound  = "DirectoryNotFound"
+	ErrCodeFileExists         = "FileExists"
+	ErrCodeNoSuchPath         = "NoSuchPath"
+	ErrCodeNotADirectory      = "NotADirectory"
+	ErrCodePathCreationFailed = "PathCreationFailed"
 )
 
 // Common errors that can be directly checked
@@ -53,33 +53,33 @@ var (
 	ErrBadRequest             = errors.New("bad request")
 	ErrServerError            = errors.New("server error")
 	ErrAuthenticationRequired = errors.New("authentication required")
-	
+
 	// Task-specific errors
-	ErrTaskNotFound           = errors.New("task not found")
-	ErrTaskExpired            = errors.New("task expired")
-	ErrTaskCanceled           = errors.New("task canceled")
-	ErrTaskCompleted          = errors.New("task completed")
-	
+	ErrTaskNotFound  = errors.New("task not found")
+	ErrTaskExpired   = errors.New("task expired")
+	ErrTaskCanceled  = errors.New("task canceled")
+	ErrTaskCompleted = errors.New("task completed")
+
 	// Endpoint-specific errors
-	ErrEndpointNotFound       = errors.New("endpoint not found")
+	ErrEndpointNotFound = errors.New("endpoint not found")
 	// Kept for backward compatibility but activation is now automatic in v0.10+
-	ErrEndpointNotActivated   = errors.New("endpoint not activated")
-	
+	ErrEndpointNotActivated = errors.New("endpoint not activated")
+
 	// File operation errors
-	ErrFileNotFound           = errors.New("file not found")
-	ErrDirectoryNotFound      = errors.New("directory not found")
-	ErrFileExists             = errors.New("file already exists")
-	ErrNoSuchPath             = errors.New("no such path")
-	ErrNotADirectory          = errors.New("not a directory")
+	ErrFileNotFound      = errors.New("file not found")
+	ErrDirectoryNotFound = errors.New("directory not found")
+	ErrFileExists        = errors.New("file already exists")
+	ErrNoSuchPath        = errors.New("no such path")
+	ErrNotADirectory     = errors.New("not a directory")
 )
 
 // TransferError represents an error from the Globus Transfer API
 type TransferError struct {
-	Code        string `json:"code"`
-	Message     string `json:"message"`
-	Resource    string `json:"resource,omitempty"`
-	RequestID   string `json:"request_id,omitempty"`
-	StatusCode  int    `json:"-"`
+	Code       string `json:"code"`
+	Message    string `json:"message"`
+	Resource   string `json:"resource,omitempty"`
+	RequestID  string `json:"request_id,omitempty"`
+	StatusCode int    `json:"-"`
 }
 
 // Error returns a string representation of the error
@@ -95,18 +95,18 @@ func IsResourceNotFound(err error) bool {
 	var transferErr *TransferError
 	if errors.As(err, &transferErr) {
 		return transferErr.Code == ErrCodeResourceNotFound ||
-			   transferErr.Code == ErrCodeEndpointNotFound ||
-			   transferErr.Code == ErrCodeFileNotFound ||
-			   transferErr.Code == ErrCodeDirectoryNotFound ||
-			   transferErr.Code == ErrCodeTaskNotFound ||
-			   transferErr.Code == ErrCodeNoSuchPath
+			transferErr.Code == ErrCodeEndpointNotFound ||
+			transferErr.Code == ErrCodeFileNotFound ||
+			transferErr.Code == ErrCodeDirectoryNotFound ||
+			transferErr.Code == ErrCodeTaskNotFound ||
+			transferErr.Code == ErrCodeNoSuchPath
 	}
 	return errors.Is(err, ErrResourceNotFound) ||
-		   errors.Is(err, ErrEndpointNotFound) ||
-		   errors.Is(err, ErrFileNotFound) ||
-		   errors.Is(err, ErrDirectoryNotFound) ||
-		   errors.Is(err, ErrTaskNotFound) ||
-		   errors.Is(err, ErrNoSuchPath)
+		errors.Is(err, ErrEndpointNotFound) ||
+		errors.Is(err, ErrFileNotFound) ||
+		errors.Is(err, ErrDirectoryNotFound) ||
+		errors.Is(err, ErrTaskNotFound) ||
+		errors.Is(err, ErrNoSuchPath)
 }
 
 // IsPermissionDenied checks if the error indicates a permission denied condition
@@ -124,15 +124,15 @@ func IsRateLimitExceeded(err error) bool {
 	var transferErr *TransferError
 	if errors.As(err, &transferErr) {
 		return transferErr.Code == ErrCodeRateLimitExceeded ||
-			   (transferErr.StatusCode == http.StatusTooManyRequests)
+			(transferErr.StatusCode == http.StatusTooManyRequests)
 	}
-	
+
 	// Check for core.Error
 	var coreErr *core.Error
 	if errors.As(err, &coreErr) {
 		return coreErr.StatusCode == http.StatusTooManyRequests
 	}
-	
+
 	// Check for wrapped error
 	return errors.Is(err, ErrRateLimitExceeded)
 }
@@ -142,7 +142,7 @@ func IsAuthenticationRequired(err error) bool {
 	var transferErr *TransferError
 	if errors.As(err, &transferErr) {
 		return transferErr.Code == ErrCodeAuthenticationRequired ||
-			   transferErr.StatusCode == http.StatusUnauthorized
+			transferErr.StatusCode == http.StatusUnauthorized
 	}
 	return errors.Is(err, ErrAuthenticationRequired)
 }
@@ -217,8 +217,8 @@ func parseTransferError(statusCode int, respBody []byte) error {
 
 		// Map common error codes to standard errors for easier checking
 		switch code {
-		case ErrCodeResourceNotFound, ErrCodeEndpointNotFound, ErrCodeTaskNotFound, 
-			 ErrCodeFileNotFound, ErrCodeDirectoryNotFound, ErrCodeNoSuchPath:
+		case ErrCodeResourceNotFound, ErrCodeEndpointNotFound, ErrCodeTaskNotFound,
+			ErrCodeFileNotFound, ErrCodeDirectoryNotFound, ErrCodeNoSuchPath:
 			return fmt.Errorf("%w: %s", ErrResourceNotFound, transferErr.Error())
 		case ErrCodePermissionDenied:
 			return fmt.Errorf("%w: %s", ErrPermissionDenied, transferErr.Error())
@@ -251,27 +251,27 @@ func IsRetryableTransferError(err error) bool {
 	var transferErr *TransferError
 	if errors.As(err, &transferErr) {
 		// Rate limit errors are always retryable
-		if transferErr.Code == ErrCodeRateLimitExceeded || 
-		   transferErr.StatusCode == http.StatusTooManyRequests {
+		if transferErr.Code == ErrCodeRateLimitExceeded ||
+			transferErr.StatusCode == http.StatusTooManyRequests {
 			return true
 		}
 
 		// Server errors are generally retryable
 		if transferErr.Code == ErrCodeServerError ||
-		   transferErr.Code == ErrCodeServiceUnavailable ||
-		   transferErr.StatusCode >= 500 && transferErr.StatusCode < 600 {
+			transferErr.Code == ErrCodeServiceUnavailable ||
+			transferErr.StatusCode >= 500 && transferErr.StatusCode < 600 {
 			return true
 		}
 
 		// Some endpoint errors might be temporary
 		if strings.Contains(transferErr.Message, "temporarily") ||
-		   strings.Contains(transferErr.Message, "retry") {
+			strings.Contains(transferErr.Message, "retry") {
 			return true
 		}
 
 		return false
 	}
-	
+
 	// Check for core.Error
 	var coreErr *core.Error
 	if errors.As(err, &coreErr) {
@@ -279,23 +279,23 @@ func IsRetryableTransferError(err error) bool {
 		if coreErr.StatusCode == http.StatusTooManyRequests {
 			return true
 		}
-		
+
 		// Server errors are generally retryable
 		if coreErr.StatusCode >= 500 && coreErr.StatusCode < 600 {
 			return true
 		}
-		
+
 		// Check error message for retry hints
 		if strings.Contains(strings.ToLower(coreErr.Message), "temporarily") ||
-		   strings.Contains(strings.ToLower(coreErr.Message), "retry") ||
-		   strings.Contains(strings.ToLower(coreErr.Message), "rate limit") {
+			strings.Contains(strings.ToLower(coreErr.Message), "retry") ||
+			strings.Contains(strings.ToLower(coreErr.Message), "rate limit") {
 			return true
 		}
-		
+
 		return false
 	}
 
 	// For standard errors, check if they match known retryable errors
 	return errors.Is(err, ErrRateLimitExceeded) ||
-		   errors.Is(err, ErrServerError)
+		errors.Is(err, ErrServerError)
 }

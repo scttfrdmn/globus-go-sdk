@@ -9,10 +9,13 @@ import (
 
 const (
 	// SyncLevel constants define how to synchronize files
-	SyncLevelExists    = 0 // Only transfer if destination doesn't exist
-	SyncLevelSize      = 1 // Transfer if size differs
-	SyncLevelModified  = 2 // Transfer if size or modification time differs
-	SyncLevelChecksum  = 3 // Transfer if size, modification time, or checksum differs
+	SyncLevelExists   = 0 // Only transfer if destination doesn't exist
+	SyncLevelSize     = 1 // Transfer if size differs
+	SyncLevelModified = 2 // Transfer if size or modification time differs
+	SyncLevelChecksum = 3 // Transfer if size, modification time, or checksum differs
+	
+	// Alias for backward compatibility
+	SyncChecksum = SyncLevelChecksum
 )
 
 // Endpoint represents a Globus endpoint (source or destination for transfers)
@@ -170,8 +173,8 @@ type TransferItem struct {
 
 // DeleteItem represents a single file or directory to delete
 type DeleteItem struct {
-	DataType  string `json:"DATA_TYPE"` // Must be "delete_item" - Important: This field is required for the API
-	Path      string `json:"path"`
+	DataType string `json:"DATA_TYPE"` // Must be "delete_item" - Important: This field is required for the API
+	Path     string `json:"path"`
 	// Note: The API does not support a "recursive" field for delete_item as of API v0.10
 }
 

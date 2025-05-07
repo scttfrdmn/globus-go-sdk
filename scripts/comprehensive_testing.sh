@@ -55,8 +55,24 @@ fi
 source "${ENV_FILE}"
 
 # Check for required environment variables
+# Support both prefixed and non-prefixed variables
+if [ -n "${GLOBUS_TEST_CLIENT_ID}" ]; then
+    export GLOBUS_CLIENT_ID="${GLOBUS_TEST_CLIENT_ID}"
+fi
+if [ -n "${GLOBUS_TEST_CLIENT_SECRET}" ]; then
+    export GLOBUS_CLIENT_SECRET="${GLOBUS_TEST_CLIENT_SECRET}"
+fi
+if [ -n "${GLOBUS_TEST_SOURCE_ENDPOINT_ID}" ]; then
+    export SOURCE_ENDPOINT_ID="${GLOBUS_TEST_SOURCE_ENDPOINT_ID}"
+fi
+if [ -n "${GLOBUS_TEST_DEST_ENDPOINT_ID}" ]; then
+    export DEST_ENDPOINT_ID="${GLOBUS_TEST_DEST_ENDPOINT_ID}"
+fi
+
+# Now check if we have what we need
 if [ -z "${GLOBUS_CLIENT_ID}" ] || [ -z "${GLOBUS_CLIENT_SECRET}" ]; then
     log "ERROR: GLOBUS_CLIENT_ID and/or GLOBUS_CLIENT_SECRET missing from .env.test file."
+    log "Make sure you have either GLOBUS_CLIENT_ID or GLOBUS_TEST_CLIENT_ID set."
     exit 1
 fi
 

@@ -10,8 +10,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 )
 
 func TestCreateEnvironment(t *testing.T) {
@@ -43,10 +41,11 @@ func TestCreateEnvironment(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
@@ -107,10 +106,11 @@ func TestListEnvironments(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
@@ -152,10 +152,11 @@ func TestGetEnvironment(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
@@ -167,7 +168,7 @@ func TestGetEnvironment(t *testing.T) {
 	assert.Equal(t, "env123", resp.ID)
 	assert.Equal(t, "test-environment", resp.Name)
 	assert.Equal(t, "true", resp.Variables["DEBUG"])
-	assert.Equal(t, 2, resp.Resources["cpus"])
+	assert.Equal(t, float64(2), resp.Resources["cpus"])
 }
 
 func TestUpdateEnvironment(t *testing.T) {
@@ -198,10 +199,11 @@ func TestUpdateEnvironment(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
@@ -234,15 +236,16 @@ func TestDeleteEnvironment(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
 	ctx := context.Background()
-	err := client.DeleteEnvironment(ctx, "env123")
+	err = client.DeleteEnvironment(ctx, "env123")
 	assert.NoError(t, err)
 }
 
@@ -273,10 +276,11 @@ func TestApplyEnvironmentToTask(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Create task request
@@ -292,26 +296,26 @@ func TestApplyEnvironmentToTask(t *testing.T) {
 	// Test the method
 	ctx := context.Background()
 	enrichedRequest, err := client.ApplyEnvironmentToTask(ctx, taskRequest, "env123")
-	
+
 	assert.NoError(t, err)
 	assert.NotNil(t, enrichedRequest)
 	assert.Equal(t, "func123", enrichedRequest.FunctionID)
 	assert.Equal(t, "endpoint123", enrichedRequest.EndpointID)
 	assert.Equal(t, []interface{}{"arg1", "arg2"}, enrichedRequest.Args)
-	
+
 	// Check that original kwargs are preserved
 	assert.Equal(t, "value1", enrichedRequest.Kwargs["param1"])
-	
+
 	// Check that environment variables were added
 	variables, ok := enrichedRequest.Kwargs["environment"].(map[string]string)
 	assert.True(t, ok)
 	assert.Equal(t, "secret-key", variables["API_KEY"])
 	assert.Equal(t, "DEBUG", variables["LOG_LEVEL"])
-	
+
 	// Check that resources were added
 	resources, ok := enrichedRequest.Kwargs["resources"].(map[string]interface{})
 	assert.True(t, ok)
-	assert.Equal(t, 4, resources["cpus"])
+	assert.Equal(t, float64(4), resources["cpus"])
 	assert.Equal(t, "8GB", resources["memory"])
 	assert.Equal(t, true, resources["gpu"])
 }
@@ -342,10 +346,11 @@ func TestCreateSecret(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
@@ -390,10 +395,11 @@ func TestListSecrets(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
@@ -418,14 +424,15 @@ func TestDeleteSecret(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
 	ctx := context.Background()
-	err := client.DeleteSecret(ctx, "secret123")
+	err = client.DeleteSecret(ctx, "secret123")
 	assert.NoError(t, err)
 }

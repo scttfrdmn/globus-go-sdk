@@ -10,6 +10,20 @@ This directory contains images used in the Globus Go SDK documentation. All imag
 3. Use SVG format for diagrams when possible
 4. Provide alt text in documentation references
 
+## Project Logo
+
+The `globus-go-sdk-logo.png` is the official logo for the Globus Go SDK project. It is used in the README and other documentation.
+
+### Logo Usage Guidelines
+
+When using the logo:
+
+1. Do not modify the logo colors or proportions
+2. Maintain adequate space around the logo when displaying it
+3. Use the logo at an appropriate size for the context
+4. For web usage, the recommended width is 400px
+5. For presentations, ensure the logo is clearly visible
+
 ## Naming Conventions
 
 Use kebab-case for filenames:

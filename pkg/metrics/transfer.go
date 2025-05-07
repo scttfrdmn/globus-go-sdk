@@ -10,11 +10,11 @@ import (
 // TransferMetrics contains performance metrics for a transfer operation
 type TransferMetrics struct {
 	// Transfer identification
-	TransferID    string
-	TaskID        string
+	TransferID     string
+	TaskID         string
 	SourceEndpoint string
 	DestEndpoint   string
-	Label         string
+	Label          string
 
 	// Overall metrics
 	StartTime        time.Time
@@ -23,34 +23,34 @@ type TransferMetrics struct {
 	BytesTransferred int64
 	FilesTotal       int64
 	FilesTransferred int64
-	
+
 	// Performance metrics
-	BytesPerSecond       float64
-	PeakBytesPerSecond   float64
-	AvgBytesPerSecond    float64
-	EstimatedTimeLeft    time.Duration
-	PercentComplete      float64
-	
+	BytesPerSecond     float64
+	PeakBytesPerSecond float64
+	AvgBytesPerSecond  float64
+	EstimatedTimeLeft  time.Duration
+	PercentComplete    float64
+
 	// Time-series data for throughput
-	ThroughputSamples    []ThroughputSample
-	
+	ThroughputSamples []ThroughputSample
+
 	// Error tracking
-	ErrorCount          int
-	RetryCount          int
-	LastError           string
-	
+	ErrorCount int
+	RetryCount int
+	LastError  string
+
 	// State
-	Status              string
-	LastUpdated         time.Time
-	
+	Status      string
+	LastUpdated time.Time
+
 	// Mutex for thread-safe updates
-	mu                  sync.RWMutex
+	mu sync.RWMutex
 }
 
 // ThroughputSample represents a single throughput measurement
 type ThroughputSample struct {
-	Timestamp       time.Time
-	BytesPerSecond  float64
+	Timestamp        time.Time
+	BytesPerSecond   float64
 	BytesTransferred int64
 	FilesTransferred int64
 }
@@ -59,31 +59,31 @@ type ThroughputSample struct {
 type PerformanceMonitor interface {
 	// StartMonitoring begins monitoring a transfer
 	StartMonitoring(transferID, taskID, sourceEndpoint, destEndpoint, label string) *TransferMetrics
-	
+
 	// StopMonitoring stops monitoring a transfer
 	StopMonitoring(transferID string)
-	
+
 	// UpdateMetrics updates metrics for a transfer
 	UpdateMetrics(transferID string, bytesTransferred, filesTransferred int64)
-	
+
 	// GetMetrics gets the current metrics for a transfer
 	GetMetrics(transferID string) (*TransferMetrics, bool)
-	
+
 	// ListActiveTransfers lists all active transfers being monitored
 	ListActiveTransfers() []string
-    
+
 	// SetTotalBytes sets the total bytes expected for a transfer
 	SetTotalBytes(transferID string, totalBytes int64)
-	
+
 	// SetTotalFiles sets the total files expected for a transfer
 	SetTotalFiles(transferID string, totalFiles int64)
-	
+
 	// RecordError records an error for a transfer
 	RecordError(transferID string, err error)
-	
+
 	// RecordRetry records a retry for a transfer
 	RecordRetry(transferID string)
-	
+
 	// SetStatus sets the status for a transfer
 	SetStatus(transferID string, status string)
 }
@@ -92,7 +92,7 @@ type PerformanceMonitor interface {
 type DefaultPerformanceMonitor struct {
 	metrics map[string]*TransferMetrics
 	mu      sync.RWMutex
-	
+
 	// Configuration
 	sampleInterval time.Duration
 	maxSamples     int
@@ -123,19 +123,19 @@ func (m *DefaultPerformanceMonitor) WithMaxSamples(maxSamples int) *DefaultPerfo
 func (m *DefaultPerformanceMonitor) StartMonitoring(transferID, taskID, sourceEndpoint, destEndpoint, label string) *TransferMetrics {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	metrics := &TransferMetrics{
-		TransferID:     transferID,
-		TaskID:         taskID,
-		SourceEndpoint: sourceEndpoint,
-		DestEndpoint:   destEndpoint,
-		Label:          label,
-		StartTime:      time.Now(),
-		Status:         "ACTIVE",
-		LastUpdated:    time.Now(),
+		TransferID:        transferID,
+		TaskID:            taskID,
+		SourceEndpoint:    sourceEndpoint,
+		DestEndpoint:      destEndpoint,
+		Label:             label,
+		StartTime:         time.Now(),
+		Status:            "ACTIVE",
+		LastUpdated:       time.Now(),
 		ThroughputSamples: make([]ThroughputSample, 0, m.maxSamples),
 	}
-	
+
 	m.metrics[transferID] = metrics
 	return metrics
 }
@@ -144,13 +144,13 @@ func (m *DefaultPerformanceMonitor) StartMonitoring(transferID, taskID, sourceEn
 func (m *DefaultPerformanceMonitor) StopMonitoring(transferID string) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
-	
+
 	if metrics, exists := m.metrics[transferID]; exists {
 		metrics.mu.Lock()
 		metrics.EndTime = time.Now()
 		metrics.Status = "COMPLETED"
 		metrics.mu.Unlock()
-		
+
 		// Keep completed transfers in the map for retrieval
 		// In a production system, you might want to clean these up or move them to storage
 	}
@@ -161,23 +161,23 @@ func (m *DefaultPerformanceMonitor) UpdateMetrics(transferID string, bytesTransf
 	m.mu.RLock()
 	metrics, exists := m.metrics[transferID]
 	m.mu.RUnlock()
-	
+
 	if !exists {
 		return
 	}
-	
+
 	metrics.mu.Lock()
 	defer metrics.mu.Unlock()
-	
+
 	now := time.Now()
-	
+
 	// Calculate bytes per second based on the time since the last update
 	var bytesPerSecond float64
 	if len(metrics.ThroughputSamples) > 0 {
 		lastSample := metrics.ThroughputSamples[len(metrics.ThroughputSamples)-1]
 		bytesDelta := bytesTransferred - lastSample.BytesTransferred
 		timeDelta := now.Sub(lastSample.Timestamp).Seconds()
-		
+
 		if timeDelta > 0 {
 			bytesPerSecond = float64(bytesDelta) / timeDelta
 		}
@@ -185,29 +185,29 @@ func (m *DefaultPerformanceMonitor) UpdateMetrics(transferID string, bytesTransf
 		// First sample, calculate from the start
 		bytesPerSecond = float64(bytesTransferred) / now.Sub(metrics.StartTime).Seconds()
 	}
-	
+
 	// Update current metrics
 	metrics.BytesTransferred = bytesTransferred
 	metrics.FilesTransferred = filesTransferred
 	metrics.BytesPerSecond = bytesPerSecond
 	metrics.LastUpdated = now
-	
+
 	// Update peak bytes per second
 	if bytesPerSecond > metrics.PeakBytesPerSecond {
 		metrics.PeakBytesPerSecond = bytesPerSecond
 	}
-	
+
 	// Calculate percent complete if total bytes is known
 	if metrics.TotalBytes > 0 {
 		metrics.PercentComplete = float64(bytesTransferred) / float64(metrics.TotalBytes) * 100
 	}
-	
+
 	// Calculate average bytes per second
 	totalTime := now.Sub(metrics.StartTime).Seconds()
 	if totalTime > 0 {
 		metrics.AvgBytesPerSecond = float64(bytesTransferred) / totalTime
 	}
-	
+
 	// Calculate estimated time left
 	if metrics.BytesPerSecond > 0 && metrics.TotalBytes > 0 {
 		remainingBytes := metrics.TotalBytes - metrics.BytesTransferred
@@ -216,18 +216,18 @@ func (m *DefaultPerformanceMonitor) UpdateMetrics(transferID string, bytesTransf
 			metrics.EstimatedTimeLeft = time.Duration(secondsLeft * float64(time.Second))
 		}
 	}
-	
+
 	// Add throughput sample
 	sample := ThroughputSample{
-		Timestamp:       now,
-		BytesPerSecond:  bytesPerSecond,
+		Timestamp:        now,
+		BytesPerSecond:   bytesPerSecond,
 		BytesTransferred: bytesTransferred,
 		FilesTransferred: filesTransferred,
 	}
-	
+
 	// Add the sample
 	metrics.ThroughputSamples = append(metrics.ThroughputSamples, sample)
-	
+
 	// Limit the number of samples
 	if len(metrics.ThroughputSamples) > m.maxSamples {
 		// Remove the oldest samples
@@ -240,7 +240,7 @@ func (m *DefaultPerformanceMonitor) UpdateMetrics(transferID string, bytesTransf
 func (m *DefaultPerformanceMonitor) GetMetrics(transferID string) (*TransferMetrics, bool) {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	metrics, exists := m.metrics[transferID]
 	return metrics, exists
 }
@@ -249,7 +249,7 @@ func (m *DefaultPerformanceMonitor) GetMetrics(transferID string) (*TransferMetr
 func (m *DefaultPerformanceMonitor) ListActiveTransfers() []string {
 	m.mu.RLock()
 	defer m.mu.RUnlock()
-	
+
 	var activeTransfers []string
 	for id, metrics := range m.metrics {
 		metrics.mu.RLock()
@@ -258,7 +258,7 @@ func (m *DefaultPerformanceMonitor) ListActiveTransfers() []string {
 		}
 		metrics.mu.RUnlock()
 	}
-	
+
 	return activeTransfers
 }
 
@@ -267,14 +267,14 @@ func (m *DefaultPerformanceMonitor) SetTotalBytes(transferID string, totalBytes 
 	m.mu.RLock()
 	metrics, exists := m.metrics[transferID]
 	m.mu.RUnlock()
-	
+
 	if !exists {
 		return
 	}
-	
+
 	metrics.mu.Lock()
 	defer metrics.mu.Unlock()
-	
+
 	metrics.TotalBytes = totalBytes
 }
 
@@ -283,14 +283,14 @@ func (m *DefaultPerformanceMonitor) SetTotalFiles(transferID string, totalFiles 
 	m.mu.RLock()
 	metrics, exists := m.metrics[transferID]
 	m.mu.RUnlock()
-	
+
 	if !exists {
 		return
 	}
-	
+
 	metrics.mu.Lock()
 	defer metrics.mu.Unlock()
-	
+
 	metrics.FilesTotal = totalFiles
 }
 
@@ -299,14 +299,14 @@ func (m *DefaultPerformanceMonitor) RecordError(transferID string, err error) {
 	m.mu.RLock()
 	metrics, exists := m.metrics[transferID]
 	m.mu.RUnlock()
-	
+
 	if !exists {
 		return
 	}
-	
+
 	metrics.mu.Lock()
 	defer metrics.mu.Unlock()
-	
+
 	metrics.ErrorCount++
 	if err != nil {
 		metrics.LastError = err.Error()
@@ -318,14 +318,14 @@ func (m *DefaultPerformanceMonitor) RecordRetry(transferID string) {
 	m.mu.RLock()
 	metrics, exists := m.metrics[transferID]
 	m.mu.RUnlock()
-	
+
 	if !exists {
 		return
 	}
-	
+
 	metrics.mu.Lock()
 	defer metrics.mu.Unlock()
-	
+
 	metrics.RetryCount++
 }
 
@@ -334,14 +334,14 @@ func (m *DefaultPerformanceMonitor) SetStatus(transferID string, status string) 
 	m.mu.RLock()
 	metrics, exists := m.metrics[transferID]
 	m.mu.RUnlock()
-	
+
 	if !exists {
 		return
 	}
-	
+
 	metrics.mu.Lock()
 	defer metrics.mu.Unlock()
-	
+
 	metrics.Status = status
 	metrics.LastUpdated = time.Now()
 }

@@ -20,7 +20,7 @@ func setupMockServer(handler http.HandlerFunc) (*httptest.Server, *Client) {
 
 	// Create an authorizer
 	authorizer := authorizers.StaticTokenCoreAuthorizer("test-access-token")
-	
+
 	// Create a client that uses the test server
 	client, _ := NewClient(
 		WithAuthorizer(authorizer),
@@ -33,7 +33,7 @@ func setupMockServer(handler http.HandlerFunc) (*httptest.Server, *Client) {
 func TestBuildURLLowLevel(t *testing.T) {
 	// Create an authorizer
 	authorizer := authorizers.StaticTokenCoreAuthorizer("test-access-token")
-	
+
 	// Create a client that uses the base URL
 	client, _ := NewClient(
 		WithAuthorizer(authorizer),

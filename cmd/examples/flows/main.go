@@ -48,23 +48,23 @@ func main() {
 	if flowID == "" {
 		// List available flows if no flow ID is provided
 		fmt.Println("\n=== Available Flows ===")
-		
+
 		flowsList, err := flowsClient.ListFlows(ctx, &flows.ListFlowsOptions{
 			Limit: 5,
 		})
 		if err != nil {
 			log.Fatalf("Failed to list flows: %v", err)
 		}
-		
+
 		if len(flowsList.Flows) == 0 {
 			fmt.Println("No flows found. Create a flow first.")
-			
+
 			// Create a simple flow for demonstration
 			fmt.Println("\n=== Creating New Flow ===")
-			
+
 			timestamp := time.Now().Format("20060102_150405")
 			flowTitle := fmt.Sprintf("SDK Example Flow %s", timestamp)
-			
+
 			// Simple flow definition that logs a message and returns it
 			flowDefinition := map[string]interface{}{
 				"title":       flowTitle,
@@ -84,26 +84,26 @@ func main() {
 					"StartAt": "LogMessage",
 					"States": map[string]interface{}{
 						"LogMessage": map[string]interface{}{
-							"Type":     "Pass",
-							"Result":   "$.message",
+							"Type":       "Pass",
+							"Result":     "$.message",
 							"ResultPath": "$.output",
-							"End":      true,
+							"End":        true,
 						},
 					},
 				},
 			}
-			
+
 			createRequest := &flows.FlowCreateRequest{
 				Title:       flowTitle,
 				Description: "An example flow created by the Globus Go SDK",
 				Definition:  flowDefinition,
 			}
-			
+
 			newFlow, err := flowsClient.CreateFlow(ctx, createRequest)
 			if err != nil {
 				log.Fatalf("Failed to create flow: %v", err)
 			}
-			
+
 			fmt.Printf("Created new flow: %s (%s)\n", newFlow.Title, newFlow.ID)
 			flowID = newFlow.ID
 		} else {
@@ -112,7 +112,7 @@ func main() {
 			for i, flow := range flowsList.Flows {
 				fmt.Printf("%d. %s (%s)\n", i+1, flow.Title, flow.ID)
 			}
-			
+
 			flowID = flowsList.Flows[0].ID
 			fmt.Printf("\nUsing first flow: %s\n", flowID)
 		}
@@ -123,7 +123,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to get flow: %v", err)
 	}
-	
+
 	fmt.Printf("\n=== Flow Details ===\n")
 	fmt.Printf("ID: %s\n", flow.ID)
 	fmt.Printf("Title: %s\n", flow.Title)
@@ -131,7 +131,7 @@ func main() {
 	fmt.Printf("Owner: %s\n", flow.FlowOwner)
 	fmt.Printf("Created: %s\n", flow.CreatedAt.Format(time.RFC3339))
 	fmt.Printf("Run Count: %d\n", flow.RunCount)
-	
+
 	// Print input schema if available
 	if flow.InputSchema != nil {
 		inputSchemaJSON, _ := json.MarshalIndent(flow.InputSchema, "", "  ")
@@ -140,7 +140,7 @@ func main() {
 
 	// Run the flow
 	fmt.Println("\n=== Running Flow ===")
-	
+
 	// Create a run request
 	runRequest := &flows.RunRequest{
 		FlowID: flowID,
@@ -150,26 +150,26 @@ func main() {
 			"message": "Hello from Globus Go SDK!",
 		},
 	}
-	
+
 	run, err := flowsClient.RunFlow(ctx, runRequest)
 	if err != nil {
 		log.Fatalf("Failed to run flow: %v", err)
 	}
-	
+
 	fmt.Printf("Flow run started with ID: %s\n", run.RunID)
 	fmt.Printf("Status: %s\n", run.Status)
 	fmt.Printf("Created at: %s\n", run.CreatedAt.Format(time.RFC3339))
-	
+
 	// Wait for a few seconds to let the flow run
 	fmt.Println("\nWaiting for flow run to complete...")
 	time.Sleep(3 * time.Second)
-	
+
 	// Get updated run status
 	runStatus, err := flowsClient.GetRun(ctx, run.RunID)
 	if err != nil {
 		log.Fatalf("Failed to get run status: %v", err)
 	}
-	
+
 	fmt.Printf("\n=== Run Status ===\n")
 	fmt.Printf("Status: %s\n", runStatus.Status)
 	if runStatus.CompletedAt.IsZero() {
@@ -178,13 +178,13 @@ func main() {
 		fmt.Printf("Completed at: %s\n", runStatus.CompletedAt.Format(time.RFC3339))
 		fmt.Printf("Duration: %s\n", runStatus.CompletedAt.Sub(runStatus.CreatedAt))
 	}
-	
+
 	// Show run output if available
 	if runStatus.Output != nil {
 		outputJSON, _ := json.MarshalIndent(runStatus.Output, "", "  ")
 		fmt.Printf("\nRun Output:\n%s\n", outputJSON)
 	}
-	
+
 	// Get run logs
 	logs, err := flowsClient.GetRunLogs(ctx, run.RunID, 10, 0)
 	if err != nil {
@@ -192,19 +192,19 @@ func main() {
 	} else {
 		fmt.Printf("\n=== Run Logs (%d entries) ===\n", len(logs.Entries))
 		for i, entry := range logs.Entries {
-			fmt.Printf("%d. [%s] %s - %s\n", 
-				i+1, 
+			fmt.Printf("%d. [%s] %s - %s\n",
+				i+1,
 				entry.CreatedAt.Format("15:04:05"),
-				entry.Code, 
+				entry.Code,
 				entry.Description)
-			
+
 			if entry.Details != nil && len(entry.Details) > 0 {
 				detailsJSON, _ := json.MarshalIndent(entry.Details, "", "  ")
 				fmt.Printf("   Details: %s\n", detailsJSON)
 			}
 		}
 	}
-	
+
 	// List action providers
 	fmt.Println("\n=== Action Providers ===")
 	providers, err := flowsClient.ListActionProviders(ctx, &flows.ListActionProvidersOptions{
@@ -216,18 +216,18 @@ func main() {
 	} else {
 		fmt.Printf("Found %d Globus action providers:\n", len(providers.ActionProviders))
 		for i, provider := range providers.ActionProviders {
-			fmt.Printf("%d. %s (%s) - %s\n", 
-				i+1, 
-				provider.DisplayName, 
+			fmt.Printf("%d. %s (%s) - %s\n",
+				i+1,
+				provider.DisplayName,
 				provider.ID,
 				provider.Type)
 		}
-		
+
 		// Show roles for the first provider
 		if len(providers.ActionProviders) > 0 {
 			provider := providers.ActionProviders[0]
 			fmt.Printf("\nRoles for %s:\n", provider.DisplayName)
-			
+
 			roles, err := flowsClient.ListActionRoles(ctx, provider.ID, 5, 0)
 			if err != nil {
 				log.Printf("Failed to list action roles: %v", err)

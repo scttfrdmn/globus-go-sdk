@@ -31,12 +31,12 @@ type Manager struct {
 func NewManager(opts ...ClientOption) (*Manager, error) {
 	// Apply default options
 	options := defaultOptions()
-	
+
 	// Apply user options
 	for _, opt := range opts {
 		opt(options)
 	}
-	
+
 	// Validate required options
 	if options.storage == nil {
 		return nil, fmt.Errorf("no storage provided")

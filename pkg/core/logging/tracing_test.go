@@ -27,7 +27,7 @@ func TestTracingTransport(t *testing.T) {
 		if traceID == "" {
 			t.Error("Trace ID was not added to the request")
 		}
-		
+
 		// Add a test header to the response
 		w.Header().Set("X-Test", "test-value")
 		w.WriteHeader(http.StatusOK)
@@ -64,19 +64,18 @@ func TestTracingTransport(t *testing.T) {
 		t.Error("Trace ID was not added to the response")
 	}
 
-	// Check the log output
-	output := buf.String()
-	
+	// Check the log output - using the buffer directly for verification
+
 	// Verify request logging
 	if !bytes.Contains(buf.Bytes(), []byte("HTTP Request")) {
 		t.Error("Request was not logged")
 	}
-	
+
 	// Verify response logging
 	if !bytes.Contains(buf.Bytes(), []byte("HTTP Response")) {
 		t.Error("Response was not logged")
 	}
-	
+
 	// Verify sensitive headers are redacted
 	if bytes.Contains(buf.Bytes(), []byte("secret-token")) {
 		t.Error("Authorization header was not redacted")
@@ -89,17 +88,17 @@ func TestTracingTransport(t *testing.T) {
 func TestGenerateTraceID(t *testing.T) {
 	// Generate a trace ID
 	traceID := GenerateTraceID()
-	
+
 	// Check that it's not empty
 	if traceID == "" {
 		t.Error("Generated trace ID is empty")
 	}
-	
+
 	// Check that it's 32 characters (16 bytes as hex)
 	if len(traceID) != 32 {
 		t.Errorf("Expected trace ID to be 32 characters, got %d", len(traceID))
 	}
-	
+
 	// Generate another one and make sure it's different
 	traceID2 := GenerateTraceID()
 	if traceID == traceID2 {

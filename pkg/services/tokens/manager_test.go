@@ -35,7 +35,7 @@ func TestGetTokenRefresh(t *testing.T) {
 	manager, err := NewManager(
 		WithStorage(storage),
 		WithRefreshHandler(mockHandler),
-		WithRefreshThreshold(30 * time.Minute),
+		WithRefreshThreshold(30*time.Minute),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create token manager: %v", err)
@@ -97,7 +97,7 @@ func TestGetTokenNearExpiry(t *testing.T) {
 	manager, err := NewManager(
 		WithStorage(storage),
 		WithRefreshHandler(mockHandler),
-		WithRefreshThreshold(30 * time.Minute),
+		WithRefreshThreshold(30*time.Minute),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create token manager: %v", err)
@@ -151,7 +151,7 @@ func TestGetTokenNoRefresh(t *testing.T) {
 	manager, err := NewManager(
 		WithStorage(storage),
 		WithRefreshHandler(mockHandler),
-		WithRefreshThreshold(30 * time.Minute),
+		WithRefreshThreshold(30*time.Minute),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create token manager: %v", err)
@@ -205,7 +205,7 @@ func TestGetTokenCannotRefresh(t *testing.T) {
 	manager, err := NewManager(
 		WithStorage(storage),
 		WithRefreshHandler(mockHandler),
-		WithRefreshThreshold(30 * time.Minute),
+		WithRefreshThreshold(30*time.Minute),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create token manager: %v", err)
@@ -232,12 +232,12 @@ func TestGetTokenCannotRefresh(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unexpected error: %v", err)
 	}
-	
+
 	// Verify the token is still expired
 	if !entry.TokenSet.IsExpired() {
 		t.Error("Expected token to be expired")
 	}
-	
+
 	// Verify it's the same token
 	if entry.TokenSet.AccessToken != "expired-access-token" {
 		t.Errorf("Expected original token, got %s", entry.TokenSet.AccessToken)
@@ -263,7 +263,7 @@ func TestGetTokenValidButCannotRefresh(t *testing.T) {
 	manager, err := NewManager(
 		WithStorage(storage),
 		WithRefreshHandler(mockHandler),
-		WithRefreshThreshold(30 * time.Minute),
+		WithRefreshThreshold(30*time.Minute),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create token manager: %v", err)
@@ -315,7 +315,7 @@ func TestGetTokenRefreshFailed(t *testing.T) {
 	manager, err := NewManager(
 		WithStorage(storage),
 		WithRefreshHandler(mockHandler),
-		WithRefreshThreshold(30 * time.Minute),
+		WithRefreshThreshold(30*time.Minute),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create token manager: %v", err)
@@ -399,7 +399,7 @@ func TestRefreshAllTokens(t *testing.T) {
 	manager, err := NewManager(
 		WithStorage(storage),
 		WithRefreshHandler(mockHandler),
-		WithRefreshThreshold(30 * time.Minute),
+		WithRefreshThreshold(30*time.Minute),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create token manager: %v", err)
@@ -416,7 +416,7 @@ func TestRefreshAllTokens(t *testing.T) {
 				Resource: resource,
 				TokenSet: &TokenSet{
 					AccessToken:  "token-" + resource,
-					RefreshToken: resource, // Use resource as refresh token for tracking
+					RefreshToken: resource,                       // Use resource as refresh token for tracking
 					ExpiresAt:    time.Now().Add(-1 * time.Hour), // Expired
 					Scope:        "test-scope",
 				},
@@ -427,7 +427,7 @@ func TestRefreshAllTokens(t *testing.T) {
 				Resource: resource,
 				TokenSet: &TokenSet{
 					AccessToken:  "token-" + resource,
-					RefreshToken: resource, // Use resource as refresh token for tracking
+					RefreshToken: resource,                      // Use resource as refresh token for tracking
 					ExpiresAt:    time.Now().Add(2 * time.Hour), // Not expired
 					Scope:        "test-scope",
 				},
@@ -506,7 +506,7 @@ func TestBackgroundRefresh(t *testing.T) {
 	manager, err := NewManager(
 		WithStorage(storage),
 		WithRefreshHandler(mockHandler),
-		WithRefreshThreshold(30 * time.Minute),
+		WithRefreshThreshold(30*time.Minute),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create token manager: %v", err)
@@ -519,7 +519,7 @@ func TestBackgroundRefresh(t *testing.T) {
 			Resource: resource,
 			TokenSet: &TokenSet{
 				AccessToken:  "token-" + resource,
-				RefreshToken: resource, // Use resource as refresh token for tracking
+				RefreshToken: resource,                       // Use resource as refresh token for tracking
 				ExpiresAt:    time.Now().Add(-1 * time.Hour), // Expired
 				Scope:        "test-scope",
 			},
@@ -562,4 +562,3 @@ func TestBackgroundRefresh(t *testing.T) {
 		}
 	}
 }
-

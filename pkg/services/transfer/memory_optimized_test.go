@@ -88,7 +88,7 @@ func (c *Client) WaitForMemoryOptimizedTransfer(
 					completed++
 					// Report progress
 					if options != nil && options.ProgressCallback != nil {
-						options.ProgressCallback(completed, total, 
+						options.ProgressCallback(completed, total,
 							fmt.Sprintf("Task %s completed with status: %s", taskID, task.Status))
 					}
 				}
@@ -130,7 +130,7 @@ func TestMemoryOptimizedTransfer(t *testing.T) {
 			// Return a mock submission ID
 			w.WriteHeader(http.StatusOK)
 			fmt.Fprintf(w, `{"value": "submission-id-123456"}`)
-		
+
 		case r.URL.Path == "/v0.10/operation/endpoint/mock-source/ls" && r.Method == http.MethodGet:
 			// Handle listing files in source directory
 			// This is called by the memory optimized transfer function to get the file list
@@ -228,11 +228,11 @@ func TestMemoryOptimizedTransfer(t *testing.T) {
 			"mock-source", "/source",
 			"mock-dest", "/dest",
 			&MemoryOptimizedOptions{
-				BatchSize:        5,
+				BatchSize:          5,
 				MaxConcurrentTasks: 2,
-				Label:             "Test Memory-Optimized Transfer",
-				SyncLevel:         SyncLevelChecksum,
-				VerifyChecksum:    true,
+				Label:              "Test Memory-Optimized Transfer",
+				SyncLevel:          SyncLevelChecksum,
+				VerifyChecksum:     true,
 				ProgressCallback: func(processed, total int, bytes int64, message string) {
 					t.Logf("Progress: %d files, %d bytes, %s", processed, bytes, message)
 				},

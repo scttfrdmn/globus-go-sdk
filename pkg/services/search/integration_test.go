@@ -32,7 +32,7 @@ func getTestCredentials(t *testing.T) (string, string, string) {
 	if clientID == "" {
 		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_ID environment variable")
 	}
-	
+
 	if clientSecret == "" {
 		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_SECRET environment variable")
 	}
@@ -47,27 +47,27 @@ func getAccessToken(t *testing.T, clientID, clientSecret string) string {
 		t.Log("Using static search token from environment")
 		return staticToken
 	}
-	
+
 	// If no static token, try to get one via client credentials
 	t.Log("Getting client credentials token for search")
 	authClient := auth.NewClient(clientID, clientSecret)
-	
+
 	// Try specific scope for search
 	tokenResp, err := authClient.GetClientCredentialsToken(context.Background(), "urn:globus:auth:scope:search.api.globus.org:all")
 	if err != nil {
 		t.Logf("Failed to get token with search scope: %v", err)
 		t.Log("Falling back to default token")
-		
+
 		// Fallback to default token
 		tokenResp, err = authClient.GetClientCredentialsToken(context.Background())
 		if err != nil {
 			t.Fatalf("Failed to get any token: %v", err)
 		}
-		
+
 		t.Log("WARNING: This token may not have search permissions. Consider providing GLOBUS_TEST_SEARCH_TOKEN")
 	} else {
-		t.Logf("Got token with resource server: %s, scopes: %s", 
-			   tokenResp.ResourceServer, tokenResp.Scope)
+		t.Logf("Got token with resource server: %s, scopes: %s",
+			tokenResp.ResourceServer, tokenResp.Scope)
 	}
 
 	return tokenResp.AccessToken
@@ -94,7 +94,7 @@ func TestIntegration_ListIndexes(t *testing.T) {
 			if err.Error() == "unknown_error: Request failed with status code 400 (status: 400)" {
 				t.Logf("ERROR: ListIndexes returned 400 Bad Request, which may be due to query parameter issues.")
 				t.Logf("Falling back to listing indexes without query parameters")
-				
+
 				// Try again without any query parameters
 				indexes, err = client.ListIndexes(ctx, nil)
 				if err != nil {
@@ -140,12 +140,12 @@ func TestIntegration_ListIndexes(t *testing.T) {
 			if firstIndex.DisplayName == "" {
 				t.Error("First index is missing display name")
 			}
-			
+
 			// Log more info
 			t.Logf("First index: %s (%s)", firstIndex.DisplayName, firstIndex.ID)
 			t.Logf("First index public status: %v", firstIndex.IsPublic)
 			t.Logf("First index active status: %v", firstIndex.IsActive)
-			
+
 			// Store this ID as a potential test index
 			os.Setenv("GLOBUS_TEST_SEARCH_INDEX_ID", firstIndex.ID)
 			t.Logf("Set GLOBUS_TEST_SEARCH_INDEX_ID=%s for subsequent tests", firstIndex.ID)
@@ -195,8 +195,8 @@ func TestIntegration_IndexLifecycle(t *testing.T) {
 		if createdIndex != nil && createdIndex.ID != "" {
 			err := client.DeleteIndex(ctx, createdIndex.ID)
 			if err != nil {
-				if strings.Contains(err.Error(), "status code 401") || 
-				   strings.Contains(err.Error(), "status code 403") {
+				if strings.Contains(err.Error(), "status code 401") ||
+					strings.Contains(err.Error(), "status code 403") {
 					t.Logf("PERMISSION WARNING: Cannot delete test index (%s): %v", createdIndex.ID, err)
 					t.Logf("This may require manual cleanup. Set GLOBUS_TEST_SEARCH_TOKEN with proper permissions.")
 				} else {
@@ -225,8 +225,8 @@ func TestIntegration_IndexLifecycle(t *testing.T) {
 		// 3. Get the index
 		fetchedIndex, err := client.GetIndex(ctx, createdIndex.ID)
 		if err != nil {
-			if strings.Contains(err.Error(), "status code 401") || 
-			   strings.Contains(err.Error(), "status code 403") {
+			if strings.Contains(err.Error(), "status code 401") ||
+				strings.Contains(err.Error(), "status code 403") {
 				t.Logf("PERMISSION ERROR: Cannot fetch index: %v", err)
 				t.Logf("To resolve, set GLOBUS_TEST_SEARCH_TOKEN with a token that has search permissions")
 			} else {
@@ -236,7 +236,7 @@ func TestIntegration_IndexLifecycle(t *testing.T) {
 			if fetchedIndex.ID != createdIndex.ID {
 				t.Errorf("Fetched index ID = %s, want %s", fetchedIndex.ID, createdIndex.ID)
 			}
-			
+
 			// Log more info
 			t.Logf("Fetched index: %s", fetchedIndex.DisplayName)
 			t.Logf("Fetched index is public: %v", fetchedIndex.IsPublic)
@@ -259,8 +259,8 @@ func TestIntegration_IndexLifecycle(t *testing.T) {
 
 		searchResponse, err := client.Search(ctx, searchRequest)
 		if err != nil {
-			if strings.Contains(err.Error(), "status code 401") || 
-			   strings.Contains(err.Error(), "status code 403") {
+			if strings.Contains(err.Error(), "status code 401") ||
+				strings.Contains(err.Error(), "status code 403") {
 				t.Logf("PERMISSION NOTE: Cannot search index: %v", err)
 				t.Logf("This is expected for newly created indexes without proper permissions")
 			} else if strings.Contains(err.Error(), "status code 404") {
@@ -284,11 +284,11 @@ func TestIntegration_ExistingIndex(t *testing.T) {
 	if indexID == "" {
 		// Look for a public index ID from previous tests
 		indexID = os.Getenv("GLOBUS_TEST_SEARCH_INDEX_ID")
-		
+
 		if indexID == "" {
 			// Try a known public Globus search index
 			indexID = os.Getenv("GLOBUS_TEST_PUBLIC_SEARCH_INDEX_ID")
-			
+
 			if indexID == "" {
 				// Use a fallback sample index (Materials Data Facility)
 				indexID = "889729e8-d101-417d-9817-a6184fd1c210"
@@ -328,7 +328,7 @@ func TestIntegration_ExistingIndex(t *testing.T) {
 	t.Logf("Index description: %s", index.Description)
 	t.Logf("Index is public: %v", index.IsPublic)
 	t.Logf("Index is active: %v", index.IsActive)
-	
+
 	// Only attempt search if we have permissions
 	t.Log("Attempting to search the index...")
 
@@ -343,8 +343,8 @@ func TestIntegration_ExistingIndex(t *testing.T) {
 
 	searchResponse, err := client.Search(ctx, searchRequest)
 	if err != nil {
-		if strings.Contains(err.Error(), "status code 401") || 
-		   strings.Contains(err.Error(), "status code 403") {
+		if strings.Contains(err.Error(), "status code 401") ||
+			strings.Contains(err.Error(), "status code 403") {
 			t.Logf("PERMISSION ERROR: Cannot search index: %v", err)
 			t.Logf("To resolve, provide GLOBUS_TEST_SEARCH_TOKEN with proper permissions")
 			return
@@ -363,7 +363,7 @@ func TestIntegration_ExistingIndex(t *testing.T) {
 		if firstResult.Subject == "" {
 			t.Error("First result is missing subject")
 		}
-		
+
 		// Log more info about the result
 		t.Logf("First result subject: %s", firstResult.Subject)
 		if firstResult.Content != nil && len(firstResult.Content) > 0 {

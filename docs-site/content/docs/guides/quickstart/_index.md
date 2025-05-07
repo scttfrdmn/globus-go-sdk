@@ -15,10 +15,10 @@ Welcome to the Globus Go SDK Quick Start Guides. These guides are designed to he
 - [Auth Service](auth) - Authentication, OAuth2 flows, and token management
 - [Transfer Service](transfer) - File transfers between Globus endpoints
 - [Search Service](search) - Indexing and searching data
-- Flows Service - Managing and executing automated workflows
-- Compute Service - Remote function execution and container management
-- Groups Service - Group management and membership operations
-- Timers Service - Scheduling tasks and operations
+- [Flows Service](flows) - Managing and executing automated workflows
+- [Compute Service](compute) - Remote function execution and container management
+- [Groups Service](groups) - Group management and membership operations
+- [Timers Service](timers) - Scheduling tasks and operations
 
 ## Prerequisites
 

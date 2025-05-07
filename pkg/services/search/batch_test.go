@@ -73,9 +73,13 @@ func TestBatchIngestDocuments(t *testing.T) {
 	defer server.Close()
 
 	// Create client with test server URL
-	client := NewClient("test-token",
+	client, err := NewClient(
+		WithAccessToken("test-token"),
 		WithBaseURL(server.URL+"/"),
 	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 
 	// Prepare batch options
 	options := &BatchIngestOptions{
@@ -169,9 +173,13 @@ func TestBatchDeleteDocuments(t *testing.T) {
 	defer server.Close()
 
 	// Create client with test server URL
-	client := NewClient("test-token",
+	client, err := NewClient(
+		WithAccessToken("test-token"),
 		WithBaseURL(server.URL+"/"),
 	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 
 	// Prepare batch options
 	options := &BatchDeleteOptions{
@@ -266,9 +274,13 @@ func TestWaitForTasks(t *testing.T) {
 	defer server.Close()
 
 	// Create client with test server URL
-	client := NewClient("test-token",
+	client, err := NewClient(
+		WithAccessToken("test-token"),
 		WithBaseURL(server.URL+"/"),
 	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 
 	// Test wait for tasks
 	taskIDs := []string{"task1", "task2", "task3"}

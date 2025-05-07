@@ -10,8 +10,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 )
 
 func TestRegisterDependency(t *testing.T) {
@@ -40,10 +38,11 @@ func TestRegisterDependency(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
@@ -96,10 +95,11 @@ func TestListDependencies(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
@@ -135,10 +135,11 @@ func TestGetDependency(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
@@ -177,10 +178,11 @@ func TestUpdateDependency(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
@@ -209,15 +211,16 @@ func TestDeleteDependency(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
 	ctx := context.Background()
-	err := client.DeleteDependency(ctx, "dep123")
+	err = client.DeleteDependency(ctx, "dep123")
 	assert.NoError(t, err)
 }
 
@@ -239,15 +242,16 @@ func TestAttachDependencyToFunction(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
 	ctx := context.Background()
-	err := client.AttachDependencyToFunction(ctx, "func123", "dep123")
+	err = client.AttachDependencyToFunction(ctx, "func123", "dep123")
 	assert.NoError(t, err)
 }
 
@@ -263,15 +267,16 @@ func TestDetachDependencyFromFunction(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
 	ctx := context.Background()
-	err := client.DetachDependencyFromFunction(ctx, "func123", "dep123")
+	err = client.DetachDependencyFromFunction(ctx, "func123", "dep123")
 	assert.NoError(t, err)
 }
 
@@ -304,10 +309,11 @@ func TestListFunctionDependencies(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method

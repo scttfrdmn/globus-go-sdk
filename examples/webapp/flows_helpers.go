@@ -13,10 +13,10 @@ import (
 
 // SimpleFlowList is a simplified response structure from the Globus Flows API
 type SimpleFlowList struct {
-	Flows     []SimpleFlow `json:"flows"`
-	Total     int          `json:"total,omitempty"`
-	HasMore   bool         `json:"has_more,omitempty"`
-	NextPage  string       `json:"next_page,omitempty"`
+	Flows    []SimpleFlow `json:"flows"`
+	Total    int          `json:"total,omitempty"`
+	HasMore  bool         `json:"has_more,omitempty"`
+	NextPage string       `json:"next_page,omitempty"`
 }
 
 // SimpleFlow is a simplified flow structure
@@ -45,22 +45,22 @@ func (app *App) performSimpleFlowsList(ctx context.Context, limit int) (*SimpleF
 	if err != nil {
 		return nil, fmt.Errorf("failed to get access token: %w", err)
 	}
-	
+
 	// Create the request URL with query parameters
 	apiURL := "https://flows.globus.org/v1/flows"
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, apiURL, nil)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create flows list request: %w", err)
 	}
-	
+
 	// Add query parameters
 	q := req.URL.Query()
 	q.Add("limit", fmt.Sprintf("%d", limit))
 	req.URL.RawQuery = q.Encode()
-	
+
 	// Add authorization header
 	req.Header.Set("Authorization", "Bearer "+accessToken)
-	
+
 	// Make the request
 	client := &http.Client{}
 	resp, err := client.Do(req)
@@ -68,18 +68,18 @@ func (app *App) performSimpleFlowsList(ctx context.Context, limit int) (*SimpleF
 		return nil, fmt.Errorf("flows list request failed: %w", err)
 	}
 	defer resp.Body.Close()
-	
+
 	// Check for errors
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
 		return nil, fmt.Errorf("flows list request failed with status %d: %s", resp.StatusCode, string(body))
 	}
-	
+
 	// Parse the response
 	var flowList SimpleFlowList
 	if err := json.NewDecoder(resp.Body).Decode(&flowList); err != nil {
 		return nil, fmt.Errorf("failed to decode flows list response: %w", err)
 	}
-	
+
 	return &flowList, nil
 }

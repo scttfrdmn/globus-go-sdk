@@ -32,7 +32,7 @@ func WithConnectionPool(poolName string, config interfaces.ConnectionPoolConfig)
 		if globalPoolManager == nil {
 			return
 		}
-		
+
 		pool := globalPoolManager.GetPool(poolName, config)
 		if pool != nil {
 			// Use the HTTP client from the pool
@@ -56,12 +56,12 @@ func NewHTTPClientWithConnectionPool(poolName string, config interfaces.Connecti
 	if globalPoolManager == nil {
 		return &http.Client{}
 	}
-	
+
 	pool := globalPoolManager.GetPool(poolName, config)
 	if pool == nil {
 		return &http.Client{}
 	}
-	
+
 	return pool.GetClient()
 }
 
@@ -71,22 +71,22 @@ func EnableDefaultConnectionPool() {
 	if globalPoolManager == nil {
 		return
 	}
-	
+
 	// Create default connection pools for each service type
 	serviceNames := []string{
-		"auth", 
-		"transfer", 
-		"search", 
-		"flows", 
-		"groups", 
+		"auth",
+		"transfer",
+		"search",
+		"flows",
+		"groups",
 		"compute",
 		"timers",
 	}
-	
+
 	for _, service := range serviceNames {
 		// Use service-specific configurations
 		config := pool.ForService(service)
-		
+
 		// Initialize the pool for the service
 		globalPoolManager.GetPool(service, config)
 	}
@@ -97,7 +97,7 @@ func ClientWithConnectionPool(service string, options ...ClientOption) *Client {
 	// Add connection pooling option to the provided options
 	poolOption := WithConnectionPool(service, nil)
 	allOptions := append([]ClientOption{poolOption}, options...)
-	
+
 	// Create the client with all options
 	return NewClient(allOptions...)
 }

@@ -133,8 +133,8 @@ func (c *Client) SubmitRecursiveTransfer(
 		DestinationEndpointID:  destinationEndpointID,
 		SyncLevel:              getSyncLevel(options),
 		VerifyChecksum:         options.VerifyChecksum,
-		PreserveTimestamp:      options.PreserveTimestamp,
-		EncryptData:            options.EncryptData,
+		PreserveMtime:          options.PreserveTimestamp,
+		Encrypt:                options.EncryptData,
 		DeleteDestinationExtra: options.DeleteDestinationExtra,
 		Items:                  transferItems,
 	}
@@ -296,12 +296,12 @@ func prepareTransferItems(files []FileListItem, sourcePath, destPath string) []T
 }
 
 // getSyncLevel converts options to the appropriate sync level string
-func getSyncLevel(options *RecursiveTransferOptions) string {
+func getSyncLevel(options *RecursiveTransferOptions) int {
 	if !options.Sync {
-		return "0"
+		return SyncLevelExists
 	}
 	if !options.VerifyChecksum {
-		return "1"
+		return SyncLevelSize
 	}
-	return "3"
+	return SyncLevelChecksum
 }

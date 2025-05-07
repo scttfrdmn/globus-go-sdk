@@ -24,7 +24,7 @@ func TestTokenManagerIntegration(t *testing.T) {
 	// Skip if credentials are not available
 	clientID := os.Getenv("GLOBUS_CLIENT_ID")
 	clientSecret := os.Getenv("GLOBUS_CLIENT_SECRET")
-	
+
 	// Check for prefixed versions
 	if clientID == "" {
 		clientID = os.Getenv("GLOBUS_TEST_CLIENT_ID")
@@ -32,7 +32,7 @@ func TestTokenManagerIntegration(t *testing.T) {
 	if clientSecret == "" {
 		clientSecret = os.Getenv("GLOBUS_TEST_CLIENT_SECRET")
 	}
-	
+
 	if clientID == "" || clientSecret == "" {
 		t.Skip("Skipping integration test: No client credentials found in environment variables")
 	}
@@ -67,7 +67,7 @@ func TestTokenManagerIntegration(t *testing.T) {
 	manager, err := NewManager(
 		WithStorage(storage),
 		WithAuthClient(authClient),
-		WithRefreshThreshold(30 * time.Minute),
+		WithRefreshThreshold(30*time.Minute),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create token manager: %v", err)
@@ -162,7 +162,7 @@ func TestTokenManagerFunctionalOptions(t *testing.T) {
 	// Skip if credentials are not available
 	clientID := os.Getenv("GLOBUS_CLIENT_ID")
 	clientSecret := os.Getenv("GLOBUS_CLIENT_SECRET")
-	
+
 	// Check for prefixed versions
 	if clientID == "" {
 		clientID = os.Getenv("GLOBUS_TEST_CLIENT_ID")
@@ -170,7 +170,7 @@ func TestTokenManagerFunctionalOptions(t *testing.T) {
 	if clientSecret == "" {
 		clientSecret = os.Getenv("GLOBUS_TEST_CLIENT_SECRET")
 	}
-	
+
 	if clientID == "" || clientSecret == "" {
 		t.Skip("Skipping integration test: No client credentials found in environment variables")
 	}
@@ -183,13 +183,13 @@ func TestTokenManagerFunctionalOptions(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create auth client: %v", err)
 	}
-	
+
 	// Test cases for different combinations of options
 	testCases := []struct {
-		name          string
-		options       []ClientOption
-		expectError   bool
-		checkRefresh  bool
+		name         string
+		options      []ClientOption
+		expectError  bool
+		checkRefresh bool
 	}{
 		{
 			name: "Default memory storage",
@@ -204,7 +204,7 @@ func TestTokenManagerFunctionalOptions(t *testing.T) {
 				WithAuthClient(authClient),
 				WithRefreshThreshold(45 * time.Minute),
 			},
-			expectError: false,
+			expectError:  false,
 			checkRefresh: true,
 		},
 		{
@@ -215,7 +215,7 @@ func TestTokenManagerFunctionalOptions(t *testing.T) {
 					t.Fatalf("Failed to create temp directory: %v", err)
 				}
 				t.Cleanup(func() { os.RemoveAll(tempDir) })
-				
+
 				return []ClientOption{
 					WithAuthClient(authClient),
 					WithFileStorage(tempDir),
@@ -224,41 +224,42 @@ func TestTokenManagerFunctionalOptions(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name: "Missing required options",
+			name:    "Missing required options",
 			options: []ClientOption{
 				// No storage or refresh handler
 			},
 			expectError: true,
 		},
 	}
-	
+
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			manager, err := NewManager(tc.options...)
-			
+
 			if tc.expectError {
 				if err == nil {
 					t.Errorf("Expected error but got nil")
 				}
 				return
 			}
-			
+
 			if err != nil {
 				t.Fatalf("Failed to create token manager: %v", err)
 			}
-			
+
 			// Verify the manager was created with correct options
 			if manager.RefreshHandler != authClient && !tc.expectError && tc.name != "Missing required options" {
 				t.Errorf("RefreshHandler not set correctly")
 			}
-			
+
 			if tc.checkRefresh && manager.RefreshThreshold != 45*time.Minute {
-				t.Errorf("RefreshThreshold not set correctly, got %v, expected %v", 
+				t.Errorf("RefreshThreshold not set correctly, got %v, expected %v",
 					manager.RefreshThreshold, 45*time.Minute)
 			}
 		})
 	}
 }
+
 // TestTokenManagerSDKIntegration tests the integration with the SDK config.
 func TestTokenManagerSDKIntegration(t *testing.T) {
 	// Skip this test if running short tests only
@@ -269,7 +270,7 @@ func TestTokenManagerSDKIntegration(t *testing.T) {
 	// Skip if credentials are not available
 	clientID := os.Getenv("GLOBUS_CLIENT_ID")
 	clientSecret := os.Getenv("GLOBUS_CLIENT_SECRET")
-	
+
 	// Check for prefixed versions
 	if clientID == "" {
 		clientID = os.Getenv("GLOBUS_TEST_CLIENT_ID")
@@ -277,22 +278,22 @@ func TestTokenManagerSDKIntegration(t *testing.T) {
 	if clientSecret == "" {
 		clientSecret = os.Getenv("GLOBUS_TEST_CLIENT_SECRET")
 	}
-	
+
 	if clientID == "" || clientSecret == "" {
 		t.Skip("Skipping integration test: No client credentials found in environment variables")
 	}
 
 	// Import the SDK package for this test
 	// This is imported in the test function to avoid import cycles
-	var sdkConfig interface{} 
-	
+	var sdkConfig interface{}
+
 	// Create in-memory storage for testing
 	storage := NewMemoryStorage()
-	
+
 	// Test the integration by verifying the token manager can be created
 	// The actual creation is tested in the SDK tests, but we can validate
 	// that our interface is compatible
-	
+
 	// Create auth client with options
 	authClient, err := auth.NewClient(
 		auth.WithClientID(clientID),
@@ -301,7 +302,7 @@ func TestTokenManagerSDKIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create auth client: %v", err)
 	}
-	
+
 	// Create token manager directly with options
 	manager, err := NewManager(
 		WithStorage(storage),
@@ -310,15 +311,15 @@ func TestTokenManagerSDKIntegration(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Failed to create token manager: %v", err)
 	}
-	
+
 	// Verify the token manager was created correctly
 	if manager.Storage == nil {
 		t.Error("Storage not set correctly")
 	}
-	
+
 	if manager.RefreshHandler == nil {
 		t.Error("RefreshHandler not set correctly")
 	}
-	
+
 	_ = sdkConfig // Suppress unused variable warning
 }

@@ -10,8 +10,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 )
 
 func TestRegisterContainer(t *testing.T) {
@@ -40,10 +38,11 @@ func TestRegisterContainer(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
@@ -92,10 +91,11 @@ func TestListContainers(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
@@ -131,10 +131,11 @@ func TestGetContainer(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
@@ -173,10 +174,11 @@ func TestUpdateContainer(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
@@ -204,15 +206,16 @@ func TestDeleteContainer(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method
 	ctx := context.Background()
-	err := client.DeleteContainer(ctx, "container123")
+	err = client.DeleteContainer(ctx, "container123")
 	assert.NoError(t, err)
 }
 
@@ -242,10 +245,11 @@ func TestRunContainerFunction(t *testing.T) {
 	defer server.Close()
 
 	// Create client
-	client := &Client{
-		Client: core.NewClient(
-			core.WithBaseURL(server.URL+"/"),
-		),
+	client, err := NewClient(
+		WithBaseURL(server.URL + "/"),
+	)
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
 	}
 
 	// Test the method

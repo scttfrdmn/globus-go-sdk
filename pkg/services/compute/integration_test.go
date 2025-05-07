@@ -32,7 +32,7 @@ func getTestCredentials(t *testing.T) (string, string, string) {
 	if clientID == "" {
 		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_ID environment variable")
 	}
-	
+
 	if clientSecret == "" {
 		t.Skip("Integration test requires GLOBUS_TEST_CLIENT_SECRET environment variable")
 	}
@@ -65,7 +65,10 @@ func TestIntegration_ListEndpoints(t *testing.T) {
 	accessToken := getAccessToken(t, clientID, clientSecret)
 
 	// Create Compute client
-	client := NewClient(accessToken)
+	client, err := NewClient(WithAccessToken(accessToken))
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	ctx := context.Background()
 
 	// List endpoints
@@ -110,7 +113,10 @@ func TestIntegration_FunctionLifecycle(t *testing.T) {
 	accessToken := getAccessToken(t, clientID, clientSecret)
 
 	// Create Compute client
-	client := NewClient(accessToken)
+	client, err := NewClient(WithAccessToken(accessToken))
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	ctx := context.Background()
 
 	// 1. Register a new function
@@ -219,7 +225,10 @@ func TestIntegration_BatchExecution(t *testing.T) {
 	accessToken := getAccessToken(t, clientID, clientSecret)
 
 	// Create Compute client
-	client := NewClient(accessToken)
+	client, err := NewClient(WithAccessToken(accessToken))
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	ctx := context.Background()
 
 	// 1. Register test functions
@@ -322,7 +331,10 @@ func TestIntegration_ListFunctions(t *testing.T) {
 	accessToken := getAccessToken(t, clientID, clientSecret)
 
 	// Create Compute client
-	client := NewClient(accessToken)
+	client, err := NewClient(WithAccessToken(accessToken))
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	ctx := context.Background()
 
 	// List functions
@@ -333,9 +345,9 @@ func TestIntegration_ListFunctions(t *testing.T) {
 		// The ListFunctions endpoint returns 405 Method Not Allowed in some configurations
 		// This is a known issue with the Compute API
 		errorMsg := err.Error()
-		if core.IsNotFound(err) || core.IsForbidden(err) || core.IsUnauthorized(err) || 
-		   (errorMsg != "" && (errorMsg == "unknown_error: Request failed with status code 405 (status: 405)" ||
-		                       errorMsg == "request failed with status 405: Method Not Allowed")) {
+		if core.IsNotFound(err) || core.IsForbidden(err) || core.IsUnauthorized(err) ||
+			(errorMsg != "" && (errorMsg == "unknown_error: Request failed with status code 405 (status: 405)" ||
+				errorMsg == "request failed with status 405: Method Not Allowed")) {
 			t.Logf("Client correctly made the request, but returned expected error: %v", err)
 			t.Logf("This is acceptable for integration testing with limited-permission credentials")
 			return // Skip the rest of the test
@@ -373,7 +385,10 @@ func TestIntegration_ListTasks(t *testing.T) {
 	accessToken := getAccessToken(t, clientID, clientSecret)
 
 	// Create Compute client
-	client := NewClient(accessToken)
+	client, err := NewClient(WithAccessToken(accessToken))
+	if err != nil {
+		t.Fatalf("Failed to create client: %v", err)
+	}
 	ctx := context.Background()
 
 	// List tasks

@@ -213,7 +213,7 @@ func main() {
 
 	// Register functions for our examples
 	fmt.Println("\n=== Registering Functions ===")
-	
+
 	// Register data processor function
 	procFuncName := fmt.Sprintf("data_processor_%s", timestamp)
 	processorReq := &pkg.FunctionRegisterRequest{
@@ -256,7 +256,7 @@ func main() {
 	// Clean up resources at the end
 	defer func() {
 		fmt.Println("\n=== Cleaning Up Resources ===")
-		
+
 		// Clean up functions
 		for _, funcID := range []string{procFunc.ID, aggFunc.ID, reportFunc.ID} {
 			if err := computeClient.DeleteFunction(ctx, funcID); err != nil {
@@ -265,7 +265,7 @@ func main() {
 				fmt.Printf("Function %s deleted successfully\n", funcID)
 			}
 		}
-		
+
 		// Clean up other resources created in examples
 		if taskGroupID != "" {
 			if err := computeClient.DeleteTaskGroup(ctx, taskGroupID); err != nil {
@@ -274,7 +274,7 @@ func main() {
 				fmt.Printf("Task group %s deleted successfully\n", taskGroupID)
 			}
 		}
-		
+
 		if workflowID != "" {
 			if err := computeClient.DeleteWorkflow(ctx, workflowID); err != nil {
 				log.Printf("Warning: Failed to delete workflow %s: %v", workflowID, err)
@@ -290,21 +290,21 @@ func main() {
 	if err != nil {
 		log.Printf("Task group execution example failed: %v", err)
 	}
-	
+
 	// Example 2: Workflow with Dependencies
 	fmt.Println("\n=== EXAMPLE 2: Workflow with Dependencies ===")
 	workflowID, err := demonstrateWorkflow(ctx, computeClient, selectedEndpoint.ID, procFunc.ID, aggFunc.ID, reportFunc.ID)
 	if err != nil {
 		log.Printf("Workflow example failed: %v", err)
 	}
-	
+
 	// Example 3: Dependency Graph Execution
 	fmt.Println("\n=== EXAMPLE 3: Dependency Graph Execution ===")
 	err = demonstrateDependencyGraph(ctx, computeClient, selectedEndpoint.ID, procFunc.ID, aggFunc.ID, reportFunc.ID)
 	if err != nil {
 		log.Printf("Dependency graph example failed: %v", err)
 	}
-	
+
 	fmt.Println("\nBatch execution examples complete!")
 }
 
@@ -317,51 +317,51 @@ var (
 // demonstrateTaskGroupExecution shows how to execute a group of similar tasks concurrently
 func demonstrateTaskGroupExecution(ctx context.Context, client *pkg.Client, endpointID, functionID string) (string, error) {
 	fmt.Println("Creating a task group for parallel data processing...")
-	
+
 	// Create sample data chunks
 	dataChunks := []map[string]interface{}{
 		{
 			"chunk_id": 1,
-			"values": []int{10, 20, 30, 40, 50},
+			"values":   []int{10, 20, 30, 40, 50},
 			"metadata": {
-				"source": "sensor-1",
+				"source":    "sensor-1",
 				"timestamp": time.Now().Unix(),
 			},
 		},
 		{
 			"chunk_id": 2,
-			"values": []int{15, 25, 35, 45, 55},
+			"values":   []int{15, 25, 35, 45, 55},
 			"metadata": {
-				"source": "sensor-2",
+				"source":    "sensor-2",
 				"timestamp": time.Now().Unix(),
 			},
 		},
 		{
 			"chunk_id": 3,
-			"values": []int{5, 15, 25, 35, 45},
+			"values":   []int{5, 15, 25, 35, 45},
 			"metadata": {
-				"source": "sensor-3",
+				"source":    "sensor-3",
 				"timestamp": time.Now().Unix(),
 			},
 		},
 		{
 			"chunk_id": 4,
-			"values": []int{12, 24, 36, 48, 60},
+			"values":   []int{12, 24, 36, 48, 60},
 			"metadata": {
-				"source": "sensor-4",
+				"source":    "sensor-4",
 				"timestamp": time.Now().Unix(),
 			},
 		},
 		{
 			"chunk_id": 5,
-			"values": []int{8, 16, 24, 32, 40},
+			"values":   []int{8, 16, 24, 32, 40},
 			"metadata": {
-				"source": "sensor-5",
+				"source":    "sensor-5",
 				"timestamp": time.Now().Unix(),
 			},
 		},
 	}
-	
+
 	// Create tasks for each data chunk
 	tasks := make([]pkg.TaskRequest, len(dataChunks))
 	for i, chunk := range dataChunks {
@@ -371,7 +371,7 @@ func demonstrateTaskGroupExecution(ctx context.Context, client *pkg.Client, endp
 			Args:       []interface{}{chunk},
 		}
 	}
-	
+
 	// Create the task group
 	taskGroupReq := &pkg.TaskGroupCreateRequest{
 		Name:        "parallel_data_processing",
@@ -379,23 +379,23 @@ func demonstrateTaskGroupExecution(ctx context.Context, client *pkg.Client, endp
 		Tasks:       tasks,
 		Concurrency: 3, // Process up to 3 tasks at once
 		RetryPolicy: &pkg.RetryPolicy{
-			MaxRetries: 2,
+			MaxRetries:    2,
 			RetryInterval: 5,
 		},
 	}
-	
+
 	taskGroup, err := client.CreateTaskGroup(ctx, taskGroupReq)
 	if err != nil {
 		return "", fmt.Errorf("failed to create task group: %w", err)
 	}
-	
+
 	fmt.Printf("Created task group: %s (%s)\n", taskGroup.Name, taskGroup.ID)
-	fmt.Printf("Task group contains %d tasks with concurrency limit of %d\n", 
+	fmt.Printf("Task group contains %d tasks with concurrency limit of %d\n",
 		len(taskGroup.Tasks), taskGroup.Concurrency)
-	
+
 	// Store for cleanup
 	taskGroupID = taskGroup.ID
-	
+
 	// Run the task group
 	fmt.Println("\nRunning the task group...")
 	runReq := &pkg.TaskGroupRunRequest{
@@ -403,25 +403,25 @@ func demonstrateTaskGroupExecution(ctx context.Context, client *pkg.Client, endp
 		Description: "Batch processing example run",
 		RunLabel:    "example-run",
 	}
-	
+
 	runResp, err := client.RunTaskGroup(ctx, taskGroup.ID, runReq)
 	if err != nil {
 		return taskGroup.ID, fmt.Errorf("failed to run task group: %w", err)
 	}
-	
+
 	fmt.Printf("Task group started with run ID: %s\n", runResp.RunID)
 	fmt.Printf("Started %d tasks\n", len(runResp.TaskIDs))
-	
+
 	// Wait for the task group to complete
 	fmt.Println("\nWaiting for task group to complete...")
 	status, err := client.WaitForTaskGroupCompletion(ctx, runResp.RunID, 30*time.Second, 2*time.Second)
 	if err != nil {
 		return taskGroup.ID, fmt.Errorf("error waiting for task group completion: %w", err)
 	}
-	
-	fmt.Printf("Task group %s! Progress: %d/%d tasks completed\n", 
+
+	fmt.Printf("Task group %s! Progress: %d/%d tasks completed\n",
 		status.Status, status.Progress.Completed, status.Progress.TotalTasks)
-	
+
 	// Print task results
 	fmt.Println("\nTask results:")
 	for taskID, taskStatus := range status.TaskStatus {
@@ -433,19 +433,19 @@ func demonstrateTaskGroupExecution(ctx context.Context, client *pkg.Client, endp
 			fmt.Printf("Task %s: Status=%s\n", taskID, taskStatus.Status)
 		}
 	}
-	
+
 	return taskGroup.ID, nil
 }
 
 // demonstrateWorkflow shows how to create and run a workflow with dependencies
 func demonstrateWorkflow(ctx context.Context, client *pkg.Client, endpointID, processorID, aggregatorID, reportID string) (string, error) {
 	fmt.Println("Creating a workflow with dependencies...")
-	
+
 	// Create a workflow with three stages:
 	// 1. Three parallel data processing tasks
 	// 2. One aggregation task that depends on the processing tasks
 	// 3. One report generation task that depends on the aggregation task
-	
+
 	// Define the workflow
 	workflowReq := &pkg.WorkflowCreateRequest{
 		Name:        "data_processing_pipeline",
@@ -514,18 +514,18 @@ func demonstrateWorkflow(ctx context.Context, client *pkg.Client, endpointID, pr
 			MaxRetries: 2,
 		},
 	}
-	
+
 	workflow, err := client.CreateWorkflow(ctx, workflowReq)
 	if err != nil {
 		return "", fmt.Errorf("failed to create workflow: %w", err)
 	}
-	
+
 	fmt.Printf("Created workflow: %s (%s)\n", workflow.Name, workflow.ID)
 	fmt.Printf("Workflow contains %d tasks with dependencies\n", len(workflow.Tasks))
-	
+
 	// Store for cleanup
 	workflowID = workflow.ID
-	
+
 	// Run the workflow
 	fmt.Println("\nRunning the workflow...")
 	runReq := &pkg.WorkflowRunRequest{
@@ -545,24 +545,24 @@ func demonstrateWorkflow(ctx context.Context, client *pkg.Client, endpointID, pr
 			},
 		},
 	}
-	
+
 	runResp, err := client.RunWorkflow(ctx, workflow.ID, runReq)
 	if err != nil {
 		return workflow.ID, fmt.Errorf("failed to run workflow: %w", err)
 	}
-	
+
 	fmt.Printf("Workflow started with run ID: %s\n", runResp.RunID)
-	
+
 	// Wait for the workflow to complete
 	fmt.Println("\nWaiting for workflow to complete...")
 	status, err := client.WaitForWorkflowCompletion(ctx, runResp.RunID, 60*time.Second, 2*time.Second)
 	if err != nil {
 		return workflow.ID, fmt.Errorf("error waiting for workflow completion: %w", err)
 	}
-	
-	fmt.Printf("Workflow %s! Progress: %d/%d tasks completed\n", 
+
+	fmt.Printf("Workflow %s! Progress: %d/%d tasks completed\n",
 		status.Status, status.Progress.Completed, status.Progress.TotalTasks)
-	
+
 	// Print task results
 	fmt.Println("\nWorkflow task results:")
 	for taskID, taskStatus := range status.TaskStatus {
@@ -574,7 +574,7 @@ func demonstrateWorkflow(ctx context.Context, client *pkg.Client, endpointID, pr
 			fmt.Printf("Task %s: Status=%s\n", taskID, taskStatus.Status)
 		}
 	}
-	
+
 	// If the final report task completed, print a summary
 	if reportStatus, ok := status.TaskStatus["report"]; ok && reportStatus.Status == "COMPLETED" {
 		if result, ok := reportStatus.Result.(map[string]interface{}); ok {
@@ -586,41 +586,41 @@ func demonstrateWorkflow(ctx context.Context, client *pkg.Client, endpointID, pr
 			}
 		}
 	}
-	
+
 	return workflow.ID, nil
 }
 
 // demonstrateDependencyGraph shows how to create and run a dependency graph with dynamic execution
 func demonstrateDependencyGraph(ctx context.Context, client *pkg.Client, endpointID, processorID, aggregatorID, reportID string) error {
 	fmt.Println("Creating a dependency graph for dynamic execution...")
-	
+
 	// Create test data with different shapes
 	testData := []map[string]interface{}{
 		{
-			"id": "data1",
-			"values": []int{10, 20, 30},
+			"id":       "data1",
+			"values":   []int{10, 20, 30},
 			"metadata": map[string]string{"type": "integers"},
 		},
 		{
-			"id": "data2",
-			"values": []string{"a", "b", "c"},
+			"id":       "data2",
+			"values":   []string{"a", "b", "c"},
 			"metadata": map[string]string{"type": "strings"},
 		},
 		{
-			"id": "data3",
-			"values": []float64{1.1, 2.2, 3.3},
+			"id":       "data3",
+			"values":   []float64{1.1, 2.2, 3.3},
 			"metadata": map[string]string{"type": "floats"},
 		},
 		{
-			"id": "data4",
-			"values": []bool{true, false, true},
+			"id":       "data4",
+			"values":   []bool{true, false, true},
 			"metadata": map[string]string{"type": "booleans"},
 		},
 	}
-	
+
 	// Define the dependency graph nodes
 	nodes := make(map[string]pkg.DependencyGraphNode)
-	
+
 	// Add processing nodes
 	for i, data := range testData {
 		nodeID := fmt.Sprintf("process_%d", i+1)
@@ -635,7 +635,7 @@ func demonstrateDependencyGraph(ctx context.Context, client *pkg.Client, endpoin
 			},
 		}
 	}
-	
+
 	// Add aggregation node
 	nodes["aggregate"] = pkg.DependencyGraphNode{
 		Task: pkg.TaskRequest{
@@ -652,7 +652,7 @@ func demonstrateDependencyGraph(ctx context.Context, client *pkg.Client, endpoin
 			},
 		},
 	}
-	
+
 	// Add report node
 	nodes["report"] = pkg.DependencyGraphNode{
 		Task: pkg.TaskRequest{
@@ -665,33 +665,33 @@ func demonstrateDependencyGraph(ctx context.Context, client *pkg.Client, endpoin
 			Strategy: "FAIL_WORKFLOW", // If report fails, fail the whole workflow
 		},
 	}
-	
+
 	// Create the request
 	graphReq := &pkg.DependencyGraphRequest{
 		Nodes:       nodes,
 		Description: "Dynamic data processing graph",
 		ErrorPolicy: "FAIL_FAST", // Fail immediately on any error
 	}
-	
+
 	// Run the dependency graph
 	fmt.Println("Running the dependency graph...")
 	resp, err := client.RunDependencyGraph(ctx, graphReq)
 	if err != nil {
 		return fmt.Errorf("failed to run dependency graph: %w", err)
 	}
-	
+
 	fmt.Printf("Dependency graph started with run ID: %s\n", resp.RunID)
-	
+
 	// Wait for the graph execution to complete
 	fmt.Println("\nWaiting for dependency graph to complete...")
 	status, err := client.WaitForDependencyGraphCompletion(ctx, resp.RunID, 60*time.Second, 2*time.Second)
 	if err != nil {
 		return fmt.Errorf("error waiting for dependency graph completion: %w", err)
 	}
-	
-	fmt.Printf("Dependency graph %s! Progress: %d/%d nodes completed\n", 
+
+	fmt.Printf("Dependency graph %s! Progress: %d/%d nodes completed\n",
 		status.Status, status.Progress.Completed, status.Progress.TotalNodes)
-	
+
 	// Print node results
 	fmt.Println("\nDependency graph node results:")
 	for nodeID, nodeStatus := range status.NodeStatus {
@@ -703,6 +703,6 @@ func demonstrateDependencyGraph(ctx context.Context, client *pkg.Client, endpoin
 			fmt.Printf("Node %s: Status=%s\n", nodeID, nodeStatus.Status)
 		}
 	}
-	
+
 	return nil
 }

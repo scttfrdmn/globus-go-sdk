@@ -26,13 +26,13 @@ type ConnectionPool interface {
 type ConnectionPoolConfig interface {
 	// GetMaxIdleConnsPerHost returns the maximum number of idle connections to keep per host
 	GetMaxIdleConnsPerHost() int
-	
+
 	// GetMaxIdleConns returns the maximum number of idle connections across all hosts
 	GetMaxIdleConns() int
-	
+
 	// GetMaxConnsPerHost returns the maximum number of connections per host
 	GetMaxConnsPerHost() int
-	
+
 	// GetIdleConnTimeout returns how long an idle connection will remain idle before being closed
 	GetIdleConnTimeout() time.Duration
 }

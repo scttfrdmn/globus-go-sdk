@@ -25,18 +25,18 @@ func TestFileMetricsStorage(t *testing.T) {
 
 	// Create test metrics
 	metrics := &TransferMetrics{
-		TransferID:      "test-transfer",
-		TaskID:          "test-task",
-		SourceEndpoint:  "source-endpoint",
-		DestEndpoint:    "dest-endpoint",
-		Label:           "Test Transfer",
-		StartTime:       time.Now().Add(-10 * time.Minute),
-		EndTime:         time.Now(),
-		TotalBytes:      1000000,
-		BytesTransferred: 750000,
-		FilesTotal:      10,
-		FilesTransferred: 7,
-		BytesPerSecond:   1250,
+		TransferID:         "test-transfer",
+		TaskID:             "test-task",
+		SourceEndpoint:     "source-endpoint",
+		DestEndpoint:       "dest-endpoint",
+		Label:              "Test Transfer",
+		StartTime:          time.Now().Add(-10 * time.Minute),
+		EndTime:            time.Now(),
+		TotalBytes:         1000000,
+		BytesTransferred:   750000,
+		FilesTotal:         10,
+		FilesTransferred:   7,
+		BytesPerSecond:     1250,
 		PeakBytesPerSecond: 2500,
 		AvgBytesPerSecond:  1250,
 		PercentComplete:    75.0,
@@ -48,14 +48,14 @@ func TestFileMetricsStorage(t *testing.T) {
 		LastUpdated:        time.Now(),
 		ThroughputSamples: []ThroughputSample{
 			{
-				Timestamp:       time.Now().Add(-5 * time.Minute),
-				BytesPerSecond:  1000,
+				Timestamp:        time.Now().Add(-5 * time.Minute),
+				BytesPerSecond:   1000,
 				BytesTransferred: 200000,
 				FilesTransferred: 2,
 			},
 			{
-				Timestamp:       time.Now().Add(-2 * time.Minute),
-				BytesPerSecond:  1500,
+				Timestamp:        time.Now().Add(-2 * time.Minute),
+				BytesPerSecond:   1500,
 				BytesTransferred: 600000,
 				FilesTransferred: 5,
 			},
@@ -148,7 +148,7 @@ func TestFileMetricsStorage(t *testing.T) {
 	if err := os.WriteFile(oldFilePath, []byte("{}"), 0644); err != nil {
 		t.Fatalf("Failed to create old metrics file: %v", err)
 	}
-	
+
 	// Set the modification time to be in the past
 	oldTime := time.Now().Add(-48 * time.Hour)
 	if err := os.Chtimes(oldFilePath, oldTime, oldTime); err != nil {
@@ -248,7 +248,7 @@ func TestPerformanceMonitorWithStorage(t *testing.T) {
 	)
 	monitor.SetTotalBytes("second-transfer", 500000)
 	monitor.UpdateMetrics("second-transfer", 250000, 5)
-	
+
 	// Save both metrics
 	err = monitor.SaveMetrics(storage, "second-transfer")
 	if err != nil {
@@ -265,7 +265,7 @@ func TestPerformanceMonitorWithStorage(t *testing.T) {
 	// Verify both transfers were loaded
 	metrics1, exists1 := finalMonitor.GetMetrics("test-transfer")
 	metrics2, exists2 := finalMonitor.GetMetrics("second-transfer")
-	
+
 	if !exists1 || !exists2 {
 		t.Fatal("Not all metrics were loaded")
 	}

@@ -12,9 +12,9 @@ type ClientOption func(*clientOptions)
 
 // clientOptions represents options for configuring a Flows client
 type clientOptions struct {
-	accessToken  string
-	baseURL      string
-	coreOptions  []core.ClientOption
+	accessToken string
+	baseURL     string
+	coreOptions []core.ClientOption
 }
 
 // WithAccessToken sets the access token for authorization
