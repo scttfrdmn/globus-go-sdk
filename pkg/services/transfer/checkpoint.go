@@ -95,7 +95,8 @@ type ResumableTransferOptions struct {
 	DeleteDestinationExtra bool `json:"delete_destination_extra"`
 
 	// ProgressCallback is called with progress updates
-	ProgressCallback func(state *CheckpointState)
+	// This field is not serialized to JSON
+	ProgressCallback func(state *CheckpointState) `json:"-"`
 }
 
 // DefaultResumableTransferOptions returns default options for resumable transfers

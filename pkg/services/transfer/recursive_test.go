@@ -151,7 +151,7 @@ func TestSubmitRecursiveTransfer(t *testing.T) {
 			json.NewEncoder(w).Encode(response)
 			return
 		}
-		
+
 		// Check if this is the directory listing request
 		if r.URL.Path == "/operation/endpoint/source-endpoint/ls" && r.URL.Query().Get("path") == "/source" {
 			// Return a mock directory listing
@@ -169,7 +169,7 @@ func TestSubmitRecursiveTransfer(t *testing.T) {
 			json.NewEncoder(w).Encode(fileList)
 			return
 		}
-		
+
 		// Check if this is the first directory listing without path (fallback)
 		if r.URL.Path == "/operation/endpoint/source-endpoint/ls" && r.URL.Query().Get("path") == "" {
 			// Return a mock directory listing
@@ -224,7 +224,7 @@ func TestSubmitRecursiveTransfer(t *testing.T) {
 		w.WriteHeader(http.StatusNotFound)
 	}
 
-	server, client := setupMockServerForAdditions(dirListingHandler)
+	server, client := setupMockServerForTests(dirListingHandler)
 	defer server.Close()
 
 	// Create a callback to track progress

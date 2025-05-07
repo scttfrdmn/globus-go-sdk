@@ -24,7 +24,7 @@ type MFARequiredError struct {
 // Error returns the error message
 func (e *MFARequiredError) Error() string {
 	if e.Challenge != nil {
-		return fmt.Sprintf("MFA required: %s (challenge ID: %s)", 
+		return fmt.Sprintf("MFA required: %s (challenge ID: %s)",
 			e.Response.ErrorDescription, e.Challenge.ChallengeID)
 	}
 	return fmt.Sprintf("MFA required: %s", e.Response.ErrorDescription)
@@ -62,8 +62,8 @@ type MFAResponse struct {
 
 // IsMFAError checks if an error is an MFA required error
 func IsMFAError(err error) bool {
-	var mfaErr *MFARequiredError
-	return err != nil && strings.Contains(err.Error(), "MFA required")
+	_, ok := err.(*MFARequiredError)
+	return ok || (err != nil && strings.Contains(err.Error(), "MFA required"))
 }
 
 // GetMFAChallenge extracts the MFA challenge from an error
@@ -90,10 +90,10 @@ func (c *Client) CheckForMFARequired(resp *http.Response) (*MFARequiredError, er
 	}
 
 	// Check if this is an MFA required error
-	if errorResp.Error == "mfa_required" || 
-	   (errorResp.Error == "invalid_grant" && 
-	    strings.Contains(errorResp.ErrorDescription, "MFA")) {
-		
+	if errorResp.Error == "mfa_required" ||
+		(errorResp.Error == "invalid_grant" &&
+			strings.Contains(errorResp.ErrorDescription, "MFA")) {
+
 		// Extract the challenge ID from the error description
 		challengeID := extractChallengeID(errorResp.ErrorDescription)
 		if challengeID == "" {
@@ -122,10 +122,18 @@ func (c *Client) CheckForMFARequired(resp *http.Response) (*MFARequiredError, er
 
 // extractChallengeID extracts the challenge ID from an error description
 func extractChallengeID(description string) string {
-	// Look for a pattern like "challenge ID: abc123" in the error description
+	// Look for patterns like "challenge ID: abc123" in the error description
 	prefix := "challenge ID: "
 	if idx := strings.Index(description, prefix); idx >= 0 {
-		return strings.TrimSpace(description[idx+len(prefix):])
+		// Get everything after the prefix
+		suffix := description[idx+len(prefix):]
+
+		// If there's a closing parenthesis, strip it
+		if closingIdx := strings.Index(suffix, ")"); closingIdx >= 0 {
+			return strings.TrimSpace(suffix[:closingIdx])
+		}
+
+		return strings.TrimSpace(suffix)
 	}
 	return ""
 }
@@ -154,7 +162,7 @@ func (c *Client) GetMFAChallenge(ctx context.Context, challengeID string) (*MFAC
 	// Check for error response
 	if resp.StatusCode != http.StatusOK {
 		respBody, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("MFA challenge request failed with status %d: %s", 
+		return nil, fmt.Errorf("MFA challenge request failed with status %d: %s",
 			resp.StatusCode, string(respBody))
 	}
 
@@ -206,7 +214,7 @@ func (c *Client) RespondToMFAChallenge(ctx context.Context, response *MFARespons
 		}
 
 		respBody, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("MFA response request failed with status %d: %s", 
+		return nil, fmt.Errorf("MFA response request failed with status %d: %s",
 			resp.StatusCode, string(respBody))
 	}
 
@@ -221,12 +229,28 @@ func (c *Client) RespondToMFAChallenge(ctx context.Context, response *MFARespons
 
 // ExchangeAuthorizationCodeWithMFA exchanges an authorization code with MFA support
 func (c *Client) ExchangeAuthorizationCodeWithMFA(
-	ctx context.Context, 
+	ctx context.Context,
 	code string,
 	mfaHandler func(challenge *MFAChallenge) (*MFAResponse, error),
 ) (*TokenResponse, error) {
-	// First attempt the regular code exchange
-	tokenResp, err := c.ExchangeAuthorizationCode(ctx, code)
+	if c.RedirectURL == "" {
+		return nil, fmt.Errorf("redirect URL is required for code exchange")
+	}
+
+	// Build the request body
+	form := url.Values{}
+	form.Set("grant_type", "authorization_code")
+	form.Set("code", code)
+	form.Set("redirect_uri", c.RedirectURL)
+	form.Set("client_id", c.ClientID)
+
+	// Add client secret if available
+	if c.ClientSecret != "" {
+		form.Set("client_secret", c.ClientSecret)
+	}
+
+	// Use MFA-enabled token request
+	tokenResp, err := c.tokenRequestMFA(ctx, form)
 	if err != nil {
 		// Check if this is an MFA error
 		if mfaErr, ok := err.(*MFARequiredError); ok && mfaHandler != nil {
@@ -247,12 +271,23 @@ func (c *Client) ExchangeAuthorizationCodeWithMFA(
 
 // RefreshTokenWithMFA refreshes a token with MFA support
 func (c *Client) RefreshTokenWithMFA(
-	ctx context.Context, 
+	ctx context.Context,
 	refreshToken string,
 	mfaHandler func(challenge *MFAChallenge) (*MFAResponse, error),
 ) (*TokenResponse, error) {
-	// First attempt the regular refresh
-	tokenResp, err := c.RefreshToken(ctx, refreshToken)
+	// Build the request body
+	form := url.Values{}
+	form.Set("grant_type", "refresh_token")
+	form.Set("refresh_token", refreshToken)
+	form.Set("client_id", c.ClientID)
+
+	// Add client secret if available
+	if c.ClientSecret != "" {
+		form.Set("client_secret", c.ClientSecret)
+	}
+
+	// Use MFA-enabled token request
+	tokenResp, err := c.tokenRequestMFA(ctx, form)
 	if err != nil {
 		// Check if this is an MFA error
 		if mfaErr, ok := err.(*MFARequiredError); ok && mfaHandler != nil {
@@ -271,8 +306,8 @@ func (c *Client) RefreshTokenWithMFA(
 	return tokenResp, nil
 }
 
-// Override the existing tokenRequest method to handle MFA challenges
-func (c *Client) tokenRequest(ctx context.Context, form url.Values) (*TokenResponse, error) {
+// tokenRequestMFA is a version of tokenRequest that supports MFA challenges
+func (c *Client) tokenRequestMFA(ctx context.Context, form url.Values) (*TokenResponse, error) {
 	// Set the headers
 	headers := http.Header{}
 	headers.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -312,7 +347,7 @@ func (c *Client) tokenRequest(ctx context.Context, form url.Values) (*TokenRespo
 
 		// Not an MFA error, or error parsing the MFA error
 		respBody, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("token request failed with status %d: %s", 
+		return nil, fmt.Errorf("token request failed with status %d: %s",
 			resp.StatusCode, string(respBody))
 	}
 

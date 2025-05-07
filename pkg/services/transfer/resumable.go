@@ -91,6 +91,7 @@ func (c *Client) CreateResumableTransfer(
 
 			// Create transfer item
 			item := TransferItem{
+				DataType:        "transfer_item",
 				SourcePath:      filepath.Join(sourcePath, file.Name),
 				DestinationPath: filepath.Join(destinationPath, relPath),
 				Recursive:       false,
@@ -340,7 +341,7 @@ func (c *Client) executeResumableTransfer(
 					// Move all items to completed
 					state.CompletedItems = append(state.CompletedItems, items...)
 					// Update stats
-					for _, item := range items {
+					for range items {
 						state.Stats.CompletedItems++
 						state.Stats.RemainingItems--
 						// We don't know the exact size, so approximate
@@ -352,9 +353,9 @@ func (c *Client) executeResumableTransfer(
 				} else if task.Status == "FAILED" {
 					mu.Lock()
 					// Move all items to failed
-					for _, item := range items {
+					for _, currentItem := range items {
 						failedItem := FailedTransferItem{
-							Item:         item,
+							Item:         currentItem,
 							ErrorMessage: "Task failed",
 							RetryCount:   0,
 							LastAttempt:  time.Now(),
@@ -372,9 +373,9 @@ func (c *Client) executeResumableTransfer(
 					// Task is in an unexpected state, consider it failed
 					mu.Lock()
 					// Move all items to failed
-					for _, item := range items {
+					for _, currentItem := range items {
 						failedItem := FailedTransferItem{
-							Item:         item,
+							Item:         currentItem,
 							ErrorMessage: fmt.Sprintf("Unexpected task status: %s", task.Status),
 							RetryCount:   0,
 							LastAttempt:  time.Now(),

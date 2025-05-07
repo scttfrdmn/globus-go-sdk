@@ -20,9 +20,9 @@ import (
 
 // Constants for Globus Transfer
 const (
-	DefaultBaseURL     = "https://transfer.api.globus.org/v0.10/"
-	TransferScope      = "urn:globus:auth:scope:transfer.api.globus.org:all"
-	MinimumAPIVersion  = "v0.10"  // Minimum supported API version
+	DefaultBaseURL    = "https://transfer.api.globus.org/v0.10/"
+	TransferScope     = "urn:globus:auth:scope:transfer.api.globus.org:all"
+	MinimumAPIVersion = "v0.10" // Minimum supported API version
 )
 
 // Client provides methods for interacting with Globus Transfer
@@ -33,7 +33,7 @@ type Client struct {
 // NewClient creates a new Transfer client
 func NewClient(options ...Option) (*Client, error) {
 	// Apply the options to create the client configuration
-	cfg := &clientConfig{}
+	cfg := &ClientConfig{}
 	for _, option := range options {
 		option(cfg)
 	}
@@ -75,8 +75,9 @@ func NewClient(options ...Option) (*Client, error) {
 	}, nil
 }
 
-// buildURL builds a URL for the transfer API
-func (c *Client) buildURL(path string, query url.Values) string {
+// buildURLLowLevel builds a URL for the transfer API
+// This is an internal method used by the client.
+func (c *Client) buildURLLowLevel(path string, query url.Values) string {
 	baseURL := c.Client.BaseURL
 	if baseURL[len(baseURL)-1] != '/' {
 		baseURL += "/"
@@ -90,9 +91,10 @@ func (c *Client) buildURL(path string, query url.Values) string {
 	return url
 }
 
-// doRequest performs an HTTP request and decodes the JSON response
-func (c *Client) doRequest(ctx context.Context, method, path string, query url.Values, body, response interface{}) error {
-	url := c.buildURL(path, query)
+// doRequestLowLevel performs an HTTP request and decodes the JSON response
+// This is an internal method used by higher-level API methods.
+func (c *Client) doRequestLowLevel(ctx context.Context, method, path string, query url.Values, body, response interface{}) error {
+	url := c.buildURLLowLevel(path, query)
 
 	var bodyReader io.Reader
 	if body != nil {
@@ -100,13 +102,13 @@ func (c *Client) doRequest(ctx context.Context, method, path string, query url.V
 		if err != nil {
 			return fmt.Errorf("failed to marshal request body: %w", err)
 		}
-		
+
 		// Debug output for request
 		if os.Getenv("HTTP_DEBUG") != "" {
 			fmt.Printf("DEBUG REQUEST URL: %s\n", url)
 			fmt.Printf("DEBUG REQUEST BODY: %s\n", string(bodyJSON))
 		}
-		
+
 		bodyReader = bytes.NewReader(bodyJSON)
 	}
 
@@ -131,13 +133,13 @@ func (c *Client) doRequest(ctx context.Context, method, path string, query url.V
 		respBody, _ := io.ReadAll(resp.Body)
 		return parseTransferError(resp.StatusCode, respBody)
 	}
-	
+
 	// Process rate limit headers if present
 	if limiter := c.Client.RateLimiter; limiter != nil {
 		limit := parseIntHeader(resp.Header, "X-RateLimit-Limit", -1)
 		remaining := parseIntHeader(resp.Header, "X-RateLimit-Remaining", -1)
 		reset := parseIntHeader(resp.Header, "X-RateLimit-Reset", -1)
-		
+
 		if limit > 0 && remaining >= 0 && reset > 0 {
 			limiter.UpdateLimit(limit, remaining, reset)
 		}
@@ -153,7 +155,7 @@ func (c *Client) doRequest(ctx context.Context, method, path string, query url.V
 		return nil
 	}
 
-	// Read and decode response body 
+	// Read and decode response body
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
@@ -211,7 +213,7 @@ func (c *Client) ListEndpoints(ctx context.Context, options *ListEndpointsOption
 	}
 
 	var endpointList EndpointList
-	err := c.doRequest(ctx, http.MethodGet, "endpoint_search", query, nil, &endpointList)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "endpoint_search", query, nil, &endpointList)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +228,7 @@ func (c *Client) GetEndpoint(ctx context.Context, endpointID string) (*Endpoint,
 	}
 
 	var endpoint Endpoint
-	err := c.doRequest(ctx, http.MethodGet, "endpoint/"+endpointID, nil, nil, &endpoint)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "endpoint/"+endpointID, nil, nil, &endpoint)
 	if err != nil {
 		return nil, err
 	}
@@ -311,7 +313,7 @@ func (c *Client) ListFiles(ctx context.Context, endpointID, path string, options
 	}
 
 	var fileList FileList
-	err := c.doRequest(ctx, http.MethodGet, "operation/endpoint/"+endpointID+"/ls", query, nil, &fileList)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "operation/endpoint/"+endpointID+"/ls", query, nil, &fileList)
 	if err != nil {
 		return nil, err
 	}
@@ -327,12 +329,12 @@ func (c *Client) GetSubmissionID(ctx context.Context) (string, error) {
 	}
 
 	var response struct {
-		Value       string `json:"value"`
+		Value        string `json:"value"`
 		SubmissionID string `json:"submission_id"`
 	}
 
 	// The API endpoint is a GET request, not POST
-	err := c.doRequest(ctx, http.MethodGet, "submission_id", nil, nil, &response)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "submission_id", nil, nil, &response)
 	if err != nil {
 		return "", fmt.Errorf("failed to get submission ID: %w", err)
 	}
@@ -384,7 +386,7 @@ func (c *Client) CreateTransferTask(ctx context.Context, request *TransferTaskRe
 	}
 
 	var response TaskResponse
-	err := c.doRequest(ctx, http.MethodPost, "transfer", nil, request, &response)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "transfer", nil, request, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -417,7 +419,7 @@ func (c *Client) CreateDeleteTask(ctx context.Context, request *DeleteTaskReques
 			request.Items[i].DataType = "delete_item"
 		}
 	}
-	
+
 	// Note: The API does not support a "recursive" field for delete_item as of API v0.10
 	// Instead, all deletions in Globus Transfer appear to be recursive by default
 
@@ -431,7 +433,7 @@ func (c *Client) CreateDeleteTask(ctx context.Context, request *DeleteTaskReques
 	}
 
 	var response TaskResponse
-	err := c.doRequest(ctx, http.MethodPost, "delete", nil, request, &response)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "delete", nil, request, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -480,7 +482,7 @@ func (c *Client) ListTasks(ctx context.Context, options *ListTasksOptions) (*Tas
 	}
 
 	var taskList TaskList
-	err := c.doRequest(ctx, http.MethodGet, "task_list", query, nil, &taskList)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "task_list", query, nil, &taskList)
 	if err != nil {
 		return nil, err
 	}
@@ -495,7 +497,7 @@ func (c *Client) GetTask(ctx context.Context, taskID string) (*Task, error) {
 	}
 
 	var task Task
-	err := c.doRequest(ctx, http.MethodGet, "task/"+taskID, nil, nil, &task)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "task/"+taskID, nil, nil, &task)
 	if err != nil {
 		return nil, err
 	}
@@ -510,14 +512,14 @@ func (c *Client) CancelTask(ctx context.Context, taskID string) (*OperationResul
 	}
 
 	var result OperationResult
-	err := c.doRequest(ctx, http.MethodPost, "task/"+taskID+"/cancel", nil, nil, &result)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "task/"+taskID+"/cancel", nil, nil, &result)
 	if err != nil {
 		return nil, err
 	}
 
 	// Add the task ID to the result for convenience
 	result.TaskID = taskID
-	
+
 	return &result, nil
 }
 
@@ -560,7 +562,7 @@ func (c *Client) Mkdir(ctx context.Context, endpointID, path string) error {
 	}
 
 	var result OperationResult
-	err := c.doRequest(ctx, http.MethodPost, "operation/endpoint/"+endpointID+"/mkdir", nil, body, &result)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "operation/endpoint/"+endpointID+"/mkdir", nil, body, &result)
 	if err != nil {
 		return err
 	}
@@ -590,7 +592,7 @@ func (c *Client) Rename(ctx context.Context, endpointID, oldPath, newPath string
 	}
 
 	var result OperationResult
-	err := c.doRequest(ctx, http.MethodPost, "operation/endpoint/"+endpointID+"/rename", nil, body, &result)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "operation/endpoint/"+endpointID+"/rename", nil, body, &result)
 	if err != nil {
 		return err
 	}
@@ -693,7 +695,7 @@ func (c *Client) GetResumableTransferStatus(
 
 // ResumeResumableTransfer resumes a previously started resumable transfer
 func (c *Client) ResumeResumableTransfer(
-	ctx context.Context, 
+	ctx context.Context,
 	checkpointID string,
 	options *ResumableTransferOptions,
 ) (*ResumableTransferResult, error) {
@@ -713,16 +715,16 @@ func parseIntHeader(header http.Header, key string, defaultValue int) int {
 	if header == nil {
 		return defaultValue
 	}
-	
+
 	value := header.Get(key)
 	if value == "" {
 		return defaultValue
 	}
-	
+
 	intValue, err := strconv.Atoi(value)
 	if err != nil {
 		return defaultValue
 	}
-	
+
 	return intValue
 }

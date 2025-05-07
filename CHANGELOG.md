@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.6] - 2025-05-07
+
+### Fixed
+- Fixed duplicate tokenRequest method in auth/mfa.go
+- Fixed type naming consistency with ClientConfig in transfer package
+- Fixed incorrect DeleteItem structure in test and debug files
+- Removed redundant Recursive field from DeleteItem that's unsupported by the API
+- Fixed JSON marshaling issues with function fields in ResumableTransferOptions
+- Added proper DataType setting for TransferItems in resumable transfers
+- Fixed duplicate setupMockServer functions in transfer tests
+
 ## [0.9.5] - 2025-05-07
 
 ### Fixed
@@ -147,7 +158,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HTTP transport layer
 - Basic authorization mechanisms
 
-[Unreleased]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.5...HEAD
+[Unreleased]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.6...HEAD
+[0.9.6]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.2...v0.9.3

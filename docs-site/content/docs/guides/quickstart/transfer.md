@@ -391,11 +391,12 @@ request := &transfer.DeleteTaskRequest{
     Label:        "Delete Files",
     DATA: []transfer.DeleteItem{
         {
-            Path: "/path/to/file/to/delete.txt",
+            DataType: "delete_item",
+            Path:     "/path/to/file/to/delete.txt",
         },
         {
-            Path:      "/path/to/directory/to/delete",
-            Recursive: true, // Delete directory recursively
+            DataType: "delete_item",
+            Path:     "/path/to/directory/to/delete", // Directories are deleted recursively by default
         },
     },
 }
