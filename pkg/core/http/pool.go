@@ -31,7 +31,7 @@ type ConnectionPoolConfig struct {
 	// ResponseHeaderTimeout is the amount of time to wait for a server's response headers
 	ResponseHeaderTimeout time.Duration
 
-	// ExpectContinueTimeout is the amount of time to wait for a server's first response headers 
+	// ExpectContinueTimeout is the amount of time to wait for a server's first response headers
 	// after fully writing the request headers if the request has an "Expect: 100-continue" header
 	ExpectContinueTimeout time.Duration
 
@@ -56,6 +56,26 @@ func DefaultConnectionPoolConfig() *ConnectionPoolConfig {
 		TLSHandshakeTimeout:   10 * time.Second,
 		TLSClientConfig:       nil,
 	}
+}
+
+// GetMaxIdleConnsPerHost returns the maximum number of idle connections to keep per host
+func (c *ConnectionPoolConfig) GetMaxIdleConnsPerHost() int {
+	return c.MaxIdleConnsPerHost
+}
+
+// GetMaxIdleConns returns the maximum number of idle connections across all hosts
+func (c *ConnectionPoolConfig) GetMaxIdleConns() int {
+	return c.MaxIdleConns
+}
+
+// GetMaxConnsPerHost returns the maximum number of connections per host
+func (c *ConnectionPoolConfig) GetMaxConnsPerHost() int {
+	return c.MaxConnsPerHost
+}
+
+// GetIdleConnTimeout returns how long an idle connection will remain idle before being closed
+func (c *ConnectionPoolConfig) GetIdleConnTimeout() time.Duration {
+	return c.IdleConnTimeout
 }
 
 // ConnectionPool manages a pool of HTTP connections to improve performance
@@ -246,12 +266,12 @@ func (m *ConnectionPoolManager) GetAllStats() map[string]ConnectionPoolStats {
 	return stats
 }
 
-// GlobalConnectionPoolManager is the default global connection pool manager
-var GlobalConnectionPoolManager = NewConnectionPoolManager(nil)
+// GlobalHttpPoolManager is the default global connection pool manager
+var GlobalHttpPoolManager = NewConnectionPoolManager(nil)
 
 // GetServicePool is a convenience function to get a connection pool from the global manager
 func GetServicePool(serviceName string, config *ConnectionPoolConfig) *ConnectionPool {
-	return GlobalConnectionPoolManager.GetPool(serviceName, config)
+	return GlobalHttpPoolManager.GetPool(serviceName, config)
 }
 
 // GetHTTPClientForService returns an HTTP client for the given service

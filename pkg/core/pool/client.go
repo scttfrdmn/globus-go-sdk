@@ -4,59 +4,47 @@ package pool
 
 import (
 	"net/http"
+	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/transport"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
 )
 
-// WithConnectionPool creates a ClientOption function for configuring a client to use a connection pool
-type ClientOption func(interface{})
+// Client defines an HTTP client that uses a connection pool
+type Client struct {
+	// Client is the underlying HTTP client
+	Client *http.Client
 
-// WithConnectionPool configures the client to use a connection pool
-func WithConnectionPool(poolName string, config *transport.ConnectionPoolConfig) ClientOption {
-	return func(c interface{}) {
-		// This is a placeholder - callers will need to adapt this to their client type
-		// Typically, we'd set c.HTTPClient = pool.GetClient()
+	// Pool is the connection pool this client uses
+	Pool interfaces.ConnectionPool
+}
+
+// NewClient creates a new pooled client for the given service
+func NewClient(serviceName string, config interfaces.ConnectionPoolConfig) *Client {
+	pool := GetServicePool(serviceName, config)
+	return &Client{
+		Client: pool.GetClient(),
+		Pool:   pool,
 	}
 }
 
-// NewHTTPClientWithConnectionPool creates a new HTTP client with a connection pool
-func NewHTTPClientWithConnectionPool(poolName string, config *transport.ConnectionPoolConfig) *http.Client {
-	pool := transport.GetServicePool(poolName, config)
-	return pool.GetClient()
+// GetConnectionPool returns the connection pool used by this client
+func (c *Client) GetConnectionPool() interfaces.ConnectionPool {
+	return c.Pool
 }
 
-// EnableDefaultConnectionPool configures a default connection pool for all clients
-// This should be called early in your application's initialization
-func EnableDefaultConnectionPool() {
-	// Create default connection pools for each service type
-	serviceNames := []string{
-		"auth",
-		"transfer",
-		"search",
-		"flows",
-		"groups",
-		"compute",
-		"timers",
-	}
+// SetTimeout sets the timeout for all requests made by this client
+func (c *Client) SetTimeout(timeout time.Duration) {
+	c.Client.Timeout = timeout
+}
 
-	for _, service := range serviceNames {
-		// Use slightly different settings based on expected service usage patterns
-		config := transport.DefaultConnectionPoolConfig()
+// GetClient returns the underlying HTTP client
+func (c *Client) GetHTTPClient() *http.Client {
+	return c.Client
+}
 
-		switch service {
-		case "transfer":
-			// Transfer service may have higher throughput needs
-			config.MaxIdleConnsPerHost = 8
-			config.MaxConnsPerHost = 16
-		case "auth":
-			// Auth service typically needs fewer connections
-			config.MaxIdleConnsPerHost = 4
-			config.MaxConnsPerHost = 8
-		default:
-			// Use defaults for other services
-		}
-
-		// Initialize the pool for the service
-		transport.GetServicePool(service, config)
+// CloseIdleConnections closes all idle connections in the connection pool
+func (c *Client) CloseIdleConnections() {
+	if c.Pool != nil {
+		c.Pool.CloseIdleConnections()
 	}
 }
