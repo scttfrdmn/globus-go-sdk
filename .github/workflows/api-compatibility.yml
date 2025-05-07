@@ -1,0 +1,88 @@
+name: API Compatibility
+
+on:
+  push:
+    branches: [ main, v*.*.* ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  api-compatibility:
+    name: Check API Compatibility
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          
+      - name: Install api-diff
+        run: go install github.com/joeshaw/go-api-diff@latest
+      
+      - name: Build SDK
+        run: go build -v ./...
+      
+      - name: Run API tests
+        run: go test -v ./pkg/core/config/... ./pkg/core/interfaces/... ./pkg/services/...
+      
+      - name: Run dependent project tests
+        run: ./scripts/test_dependent_projects.sh
+      
+      - name: Compare API with previous version
+        run: |
+          # Get the latest release tag
+          LATEST_RELEASE=$(git describe --tags --abbrev=0)
+          echo "Latest release: $LATEST_RELEASE"
+          
+          # Checkout the latest release temporarily
+          git checkout $LATEST_RELEASE
+          
+          # Build the latest release version
+          go build -o /tmp/sdk-old.a ./...
+          
+          # Go back to the current branch
+          git checkout -
+          
+          # Build the current version
+          go build -o /tmp/sdk-new.a ./...
+          
+          # Compare the APIs
+          go-api-diff -old /tmp/sdk-old.a -new /tmp/sdk-new.a
+      
+      - name: Verify interfaces are implemented
+        run: |
+          # This script checks that all required interfaces are implemented
+          cat << 'EOF' > verify_interfaces.go
+          package main
+          
+          import (
+            "fmt"
+            "reflect"
+            
+            "github.com/scttfrdmn/globus-go-sdk/pkg/core"
+            "github.com/scttfrdmn/globus-go-sdk/pkg/core/config"
+            "github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
+          )
+          
+          func main() {
+            // Verify Config implements ConfigAccessor
+            verifyInterface("Config", reflect.TypeOf((*config.ConfigAccessor)(nil)).Elem(), reflect.TypeOf(&config.Config{}))
+            
+            // Verify Client implements Client interface
+            verifyInterface("Client", reflect.TypeOf((*interfaces.Client)(nil)).Elem(), reflect.TypeOf(&core.Client{}))
+            
+            fmt.Println("All interface implementations verified!")
+          }
+          
+          func verifyInterface(name string, interfaceType, implementationType reflect.Type) {
+            if !implementationType.Implements(interfaceType) {
+              panic(fmt.Sprintf("%s does not implement %s", implementationType, interfaceType))
+            }
+            fmt.Printf("✓ %s implements %s\n", implementationType, interfaceType)
+          }
+          EOF
+          
+          # Run the verification
+          go run verify_interfaces.go
