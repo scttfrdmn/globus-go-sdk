@@ -12,7 +12,7 @@ import (
 )
 
 // Version is the current version of the Globus Go SDK
-const Version = "0.9.3"
+const Version = "0.9.4"
 
 // APIVersion represents a Globus API version
 type APIVersion struct {
@@ -178,9 +178,10 @@ func (v *APIVersion) String() string {
 
 // Compare compares this version to another version
 // Returns:
-//   -1 if this version is less than the other version
-//    0 if this version is equal to the other version
-//    1 if this version is greater than the other version
+//
+//	-1 if this version is less than the other version
+//	 0 if this version is equal to the other version
+//	 1 if this version is greater than the other version
 func (v *APIVersion) Compare(other *APIVersion) int {
 	// Compare major version
 	if v.Major != other.Major {
@@ -262,9 +263,9 @@ func (v *APIVersion) IsCompatible(other interface{}) bool {
 	// - v1.0 is compatible with v1.1 (minor version increments are backward compatible)
 	// - v1.2 is compatible with v1.2.3 (patch version increments are backward compatible)
 	// - v2.0 is not compatible with v1.0 (major version increments are not backward compatible)
-	
+
 	// Some services (like Auth) might have different conventions, but this is the default
-	
+
 	// Everything else is compatible
 	return true
 }
@@ -374,7 +375,7 @@ func (vc *VersionCheck) CheckServiceVersion(service string, version string) erro
 	if err != nil {
 		return err
 	}
-	
+
 	// Mark as checked
 	vc.MarkServiceChecked(service)
 	return nil

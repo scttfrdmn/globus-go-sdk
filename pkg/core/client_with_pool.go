@@ -3,11 +3,8 @@
 package core
 
 import (
-	"context"
 	"net/http"
-	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/transport"
 )
 

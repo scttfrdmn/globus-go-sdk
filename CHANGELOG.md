@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.4] - 2025-05-07
+
+### Fixed
+- Added missing ClientInterface methods to Client type
+- Fixed unused imports in client_with_pool.go
+- Resolved interface implementation issues causing compilation errors in consuming applications
+
 ## [0.9.3] - 2025-05-07
 
 ### Fixed
@@ -132,7 +139,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HTTP transport layer
 - Basic authorization mechanisms
 
-[Unreleased]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.3...HEAD
+[Unreleased]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.4...HEAD
+[0.9.4]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.0...v0.9.1

@@ -147,3 +147,22 @@ func (c *Client) Do(ctx context.Context, req *http.Request) (*http.Response, err
 	return resp, nil
 }
 
+// GetHTTPClient returns the underlying HTTP client
+func (c *Client) GetHTTPClient() *http.Client {
+	return c.HTTPClient
+}
+
+// GetBaseURL returns the base URL for the client
+func (c *Client) GetBaseURL() string {
+	return c.BaseURL
+}
+
+// GetUserAgent returns the user agent string for the client
+func (c *Client) GetUserAgent() string {
+	return c.UserAgent
+}
+
+// GetLogger returns the logger for the client
+func (c *Client) GetLogger() interfaces.Logger {
+	return c.Logger
+}
