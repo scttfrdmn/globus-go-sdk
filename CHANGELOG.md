@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.9] - 2025-05-07
+
+### Added
+- Comprehensive API compatibility testing suite
+- Interface implementation verification tests
+- Dependent project build test script
+- Compiler-enforced API contracts using interfaces
+- GitHub Actions workflow for API compatibility checks
+
+### Changed
+- Updated version to 0.9.9
+
 ## [0.9.8] - 2025-05-07
 
 ### Fixed
@@ -172,7 +184,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HTTP transport layer
 - Basic authorization mechanisms
 
-[Unreleased]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.8...HEAD
+[Unreleased]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.9...HEAD
+[0.9.9]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.8...v0.9.9
 [0.9.8]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.7...v0.9.8
 [0.9.7]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.6...v0.9.7
 [0.9.6]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.5...v0.9.6
