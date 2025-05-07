@@ -118,6 +118,9 @@ jobs:
 
       - name: Run tests with coverage
         run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+        
+      - name: Run connection pool integration tests
+        run: go test -v ./pkg/connection_pools_test.go
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -148,6 +151,12 @@ jobs:
 
       - name: Build
         run: go build -v ./pkg/...
+        
+      - name: Verify package exports
+        run: ./scripts/verify_exports.sh
+        
+      - name: Run API availability tests
+        run: go test -v ./pkg/core/http/...
 
   integration:
     name: Integration Tests

@@ -63,8 +63,9 @@ The SDK uses the following testing approaches:
 
 1. **Unit Testing**: Tests individual components in isolation
 2. **Integration Testing**: Tests interactions with real Globus services
-3. **Shell Script Testing**: Validates shell scripts using static analysis and automated tests
-4. **Security Testing**: Identifies potential security vulnerabilities
+3. **API Export Verification**: Ensures that all required functions and interfaces are properly exported
+4. **Shell Script Testing**: Validates shell scripts using static analysis and automated tests
+5. **Security Testing**: Identifies potential security vulnerabilities
 
 ### Test Coverage Goals
 
@@ -369,6 +370,69 @@ To avoid data loss or unintended consequences:
 3. Clean up all created resources when tests complete
 4. Use read-only operations where possible
 5. Never modify or delete data outside of your test directories
+
+## API Export Verification
+
+API Export Verification ensures that all functions, types, and interfaces required by dependent projects are properly exported from the SDK. This helps prevent breaking changes by catching issues with missing or mis-exported APIs.
+
+### Export Verification Tools
+
+The SDK includes dedicated tools for verifying API exports:
+
+1. **`verify_package_exports.go`**: A standalone tool that verifies required exports
+2. **`verify_exports.sh`**: A shell script wrapper for easy use in CI/CD pipelines
+3. **HTTP Pool API tests**: Dedicated tests for HTTP connection pool exports
+
+### Running Export Verification
+
+```bash
+# Run the export verification script
+./scripts/verify_exports.sh
+
+# Run HTTP pool API tests
+go test -v ./pkg/core/http/pool_api_test.go
+
+# Run connection pool integration tests
+go test -v ./pkg/connection_pools_test.go
+```
+
+### Writing Export Verification Tests
+
+When adding new exported functions or interfaces:
+
+1. Add them to the list of critical exports in `scripts/verify_package_exports.go`
+2. Add interface implementation tests for any new interfaces
+3. Add practical usage tests that simulate how dependent packages use the API
+
+Example:
+
+```go
+// Add to verify_package_exports.go
+criticalExports := []requiredExport{
+    // Existing exports...
+    {"MyNewFunction", "github.com/scttfrdmn/globus-go-sdk/pkg/mypackage", mypackage.MyNewFunction, false},
+}
+
+// Add interface implementation test
+func TestMyInterfaceImplementation(t *testing.T) {
+    var _ MyInterface = (*MyConcreteType)(nil)  // Static check
+    
+    // Runtime check
+    instance := NewMyConcreteType()
+    _, ok := interface{}(instance).(MyInterface)
+    if !ok {
+        t.Error("MyConcreteType does not implement MyInterface")
+    }
+}
+```
+
+### Best Practices for API Export Verification
+
+1. **Test direct usage patterns**: Verify the exact patterns that dependent projects use
+2. **Use direct type assertions**: For interface implementation tests, use direct type assertions instead of reflect-based checks
+3. **Check for nil functions**: Verify that exported functions are not nil
+4. **Add tests for critical components**: Focus on APIs used by dependent projects
+5. **Test practical usage scenarios**: Go beyond simple existence checks to verify that the APIs work as expected
 
 ## Shell Script Testing
 
@@ -754,8 +818,9 @@ The standard CI pipeline follows this structure:
 2. **Lint**: Run golangci-lint to verify code style
 3. **Test**: Run unit tests with coverage reporting
 4. **Build**: Verify the project builds successfully
-5. **Security Scan**: Run security tools (gosec, nancy, gitleaks)
-6. **Report**: Upload test coverage and other reports
+5. **API Export Verification**: Run API availability tests and verify package exports
+6. **Security Scan**: Run security tools (gosec, nancy, gitleaks)
+7. **Report**: Upload test coverage and other reports
 
 ### Test Environment Variables
 
@@ -773,7 +838,9 @@ env:
 
 ### Running Tests in CI
 
-Example GitHub Actions configuration for integration tests:
+Example GitHub Actions configurations:
+
+#### Integration Tests Workflow
 
 ```yaml
 name: Integration Tests
@@ -805,6 +872,44 @@ jobs:
           
       - name: Run integration tests
         run: ./scripts/run_integration_tests.sh
+```
+
+#### API Export Verification Workflow
+
+```yaml
+name: API Export Verification
+
+on:
+  push:
+    branches: [ main, v0.9.0-release ]
+  pull_request:
+    branches: [ main, v0.9.0-release ]
+
+jobs:
+  verify-exports:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v2
+      
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: '1.21'
+          
+      - name: Get dependencies
+        run: |
+          go mod download
+          go mod verify
+          
+      - name: Verify package exports
+        run: ./scripts/verify_exports.sh
+        
+      - name: Run HTTP pool API tests
+        run: go test -v ./pkg/core/http/...
+        
+      - name: Run connection pool integration tests
+        run: go test -v ./pkg/connection_pools_test.go
 ```
 
 Best practices for CI/CD testing:
@@ -894,3 +999,5 @@ Best practices for CI/CD testing:
 - [Effective Go](https://golang.org/doc/effective_go)
 - [OWASP Go Security Cheatsheet](https://github.com/OWASP/CheatSheetSeries/blob/master/cheatsheets/Go_Security_Cheatsheet.md)
 - [Shell Script Best Practices](https://kvz.io/bash-best-practices.html)
+- [HTTP Pool API Testing](../../HTTP_POOL_API_TESTING.md) - Guide for HTTP pool API verification tests
+- [Testing Goals](test-goals.md) - Testing goals and priorities for the SDK
