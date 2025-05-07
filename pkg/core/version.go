@@ -5,13 +5,14 @@ package core
 import (
 	"fmt"
 	"regexp"
+	"runtime/debug"
 	"strconv"
 	"strings"
 	"sync"
 )
 
 // Version is the current version of the Globus Go SDK
-const Version = "0.9.0"
+const Version = "0.9.3"
 
 // APIVersion represents a Globus API version
 type APIVersion struct {
@@ -29,6 +30,60 @@ type APIVersion struct {
 
 	// Beta indicates whether this is a beta version
 	Beta bool
+}
+
+// VersionInfo provides additional info about the build
+type VersionInfo struct {
+	Version     string `json:"version"`     // Semver version
+	GitCommit   string `json:"gitCommit"`   // Git commit hash
+	BuildDate   string `json:"buildDate"`   // Build date
+	GoVersion   string `json:"goVersion"`   // Go version used for building
+	FullVersion string `json:"fullVersion"` // Full version with build details
+}
+
+// GetInfo returns detailed version information
+func GetInfo() VersionInfo {
+	info := VersionInfo{
+		Version: Version,
+	}
+
+	// Try to extract build info
+	if buildInfo, ok := debug.ReadBuildInfo(); ok {
+		info.GoVersion = buildInfo.GoVersion
+
+		// Extract revision info from build settings
+		for _, setting := range buildInfo.Settings {
+			switch setting.Key {
+			case "vcs.revision":
+				info.GitCommit = setting.Value
+			case "vcs.time":
+				info.BuildDate = setting.Value
+			}
+		}
+	}
+
+	// Format full version
+	parts := []string{info.Version}
+	if info.GitCommit != "" {
+		parts = append(parts, fmt.Sprintf("commit:%s", info.GitCommit[:8]))
+	}
+	if info.BuildDate != "" {
+		parts = append(parts, fmt.Sprintf("built:%s", info.BuildDate))
+	}
+	info.FullVersion = strings.Join(parts, " ")
+
+	return info
+}
+
+// IsDevelopment returns true if the version is a development version
+func IsDevelopment() bool {
+	return strings.Contains(Version, "-rc") || strings.Contains(Version, "-beta")
+}
+
+// UserAgent returns the appropriate User-Agent header string for the SDK
+func UserAgent() string {
+	info := GetInfo()
+	return fmt.Sprintf("Globus-Go-SDK/%s", info.Version)
 }
 
 // ParseVersion parses a version string into an APIVersion
