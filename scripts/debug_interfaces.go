@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
-package main
+package scripts
 
 import (
 	"fmt"
@@ -10,7 +10,8 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
 )
 
-func main() {
+// DebugInterfaces analyzes interfaces and their implementations
+func DebugInterfaces() {
 	// Get the interface type
 	interfaceType := reflect.TypeOf((*interfaces.ConnectionPoolManager)(nil)).Elem()
 	fmt.Printf("Interface: %s has %d methods\n", interfaceType.Name(), interfaceType.NumMethod())

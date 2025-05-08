@@ -6,10 +6,11 @@
 // exports that would only be noticed during compilation of dependent projects.
 //
 // Run with: go run scripts/verify_package_exports.go
-package main
+package scripts
 
 import (
 	"fmt"
+	"os"
 	"reflect"
 
 	// Import SDK packages that we want to verify
@@ -60,7 +61,17 @@ func validateInterfaceImplementation(concreteName string, concrete, iface interf
 }
 */
 
+// Required for standalone execution
 func main() {
+	if VerifyPackageExports() {
+		os.Exit(0)
+	} else {
+		os.Exit(1)
+	}
+}
+
+// VerifyPackageExports checks that all required exports are available
+func VerifyPackageExports() bool {
 	// Define the critical exports we need to verify
 	criticalExports := []requiredExport{
 		// HTTP Package exports - these were problematic in issue #11
@@ -131,7 +142,9 @@ func main() {
 	if hasErrors {
 		fmt.Println("\n❌ FAILED: Some exports are missing or invalid")
 		fmt.Println("This will likely cause compilation errors in dependent projects")
+		return false
 	} else {
 		fmt.Println("\n✅ SUCCESS: All required exports are available")
+		return true
 	}
 }
