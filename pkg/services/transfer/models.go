@@ -13,7 +13,7 @@ const (
 	SyncLevelSize     = 1 // Transfer if size differs
 	SyncLevelModified = 2 // Transfer if size or modification time differs
 	SyncLevelChecksum = 3 // Transfer if size, modification time, or checksum differs
-	
+
 	// Alias for backward compatibility
 	SyncChecksum = SyncLevelChecksum
 )

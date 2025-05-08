@@ -36,16 +36,16 @@ func TestTransferConstants(t *testing.T) {
 // function correctly initializes the SyncLevel field
 func TestMemoryOptimizedOptionsSyncLevel(t *testing.T) {
 	options := DefaultMemoryOptimizedOptions()
-	
+
 	// Verify SyncLevel is set to SyncLevelChecksum
 	if options.SyncLevel != SyncLevelChecksum {
-		t.Fatalf("Expected SyncLevel to be SyncLevelChecksum (%d), got %d", 
+		t.Fatalf("Expected SyncLevel to be SyncLevelChecksum (%d), got %d",
 			SyncLevelChecksum, options.SyncLevel)
 	}
-	
+
 	// Verify backward compatibility: ensure SyncLevel equals SyncChecksum
 	if options.SyncLevel != SyncChecksum {
-		t.Fatalf("Expected SyncLevel (%d) to equal SyncChecksum (%d)", 
+		t.Fatalf("Expected SyncLevel (%d) to equal SyncChecksum (%d)",
 			options.SyncLevel, SyncChecksum)
 	}
 }
