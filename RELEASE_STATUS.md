@@ -25,17 +25,38 @@ Version v0.9.15 includes:
 
 ## Upcoming Releases
 
+### v0.9.16 (In Development)
+
+This release will focus on API stability improvements:
+- Package stability indicators for all packages
+- Enhanced documentation with compatibility guarantees
+- Improved CHANGELOG structure for better API change tracking
+- Updated developer guidance in CLAUDE.md
+
 ### v0.10.0 (Planned)
 
-Planned features:
+Planned features and improvements:
+- API compatibility verification tools
+- Formal deprecation mechanisms
+- Complete contract testing for interfaces
 - Enhanced authentication mechanisms
 - Expanded compute service capabilities
 - Improved performance for transfer operations
-- Enhanced documentation and examples
+
+### v1.0.0 (Long-term Goal)
+
+Our road to v1.0.0 includes:
+- Complete API stability throughout the SDK
+- Comprehensive documentation and examples
+- Full test coverage for all packages
+- Formal API review process
+- Migration guides for any breaking changes
 
 ## Current Status
 
 All critical bugs have been fixed, and the SDK is stable for production use. The most recent bug fix (issue #13) has been thoroughly validated and released as v0.9.15.
+
+The current development focus is on implementing the API Stability Plan to improve compatibility guarantees and user confidence.
 
 ## Release Process
 

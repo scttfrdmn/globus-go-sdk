@@ -10,6 +10,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Package stability indicators throughout the SDK
+  - Added doc.go files with STABILITY levels (stable, beta, alpha, experimental)
+  - Added explicit API component listings for each package
+  - Documented compatibility guarantees and examples
+- Updated CLAUDE.md with API stability guidelines and examples
+- Enhanced CHANGELOG structure to track API changes more explicitly
+
+### Changed
+- Updated documentation to clarify stability levels of different components
+- Core package marked as BETA due to ongoing connection pool improvements
+- Transfer package components now have explicit stability indicators
+
+### Deprecated
+- No functionality has been deprecated in this release
+
+### Removed
+- No functionality has been removed in this release
+
+### Fixed
+- No bug fixes included in this release
+
 ## [0.9.15] - 2025-05-08
 
 ### Fixed
