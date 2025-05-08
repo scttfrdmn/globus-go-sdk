@@ -75,7 +75,8 @@ func demonstrateMemoryStorage(ctx context.Context, authClient *auth.Client) {
 	}
 
 	// Store the token
-	err := storage.Store(entry)
+	var err error
+	err = storage.Store(entry)
 	if err != nil {
 		log.Fatalf("Failed to store token: %v", err)
 	}
@@ -237,7 +238,7 @@ func demonstrateTokenManager(ctx context.Context, authClient *auth.Client) {
 	}
 
 	// Store the token
-	err := storage.Store(entry)
+	err = storage.Store(entry)
 	if err != nil {
 		log.Fatalf("Failed to store token: %v", err)
 	}

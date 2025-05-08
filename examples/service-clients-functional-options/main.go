@@ -6,6 +6,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	"os"
 	"time"
 
@@ -104,7 +105,7 @@ func main() {
 	fmt.Println("\n5. Creating Transfer client with functional options")
 
 	// Create an authorizer from the access token
-	authorizer := authorizers.StaticTokenAuthorizerWithCoreAuthorizer(accessToken)
+	authorizer := authorizers.StaticTokenCoreAuthorizer(accessToken)
 
 	transferClient, err := transfer.NewClient(
 		transfer.WithAuthorizer(authorizer),
@@ -247,20 +248,32 @@ func main() {
 	// Create custom core client options
 	coreOptions := []core.ClientOption{
 		core.WithAuthorizer(authorizer),
-		core.WithUserAgent("globus-go-sdk-example/1.0"),
-		core.WithRequestTimeout(30 * time.Second),
+		// Note: WithUserAgent and WithRequestTimeout would be defined in pkg/core/client.go
+		// Using custom WithHTTPClient instead as a workaround
+		core.WithHTTPClient(&http.Client{
+			Timeout: 30 * time.Second,
+		}),
 	}
 
 	// Apply core options to flows client
 	advancedFlowsClient, err := flows.NewClient(
-		flows.WithCoreOptions(coreOptions...),
+		flows.WithAccessToken(accessToken),
 		flows.WithHTTPDebugging(enableDebug),
-	)
+		flows.WithCoreOption(coreOptions[0]), // Use the authorizer from coreOptions
+		flows.WithCoreOption(coreOptions[1])) // Use the custom HTTP client
 	if err != nil {
 		log.Fatalf("Failed to create advanced flows client: %v", err)
 	}
 
 	fmt.Printf("Advanced flows client created successfully: %T\n", advancedFlowsClient)
+	
+	// Use ctx to demonstrate a simple API call
+	flowsList, err := advancedFlowsClient.ListFlows(ctx, nil)
+	if err != nil {
+		fmt.Printf("List flows API call failed: %v\n", err)
+	} else {
+		fmt.Printf("Successfully made API call with context. Found %d flows.\n", len(flowsList.Flows))
+	}
 
 	fmt.Println("\n=== Functional Options Pattern Demonstration Complete ===")
 	fmt.Println("All service clients in the Globus Go SDK now use a consistent")

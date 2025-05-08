@@ -52,21 +52,27 @@ func usingDefaultPool() {
 	config := pkg.NewConfigFromEnvironment()
 
 	// Create multiple service clients
-	authClient, err := config.NewAuthClient()
+	// We'll just print status about this client to avoid unused variable warning
+	_, err := config.NewAuthClient()
 	if err != nil {
 		fmt.Printf("Failed to create auth client: %v\n", err)
 		return
 	}
+	fmt.Println("Successfully created Auth client")
+	// Store client in a variable we'll actually use
 	transferClient, err := config.NewTransferClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
 	if err != nil {
 		fmt.Printf("Failed to create transfer client: %v\n", err)
 		return
 	}
+	fmt.Printf("Successfully created Transfer client with ID: %p\n", transferClient)
+	// Create a Search client
 	searchClient, err := config.NewSearchClient(os.Getenv("GLOBUS_ACCESS_TOKEN"))
 	if err != nil {
 		fmt.Printf("Failed to create search client: %v\n", err)
 		return
 	}
+	fmt.Printf("Successfully created Search client with ID: %p\n", searchClient)
 
 	// The clients now share connection pools based on service type
 	fmt.Println("Created Auth, Transfer, and Search clients with connection pooling")
