@@ -23,6 +23,11 @@ const (
 	// Error codes for authorization endpoint
 	ErrCodeServerError            = "server_error"
 	ErrCodeTemporarilyUnavailable = "temporarily_unavailable"
+
+	// Error codes for device flow
+	ErrCodeAuthorizationPending = "authorization_pending"
+	ErrCodeSlowDown             = "slow_down"
+	ErrCodeExpiredToken         = "expired_token"
 )
 
 // Common errors that can be directly checked
@@ -42,11 +47,16 @@ var (
 	// ErrServerError is returned when the server encounters an error
 	ErrServerError = errors.New("server error")
 
-	// ErrUnathorized is returned when the request is not authorized
+	// ErrUnauthorized is returned when the request is not authorized
 	ErrUnauthorized = errors.New("unauthorized")
 
 	// ErrBadRequest is returned when the request is malformed
 	ErrBadRequest = errors.New("bad request")
+
+	// Device flow errors
+	ErrAuthorizationPending = errors.New("authorization pending")
+	ErrSlowDown             = errors.New("slow down polling")
+	ErrExpiredToken         = errors.New("expired token")
 )
 
 // AuthError represents an error from the Globus Auth API
@@ -125,6 +135,42 @@ func IsBadRequest(err error) bool {
 		return authErr.StatusCode == http.StatusBadRequest
 	}
 	return errors.Is(err, ErrBadRequest)
+}
+
+// DeviceAuthError represents an error specific to the device authorization flow
+type DeviceAuthError struct {
+	Code        string
+	Description string
+}
+
+// Error returns a string representation of the error
+func (e *DeviceAuthError) Error() string {
+	return fmt.Sprintf("Device flow error: %s - %s", e.Code, e.Description)
+}
+
+// IsDeviceAuthError checks if an error is a DeviceAuthError with the specified code
+// If code is empty, it checks for any DeviceAuthError
+func IsDeviceAuthError(err error, code string) bool {
+	var devErr *DeviceAuthError
+	if errors.As(err, &devErr) {
+		return code == "" || devErr.Code == code
+	}
+	return false
+}
+
+// IsAuthorizationPending checks if the error indicates that device authorization is pending
+func IsAuthorizationPending(err error) bool {
+	return IsDeviceAuthError(err, ErrCodeAuthorizationPending) || errors.Is(err, ErrAuthorizationPending)
+}
+
+// IsSlowDown checks if the error indicates that polling should slow down
+func IsSlowDown(err error) bool {
+	return IsDeviceAuthError(err, ErrCodeSlowDown) || errors.Is(err, ErrSlowDown)
+}
+
+// IsExpiredToken checks if the error indicates that the token has expired
+func IsExpiredToken(err error) bool {
+	return IsDeviceAuthError(err, ErrCodeExpiredToken) || errors.Is(err, ErrExpiredToken)
 }
 
 // parseAuthError parses an error response from the Globus Auth API

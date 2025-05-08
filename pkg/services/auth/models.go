@@ -132,3 +132,25 @@ type ErrorResponse struct {
 	Error            string `json:"error"`
 	ErrorDescription string `json:"error_description,omitempty"`
 }
+
+// DeviceCodeResponse represents a response from the device authorization endpoint
+type DeviceCodeResponse struct {
+	DeviceCode      string    `json:"device_code"`
+	UserCode        string    `json:"user_code"`
+	VerificationURI string    `json:"verification_uri"`
+	ExpiresIn       int       `json:"expires_in"`
+	Interval        int       `json:"interval"`
+	Message         string    `json:"message,omitempty"`
+	ExpiryTime      time.Time `json:"-"` // Calculated expiry time
+}
+
+// IsExpired returns true if the device code is expired
+func (d *DeviceCodeResponse) IsExpired() bool {
+	// Add a buffer of 30 seconds to avoid edge cases
+	return time.Now().Add(30 * time.Second).After(d.ExpiryTime)
+}
+
+// ExpiresAt returns the expiry time
+func (d *DeviceCodeResponse) ExpiresAt() time.Time {
+	return d.ExpiryTime
+}

@@ -387,3 +387,218 @@ func (c *Client) CreateRefreshableTokenAuthorizer(accessToken, refreshToken stri
 func (c *Client) CreateStaticTokenAuthorizer(accessToken string) *authorizers.StaticTokenAuthorizer {
 	return authorizers.NewStaticTokenAuthorizer(accessToken)
 }
+
+// RequestDeviceCode initiates a device authorization flow
+func (c *Client) RequestDeviceCode(ctx context.Context, scopes ...string) (*DeviceCodeResponse, error) {
+	// Use default scope if none provided
+	if len(scopes) == 0 {
+		scopes = []string{AuthScope}
+	}
+
+	// Build the scopes string
+	scopesStr := strings.Join(scopes, " ")
+
+	// Build the request body
+	form := url.Values{}
+	form.Set("client_id", c.ClientID)
+	form.Set("scope", scopesStr)
+
+	// Set the headers
+	headers := http.Header{}
+	headers.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	// Create the request body
+	body := strings.NewReader(form.Encode())
+
+	// Create the request
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.Client.BaseURL+"oauth2/device_authorization", body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create device authorization request: %w", err)
+	}
+
+	// Set headers
+	for key, values := range headers {
+		for _, value := range values {
+			req.Header.Add(key, value)
+		}
+	}
+
+	// Make the request
+	resp, err := c.Client.Do(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("device authorization request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check for error response
+	if resp.StatusCode != http.StatusOK {
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("device authorization request failed with status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	// Parse the response
+	var deviceCode DeviceCodeResponse
+	if err := json.NewDecoder(resp.Body).Decode(&deviceCode); err != nil {
+		return nil, fmt.Errorf("failed to parse device authorization response: %w", err)
+	}
+
+	// Calculate expiry time
+	deviceCode.ExpiryTime = time.Now().Add(time.Duration(deviceCode.ExpiresIn) * time.Second)
+
+	return &deviceCode, nil
+}
+
+// PollDeviceCode polls for a token using a device code
+func (c *Client) PollDeviceCode(ctx context.Context, deviceCode string) (*TokenResponse, error) {
+	// Build the request body
+	form := url.Values{}
+	form.Set("client_id", c.ClientID)
+	form.Set("device_code", deviceCode)
+	form.Set("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
+
+	// Add client secret if available
+	if c.ClientSecret != "" {
+		form.Set("client_secret", c.ClientSecret)
+	}
+
+	// Set the headers
+	headers := http.Header{}
+	headers.Set("Content-Type", "application/x-www-form-urlencoded")
+
+	// Create the request body
+	body := strings.NewReader(form.Encode())
+
+	// Create the request
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.Client.BaseURL+"oauth2/token", body)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create token request: %w", err)
+	}
+
+	// Set headers
+	for key, values := range headers {
+		for _, value := range values {
+			req.Header.Add(key, value)
+		}
+	}
+
+	// Make the request
+	resp, err := c.Client.Do(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("token request failed: %w", err)
+	}
+	defer resp.Body.Close()
+
+	// Check for specific device flow errors
+	if resp.StatusCode != http.StatusOK {
+		var errorResp ErrorResponse
+		if err := json.NewDecoder(resp.Body).Decode(&errorResp); err == nil {
+			// Handle specific device flow errors
+			switch errorResp.Error {
+			case "authorization_pending":
+				// This is expected while waiting for user to authorize
+				return nil, &DeviceAuthError{
+					Code:        "authorization_pending",
+					Description: "Authorization pending, user has not yet authorized the device",
+				}
+			case "slow_down":
+				// Server is asking us to slow down polling
+				return nil, &DeviceAuthError{
+					Code:        "slow_down",
+					Description: "Polling too frequently, slow down",
+				}
+			case "expired_token":
+				// Device code has expired
+				return nil, &DeviceAuthError{
+					Code:        "expired_token",
+					Description: "Device code expired, request a new one",
+				}
+			case "access_denied":
+				// User denied the authorization
+				return nil, &DeviceAuthError{
+					Code:        "access_denied",
+					Description: "User denied access",
+				}
+			default:
+				// Other error
+				return nil, fmt.Errorf("token request failed: %s: %s", errorResp.Error, errorResp.ErrorDescription)
+			}
+		}
+
+		// If we couldn't parse the error, return a generic error
+		respBody, _ := io.ReadAll(resp.Body)
+		return nil, fmt.Errorf("token request failed with status %d: %s", resp.StatusCode, string(respBody))
+	}
+
+	// Parse the response
+	var tokenResponse TokenResponse
+	if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
+		return nil, fmt.Errorf("failed to parse token response: %w", err)
+	}
+
+	// Calculate expiry time
+	tokenResponse.ExpiryTime = time.Now().Add(time.Duration(tokenResponse.ExpiresIn) * time.Second)
+
+	return &tokenResponse, nil
+}
+
+// CompleteDeviceFlow performs the complete device flow authentication
+// This is a convenience method that handles the entire device flow process
+// It will block until the user authorizes the application or the context is canceled
+func (c *Client) CompleteDeviceFlow(ctx context.Context, displayCallback func(*DeviceCodeResponse), pollInterval time.Duration, scopes ...string) (*TokenResponse, error) {
+	// Request a device code
+	deviceCode, err := c.RequestDeviceCode(ctx, scopes...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to request device code: %w", err)
+	}
+
+	// Call the display callback to show the user the verification info
+	if displayCallback != nil {
+		displayCallback(deviceCode)
+	}
+
+	// Use the device's recommended interval if none provided
+	if pollInterval == 0 {
+		pollInterval = time.Duration(deviceCode.Interval) * time.Second
+		// Ensure a reasonable minimum interval
+		if pollInterval < 5*time.Second {
+			pollInterval = 5 * time.Second
+		}
+	}
+
+	// Create a ticker for polling
+	ticker := time.NewTicker(pollInterval)
+	defer ticker.Stop()
+
+	// Poll until success, error, or context cancellation
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-ticker.C:
+			// Poll for the token
+			token, err := c.PollDeviceCode(ctx, deviceCode.DeviceCode)
+			if err != nil {
+				// Check if this is a retriable device flow error
+				if devErr, ok := err.(*DeviceAuthError); ok {
+					switch devErr.Code {
+					case "authorization_pending":
+						// This is normal, continue polling
+						continue
+					case "slow_down":
+						// Slow down polling
+						ticker.Reset(pollInterval * 2)
+						continue
+					default:
+						// Other device errors are terminal
+						return nil, err
+					}
+				}
+				// For non-device errors, stop polling
+				return nil, err
+			}
+
+			// Success! Return the token
+			return token, nil
+		}
+	}
+}

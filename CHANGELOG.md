@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.12] - 2025-05-07
+
+### Added
+- Device authentication flow in auth package
+  - Added `RequestDeviceCode`, `PollDeviceCode`, and `CompleteDeviceFlow` methods
+  - Added `DeviceCodeResponse` model for device flow responses
+  - Added `DeviceAuthError` error type for device flow specific errors
+  - Added example implementation in `cmd/examples/device-auth/`
+
+### Fixed
+- Fixed missing functions in `transport_init.go` that were causing compilation errors
+  - Updated `SetConnectionPoolManager` to accept both `ConnectionPoolProvider` and `interfaces.ConnectionPoolManager` types
+
 ## [0.9.11] - 2025-05-07
 
 ### Fixed
@@ -200,7 +213,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HTTP transport layer
 - Basic authorization mechanisms
 
-[Unreleased]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.11...HEAD
+[Unreleased]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.12...HEAD
+[0.9.12]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.11...v0.9.12
 [0.9.11]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.10...v0.9.11
 [0.9.10]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.9...v0.9.10
 [0.9.9]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.8...v0.9.9
