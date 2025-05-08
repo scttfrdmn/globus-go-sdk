@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.11] - 2025-05-07
+
+### Fixed
+- Fixed string formatting issues in example files
+- Added missing ExpiresAt() method to TokenResponse in auth package
+- Fixed client initialization patterns with proper error handling
+- Fixed GitHub Actions workflow for API compatibility testing
+- Updated API compatibility workflow to properly handle GitHub token authentication
+- Fixed type references in integration tests
+
 ## [0.9.10] - 2025-05-07
 
 ### Fixed
@@ -190,7 +200,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HTTP transport layer
 - Basic authorization mechanisms
 
-[Unreleased]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.10...HEAD
+[Unreleased]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.11...HEAD
+[0.9.11]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.10...v0.9.11
 [0.9.10]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.9...v0.9.10
 [0.9.9]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.8...v0.9.9
 [0.9.8]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.7...v0.9.8
