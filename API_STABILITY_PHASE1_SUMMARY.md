@@ -41,6 +41,26 @@ We have added `doc.go` files with explicit stability indicators to the following
   - Notes internal "LowLevel" methods as non-public
   - Demonstrates best practices for stable packages
 
+- **pkg/services/compute** - BETA
+  - Documents the function management API
+  - Highlights workflow orchestration features as less stable
+  - Includes detailed usage examples for common operations
+
+- **pkg/services/flows** - BETA
+  - Documents the flow management and execution API
+  - Identifies batch operations as potentially evolving
+  - Provides examples for all key operations
+
+- **pkg/services/search** - BETA
+  - Documents core index and search operations
+  - Marks advanced query framework as potentially evolving
+  - Includes usage examples for simple and advanced searches
+
+- **pkg/services/timers** - BETA
+  - Documents timer management and control API
+  - Identifies error handling and scheduling as areas for refinement
+  - Includes examples for various timer types and operations
+
 ### 2. CHANGELOG Enhancement
 
 We have updated the CHANGELOG structure to better track API changes:
@@ -72,18 +92,11 @@ We have enhanced the CLAUDE.md file with API stability guidance:
 
 The following tasks from Phase 1 are still in progress:
 
-1. **Complete Package Stability Indicators**
-   - Add doc.go files to remaining service packages
-   - pkg/services/compute
-   - pkg/services/flows
-   - pkg/services/search
-   - pkg/services/timers
-
-2. **Release Checklist Development**
+1. **Release Checklist Development**
    - Create formal release process documentation
    - Implement release verification checks
 
-3. **Code Coverage Targets**
+2. **Code Coverage Targets**
    - Define per-package coverage requirements
    - Document coverage expectations
 
