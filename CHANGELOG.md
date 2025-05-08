@@ -10,6 +10,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.14] - 2025-05-07
+
+### Fixed
+- Verified and reinforced fix for missing connection pool functions (issue #13)
+  - Added comprehensive test suite to validate connection pool functions
+  - Added verification script to confirm proper implementation
+  - Ensured all required functions are properly defined and exported
+
+### Added
+- Comprehensive test coverage for connection pool functions
+  - Added unit tests in pkg/core/connection_pool_test.go
+  - Added verification script in scripts/verify_connection_pool_functions.go
+  - Added test harness to simulate downstream project usage
+
+## [0.9.13] - 2025-05-07
+
+### Fixed
+- Restored missing connection pool functions that were referenced in transport_init.go
+  - Added missing SetConnectionPoolManager and EnableDefaultConnectionPool functions
+  - Added GetConnectionPool and GetHTTPClientForService helper functions
+  - Fixed breaking changes introduced in v0.9.11 that caused downstream projects to fail compilation
+
 ## [0.9.11] - 2025-05-07
 
 ### Fixed
@@ -200,7 +222,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HTTP transport layer
 - Basic authorization mechanisms
 
-[Unreleased]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.11...HEAD
+[Unreleased]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.14...HEAD
+[0.9.14]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.13...v0.9.14
+[0.9.13]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.12...v0.9.13
+[0.9.12]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.11...v0.9.12
 [0.9.11]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.10...v0.9.11
 [0.9.10]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.9...v0.9.10
 [0.9.9]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.8...v0.9.9

@@ -1,0 +1,60 @@
+# Hugo configuration file for Globus Go SDK documentation
+baseURL = "https://docs.globus.org/developer-tools/go-sdk/"
+languageCode = "en-us"
+title = "Globus Go SDK"
+theme = "hugo-book"
+enableGitInfo = true
+
+# Book theme options
+[params]
+  # Show or hide table of contents
+  BookMenuBundle = '/menu'
+  BookSection = 'docs'
+  BookRepo = 'https://github.com/scttfrdmn/globus-go-sdk'
+  BookEditPath = 'edit/main/docs-site/content'
+  BookDateFormat = 'Jan 2, 2006'
+  BookSearch = true
+  BookComments = false
+  BookPortableLinks = true
+  BookServiceWorker = true
+  
+  # Multi-version documentation support
+  BookVersions = [
+    { version = "v0.9.12", path = "/developer-tools/go-sdk/v0.9.12", selected = false },
+    { version = "v0.9.11", path = "/developer-tools/go-sdk/v0.9.11" },
+    { version = "v0.9.10", path = "/developer-tools/go-sdk/v0.9.10" },
+    { version = "v0.9.0", path = "/developer-tools/go-sdk/v0.9.0" },
+    { version = "v0.8.0", path = "/developer-tools/go-sdk/v0.8.0" },
+    { version = "v0.7.0", path = "/developer-tools/go-sdk/v0.7.0" },
+    { version = "v0.6.0", path = "/developer-tools/go-sdk/v0.6.0" },
+    { version = "main", path = "/developer-tools/go-sdk/latest", selected = true }
+  ]
+  
+  # Custom parameters
+  GlobusSDKLatestVersion = "v0.9.12"
+  GlobusSDKGithubRepo = "https://github.com/scttfrdmn/globus-go-sdk"
+  GlobusSDKGoDocs = "https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk"
+
+# Code highlighting
+[markup.highlight]
+  style = "dracula"
+  lineNos = true
+
+# Configure the format of URLs
+[permalinks]
+  docs = "/:sections/:filename.html"
+
+# Configure menu
+[menu]
+  [[menu.after]]
+    name = "GitHub"
+    url = "https://github.com/scttfrdmn/globus-go-sdk"
+    weight = 10
+  [[menu.after]]
+    name = "GoDoc Reference"
+    url = "https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk"
+    weight = 20
+
+# Define output formats
+[outputs]
+  home = ["HTML", "RSS", "JSON"]
