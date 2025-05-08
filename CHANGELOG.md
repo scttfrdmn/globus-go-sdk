@@ -10,6 +10,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.9.15] - 2025-05-08
+
+### Fixed
+- Properly tagged release for the connection pool functions fix (issue #13)
+  - Ensured correct Git tag pointing to the fixed code
+  - Verified build works with downstream dependencies
+  - Fixed tagging issues from previous release attempts
+
 ## [0.9.14] - 2025-05-07
 
 ### Fixed
@@ -222,7 +230,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HTTP transport layer
 - Basic authorization mechanisms
 
-[Unreleased]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.14...HEAD
+[Unreleased]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.15...HEAD
+[0.9.15]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.14...v0.9.15
 [0.9.14]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.13...v0.9.14
 [0.9.13]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.12...v0.9.13
 [0.9.12]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.11...v0.9.12
