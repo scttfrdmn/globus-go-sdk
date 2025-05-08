@@ -142,20 +142,20 @@ func (p *mockPool) GetStats() interface{} {
 func TestWithMockImplementations(t *testing.T) {
 	// Reset global state
 	core.SetConnectionPoolManager(nil)
-	
+
 	// Create and set a mock pool manager
 	mockManager := &mockPoolManager{}
 	core.SetConnectionPoolManager(mockManager)
-	
+
 	// Test EnableDefaultConnectionPool with mock
 	core.EnableDefaultConnectionPool()
-	
+
 	// Test GetConnectionPool with mock
 	pool := core.GetConnectionPool("test-service", nil)
 	if pool == nil {
 		t.Fatal("Expected non-nil pool from mock but got nil")
 	}
-	
+
 	// Test GetHTTPClientForService with mock
 	client := core.GetHTTPClientForService("test-service")
 	if client == nil {

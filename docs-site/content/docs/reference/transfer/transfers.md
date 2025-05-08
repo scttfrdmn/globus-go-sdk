@@ -207,7 +207,6 @@ request := &transfer.DeleteTaskRequest{
         {
             DataType: "delete_item",
             Path:     "/path/to/directory/to/delete",
-            // Note: The Globus Transfer API automatically deletes directories recursively
         },
     },
 }
