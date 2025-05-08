@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
 )
 
 // Config represents the configuration for the SDK
@@ -38,6 +39,15 @@ type Config struct {
 
 	// VersionCheck manages API version checking
 	VersionCheck *core.VersionCheck
+
+	// Debug enables debug mode for HTTP operations
+	Debug bool
+
+	// Trace enables distributed tracing
+	Trace bool
+
+	// CustomTransport allows for custom transport configuration
+	CustomTransport interfaces.Transport
 }
 
 // DefaultConfig returns the default configuration
@@ -87,6 +97,10 @@ func FromEnvironment() *Config {
 
 // ApplyToClient applies the configuration to a client
 func (c *Config) ApplyToClient(client *core.Client) {
+	if client == nil {
+		return
+	}
+
 	if c.HTTPClient != nil {
 		client.HTTPClient = c.HTTPClient
 	}
@@ -106,6 +120,20 @@ func (c *Config) ApplyToClient(client *core.Client) {
 	// Apply VersionCheck if set
 	if client.VersionCheck == nil && c.VersionCheck != nil {
 		client.VersionCheck = c.VersionCheck
+	}
+
+	// Apply Debug and Tracing settings
+	if c.Debug {
+		client.Debug = true
+	}
+
+	if c.Trace {
+		client.Trace = true
+	}
+
+	// Apply CustomTransport if set
+	if c.CustomTransport != nil {
+		client.Transport = c.CustomTransport
 	}
 }
 
