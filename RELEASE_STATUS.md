@@ -1,52 +1,55 @@
-# Globus Go SDK v0.8.0 Release Status
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- Copyright (c) 2025 Scott Friedman and Project Contributors -->
+# Globus Go SDK Release Status
 
-## Release Preparation Status
+## Current Release: v0.9.15
 
-This document tracks the status of the v0.8.0 release preparation.
+The Globus Go SDK is currently at version v0.9.15, released on May 8, 2025.
 
-### Key Accomplishments
+### Latest Release Details
 
-1. **Test Files Fixed**:
-   - Updated all disabled test files in the transfer package to use the new client initialization pattern.
-   - Added robust error handling with retry mechanisms.
-   - Enhanced resource cleanup and diagnostic logging.
-   - Fixed auth integration tests.
+Version v0.9.15 includes:
+- Fixed connection pool functions that were missing in previous releases
+- Comprehensive testing and validation of the fix
+- Properly tagged release with correct Git tags
 
-2. **New Features**:
-   - Added enhanced options pattern for client initialization.
-   - Improved rate limiting with backoff mechanisms.
-   - Added token utility methods.
+### Recent Releases
 
-3. **API Improvements**:
-   - Standardized client initialization across packages.
-   - Enhanced error handling and reporting.
-   - Added proper DATA_TYPE fields for Globus API compatibility.
+- **v0.9.15** (2025-05-08): Properly tagged release for connection pool functions fix
+- **v0.9.14** (2025-05-07): Added comprehensive test coverage for connection pool functions
+- **v0.9.13** (2025-05-07): Restored missing connection pool functions
+- **v0.9.12** (2025-05-07): Documentation update for 0.9.12
+- **v0.9.11** (2025-05-07): Bug fixes for GitHub Actions and client initialization
+- **v0.9.10** (2025-05-07): Fixed connection pool initialization
+- **v0.9.9** (2025-05-07): Added API compatibility testing
 
-### Outstanding Tasks
+## Upcoming Releases
 
-1. **Implementation Requirements**:
-   - Implement the options pattern in the auth client.
-   - Test all fixed integration tests against the Globus API.
-   - Update documentation to reflect the new client initialization patterns.
+### v0.10.0 (Planned)
 
-2. **Documentation Updates**:
-   - Add examples using the new client initialization patterns.
-   - Update API reference documentation.
-   - Add information about rate limiting and retry mechanisms.
-
-3. **Final Testing**:
-   - Run all tests, including the newly fixed ones.
-   - Ensure proper error handling in all cases.
-   - Verify compatibility with the Globus API.
+Planned features:
+- Enhanced authentication mechanisms
+- Expanded compute service capabilities
+- Improved performance for transfer operations
+- Enhanced documentation and examples
 
 ## Current Status
 
-Ready for final review and testing before v0.8.0 release.
+All critical bugs have been fixed, and the SDK is stable for production use. The most recent bug fix (issue #13) has been thoroughly validated and released as v0.9.15.
 
-## Recommendations
+## Release Process
 
-1. Complete the options pattern implementation for the auth client.
-2. Run integration tests to ensure everything works as expected.
-3. Update documentation to reflect the new client initialization patterns.
-4. Create release notes highlighting the changes and improvements.
-EOT < /dev/null
+1. All changes go through code review via pull requests
+2. Comprehensive testing including:
+   - Unit tests
+   - Integration tests
+   - Downstream project compatibility verification
+3. Documentation updates
+4. Proper Git tagging and GitHub releases
+
+## How to Upgrade
+
+To update to the latest version:
+```
+go get github.com/scttfrdmn/globus-go-sdk@v0.9.15
+```
