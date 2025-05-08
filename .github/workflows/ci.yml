@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ main, v0.9.0-release ]
+    branches: [ main, v0.9.0-release, v0.9.10-release ]
   pull_request:
-    branches: [ main, v0.9.0-release ]
+    branches: [ main, v0.9.0-release, v0.9.10-release ]
   workflow_dispatch:
     inputs:
       run_all:

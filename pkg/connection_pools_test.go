@@ -76,6 +76,12 @@ func TestServiceClientConnectionPoolIntegration(t *testing.T) {
 // TestInitializeConnectionPools verifies that the initializeConnectionPools function
 // correctly creates and configures connection pools for all services.
 func TestInitializeConnectionPools(t *testing.T) {
+	// Save the original value to restore after the test
+	origManager := httppool.GlobalHttpPoolManager
+	defer func() {
+		httppool.GlobalHttpPoolManager = origManager
+	}()
+
 	// First, reset the global manager for testing
 	httppool.GlobalHttpPoolManager = httppool.NewConnectionPoolManager(nil)
 
