@@ -1,4 +1,6 @@
 #!/bin/bash
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 # Script to sync reference documentation to the Hugo site
 
 # Make sure we're in the docs-site directory
