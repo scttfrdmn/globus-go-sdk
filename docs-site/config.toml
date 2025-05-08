@@ -43,6 +43,10 @@ theme = "hugo-book"
   # with pages that exist within the site.
   BookPortableLinks = true
 
+# Configure the format of URLs
+[permalinks]
+  docs = "/:sections/:filename.html"
+
 [menu]
 # [[menu.before]]
 [[menu.after]]
