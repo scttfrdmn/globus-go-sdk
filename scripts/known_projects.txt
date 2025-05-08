@@ -1,0 +1,7 @@
+# List of known projects that depend on the Globus Go SDK
+# Format: git_url branch_name
+
+# Example projects
+https://github.com/scttfrdmn/globus-go-sdk-examples.git main
+https://github.com/scttfrdmn/globus-cli-go.git main
+EOF < /dev/null

@@ -1,232 +1,259 @@
 <!-- SPDX-License-Identifier: Apache-2.0 -->
 <!-- SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors -->
-# Globus Go SDK v0.8.0 Release Checklist
 
-This document provides a comprehensive checklist and roadmap for the Globus Go SDK from v0.8.0 to a full v1.0.0 release.
+# Globus Go SDK Release Process & Checklist
 
-## Release Status
+This document provides a comprehensive and formal process for releasing new versions of the Globus Go SDK, ensuring consistent quality, stability, and compatibility.
 
-**Current Version:** 0.8.0
+## Release Classification
 
-**Target Release Dates:** 
-- v0.8.0: End of Q2 2025
-- v0.9.0: Q3 2025
-- v1.0.0: Q4 2025
+Each release is classified according to semantic versioning principles:
 
-**Release Manager:** Scott Friedman
+| Release Type | Version Format | Description |
+|--------------|----------------|-------------|
+| **Patch**    | `x.y.Z`        | Bug fixes and minor improvements with no API changes |
+| **Minor**    | `x.Y.0`        | New functionality in a backward-compatible manner |
+| **Major**    | `X.0.0`        | Changes that break backward compatibility |
 
-## Critical Issues to Address Before v0.8.0 Release
+**Note:** Until v1.0.0 is released, minor versions may contain breaking changes, but these will be clearly documented.
 
-- [x] Interface extraction pattern implementation (complete)
-- [x] Import cycle resolution (complete)
-- [x] Fix compilation errors in core packages
-- [x] Consolidate duplicate method declarations (complete)
-- [ ] Pass all linting checks
-- [ ] Pass all unit tests
-- [ ] Pass all validation tests 
-- [ ] Complete integration testing with real credentials
+## Release Prerequisites
 
-## Completed Tasks
+Before starting any release process, verify:
 
-- [x] Core client implementation 
-- [x] Authentication service implementation
-- [x] Transfer service implementation
-- [x] Groups service implementation
-- [x] Search service implementation
-- [x] Flows service implementation
-- [x] Compute service implementation
-- [x] SPDX licensing updates
-- [x] Documentation restructuring
-- [x] API version compatibility documentation
-- [x] Rate limiting implementation
-- [x] Standalone credential verification tool
-- [x] Integration testing preparation
-- [x] Connection pooling implementation
-- [x] Token storage (memory and file-based)
-- [x] Logging and tracing system
-- [x] Resumable transfers with checkpointing
+- [ ] All planned features and bug fixes for this release are merged to main
+- [ ] The CHANGELOG.md is up to date with all changes included in this release
+- [ ] All documentation is updated to reflect the current state of the code
+- [ ] There are no open critical issues blocking this release
 
-## Tasks in Progress for v0.8.0
+## Step 1: Pre-Release Verification
 
-- [x] Resolving import cycles
-- [x] Fixing compilation errors
-- [x] Consolidating duplicate method declarations 
-- [x] Updating test suite for renamed methods
-- [x] Implementing tokens package for token management
-- [x] Creating token management example 
-- [x] Creating token management integration tests
-- [x] Setting up comprehensive testing framework
-- [x] Updating environment variables handling for tests
-- [x] Fixing core unit tests to pass
-- [x] Running and fixing tokens package integration tests
-- [ ] Running integration tests with all services
-- [x] Fixing example compilation issues
+### Code Quality & Validation
 
-## Documentation for v0.8.0
+- [ ] All linting checks pass without errors: `go vet ./...`, `golint ./...`
+- [ ] Go formatting is properly applied: `go fmt ./...`
+- [ ] SPDX license headers are present on all source files: `./scripts/check-license-headers.sh`
+- [ ] All unit tests pass: `go test ./... -short`
+- [ ] All integration tests pass: `./scripts/run_integration_tests.sh`
+- [ ] All examples compile and run without errors
+- [ ] Documentation builds successfully: `cd docs-site && ./build.sh`
 
-- [x] README.md
-- [x] CONTRIBUTING.md
-- [x] Integration testing guide
-- [x] CHANGELOG.md structure
-- [x] API compatibility documentation
-- [x] Package documentation
-- [ ] User guide (in progress)
-- [ ] Tutorial examples (in progress)
-- [ ] API reference documentation (in progress)
+### API Compatibility
 
-## v0.8.0 Release Process
+Before proceeding with a release, API compatibility must be verified. 
 
-Once all critical issues are resolved:
+#### For Patch Releases (x.y.Z):
 
-1. **Final Code Review**
-   - [ ] Review all code for correctness
-   - [ ] Ensure proper error handling
-   - [ ] Verify code formatting and lint checks pass
-   - [ ] Ensure interfaces are properly defined and implemented
+- [ ] Run API compatibility verification tool against previous patch release:
+  ```
+  ./scripts/verify_api_compatibility.sh v0.9.x v0.9.z -level=patch
+  ```
+- [ ] Verify all API signatures match the previous patch release
+- [ ] Document any deviations with justification if they exist
 
-2. **Testing (Required for All Releases)**
-   - [ ] Run comprehensive testing script: ./scripts/comprehensive_testing.sh
-   - [ ] Pass all linting checks with zero warnings or errors
-   - [ ] Pass all unit tests with 100% success rate
-   - [ ] Pass all validation tests with 100% success rate
-   - [ ] Run integration tests with real credentials and verify 100% success rate
-   - [ ] Test all SDK services with real credentials
-   - [ ] Test tokens package with real credentials using examples/token-management/test_tokens.sh
-   - [ ] Verify all examples work correctly
-   - [ ] Perform manual testing of key features
-   - [ ] Test error scenarios and edge cases
-   - [ ] Document test results in doc/TESTING_RESULTS.md
+#### For Minor Releases (x.Y.0):
 
-3. **Documentation Review**
-   - [ ] Verify all exported functions have documentation
-   - [ ] Ensure examples are up-to-date
-   - [ ] Check for outdated information in guides
-   - [ ] Update version numbers in all documentation
+- [ ] Run API compatibility verification tool against previous minor release:
+  ```
+  ./scripts/verify_api_compatibility.sh v0.x.0 v0.y.0 -level=minor
+  ```
+- [ ] Verify all API signatures are backward compatible with previous minor release
+- [ ] Document any backward-incompatible changes (acceptable pre-v1.0.0 but must be documented)
 
-4. **v0.8.0 Release Preparation**
-   - [ ] Update version number in pkg/core/version.go and other relevant files
-   - [ ] Update CHANGELOG.md with v0.8.0 release notes
-   - [ ] Tag release with git tag v0.8.0
-   - [ ] Create GitHub release with detailed notes
-   - [ ] Publish documentation updates
+#### For Major Releases (X.0.0):
 
-## Roadmap to v0.9.0
+- [ ] Document all breaking changes with migration paths
+- [ ] Create comprehensive migration guide for users
+- [ ] Run API compatibility verification tool to generate full API difference report:
+  ```
+  ./scripts/verify_api_compatibility.sh vx.0.0 vy.0.0 -level=major
+  ```
 
-After v0.8.0, focus on:
+### Downstream Impact Assessment
 
-1. **Testing and Quality Assurance**
-   - [ ] Ensure 100% passing rate for all linting checks  
-   - [ ] Establish comprehensive test suite with high coverage
-   - [ ] Set up continuous integration to run tests on all PRs
-   - [ ] Implement automated regression testing
-   - [ ] Create dedicated integration test environment
+- [ ] Test with downstream projects: `./scripts/test_dependent_projects.sh`
+- [ ] Verify that all documented examples work with the new release
+- [ ] Check compatibility with any known projects using the SDK
 
-2. **Architecture Improvements**
-   - [ ] Refactor package structure to improve maintainability
-   - [ ] Standardize error handling across all services
-   - [ ] Implement consistent logging throughout the codebase
+## Step 2: Release Preparation
 
-2. **Feature Enhancements**
-   - [ ] Implement advanced Compute service features
-   - [ ] Enhance Search API with more query options
-   - [ ] Add support for Timers API
-   - [ ] Improve batch processing capabilities
-   - [ ] Implement Multi-factor authentication support
+### Version Update
 
-3. **Performance Optimization**
-   - [ ] Profile and optimize network operations
-   - [ ] Reduce memory footprint for large transfers
-   - [ ] Improve connection reuse
-   - [ ] Optimize error recovery mechanisms
+- [ ] Update version number in `pkg/core/version.go`
+- [ ] Verify version appears correctly in all relevant documentation
+- [ ] Update copyright years in documentation if releasing in a new year
 
-4. **Documentation Expansion**
-   - [ ] Create comprehensive user guide
-   - [ ] Add detailed API reference
-   - [ ] Create tutorials for common use cases
-   - [ ] Provide migration guides for users of other SDKs
+### Documentation Finalization
 
-## Path to v1.0.0 (Production Release)
+- [ ] Finalize CHANGELOG.md for the release with:
+  - Release date in ISO 8601 format (YYYY-MM-DD)
+  - Complete list of changes categorized as:
+    - Added (new features)
+    - Changed (changes in existing functionality)
+    - Deprecated (soon-to-be removed features)
+    - Removed (now removed features)
+    - Fixed (bug fixes)
+    - Security (vulnerability fixes)
+  - Links to relevant issues and PRs
 
-1. **API Stability**
-   - [ ] Finalize all public interfaces
-   - [ ] Ensure backward compatibility
-   - [ ] Deprecate and document any planned changes
-   - [ ] Create API stability promises document
+- [ ] Ensure all stability indicators in doc.go files are accurate
 
-2. **Production Readiness**
-   - [ ] Complete security audit
-   - [ ] Ensure thread safety throughout
-   - [ ] Verify error handling is comprehensive
-   - [ ] Add telemetry and observability features
+- [ ] Verify documentation site builds correctly with the new version
 
-3. **Community Building**
-   - [ ] Create contributor guidelines
-   - [ ] Establish governance model
-   - [ ] Set up community forums or discussion channels
-   - [ ] Prepare outreach to potential users
+## Step 3: Release Creation
 
-4. **Quality Assurance**
-   - [ ] Maintain 100% passing rate for all test suites
-   - [ ] Achieve >90% test coverage across all packages
-   - [ ] Implement comprehensive performance benchmarks
-   - [ ] Conduct external code reviews and security audits
-   - [ ] Perform integration testing with all supported Globus services
-   - [ ] Create automated CI/CD pipeline for continuous validation
+### Git Operations
 
-5. **v1.0.0 Release**
-   - [ ] Update version to 1.0.0 in all files
-   - [ ] Prepare comprehensive release notes
-   - [ ] Create GitHub release with detailed documentation
-   - [ ] Announce on relevant platforms and communities
-   - [ ] Submit to go.dev
+- [ ] Create a release commit:
+  ```
+  git add pkg/core/version.go CHANGELOG.md
+  git commit -m "Release v0.x.y"
+  ```
 
-## Known Limitations for v0.8.0
+- [ ] Tag the release:
+  ```
+  git tag -a v0.x.y -m "Release v0.x.y"
+  ```
 
-- Some advanced features of the Globus services may not be fully implemented
-- Integration testing requires user-provided credentials
-- Performance optimizations are scheduled for v0.9.0
-- Some service-specific features are minimal implementations
-- API interfaces may change before v1.0.0
+- [ ] Push the changes and tag to GitHub:
+  ```
+  git push origin main
+  git push origin v0.x.y
+  ```
 
-## Workarounds for Current Issues
+### GitHub Release
 
-1. **Import Cycles**: Use the standalone credential verification tool to test credentials
-2. **Duplicate Methods**: Only use methods from the main service client files
-3. **Compilation Errors**: Build only the needed packages or use the standalone tool
+- [ ] Create a GitHub release at https://github.com/scttfrdmn/globus-go-sdk/releases/new
+- [ ] Select the tag just created
+- [ ] Title the release "Globus Go SDK v0.x.y"
+- [ ] Include the relevant section from CHANGELOG.md in the description
+- [ ] Highlight any significant changes, deprecations, or breaking changes
+- [ ] Add migration guidance if applicable
+- [ ] Publish the release
 
-## Making the SDK Generally Available
+### Documentation Deployment
 
-1. **Go Module Publishing**
-   - [ ] Ensure go.mod is correctly configured
-   - [ ] Verify module path matches GitHub repository
-   - [ ] Test installation via `go get`
-   - [ ] Verify compatibility with different Go versions (1.18+)
+- [ ] Build and deploy the documentation for the new version:
+  ```
+  cd docs-site
+  ./build.sh
+  ./sync-docs.sh v0.x.y
+  ```
 
-2. **Documentation Publishing**
-   - [ ] Ensure GoDoc comments are comprehensive
-   - [ ] Verify pkg.go.dev correctly renders documentation
-   - [ ] Consider GitHub Pages for additional documentation
+- [ ] Verify that the documentation site correctly shows the new version
 
-3. **Distribution and Discovery**
-   - [ ] Add appropriate repository topics for discoverability
-   - [ ] Create social media announcements for releases
-   - [ ] Reach out to relevant Go newsletters and forums
-   - [ ] Consider writing a blog post about the SDK
+## Step 4: Post-Release Verification
 
-4. **Support Plan**
-   - [ ] Establish issue response SLAs
-   - [ ] Create process for security vulnerability reporting
-   - [ ] Plan regular maintenance releases
-   - [ ] Set up automated dependency scanning
+### Verification
 
-## Post v1.0.0 Plans
+- [ ] Verify the new release can be correctly installed via go get:
+  ```
+  cd $(mktemp -d)
+  go mod init test-globus-sdk
+  go get github.com/scttfrdmn/globus-go-sdk@v0.x.y
+  go build
+  ```
 
-After the v1.0.0 release:
+- [ ] Check that the GitHub release page shows the correct tag and description
+- [ ] Verify that the documentation site correctly shows the new version
+- [ ] Test a simple program that imports and uses the SDK to confirm basic functionality
+- [ ] Run the verification example: `./cmd/verify-credentials/main.go version`
 
-1. Maintain a stable v1.x.x branch
-2. Plan for v1.1.0 with focus on:
-   - New Globus API features as they become available
-   - Performance enhancements
-   - Additional utilities and helpers
-   - Expanded examples for more complex scenarios
-3. Gather community feedback for future major versions
+### Announcements
+
+- [ ] Create an announcement issue with release highlights
+- [ ] Post the release announcement in appropriate channels
+- [ ] Update the release status in RELEASE_STATUS.md
+
+## Step 5: Preparation for Next Development Cycle
+
+- [ ] Create a new "Unreleased" section in CHANGELOG.md
+- [ ] Review the roadmap and plan for the next release
+- [ ] Update project boards and milestone tracking
+- [ ] Triage any pending issues and PRs
+
+## Additional Consideration for Releases with Breaking Changes
+
+For releases that contain breaking changes:
+
+1. Major version changes (X.0.0) - Expected to have breaking changes:
+   - Complete migration guide must be provided
+   - Consider maintaining the previous major version for critical fixes
+   - Provide tooling to help users migrate if possible
+
+2. Minor versions pre-v1.0.0 (0.X.0) - May have documented breaking changes:
+   - Clearly document all breaking changes in CHANGELOG.md
+   - Provide detailed migration steps for each breaking change
+   - Consider providing a compatibility layer if changes are significant
+
+## Security Releases
+
+Security releases follow an expedited process:
+
+1. Prepare the fix in a private branch or fork
+2. Follow the standard release process but prioritize speed
+3. Release a patch version as soon as the fix is verified
+4. Coordinate disclosure with the security issue reporter
+5. Provide clear documentation on the vulnerability and fix
+
+## Pre-Release Versions
+
+For pre-release testing, use the following version formats:
+
+- Alpha: `v0.x.y-alpha.n`
+- Beta: `v0.x.y-beta.n`
+- Release Candidate: `v0.x.y-rc.n`
+
+Follow the standard release process, but clearly mark these as pre-releases on GitHub.
+
+## Release Schedule Guidelines
+
+- **Patch releases**: As needed for bug fixes, typically within 1-2 weeks of critical bugs
+- **Minor releases**: Planned according to feature roadmap, typically every 1-3 months
+- **Major releases**: Planned well in advance with full migration support, typically every 6-12 months
+
+## Troubleshooting Common Release Issues
+
+| Issue | Solution |
+|-------|----------|
+| Tests failing | Investigate and fix failed tests before proceeding |
+| Documentation build issues | Verify all markdown links and formatting |
+| API compatibility tool errors | Review changes that break compatibility and document or fix |
+| Tag already exists | Verify if release was already created or delete tag if incorrect |
+| Downstream project failures | Fix SDK issues or provide guidance to downstream projects |
+
+## Checklist Completion
+
+Release Manager: ______________________________
+
+Release Version: v___.___.___
+
+Date Completed: __________________
+
+Signature: _______________________________
+
+## Appendices
+
+### A. Version Numbering Examples
+
+- v0.9.15: Fifteenth patch release of the 0.9.x series
+- v0.10.0: New minor release with backward-compatible new features
+- v1.0.0: First stable release with API stability guarantees
+
+### B. API Compatibility Verification Procedure
+
+The API compatibility verification tool checks for breaking changes between releases:
+
+1. Function signatures changes
+2. Interface method additions or removals
+3. Struct field changes
+4. Constant value changes
+5. Public API removals
+
+See `./scripts/verify_api_compatibility.sh` for the implementation.
+
+### C. Handling Edge Cases
+
+1. **Emergency fixes**: For critical bugs, follow the security release process
+2. **Reverting releases**: If a release must be reverted, create a new release that explicitly reverts the changes
+3. **Handling conflicts**: If conflicts arise during the release process, resolve them before proceeding
