@@ -19,7 +19,11 @@ jobs:
           go-version: '1.21'
           
       - name: Install api-diff
-        run: go install github.com/joeshaw/go-api-diff@latest
+        run: |
+          git config --global url."https://oauth2:${GITHUB_TOKEN}@github.com".insteadOf "https://github.com"
+          go install github.com/joeshaw/go-api-diff@v0.0.0-20200216013559-f98a0edcfdee
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Build SDK
         run: go build -v ./...

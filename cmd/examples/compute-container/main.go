@@ -94,9 +94,7 @@ func main() {
 
 	// List available endpoints
 	fmt.Println("\n=== Available Compute Endpoints ===")
-	endpoints, err := computeClient.ListEndpoints(ctx, &pkg.ListEndpointsOptions{
-		PerPage: 5,
-	})
+	endpoints, err := computeClient.ListEndpoints(ctx, nil)
 	if err != nil {
 		log.Fatalf("Failed to list endpoints: %v", err)
 	}
@@ -120,7 +118,7 @@ func main() {
 	timestamp := time.Now().Format("20060102_150405")
 	containerName := fmt.Sprintf("data_science_container_%s", timestamp)
 
-	containerReq := &pkg.ContainerRegistrationRequest{
+	containerReq := &compute.ContainerRegistrationRequest{
 		Name:        containerName,
 		Description: "Python data science container with numpy, pandas, and matplotlib",
 		Image:       "python:3.9-slim",

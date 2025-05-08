@@ -3,151 +3,181 @@
 package auth
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
+	"net/url"
 	"os"
 	"path/filepath"
+	"strconv"
+	"strings"
 	"time"
 
+	"github.com/pkg/browser"
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 )
 
-// TokenInfo represents stored token information
-type TokenInfo struct {
-	AccessToken  string    `json:"access_token"`
-	RefreshToken string    `json:"refresh_token,omitempty"`
-	ExpiresAt    time.Time `json:"expires_at"`
-}
-
-// Config represents the CLI configuration
+// Config holds the CLI configuration
 type Config struct {
 	ClientID     string `json:"client_id"`
 	ClientSecret string `json:"client_secret"`
 	TokensDir    string `json:"tokens_dir"`
 }
 
-// Default configuration values
+// TokenInfo holds the token information
+type TokenInfo struct {
+	AccessToken  string    `json:"access_token"`
+	RefreshToken string    `json:"refresh_token,omitempty"`
+	ExpiresIn    int       `json:"expires_in"`
+	ExpiresAt    time.Time `json:"expires_at"`
+	Scope        string    `json:"scope"`
+	TokenType    string    `json:"token_type"`
+	ResourceID   string    `json:"resource_id,omitempty"`
+}
+
 const (
-	// DefaultClientID is the default client ID for the CLI
-	DefaultClientID = "e6c75d97-532a-4c88-b031-f5a3014430e3"
+	// DefaultConfigFile is the default config file name
+	DefaultConfigFile = "globus-cli-config"
 
-	// DefaultClientSecret is the default client secret for the CLI
-	DefaultClientSecret = "YOUR_CLIENT_SECRET"
+	// DefaultTokenFile is the default token file name
+	DefaultTokenFile = "globus-cli-token"
 
-	// DefaultTokenFile is the default name for the token file
-	DefaultTokenFile = "default.json"
+	// DefaultRedirectURI is the redirect URI for browser-based auth
+	DefaultRedirectURI = "http://localhost:8080/callback"
 )
 
-// LoadOrCreateConfig loads or creates the CLI configuration
+// LoadOrCreateConfig loads the CLI configuration from disk
 func LoadOrCreateConfig() (*Config, error) {
-	homeDir, err := os.UserHomeDir()
+	// Check for the config file
+	configDir, err := getConfigDir()
 	if err != nil {
-		return nil, fmt.Errorf("error determining home directory: %w", err)
+		return nil, err
 	}
 
-	configDir := filepath.Join(homeDir, ".globus-cli")
-	configFile := filepath.Join(configDir, "config.json")
-	tokensDir := filepath.Join(configDir, "tokens")
-
-	// Create the config directory if it doesn't exist
+	// Create the config dir if it doesn't exist
 	if err := os.MkdirAll(configDir, 0700); err != nil {
-		return nil, fmt.Errorf("error creating config directory: %w", err)
+		return nil, fmt.Errorf("failed to create config directory: %w", err)
 	}
 
-	// Create the tokens directory if it doesn't exist
-	if err := os.MkdirAll(tokensDir, 0700); err != nil {
-		return nil, fmt.Errorf("error creating tokens directory: %w", err)
-	}
-
-	// Try to load existing config
-	config := &Config{
-		ClientID:     DefaultClientID,
-		ClientSecret: DefaultClientSecret,
-		TokensDir:    tokensDir,
-	}
-
-	// Check if config file exists
+	configFile := filepath.Join(configDir, DefaultConfigFile+".json")
 	if _, err := os.Stat(configFile); err == nil {
-		// Read the config file
-		data, err := os.ReadFile(configFile)
+		// Load the config file
+		f, err := os.Open(configFile)
 		if err != nil {
-			return nil, fmt.Errorf("error reading config file: %w", err)
+			return nil, fmt.Errorf("failed to open config file: %w", err)
+		}
+		defer f.Close()
+
+		var config Config
+		if err := json.NewDecoder(f).Decode(&config); err != nil {
+			return nil, fmt.Errorf("failed to parse config file: %w", err)
 		}
 
-		// Parse the config
-		if err := json.Unmarshal(data, config); err != nil {
-			return nil, fmt.Errorf("error parsing config file: %w", err)
-		}
-	} else {
-		// Save the default config
-		data, err := json.MarshalIndent(config, "", "  ")
-		if err != nil {
-			return nil, fmt.Errorf("error marshaling config: %w", err)
+		// Make sure the tokens directory exists
+		if config.TokensDir == "" {
+			config.TokensDir = configDir
 		}
 
-		if err := os.WriteFile(configFile, data, 0600); err != nil {
-			return nil, fmt.Errorf("error writing config file: %w", err)
+		if err := os.MkdirAll(config.TokensDir, 0700); err != nil {
+			return nil, fmt.Errorf("failed to create tokens directory: %w", err)
 		}
+
+		return &config, nil
+	}
+
+	// Create a default config
+	config := &Config{
+		ClientID:     "91739f66-9226-4382-8295-4ab5f0a8f88e", // Default Globus CLI client ID
+		ClientSecret: "",                                     // No client secret for native apps
+		TokensDir:    configDir,
+	}
+
+	// Save the config
+	if err := saveConfig(config, configFile); err != nil {
+		return nil, fmt.Errorf("failed to save config: %w", err)
 	}
 
 	return config, nil
 }
 
-// StoreToken stores a token in the tokens directory
-func StoreToken(config *Config, name string, token *TokenInfo) error {
-	// Create the token file path
-	tokenFile := filepath.Join(config.TokensDir, name+".json")
-
-	// Marshal the token to JSON
-	data, err := json.MarshalIndent(token, "", "  ")
+// saveConfig saves the config to the specified file
+func saveConfig(config *Config, configFile string) error {
+	f, err := os.OpenFile(configFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
 	if err != nil {
-		return fmt.Errorf("error marshaling token: %w", err)
+		return fmt.Errorf("failed to open config file for writing: %w", err)
 	}
+	defer f.Close()
 
-	// Write the token to the file
-	if err := os.WriteFile(tokenFile, data, 0600); err != nil {
-		return fmt.Errorf("error writing token file: %w", err)
+	if err := json.NewEncoder(f).Encode(config); err != nil {
+		return fmt.Errorf("failed to write config file: %w", err)
 	}
 
 	return nil
 }
 
-// LoadToken loads a token from the tokens directory
-func LoadToken(config *Config, name string) (*TokenInfo, error) {
-	// Create the token file path
-	tokenFile := filepath.Join(config.TokensDir, name+".json")
-
-	// Check if the token file exists
-	if _, err := os.Stat(tokenFile); err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			return nil, fmt.Errorf("token file does not exist: %s", name)
-		}
-		return nil, fmt.Errorf("error checking token file: %w", err)
-	}
-
-	// Read the token file
-	data, err := os.ReadFile(tokenFile)
+// LoadToken loads a token from disk
+func LoadToken(config *Config, tokenName string) (*TokenInfo, error) {
+	tokenFile := filepath.Join(config.TokensDir, tokenName+".json")
+	f, err := os.Open(tokenFile)
 	if err != nil {
-		return nil, fmt.Errorf("error reading token file: %w", err)
+		return nil, fmt.Errorf("failed to open token file: %w", err)
+	}
+	defer f.Close()
+
+	var token TokenInfo
+	if err := json.NewDecoder(f).Decode(&token); err != nil {
+		return nil, fmt.Errorf("failed to parse token file: %w", err)
 	}
 
-	// Parse the token
-	var token TokenInfo
-	if err := json.Unmarshal(data, &token); err != nil {
-		return nil, fmt.Errorf("error parsing token file: %w", err)
+	// Check if token is expired
+	if token.ExpiresAt.Before(time.Now()) {
+		// Try to refresh the token
+		if token.RefreshToken != "" {
+			refreshedToken, err := refreshToken(config, token.RefreshToken)
+			if err != nil {
+				return nil, fmt.Errorf("token expired and refresh failed: %w", err)
+			}
+			saveToken(config, tokenName, refreshedToken)
+			return refreshedToken, nil
+		}
+		return nil, fmt.Errorf("token expired and no refresh token available")
 	}
 
 	return &token, nil
 }
 
-// IsTokenValid checks if a token is valid
-func IsTokenValid(token *TokenInfo) bool {
-	// Add a buffer of 5 minutes to avoid edge cases
-	return token != nil && time.Now().Add(5*time.Minute).Before(token.ExpiresAt)
+// saveToken saves a token to disk
+func saveToken(config *Config, tokenName string, token *TokenInfo) error {
+	tokenFile := filepath.Join(config.TokensDir, tokenName+".json")
+	f, err := os.OpenFile(tokenFile, os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0600)
+	if err != nil {
+		return fmt.Errorf("failed to open token file for writing: %w", err)
+	}
+	defer f.Close()
+
+	if err := json.NewEncoder(f).Encode(token); err != nil {
+		return fmt.Errorf("failed to write token file: %w", err)
+	}
+
+	return nil
+}
+
+// getConfigDir returns the config directory
+func getConfigDir() (string, error) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return "", fmt.Errorf("failed to get home directory: %w", err)
+	}
+
+	configDir := filepath.Join(homeDir, ".globus-cli")
+	return configDir, nil
 }
 
 // LoginCommand handles the login command
@@ -158,104 +188,207 @@ func LoginCommand(args []string) error {
 		return fmt.Errorf("error loading configuration: %w", err)
 	}
 
-	// Create a new auth client
+	// Start the local server
+	server, err := startLocalServer()
+	if err != nil {
+		return fmt.Errorf("error starting local server: %w", err)
+	}
+
+	// Generate a random state value
+	state, err := generateRandomState()
+	if err != nil {
+		return fmt.Errorf("error generating state: %w", err)
+	}
+
+	// Generate the authorization URL
 	sdkConfig := pkg.NewConfig().
 		WithClientID(config.ClientID).
 		WithClientSecret(config.ClientSecret)
 
-	authClient := sdkConfig.NewAuthClient()
-
-	// Check if we already have a valid token
-	token, err := LoadToken(config, DefaultTokenFile)
-	if err == nil && IsTokenValid(token) {
-		fmt.Println("Already logged in with a valid token.")
-		return nil
+	authClient, err := sdkConfig.NewAuthClient()
+	if err != nil {
+		return fmt.Errorf("error creating auth client: %w", err)
 	}
 
-	// Set up a local server to handle the OAuth callback
-	authCode := make(chan string, 1)
-	authErr := make(chan error, 1)
+	// Use all scopes to make the login useful for all commands
+	scopes := []string{
+		pkg.AuthScope,
+		pkg.TransferScope,
+		pkg.GroupsScope,
+		pkg.SearchScope,
+		pkg.FlowsScope,
+		pkg.ComputeScope,
+		pkg.TimersScope,
+	}
 
-	// Start a local server to handle the callback
-	server := &http.Server{Addr: ":8888"}
-	http.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
-		// Get the authorization code from the query parameters
-		code := r.URL.Query().Get("code")
-		if code == "" {
-			authErr <- fmt.Errorf("no authorization code in callback")
-			w.WriteHeader(http.StatusBadRequest)
-			fmt.Fprintf(w, "Error: No authorization code received")
+	// Get the URL for the login
+	authURL, err := authClient.GetAuthorizeURL(DefaultRedirectURI, scopes, state, "code")
+	if err != nil {
+		return fmt.Errorf("error generating authorization URL: %w", err)
+	}
+
+	// Open the browser
+	fmt.Printf("Opening browser to login at: %s\n", authURL)
+	if err := browser.OpenURL(authURL); err != nil {
+		fmt.Printf("Failed to open browser automatically. Please open this URL in your browser:\n%s\n", authURL)
+	}
+
+	// Wait for the callback
+	select {
+	case result := <-server.ResultChan:
+		if result.Error != nil {
+			return fmt.Errorf("error during login: %w", result.Error)
+		}
+
+		// Check state value
+		if result.State != state {
+			return fmt.Errorf("state mismatch, possible CSRF attack")
+		}
+
+		// Exchange code for token
+		token, err := exchangeCodeForToken(config, result.Code)
+		if err != nil {
+			return fmt.Errorf("error exchanging code for token: %w", err)
+		}
+
+		// Save the token
+		if err := saveToken(config, DefaultTokenFile, token); err != nil {
+			return fmt.Errorf("error saving token: %w", err)
+		}
+
+		fmt.Println("Login successful!")
+		return nil
+	case <-time.After(5 * time.Minute):
+		return fmt.Errorf("login timed out after 5 minutes")
+	}
+}
+
+// CallbackResult holds the result of the OAuth callback
+type CallbackResult struct {
+	Code  string
+	State string
+	Error error
+}
+
+// CallbackServer is a simple HTTP server for handling OAuth callbacks
+type CallbackServer struct {
+	Server     *http.Server
+	ResultChan chan CallbackResult
+}
+
+// startLocalServer starts a local HTTP server to receive the OAuth callback
+func startLocalServer() (*CallbackServer, error) {
+	resultChan := make(chan CallbackResult, 1)
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/callback", func(w http.ResponseWriter, r *http.Request) {
+		if errParam := r.URL.Query().Get("error"); errParam != "" {
+			errDesc := r.URL.Query().Get("error_description")
+			resultChan <- CallbackResult{Error: fmt.Errorf("%s: %s", errParam, errDesc)}
+			fmt.Fprintf(w, "<html><body><h1>Login Failed</h1><p>%s: %s</p></body></html>", errParam, errDesc)
 			return
 		}
 
-		// Send the code to the channel
-		authCode <- code
+		code := r.URL.Query().Get("code")
+		state := r.URL.Query().Get("state")
 
-		// Send a success response
-		w.WriteHeader(http.StatusOK)
-		fmt.Fprintf(w, "Authorization successful! You can close this window and return to the CLI.")
+		if code == "" {
+			resultChan <- CallbackResult{Error: fmt.Errorf("no code in callback")}
+			fmt.Fprintf(w, "<html><body><h1>Login Failed</h1><p>No authorization code received.</p></body></html>")
+			return
+		}
+
+		resultChan <- CallbackResult{Code: code, State: state}
+		fmt.Fprintf(w, "<html><body><h1>Login Successful</h1><p>You can close this window and return to the CLI.</p></body></html>")
 	})
 
-	// Start the server in a goroutine
+	server := &http.Server{
+		Addr:    ":8080",
+		Handler: mux,
+	}
+
 	go func() {
-		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-			authErr <- fmt.Errorf("server error: %w", err)
+		if err := server.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			resultChan <- CallbackResult{Error: err}
 		}
 	}()
 
-	// Set the redirect URL
-	authClient.SetRedirectURL("http://localhost:8888/callback")
+	return &CallbackServer{
+		Server:     server,
+		ResultChan: resultChan,
+	}, nil
+}
 
-	// Get the authorization URL
-	authURL := authClient.GetAuthorizationURL("state", pkg.GetScopesByService("auth", "transfer", "groups")...)
-
-	// Print the URL for the user to open
-	fmt.Println("Please open the following URL in your browser:")
-	fmt.Println(authURL)
-	fmt.Println("
-Waiting for authorization...")
-
-	// Wait for the authorization code or an error
-	var code string
-	select {
-	case code = <-authCode:
-		// Continue with the token exchange
-	case err := <-authErr:
-		return fmt.Errorf("authorization error: %w", err)
-	case <-time.After(5 * time.Minute):
-		return fmt.Errorf("authorization timed out after 5 minutes")
-	}
-
-	// Exchange the code for tokens
-	fmt.Println("Exchanging authorization code for tokens...")
-	tokenResp, err := authClient.ExchangeAuthorizationCode(context.Background(), code)
+// generateRandomState generates a random state value
+func generateRandomState() (string, error) {
+	buffer := make([]byte, 32)
+	_, err := rand.Read(buffer)
 	if err != nil {
-		return fmt.Errorf("error exchanging code for tokens: %w", err)
+		return "", err
+	}
+	return base64.URLEncoding.EncodeToString(buffer), nil
+}
+
+// exchangeCodeForToken exchanges an authorization code for a token
+func exchangeCodeForToken(config *Config, code string) (*TokenInfo, error) {
+	// Create SDK configuration
+	sdkConfig := pkg.NewConfig().
+		WithClientID(config.ClientID).
+		WithClientSecret(config.ClientSecret)
+
+	authClient, err := sdkConfig.NewAuthClient()
+	if err != nil {
+		return nil, fmt.Errorf("error creating auth client: %w", err)
 	}
 
-	// Convert to our token format
-	token = &TokenInfo{
+	// Exchange code for token
+	tokenResp, err := authClient.ExchangeAuthorizationCode(context.Background(), code, DefaultRedirectURI)
+	if err != nil {
+		return nil, fmt.Errorf("error exchanging authorization code: %w", err)
+	}
+
+	// Convert to token info
+	token := &TokenInfo{
 		AccessToken:  tokenResp.AccessToken,
 		RefreshToken: tokenResp.RefreshToken,
-		ExpiresAt:    tokenResp.ExpiryTime,
+		ExpiresIn:    tokenResp.ExpiresIn,
+		ExpiresAt:    time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
+		Scope:        tokenResp.Scope,
+		TokenType:    tokenResp.TokenType,
 	}
 
-	// Store the token
-	if err := StoreToken(config, DefaultTokenFile, token); err != nil {
-		return fmt.Errorf("error storing token: %w", err)
+	return token, nil
+}
+
+// refreshToken refreshes a token
+func refreshToken(config *Config, refreshToken string) (*TokenInfo, error) {
+	// Create SDK configuration
+	sdkConfig := pkg.NewConfig().
+		WithClientID(config.ClientID).
+		WithClientSecret(config.ClientSecret)
+
+	authClient, err := sdkConfig.NewAuthClient()
+	if err != nil {
+		return nil, fmt.Errorf("error creating auth client: %w", err)
 	}
 
-	// Close the server
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := server.Shutdown(ctx); err != nil {
-		return fmt.Errorf("error shutting down server: %w", err)
+	// Refresh the token
+	tokenResp, err := authClient.RefreshToken(context.Background(), refreshToken)
+	if err != nil {
+		return nil, fmt.Errorf("error refreshing token: %w", err)
 	}
 
-	fmt.Println("Login successful!")
-	printTokenInfo(token)
+	// Convert to token info
+	token := &TokenInfo{
+		AccessToken:  tokenResp.AccessToken,
+		RefreshToken: tokenResp.RefreshToken,
+		ExpiresIn:    tokenResp.ExpiresIn,
+		ExpiresAt:    time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
+		Scope:        tokenResp.Scope,
+		TokenType:    tokenResp.TokenType,
+	}
 
-	return nil
+	return token, nil
 }
 
 // LogoutCommand handles the logout command
@@ -269,30 +402,30 @@ func LogoutCommand(args []string) error {
 	// Check if we have a token
 	token, err := LoadToken(config, DefaultTokenFile)
 	if err != nil {
-		fmt.Println("Not logged in.")
-		return nil
+		return fmt.Errorf("not logged in: %w", err)
 	}
 
-	// Create a new auth client
+	// Create SDK configuration
 	sdkConfig := pkg.NewConfig().
 		WithClientID(config.ClientID).
 		WithClientSecret(config.ClientSecret)
 
-	authClient := sdkConfig.NewAuthClient()
+	authClient, err := sdkConfig.NewAuthClient()
+	if err != nil {
+		return fmt.Errorf("error creating auth client: %w", err)
+	}
 
 	// Revoke the access token
 	fmt.Println("Revoking access token...")
 	if err := authClient.RevokeToken(context.Background(), token.AccessToken); err != nil {
-		fmt.Printf("Warning: Failed to revoke access token: %v
-", err)
+		fmt.Printf("Warning: Failed to revoke access token: %v\n", err)
 	}
 
 	// Revoke the refresh token
 	if token.RefreshToken != "" {
 		fmt.Println("Revoking refresh token...")
 		if err := authClient.RevokeToken(context.Background(), token.RefreshToken); err != nil {
-			fmt.Printf("Warning: Failed to revoke refresh token: %v
-", err)
+			fmt.Printf("Warning: Failed to revoke refresh token: %v\n", err)
 		}
 	}
 
@@ -339,61 +472,63 @@ func TokenCommand(args []string) error {
 // printTokenInfo prints information about a token
 func printTokenInfo(token *TokenInfo) error {
 	fmt.Println("Token Information:")
-	fmt.Printf("  Access Token: %s...%s
-", token.AccessToken[:10], token.AccessToken[len(token.AccessToken)-10:])
-	
+	fmt.Printf("  Access Token: %s...%s\n", token.AccessToken[:10], token.AccessToken[len(token.AccessToken)-10:])
+
 	if token.RefreshToken != "" {
-		fmt.Printf("  Refresh Token: %s...%s
-", token.RefreshToken[:10], token.RefreshToken[len(token.RefreshToken)-10:])
+		fmt.Printf("  Refresh Token: %s...%s\n", token.RefreshToken[:10], token.RefreshToken[len(token.RefreshToken)-10:])
 	}
-	
-	fmt.Printf("  Expires At: %s
-", token.ExpiresAt.Format(time.RFC3339))
-	
-	if IsTokenValid(token) {
-		fmt.Printf("  Status: Valid (expires in %s)
-", time.Until(token.ExpiresAt).Round(time.Second))
-	} else {
-		fmt.Println("  Status: Expired")
-	}
-	
+
+	fmt.Printf("  Expires At: %s\n", token.ExpiresAt.Format(time.RFC3339))
+	fmt.Printf("  Scopes: %s\n", token.Scope)
+
 	return nil
 }
 
 // revokeToken revokes a token
 func revokeToken(config *Config, token *TokenInfo, args []string) error {
-	// Create a new auth client
+	// Create SDK configuration
 	sdkConfig := pkg.NewConfig().
 		WithClientID(config.ClientID).
 		WithClientSecret(config.ClientSecret)
 
-	authClient := sdkConfig.NewAuthClient()
-
-	// Check if we have a token type to revoke
-	if len(args) > 0 {
-		switch args[0] {
-		case "access":
-			fmt.Println("Revoking access token...")
-			if err := authClient.RevokeToken(context.Background(), token.AccessToken); err != nil {
-				return fmt.Errorf("error revoking access token: %w", err)
-			}
-			fmt.Println("Access token revoked successfully.")
-			return nil
-		case "refresh":
-			if token.RefreshToken == "" {
-				return fmt.Errorf("no refresh token available")
-			}
-			fmt.Println("Revoking refresh token...")
-			if err := authClient.RevokeToken(context.Background(), token.RefreshToken); err != nil {
-				return fmt.Errorf("error revoking refresh token: %w", err)
-			}
-			fmt.Println("Refresh token revoked successfully.")
-			return nil
-		default:
-			return fmt.Errorf("unknown token type: %s", args[0])
-		}
+	authClient, err := sdkConfig.NewAuthClient()
+	if err != nil {
+		return fmt.Errorf("error creating auth client: %w", err)
 	}
 
-	// Default to revoking both tokens
-	return LogoutCommand(nil)
+	// Check which token to revoke
+	if len(args) > 0 && args[0] == "refresh" {
+		if token.RefreshToken == "" {
+			return fmt.Errorf("no refresh token to revoke")
+		}
+
+		fmt.Println("Revoking refresh token...")
+		if err := authClient.RevokeToken(context.Background(), token.RefreshToken); err != nil {
+			return fmt.Errorf("failed to revoke refresh token: %w", err)
+		}
+
+		// Update the token
+		token.RefreshToken = ""
+		if err := saveToken(config, DefaultTokenFile, token); err != nil {
+			return fmt.Errorf("error saving updated token: %w", err)
+		}
+
+		fmt.Println("Refresh token revoked!")
+		return nil
+	}
+
+	// Default to revoking the access token
+	fmt.Println("Revoking access token...")
+	if err := authClient.RevokeToken(context.Background(), token.AccessToken); err != nil {
+		return fmt.Errorf("failed to revoke access token: %w", err)
+	}
+
+	// Delete the token file - this effectively logs the user out
+	tokenFile := filepath.Join(config.TokensDir, DefaultTokenFile+".json")
+	if err := os.Remove(tokenFile); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return fmt.Errorf("error deleting token file: %w", err)
+	}
+
+	fmt.Println("Access token revoked! You are now logged out.")
+	return nil
 }

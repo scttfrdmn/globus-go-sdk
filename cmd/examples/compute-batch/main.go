@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/compute"
 )
 
 // Define several functions to use in our workflow examples
@@ -187,9 +188,7 @@ func main() {
 
 	// List available endpoints
 	fmt.Println("\n=== Available Compute Endpoints ===")
-	endpoints, err := computeClient.ListEndpoints(ctx, &pkg.ListEndpointsOptions{
-		PerPage: 5,
-	})
+	endpoints, err := computeClient.ListEndpoints(ctx, nil)
 	if err != nil {
 		log.Fatalf("Failed to list endpoints: %v", err)
 	}
@@ -216,7 +215,7 @@ func main() {
 
 	// Register data processor function
 	procFuncName := fmt.Sprintf("data_processor_%s", timestamp)
-	processorReq := &pkg.FunctionRegisterRequest{
+	processorReq := &compute.FunctionRegisterRequest{
 		Function:    dataProcessorFunction,
 		Name:        procFuncName,
 		Description: "Function to process data chunks",
@@ -229,7 +228,7 @@ func main() {
 
 	// Register aggregator function
 	aggFuncName := fmt.Sprintf("data_aggregator_%s", timestamp)
-	aggregatorReq := &pkg.FunctionRegisterRequest{
+	aggregatorReq := &compute.FunctionRegisterRequest{
 		Function:    dataAggregatorFunction,
 		Name:        aggFuncName,
 		Description: "Function to aggregate processed results",
@@ -242,7 +241,7 @@ func main() {
 
 	// Register report generator function
 	reportFuncName := fmt.Sprintf("report_generator_%s", timestamp)
-	reportReq := &pkg.FunctionRegisterRequest{
+	reportReq := &compute.FunctionRegisterRequest{
 		Function:    reportGeneratorFunction,
 		Name:        reportFuncName,
 		Description: "Function to generate final report",
@@ -268,32 +267,26 @@ func main() {
 
 		// Clean up other resources created in examples
 		if taskGroupID != "" {
-			if err := computeClient.DeleteTaskGroup(ctx, taskGroupID); err != nil {
-				log.Printf("Warning: Failed to delete task group %s: %v", taskGroupID, err)
-			} else {
-				fmt.Printf("Task group %s deleted successfully\n", taskGroupID)
-			}
+			// Task group deletion not implemented yet
+			fmt.Printf("Note: Task group %s would be deleted here if implemented\n", taskGroupID)
 		}
 
 		if workflowID != "" {
-			if err := computeClient.DeleteWorkflow(ctx, workflowID); err != nil {
-				log.Printf("Warning: Failed to delete workflow %s: %v", workflowID, err)
-			} else {
-				fmt.Printf("Workflow %s deleted successfully\n", workflowID)
-			}
+			// Workflow deletion not implemented yet
+			fmt.Printf("Note: Workflow %s would be deleted here if implemented\n", workflowID)
 		}
 	}()
 
 	// Example 1: Task Group Execution
 	fmt.Println("\n=== EXAMPLE 1: Task Group Execution ===")
-	taskGroupID, err := demonstrateTaskGroupExecution(ctx, computeClient, selectedEndpoint.ID, procFunc.ID)
+	taskGroupID, err = demonstrateTaskGroupExecution(ctx, computeClient, selectedEndpoint.ID, procFunc.ID)
 	if err != nil {
 		log.Printf("Task group execution example failed: %v", err)
 	}
 
 	// Example 2: Workflow with Dependencies
 	fmt.Println("\n=== EXAMPLE 2: Workflow with Dependencies ===")
-	workflowID, err := demonstrateWorkflow(ctx, computeClient, selectedEndpoint.ID, procFunc.ID, aggFunc.ID, reportFunc.ID)
+	workflowID, err = demonstrateWorkflow(ctx, computeClient, selectedEndpoint.ID, procFunc.ID, aggFunc.ID, reportFunc.ID)
 	if err != nil {
 		log.Printf("Workflow example failed: %v", err)
 	}
@@ -315,47 +308,47 @@ var (
 )
 
 // demonstrateTaskGroupExecution shows how to execute a group of similar tasks concurrently
-func demonstrateTaskGroupExecution(ctx context.Context, client *pkg.Client, endpointID, functionID string) (string, error) {
+func demonstrateTaskGroupExecution(ctx context.Context, client *compute.Client, endpointID, functionID string) (string, error) {
 	fmt.Println("Creating a task group for parallel data processing...")
 
 	// Create sample data chunks
 	dataChunks := []map[string]interface{}{
-		{
+		map[string]interface{}{
 			"chunk_id": 1,
 			"values":   []int{10, 20, 30, 40, 50},
-			"metadata": {
+			"metadata": map[string]interface{}{
 				"source":    "sensor-1",
 				"timestamp": time.Now().Unix(),
 			},
 		},
-		{
+		map[string]interface{}{
 			"chunk_id": 2,
 			"values":   []int{15, 25, 35, 45, 55},
-			"metadata": {
+			"metadata": map[string]interface{}{
 				"source":    "sensor-2",
 				"timestamp": time.Now().Unix(),
 			},
 		},
-		{
+		map[string]interface{}{
 			"chunk_id": 3,
 			"values":   []int{5, 15, 25, 35, 45},
-			"metadata": {
+			"metadata": map[string]interface{}{
 				"source":    "sensor-3",
 				"timestamp": time.Now().Unix(),
 			},
 		},
-		{
+		map[string]interface{}{
 			"chunk_id": 4,
 			"values":   []int{12, 24, 36, 48, 60},
-			"metadata": {
+			"metadata": map[string]interface{}{
 				"source":    "sensor-4",
 				"timestamp": time.Now().Unix(),
 			},
 		},
-		{
+		map[string]interface{}{
 			"chunk_id": 5,
 			"values":   []int{8, 16, 24, 32, 40},
-			"metadata": {
+			"metadata": map[string]interface{}{
 				"source":    "sensor-5",
 				"timestamp": time.Now().Unix(),
 			},
@@ -363,9 +356,9 @@ func demonstrateTaskGroupExecution(ctx context.Context, client *pkg.Client, endp
 	}
 
 	// Create tasks for each data chunk
-	tasks := make([]pkg.TaskRequest, len(dataChunks))
+	tasks := make([]compute.TaskRequest, len(dataChunks))
 	for i, chunk := range dataChunks {
-		tasks[i] = pkg.TaskRequest{
+		tasks[i] = compute.TaskRequest{
 			FunctionID: functionID,
 			EndpointID: endpointID,
 			Args:       []interface{}{chunk},
@@ -373,12 +366,12 @@ func demonstrateTaskGroupExecution(ctx context.Context, client *pkg.Client, endp
 	}
 
 	// Create the task group
-	taskGroupReq := &pkg.TaskGroupCreateRequest{
+	taskGroupReq := &compute.TaskGroupCreateRequest{
 		Name:        "parallel_data_processing",
 		Description: "Process multiple data chunks in parallel",
 		Tasks:       tasks,
 		Concurrency: 3, // Process up to 3 tasks at once
-		RetryPolicy: &pkg.RetryPolicy{
+		RetryPolicy: &compute.RetryPolicy{
 			MaxRetries:    2,
 			RetryInterval: 5,
 		},
@@ -398,7 +391,7 @@ func demonstrateTaskGroupExecution(ctx context.Context, client *pkg.Client, endp
 
 	// Run the task group
 	fmt.Println("\nRunning the task group...")
-	runReq := &pkg.TaskGroupRunRequest{
+	runReq := &compute.TaskGroupRunRequest{
 		Priority:    2,
 		Description: "Batch processing example run",
 		RunLabel:    "example-run",
@@ -438,7 +431,7 @@ func demonstrateTaskGroupExecution(ctx context.Context, client *pkg.Client, endp
 }
 
 // demonstrateWorkflow shows how to create and run a workflow with dependencies
-func demonstrateWorkflow(ctx context.Context, client *pkg.Client, endpointID, processorID, aggregatorID, reportID string) (string, error) {
+func demonstrateWorkflow(ctx context.Context, client *compute.Client, endpointID, processorID, aggregatorID, reportID string) (string, error) {
 	fmt.Println("Creating a workflow with dependencies...")
 
 	// Create a workflow with three stages:
@@ -447,10 +440,10 @@ func demonstrateWorkflow(ctx context.Context, client *pkg.Client, endpointID, pr
 	// 3. One report generation task that depends on the aggregation task
 
 	// Define the workflow
-	workflowReq := &pkg.WorkflowCreateRequest{
+	workflowReq := &compute.WorkflowCreateRequest{
 		Name:        "data_processing_pipeline",
 		Description: "A three-stage data processing pipeline",
-		Tasks: []pkg.WorkflowTask{
+		Tasks: []compute.WorkflowTask{
 			{
 				ID:         "process1",
 				Name:       "Process Data 1",
@@ -510,7 +503,7 @@ func demonstrateWorkflow(ctx context.Context, client *pkg.Client, endpointID, pr
 			"report":    {"aggregate"},
 		},
 		ErrorHandling: "continue",
-		RetryPolicy: &pkg.RetryPolicy{
+		RetryPolicy: &compute.RetryPolicy{
 			MaxRetries: 2,
 		},
 	}
@@ -528,7 +521,7 @@ func demonstrateWorkflow(ctx context.Context, client *pkg.Client, endpointID, pr
 
 	// Run the workflow
 	fmt.Println("\nRunning the workflow...")
-	runReq := &pkg.WorkflowRunRequest{
+	runReq := &compute.WorkflowRunRequest{
 		Priority:    2,
 		Description: "Data processing pipeline execution",
 		RunLabel:    "pipeline-run",
@@ -591,27 +584,27 @@ func demonstrateWorkflow(ctx context.Context, client *pkg.Client, endpointID, pr
 }
 
 // demonstrateDependencyGraph shows how to create and run a dependency graph with dynamic execution
-func demonstrateDependencyGraph(ctx context.Context, client *pkg.Client, endpointID, processorID, aggregatorID, reportID string) error {
+func demonstrateDependencyGraph(ctx context.Context, client *compute.Client, endpointID, processorID, aggregatorID, reportID string) error {
 	fmt.Println("Creating a dependency graph for dynamic execution...")
 
 	// Create test data with different shapes
 	testData := []map[string]interface{}{
-		{
+		map[string]interface{}{
 			"id":       "data1",
 			"values":   []int{10, 20, 30},
 			"metadata": map[string]string{"type": "integers"},
 		},
-		{
+		map[string]interface{}{
 			"id":       "data2",
 			"values":   []string{"a", "b", "c"},
 			"metadata": map[string]string{"type": "strings"},
 		},
-		{
+		map[string]interface{}{
 			"id":       "data3",
 			"values":   []float64{1.1, 2.2, 3.3},
 			"metadata": map[string]string{"type": "floats"},
 		},
-		{
+		map[string]interface{}{
 			"id":       "data4",
 			"values":   []bool{true, false, true},
 			"metadata": map[string]string{"type": "booleans"},
@@ -619,55 +612,55 @@ func demonstrateDependencyGraph(ctx context.Context, client *pkg.Client, endpoin
 	}
 
 	// Define the dependency graph nodes
-	nodes := make(map[string]pkg.DependencyGraphNode)
+	nodes := make(map[string]compute.DependencyGraphNode)
 
 	// Add processing nodes
 	for i, data := range testData {
 		nodeID := fmt.Sprintf("process_%d", i+1)
-		nodes[nodeID] = pkg.DependencyGraphNode{
-			Task: pkg.TaskRequest{
+		nodes[nodeID] = compute.DependencyGraphNode{
+			Task: compute.TaskRequest{
 				FunctionID: processorID,
 				EndpointID: endpointID,
 				Args:       []interface{}{data},
 			},
-			RetryPolicy: &pkg.RetryPolicy{
+			RetryPolicy: &compute.RetryPolicy{
 				MaxRetries: 1,
 			},
 		}
 	}
 
 	// Add aggregation node
-	nodes["aggregate"] = pkg.DependencyGraphNode{
-		Task: pkg.TaskRequest{
+	nodes["aggregate"] = compute.DependencyGraphNode{
+		Task: compute.TaskRequest{
 			FunctionID: aggregatorID,
 			EndpointID: endpointID,
 			// Args will be created dynamically from processing results
 		},
 		Dependencies: []string{"process_1", "process_2", "process_3", "process_4"},
 		Condition:    "ALL_COMPLETED", // Wait for all dependencies
-		ErrorHandler: &pkg.ErrorHandler{
+		ErrorHandler: &compute.ErrorHandler{
 			Strategy: "RETRY",
-			RetryPolicy: &pkg.RetryPolicy{
+			RetryPolicy: &compute.RetryPolicy{
 				MaxRetries: 2,
 			},
 		},
 	}
 
 	// Add report node
-	nodes["report"] = pkg.DependencyGraphNode{
-		Task: pkg.TaskRequest{
+	nodes["report"] = compute.DependencyGraphNode{
+		Task: compute.TaskRequest{
 			FunctionID: reportID,
 			EndpointID: endpointID,
 			// Args will be created from aggregation result
 		},
 		Dependencies: []string{"aggregate"},
-		ErrorHandler: &pkg.ErrorHandler{
+		ErrorHandler: &compute.ErrorHandler{
 			Strategy: "FAIL_WORKFLOW", // If report fails, fail the whole workflow
 		},
 	}
 
 	// Create the request
-	graphReq := &pkg.DependencyGraphRequest{
+	graphReq := &compute.DependencyGraphRequest{
 		Nodes:       nodes,
 		Description: "Dynamic data processing graph",
 		ErrorPolicy: "FAIL_FAST", // Fail immediately on any error

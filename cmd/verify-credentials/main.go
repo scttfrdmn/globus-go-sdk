@@ -193,7 +193,7 @@ func VerifyCredentialsSDK() error {
 					Limit: 1, // Only need one result to verify access
 				},
 			}
-			_, err := searchClient.Search(ctx, searchRequest)
+			_, err = searchClient.Search(ctx, searchRequest)
 			if err != nil {
 				fmt.Printf("❌ Failed to query search index: %v\n", err)
 			} else {

@@ -50,7 +50,17 @@ func getAccessToken(t *testing.T, clientID, clientSecret string) string {
 
 	// If no static token, try to get one via client credentials
 	t.Log("Getting client credentials token for flows")
-	authClient := auth.NewClient(clientID, clientSecret)
+
+	// Create auth client with proper options
+	options := []auth.ClientOption{
+		auth.WithClientID(clientID),
+		auth.WithClientSecret(clientSecret),
+	}
+
+	authClient, err := auth.NewClient(options...)
+	if err != nil {
+		t.Fatalf("Failed to create auth client: %v", err)
+	}
 
 	// Try specific scope for flows
 	tokenResp, err := authClient.GetClientCredentialsToken(context.Background(), FlowsScope)
@@ -79,8 +89,11 @@ func TestIntegration_ListFlows(t *testing.T) {
 	// Get access token
 	accessToken := getAccessToken(t, clientID, clientSecret)
 
-	// Create Flows client
-	client := NewClient(accessToken)
+	// Create Flows client with proper options
+	client, err := NewClient(WithAccessToken(accessToken))
+	if err != nil {
+		t.Fatalf("Failed to create flows client: %v", err)
+	}
 	ctx := context.Background()
 
 	// List flows
@@ -131,8 +144,11 @@ func TestIntegration_FlowLifecycle(t *testing.T) {
 	// Get access token
 	accessToken := getAccessToken(t, clientID, clientSecret)
 
-	// Create Flows client
-	client := NewClient(accessToken)
+	// Create Flows client with proper options
+	client, err := NewClient(WithAccessToken(accessToken))
+	if err != nil {
+		t.Fatalf("Failed to create flows client: %v", err)
+	}
 	ctx := context.Background()
 
 	// 1. Create a new flow
@@ -320,8 +336,11 @@ func TestIntegration_ExistingFlow(t *testing.T) {
 	// Get access token
 	accessToken := getAccessToken(t, clientID, clientSecret)
 
-	// Create Flows client
-	client := NewClient(accessToken)
+	// Create Flows client with proper options
+	client, err := NewClient(WithAccessToken(accessToken))
+	if err != nil {
+		t.Fatalf("Failed to create flows client: %v", err)
+	}
 	ctx := context.Background()
 
 	// Verify we can get the flow
@@ -380,8 +399,11 @@ func TestIntegration_ActionProviders(t *testing.T) {
 	// Get access token
 	accessToken := getAccessToken(t, clientID, clientSecret)
 
-	// Create Flows client
-	client := NewClient(accessToken)
+	// Create Flows client with proper options
+	client, err := NewClient(WithAccessToken(accessToken))
+	if err != nil {
+		t.Fatalf("Failed to create flows client: %v", err)
+	}
 	ctx := context.Background()
 
 	// List action providers

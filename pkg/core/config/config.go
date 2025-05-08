@@ -59,8 +59,7 @@ func DefaultConfig() *Config {
 
 	if !disablePooling {
 		// Use connection pooling by default
-		// Import indirectly to avoid circular imports
-		httpClient = core.NewHTTPClientWithConnectionPool("default", nil)
+		httpClient = core.GetHTTPClientForService("default")
 	} else {
 		// Use standard HTTP client
 		httpClient = &http.Client{

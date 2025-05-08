@@ -59,7 +59,17 @@ func getAccessToken(t *testing.T, clientID, clientSecret string) string {
 
 	// If no static token, try to get one via client credentials
 	t.Log("Getting client credentials token for groups")
-	authClient := auth.NewClient(clientID, clientSecret)
+
+	// Create auth client with proper options
+	options := []auth.ClientOption{
+		auth.WithClientID(clientID),
+		auth.WithClientSecret(clientSecret),
+	}
+
+	authClient, err := auth.NewClient(options...)
+	if err != nil {
+		t.Fatalf("Failed to create auth client: %v", err)
+	}
 
 	// Try specific scope for groups
 	tokenResp, err := authClient.GetClientCredentialsToken(context.Background(), "urn:globus:auth:scope:groups.api.globus.org:all")

@@ -99,7 +99,7 @@ func TestIntegration_VerifySetup(t *testing.T) {
 }
 
 // verifyTransferEndpoints checks that the specified endpoints are accessible
-func verifyTransferEndpoints(t *testing.T, config *Config, sourceEndpointID, destEndpointID string) {
+func verifyTransferEndpoints(t *testing.T, config *SDKConfig, sourceEndpointID, destEndpointID string) {
 	ctx := context.Background()
 
 	// We need a token with transfer scope
@@ -113,7 +113,10 @@ func verifyTransferEndpoints(t *testing.T, config *Config, sourceEndpointID, des
 	}
 
 	// Create transfer client
-	transferClient := config.NewTransferClient(token.AccessToken)
+	transferClient, err := config.NewTransferClient(token.AccessToken)
+	if err != nil {
+		t.Fatalf("Failed to create transfer client: %v", err)
+	}
 
 	// Verify source endpoint
 	fmt.Printf("Checking source endpoint (%s)...\n", sourceEndpointID)
@@ -166,7 +169,7 @@ func verifyTransferEndpoints(t *testing.T, config *Config, sourceEndpointID, des
 	}
 
 	// Verify source path exists
-	_, err = transferClient.ListDirectoryContents(ctx, sourceEndpointID, sourcePath, &transfer.ListOptions{})
+	_, err = transferClient.ListFiles(ctx, sourceEndpointID, sourcePath, &transfer.ListFileOptions{})
 	if err != nil {
 		fmt.Printf("⚠️  Could not access source path %s: %v\n", sourcePath, err)
 		fmt.Println("   Consider creating this directory for transfer tests")
@@ -175,7 +178,7 @@ func verifyTransferEndpoints(t *testing.T, config *Config, sourceEndpointID, des
 	}
 
 	// Verify destination path exists
-	_, err = transferClient.ListDirectoryContents(ctx, destEndpointID, destPath, &transfer.ListOptions{})
+	_, err = transferClient.ListFiles(ctx, destEndpointID, destPath, &transfer.ListFileOptions{})
 	if err != nil {
 		fmt.Printf("⚠️  Could not access destination path %s: %v\n", destPath, err)
 		fmt.Println("   Consider creating this directory for transfer tests")

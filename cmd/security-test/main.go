@@ -134,7 +134,10 @@ func analyzeToken(token, clientID, clientSecret string) {
 	config := pkg.NewConfig().
 		WithClientID(clientID).
 		WithClientSecret(clientSecret)
-	authClient := config.NewAuthClient()
+	authClient, err := config.NewAuthClient()
+	if err != nil {
+		log.Fatalf("Failed to create auth client: %v", err)
+	}
 
 	// Check token format
 	if !isValidTokenFormat(token) {

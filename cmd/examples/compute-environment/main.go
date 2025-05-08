@@ -135,9 +135,7 @@ func main() {
 
 	// List available endpoints
 	fmt.Println("\n=== Available Compute Endpoints ===")
-	endpoints, err := computeClient.ListEndpoints(ctx, &pkg.ListEndpointsOptions{
-		PerPage: 5,
-	})
+	endpoints, err := computeClient.ListEndpoints(ctx, nil)
 	if err != nil {
 		log.Fatalf("Failed to list endpoints: %v", err)
 	}
@@ -162,7 +160,7 @@ func main() {
 	// Create a secret
 	fmt.Println("\n=== Creating Secret ===")
 	secretName := fmt.Sprintf("API_KEY_%s", timestamp)
-	secretRequest := &pkg.SecretCreateRequest{
+	secretRequest := &compute.SecretCreateRequest{
 		Name:        secretName,
 		Description: "Sample API key for environment example",
 		Value:       "abcd1234-test-api-key-5678efgh",

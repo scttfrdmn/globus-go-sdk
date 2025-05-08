@@ -110,9 +110,7 @@ func main() {
 
 	// List available endpoints
 	fmt.Println("\n=== Available Compute Endpoints ===")
-	endpoints, err := computeClient.ListEndpoints(ctx, &pkg.ListEndpointsOptions{
-		PerPage: 5,
-	})
+	endpoints, err := computeClient.ListEndpoints(ctx, nil)
 	if err != nil {
 		log.Fatalf("Failed to list endpoints: %v", err)
 	}
@@ -146,7 +144,7 @@ Pillow==9.5.0
 requests==2.28.2
 `
 
-	dependencyReq := &pkg.DependencyRegistrationRequest{
+	dependencyReq := &compute.DependencyRegistrationRequest{
 		Name:               dependencyName,
 		Description:        "Computer vision dependencies for image processing",
 		PythonRequirements: pythonRequirements,

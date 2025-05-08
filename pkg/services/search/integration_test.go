@@ -50,7 +50,17 @@ func getAccessToken(t *testing.T, clientID, clientSecret string) string {
 
 	// If no static token, try to get one via client credentials
 	t.Log("Getting client credentials token for search")
-	authClient := auth.NewClient(clientID, clientSecret)
+
+	// Create auth client with proper options
+	options := []auth.ClientOption{
+		auth.WithClientID(clientID),
+		auth.WithClientSecret(clientSecret),
+	}
+
+	authClient, err := auth.NewClient(options...)
+	if err != nil {
+		t.Fatalf("Failed to create auth client: %v", err)
+	}
 
 	// Try specific scope for search
 	tokenResp, err := authClient.GetClientCredentialsToken(context.Background(), "urn:globus:auth:scope:search.api.globus.org:all")
@@ -80,7 +90,10 @@ func TestIntegration_ListIndexes(t *testing.T) {
 	accessToken := getAccessToken(t, clientID, clientSecret)
 
 	// Create Search client
-	client := NewClient(accessToken)
+	client, err := NewClient(WithAccessToken(accessToken))
+	if err != nil {
+		t.Fatalf("Failed to create search client: %v", err)
+	}
 	ctx := context.Background()
 
 	// List indexes - filter for public indexes which requires fewer permissions
@@ -162,7 +175,10 @@ func TestIntegration_IndexLifecycle(t *testing.T) {
 	accessToken := getAccessToken(t, clientID, clientSecret)
 
 	// Create Search client
-	client := NewClient(accessToken)
+	client, err := NewClient(WithAccessToken(accessToken))
+	if err != nil {
+		t.Fatalf("Failed to create search client: %v", err)
+	}
 	ctx := context.Background()
 
 	// 1. Create a new index
@@ -301,7 +317,10 @@ func TestIntegration_ExistingIndex(t *testing.T) {
 	accessToken := getAccessToken(t, clientID, clientSecret)
 
 	// Create Search client
-	client := NewClient(accessToken)
+	client, err := NewClient(WithAccessToken(accessToken))
+	if err != nil {
+		t.Fatalf("Failed to create search client: %v", err)
+	}
 	ctx := context.Background()
 
 	// Verify we can get the index

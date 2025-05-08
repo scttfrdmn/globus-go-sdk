@@ -32,6 +32,11 @@ func (t *TokenResponse) IsValid() bool {
 	return time.Now().Add(30 * time.Second).Before(t.ExpiryTime)
 }
 
+// ExpiresAt returns the expiry time
+func (t *TokenResponse) ExpiresAt() time.Time {
+	return t.ExpiryTime
+}
+
 // GetOtherTokens parses the other_tokens field into actual TokenResponse objects
 func (t *TokenResponse) GetOtherTokens() ([]*TokenResponse, error) {
 	if len(t.OtherTokens) == 0 {
