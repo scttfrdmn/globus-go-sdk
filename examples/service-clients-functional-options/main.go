@@ -266,7 +266,7 @@ func main() {
 	}
 
 	fmt.Printf("Advanced flows client created successfully: %T\n", advancedFlowsClient)
-	
+
 	// Use ctx to demonstrate a simple API call
 	flowsList, err := advancedFlowsClient.ListFlows(ctx, nil)
 	if err != nil {

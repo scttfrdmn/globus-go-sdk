@@ -83,7 +83,7 @@ func DemonstrateWithMockHandler() {
 	}
 
 	// Store the token
-	err := storage.Store(entry)
+	err = storage.Store(entry)
 	if err != nil {
 		fmt.Printf("Failed to store token: %v\n", err)
 		return

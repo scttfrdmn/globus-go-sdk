@@ -81,7 +81,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("Failed to create token manager: %v", err)
 	}
-	
+
 	// Demonstrate using manager2
 	refreshThreshold := manager2.RefreshThreshold
 	fmt.Printf("Token refresh threshold: %v\n", refreshThreshold)

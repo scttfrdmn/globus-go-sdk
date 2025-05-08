@@ -585,8 +585,14 @@ func getAccessToken() (string, error) {
 	}
 
 	// Create auth client
-	authClient := auth.NewClient(clientID, clientSecret)
-	authClient.SetRedirectURL("http://localhost:8080/callback")
+	authClient, err := auth.NewClient(
+		auth.WithClientID(clientID),
+		auth.WithClientSecret(clientSecret),
+		auth.WithRedirectURL("http://localhost:8080/callback"),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create auth client: %v", err)
+	}
 
 	// Get authorization URL
 	state := "ratelimit-demo-state"

@@ -191,7 +191,7 @@ func main() {
 				fmt.Println()
 
 				// Get list of active transfers
-				activeTransfers := monitor.ListActiveTransfers()
+				_ = monitor.ListActiveTransfers() // Unused for now but could be used for additional status display
 				allCompleted := true
 
 				for _, id := range transferIDs {

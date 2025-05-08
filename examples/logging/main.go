@@ -38,7 +38,11 @@ func textExample(accessToken string) {
 		WithClientOption(logging.WithLogLevel(logging.LogLevelDebug))
 
 	// Create a client
-	transferClient := config.NewTransferClient(accessToken)
+	transferClient, err := config.NewTransferClient(accessToken)
+	if err != nil {
+		fmt.Printf("Error creating transfer client: %v\n", err)
+		return
+	}
 
 	// Context for the operation
 	ctx := context.Background()
@@ -61,7 +65,11 @@ func jsonExample(accessToken string) {
 		WithClientOption(logging.WithJSONLogging())
 
 	// Create a client
-	transferClient := config.NewTransferClient(accessToken)
+	transferClient, err := config.NewTransferClient(accessToken)
+	if err != nil {
+		fmt.Printf("Error creating transfer client: %v\n", err)
+		return
+	}
 
 	// Context for the operation
 	ctx := context.Background()
@@ -84,7 +92,11 @@ func tracingExample(accessToken string) {
 		WithClientOption(logging.WithTracing("example-trace-id"))
 
 	// Create a client
-	transferClient := config.NewTransferClient(accessToken)
+	transferClient, err := config.NewTransferClient(accessToken)
+	if err != nil {
+		fmt.Printf("Error creating transfer client: %v\n", err)
+		return
+	}
 
 	// Context for the operation
 	ctx := context.Background()

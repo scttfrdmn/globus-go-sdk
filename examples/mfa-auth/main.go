@@ -43,7 +43,12 @@ func main() {
 		WithClientSecret(clientSecret)
 
 	// Create an Auth client
-	authClient := config.NewAuthClient()
+	authClient, err := config.NewAuthClient()
+	if err != nil {
+		log.Fatalf("Failed to create auth client: %v", err)
+	}
+
+	// Set redirect URL
 	authClient.SetRedirectURL(callbackAddress)
 
 	// Generate a random state value

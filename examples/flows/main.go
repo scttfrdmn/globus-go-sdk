@@ -12,7 +12,13 @@ import (
 
 func main() {
 	// Setup placeholder client
-	client := flows.NewClient("fake-token", core.WithLogLevel(core.LogLevelDebug))
+	client, err := flows.NewClient(
+		flows.WithAccessToken("fake-token"),
+		flows.WithCoreOption(core.WithLogLevel(core.LogLevelDebug)),
+	)
+	if err != nil {
+		panic("Failed to create client: " + err.Error())
+	}
 	ctx := context.Background()
 
 	// Try using the problematic types

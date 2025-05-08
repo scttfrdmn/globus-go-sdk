@@ -94,11 +94,23 @@ func main() {
 	}
 
 	// Initialize auth client
-	app.AuthClient = auth.NewClient(config.ClientID, config.ClientSecret)
-	app.AuthClient.SetRedirectURL(config.RedirectURL)
+	app.AuthClient, err = auth.NewClient(
+		auth.WithClientID(config.ClientID),
+		auth.WithClientSecret(config.ClientSecret),
+		auth.WithRedirectURL(config.RedirectURL),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create auth client: %v", err)
+	}
 
 	// Initialize token manager
-	app.TokenManager = tokens.NewManager(app.TokenStorage, app.AuthClient)
+	app.TokenManager, err = tokens.NewManager(
+		tokens.WithStorage(app.TokenStorage),
+		tokens.WithAuthClient(app.AuthClient),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create token manager: %v", err)
+	}
 
 	// Configure token refresh to happen when tokens are within 10 minutes of expiry
 	app.TokenManager.SetRefreshThreshold(10 * time.Minute)
@@ -697,7 +709,13 @@ func (app *App) handleAPIFlows(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create a new flows client with the fresh token for this request
-	app.FlowsClient = flows.NewClient(accessToken)
+	app.FlowsClient, err = flows.NewClient(
+		flows.WithAccessToken(accessToken),
+	)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create flows client: %v", err), http.StatusInternalServerError)
+		return
+	}
 
 	// Note: In a production implementation, we would use the flows client's method directly
 	// but for this example we're using our own implementation
@@ -738,7 +756,13 @@ func (app *App) handleAPISearch(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create a new search client with the fresh token for this request
-	app.SearchClient = search.NewClient(accessToken)
+	app.SearchClient, err = search.NewClient(
+		search.WithAccessToken(accessToken),
+	)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Failed to create search client: %v", err), http.StatusInternalServerError)
+		return
+	}
 
 	// Note: In a production implementation, we would use the search client's method directly
 	// but for this example we're using our own implementation

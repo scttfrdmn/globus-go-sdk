@@ -138,7 +138,7 @@ func (p *Pipeline) initializeClients() error {
 		// Return a mock token - in a real app, this would contact the auth service
 		return "mock-access-token", time.Now().Add(1 * time.Hour), nil
 	}
-	
+
 	// Create the scopes list
 	scopes := []string{
 		"urn:globus:auth:scope:transfer.api.globus.org:all",
@@ -146,7 +146,7 @@ func (p *Pipeline) initializeClients() error {
 		"urn:globus:auth:scope:flows.globus.org:all",
 		"urn:globus:auth:scope:compute.api.globus.org:all",
 	}
-	
+
 	// Create the authorizer
 	clientAuthorizer := authorizers.NewClientCredentialsAuthorizer(
 		p.config.ClientID,
@@ -336,9 +336,9 @@ func (p *Pipeline) executeTransfer() (string, error) {
 		TaskID         string
 		SaveCheckpoint func(ctx context.Context) error
 	}
-	
+
 	checkpointManager := &CheckpointManager{TaskID: taskID}
-	
+
 	// Add a SaveCheckpoint method to the CheckpointManager
 	checkpointManager.SaveCheckpoint = func(ctx context.Context) error {
 		p.logger.Printf("Saving checkpoint for task %s", taskID)
@@ -529,7 +529,7 @@ func (p *Pipeline) waitForCompletion(transferTaskID, ingestID, computeTaskID, fl
 
 	// Wait for a short time to simulate work
 	time.Sleep(2 * time.Second)
-	
+
 	p.logger.Println("All pipeline components completed successfully")
 	return nil
 }
@@ -543,7 +543,7 @@ func (p *Pipeline) waitForTaskWithRetry(taskID string) (*TaskCompletionResult, e
 		if attempts == 0 {
 			// Simulate work
 			time.Sleep(1 * time.Second)
-			
+
 			// Return successful result
 			return &TaskCompletionResult{
 				Successful: 1,
@@ -551,7 +551,7 @@ func (p *Pipeline) waitForTaskWithRetry(taskID string) (*TaskCompletionResult, e
 				Skipped:    0,
 			}, nil
 		}
-			
+
 		// Log retry attempt
 		p.logger.Printf("Retry %d/%d: Task completion check failed. Retrying in %d seconds...",
 			attempts+1, maxRetries, backoff)
@@ -736,7 +736,7 @@ func (s *Storage) GetValue(key string) (float64, bool) {
 func (s *Storage) GetAllMetrics() map[string]float64 {
 	s.mu.RLock()
 	defer s.mu.RUnlock()
-	
+
 	// Make a copy to avoid concurrent map access
 	result := make(map[string]float64, len(s.values))
 	for k, v := range s.values {

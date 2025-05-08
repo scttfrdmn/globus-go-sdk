@@ -21,10 +21,14 @@ func main() {
 	}
 
 	// Create a compute client
-	client := compute.NewClient(accessToken,
-		core.WithLogLevel(core.LogLevelDebug),
-		core.WithHTTPTracing(true),
+	client, err := compute.NewClient(
+		compute.WithAccessToken(accessToken),
+		compute.WithCoreOption(core.WithLogLevel(core.LogLevelDebug)),
+		compute.WithCoreOption(core.WithHTTPTracing(true)),
 	)
+	if err != nil {
+		log.Fatalf("Failed to create compute client: %v", err)
+	}
 
 	// Define the context
 	ctx := context.Background()
