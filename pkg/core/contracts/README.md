@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors -->
+
 # Contract Tests for Core Interfaces
 
 This package provides contract tests for the core interfaces defined in the Globus Go SDK. Contract tests verify that implementations of these interfaces adhere to the behavioral contracts required by the interfaces.

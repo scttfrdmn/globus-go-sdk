@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors -->
+
 # API Deprecation System
 
 This document describes the deprecation system implemented as part of Phase 2 of the API Stability Implementation Plan for the Globus Go SDK.

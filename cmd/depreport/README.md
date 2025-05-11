@@ -1,3 +1,6 @@
+<!-- SPDX-License-Identifier: Apache-2.0 -->
+<!-- SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors -->
+
 # Deprecation Report Tool
 
 This tool scans the Globus Go SDK codebase for deprecated features and generates a report. It looks for:
