@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/compute"
 )
 
 // Define a simple function to run in a container
@@ -140,7 +141,7 @@ func main() {
 	fmt.Println("\n=== Registering Function ===")
 	functionName := fmt.Sprintf("data_analysis_function_%s", timestamp)
 
-	registerRequest := &pkg.FunctionRegisterRequest{
+	registerRequest := &compute.FunctionRegisterRequest{
 		Function:    samplePythonFunction,
 		Name:        functionName,
 		Description: "A data analysis function that uses numpy and pandas",
@@ -177,7 +178,7 @@ func main() {
 
 	// Execute the function in the container
 	fmt.Println("\n=== Running Function in Container ===")
-	containerTaskReq := &pkg.ContainerTaskRequest{
+	containerTaskReq := &compute.ContainerTaskRequest{
 		EndpointID:  selectedEndpoint.ID,
 		ContainerID: container.ID,
 		FunctionID:  function.ID,
@@ -262,7 +263,7 @@ def run():
 output = run()
 `
 
-	directTaskReq := &pkg.ContainerTaskRequest{
+	directTaskReq := &compute.ContainerTaskRequest{
 		EndpointID:  selectedEndpoint.ID,
 		ContainerID: container.ID,
 		Code:        directCode,

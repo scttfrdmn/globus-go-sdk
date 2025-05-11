@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
-package scripts
+package verification
 
 import (
 	"fmt"

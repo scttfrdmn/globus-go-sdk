@@ -220,8 +220,8 @@ Batch Operations:
 		// Handle error
 	}
 
-	fmt.Printf("Successfully ingested %d documents in %d batches\n", 
-		batchResponse.TotalDocuments, 
+	fmt.Printf("Successfully ingested %d documents in %d batches\n",
+		batchResponse.TotalDocuments,
 		len(batchResponse.TaskIDs))
 */
 package search

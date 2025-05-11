@@ -26,8 +26,7 @@ func init() {
 	// Determine the user's home directory
 	homeDir, err := os.UserHomeDir()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error determining home directory: %v
-", err)
+		fmt.Fprintf(os.Stderr, "Error determining home directory: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -36,8 +35,7 @@ func init() {
 
 	// Create the configuration directory if it doesn't exist
 	if err := os.MkdirAll(configDir, 0700); err != nil {
-		fmt.Fprintf(os.Stderr, "Error creating configuration directory: %v
-", err)
+		fmt.Fprintf(os.Stderr, "Error creating configuration directory: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -106,8 +104,7 @@ func main() {
 	for _, cmd := range commands {
 		if cmd.Name == cmdName {
 			if err := cmd.Execute(os.Args[2:]); err != nil {
-				fmt.Fprintf(os.Stderr, "Error: %v
-", err)
+				fmt.Fprintf(os.Stderr, "Error: %v\n", err)
 				os.Exit(1)
 			}
 			return
@@ -115,8 +112,7 @@ func main() {
 	}
 
 	// If we got here, the command wasn't found
-	fmt.Fprintf(os.Stderr, "Unknown command: %s
-", cmdName)
+	fmt.Fprintf(os.Stderr, "Unknown command: %s\n", cmdName)
 	showUsage(commands)
 	os.Exit(1)
 }
@@ -124,19 +120,15 @@ func main() {
 // showUsage displays usage information for all commands
 func showUsage(commands []Command) {
 	fmt.Println("Globus CLI - A command line interface for Globus")
-	fmt.Println("
-Usage:")
+	fmt.Println("\nUsage:")
 	fmt.Println("  globus-cli <command> [arguments]")
-	fmt.Println("
-Available commands:")
+	fmt.Println("\nAvailable commands:")
 
 	for _, cmd := range commands {
-		fmt.Printf("  %-12s %s
-", cmd.Name, cmd.Description)
+		fmt.Printf("  %-12s %s\n", cmd.Name, cmd.Description)
 	}
 
-	fmt.Println("
-For more information on a command, use:")
+	fmt.Println("\nFor more information on a command, use:")
 	fmt.Println("  globus-cli help <command>")
 }
 
@@ -144,17 +136,13 @@ For more information on a command, use:")
 func showCommandHelp(commands []Command, cmdName string) {
 	for _, cmd := range commands {
 		if cmd.Name == cmdName {
-			fmt.Printf("Command: %s
-", cmd.Name)
-			fmt.Printf("Description: %s
-", cmd.Description)
-			fmt.Printf("Usage: %s
-", cmd.Usage)
+			fmt.Printf("Command: %s\n", cmd.Name)
+			fmt.Printf("Description: %s\n", cmd.Description)
+			fmt.Printf("Usage: %s\n", cmd.Usage)
 			return
 		}
 	}
 
-	fmt.Fprintf(os.Stderr, "Unknown command: %s
-", cmdName)
+	fmt.Fprintf(os.Stderr, "Unknown command: %s\n", cmdName)
 	showUsage(commands)
 }

@@ -3,15 +3,9 @@
 package main
 
 import (
-	"os"
-
 	"github.com/scttfrdmn/globus-go-sdk/internal/verification"
 )
 
 func main() {
-	if verification.VerifyPackageExports() {
-		os.Exit(0)
-	} else {
-		os.Exit(1)
-	}
+	verification.DebugInterfaces()
 }

@@ -3,25 +3,19 @@
 package auth
 
 import (
-	"bytes"
 	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 	"net/http"
-	"net/url"
 	"os"
 	"path/filepath"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/pkg/browser"
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 )
 
 // Config holds the CLI configuration
@@ -52,6 +46,11 @@ const (
 	// DefaultRedirectURI is the redirect URI for browser-based auth
 	DefaultRedirectURI = "http://localhost:8080/callback"
 )
+
+// IsTokenValid checks if a token is still valid (not expired)
+func IsTokenValid(token *TokenInfo) bool {
+	return time.Now().Before(token.ExpiresAt)
+}
 
 // LoadOrCreateConfig loads the CLI configuration from disk
 func LoadOrCreateConfig() (*Config, error) {
@@ -221,11 +220,11 @@ func LoginCommand(args []string) error {
 		pkg.TimersScope,
 	}
 
+	// Set the redirect URL
+	authClient.SetRedirectURL(DefaultRedirectURI)
+
 	// Get the URL for the login
-	authURL, err := authClient.GetAuthorizeURL(DefaultRedirectURI, scopes, state, "code")
-	if err != nil {
-		return fmt.Errorf("error generating authorization URL: %w", err)
-	}
+	authURL := authClient.GetAuthorizationURL(state, scopes...)
 
 	// Open the browser
 	fmt.Printf("Opening browser to login at: %s\n", authURL)
@@ -341,8 +340,11 @@ func exchangeCodeForToken(config *Config, code string) (*TokenInfo, error) {
 		return nil, fmt.Errorf("error creating auth client: %w", err)
 	}
 
+	// Set redirect URL for authorization code exchange
+	authClient.SetRedirectURL(DefaultRedirectURI)
+
 	// Exchange code for token
-	tokenResp, err := authClient.ExchangeAuthorizationCode(context.Background(), code, DefaultRedirectURI)
+	tokenResp, err := authClient.ExchangeAuthorizationCode(context.Background(), code)
 	if err != nil {
 		return nil, fmt.Errorf("error exchanging authorization code: %w", err)
 	}

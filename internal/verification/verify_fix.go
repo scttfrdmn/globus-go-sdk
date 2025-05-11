@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2025 Scott Friedman and Project Contributors
-package main
+// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
+package verification
 
 import (
 	"fmt"
-	"os"
 	"reflect"
 	"runtime"
 	"strings"
@@ -12,11 +11,9 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 )
 
-// This script provides an extremely thorough verification of the fix for issue #13.
-// It directly validates the functionality by calling the transport_init.go code path
-// that was failing in downstream projects.
-
-func main() {
+// VerifyConnectionPoolFix verifies the fix for issue #13 in transport_init.go
+// It returns true if all validation passes, and an array of error messages
+func VerifyConnectionPoolFix() (bool, []string) {
 	success := true
 	errors := []string{}
 
@@ -40,7 +37,7 @@ func main() {
 
 	// Phase 2: Check the function implementations match what's expected
 	fmt.Println("\n🔍 PHASE 2: Function Implementation Check")
-	
+
 	// Use runtime package to get function name
 	setFuncName := runtime.FuncForPC(setFuncVal.Pointer()).Name()
 	if !strings.Contains(setFuncName, "SetConnectionPoolManager") {
@@ -49,7 +46,7 @@ func main() {
 	} else {
 		fmt.Println("✅ SetConnectionPoolManager has correct implementation:", setFuncName)
 	}
-	
+
 	enableFuncName := runtime.FuncForPC(enableFuncVal.Pointer()).Name()
 	if !strings.Contains(enableFuncName, "EnableDefaultConnectionPool") {
 		success = false
@@ -57,26 +54,18 @@ func main() {
 	} else {
 		fmt.Println("✅ EnableDefaultConnectionPool has correct implementation:", enableFuncName)
 	}
-	
+
 	// Phase 3: Validate that these functions are actually used in transport_init.go
 	fmt.Println("\n🔍 PHASE 3: Validating transport_init.go Integration")
-	
+
 	// We can't directly inspect the InitTransport function from transport_init.go
 	// as it's not directly exported, but we can validate the package initialization
 	fmt.Println("✅ Checking transport_init.go integration")
-	
-	// We can't directly inspect the init() function's code since it's not exported,
-	// but we can validate it's properly defined and working by checking if our global
-	// connection pool was initialized
-	
+
 	// Phase 4: Comprehensive full-stack test
 	fmt.Println("\n🔍 PHASE 4: Full-Stack Test")
 	fmt.Println("Testing complete flow that downstream packages would use...")
-	
-	// Create a test client that would trigger the init() function
-	// This implicitly tests that the init() function in transport_init.go
-	// properly calls SetConnectionPoolManager and EnableDefaultConnectionPool
-	
+
 	// Test GetConnectionPool function
 	pool := core.GetConnectionPool("test-service", nil)
 	if pool == nil {
@@ -86,7 +75,7 @@ func main() {
 	} else {
 		fmt.Println("✅ GetConnectionPool successfully returned a connection pool")
 	}
-	
+
 	// Test GetHTTPClientForService function
 	client := core.GetHTTPClientForService("test-service")
 	if client == nil {
@@ -97,17 +86,5 @@ func main() {
 		fmt.Println("✅ GetHTTPClientForService successfully returned an HTTP client")
 	}
 
-	// Print result summary
-	fmt.Println("\n📋 TEST SUMMARY")
-	if success {
-		fmt.Println("\n✅ SUCCESS: All tests passed! The fix for issue #13 is correctly implemented.")
-		fmt.Println("The problem with missing functions in transport_init.go has been fixed.")
-	} else {
-		fmt.Println("\n❌ FAILURE: There were errors in the tests:")
-		for _, err := range errors {
-			fmt.Printf("  %s\n", err)
-		}
-		fmt.Println("\nThe fix for issue #13 is NOT correctly implemented.")
-		os.Exit(1)
-	}
+	return success, errors
 }

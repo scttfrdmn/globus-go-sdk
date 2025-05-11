@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2025 Scott Friedman and Project Contributors
-package main
+package debug
 
 import (
 	"context"
@@ -12,27 +12,27 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
 )
 
-// testAuthorizer implements the authorizer interface for testing
-type testAuthorizer struct {
+// taskAuthorizer implements the authorizer interface for testing
+type taskAuthorizer struct {
 	token string
 }
 
 // GetAuthorizationHeader returns the authorization header value
-func (a *testAuthorizer) GetAuthorizationHeader(ctx ...context.Context) (string, error) {
+func (a *taskAuthorizer) GetAuthorizationHeader(ctx ...context.Context) (string, error) {
 	return "Bearer " + a.token, nil
 }
 
 // IsValid returns whether the authorization is valid
-func (a *testAuthorizer) IsValid() bool {
+func (a *taskAuthorizer) IsValid() bool {
 	return a.token != ""
 }
 
 // GetToken returns the token
-func (a *testAuthorizer) GetToken() string {
+func (a *taskAuthorizer) GetToken() string {
 	return a.token
 }
 
-func main() {
+func RunDeleteTask() {
 	// Enable HTTP debugging
 	os.Setenv("HTTP_DEBUG", "true")
 
@@ -54,7 +54,7 @@ func main() {
 
 	// Create Transfer client with debugging enabled
 	client, err := transfer.NewClient(
-		transfer.WithAuthorizer(&testAuthorizer{token: accessToken}),
+		transfer.WithAuthorizer(&taskAuthorizer{token: accessToken}),
 		transfer.WithHTTPDebugging(true),
 	)
 	if err != nil {

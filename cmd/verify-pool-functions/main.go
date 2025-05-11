@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 package main
 
 import (
@@ -93,7 +93,7 @@ func main() {
 				errors = append(errors, fmt.Sprintf("GetConnectionPool panicked: %v", r))
 			}
 		}()
-		
+
 		// Test with various service names
 		services := []string{"auth", "transfer", "search", "compute", "flows", "groups", "timers"}
 		for _, service := range services {
@@ -115,7 +115,7 @@ func main() {
 				errors = append(errors, fmt.Sprintf("GetHTTPClientForService panicked: %v", r))
 			}
 		}()
-		
+
 		// Test with various service names
 		services := []string{"auth", "transfer", "search", "compute", "flows", "groups", "timers"}
 		for _, service := range services {
@@ -129,26 +129,26 @@ func main() {
 
 	// Verify correct function signatures by testing function values
 	fmt.Println("- Verifying function signatures...")
-	
+
 	// Use reflection to verify the function signatures
 	setPoolManagerType := runtime.FuncForPC(reflect.ValueOf(core.SetConnectionPoolManager).Pointer()).Name()
 	if !strings.Contains(setPoolManagerType, "SetConnectionPoolManager") {
 		success = false
 		errors = append(errors, fmt.Sprintf("SetConnectionPoolManager has incorrect signature: %s", setPoolManagerType))
 	}
-	
+
 	enablePoolType := runtime.FuncForPC(reflect.ValueOf(core.EnableDefaultConnectionPool).Pointer()).Name()
 	if !strings.Contains(enablePoolType, "EnableDefaultConnectionPool") {
 		success = false
 		errors = append(errors, fmt.Sprintf("EnableDefaultConnectionPool has incorrect signature: %s", enablePoolType))
 	}
-	
+
 	getPoolType := runtime.FuncForPC(reflect.ValueOf(core.GetConnectionPool).Pointer()).Name()
 	if !strings.Contains(getPoolType, "GetConnectionPool") {
 		success = false
 		errors = append(errors, fmt.Sprintf("GetConnectionPool has incorrect signature: %s", getPoolType))
 	}
-	
+
 	getClientType := runtime.FuncForPC(reflect.ValueOf(core.GetHTTPClientForService).Pointer()).Name()
 	if !strings.Contains(getClientType, "GetHTTPClientForService") {
 		success = false

@@ -8,9 +8,9 @@ import (
 	"log"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 )
 
 func main() {
@@ -181,7 +181,8 @@ func analyzeToken(token, clientID, clientSecret string) {
 		}
 
 		// Check for long-lived tokens
-		tokenLifetimeDays := (tokenInfo.Exp - auth.NowEpoch()) / (24 * 60 * 60)
+		nowTime := nowEpoch()
+		tokenLifetimeDays := (tokenInfo.Exp - nowTime) / (24 * 60 * 60)
 		if tokenLifetimeDays > 30 {
 			fmt.Printf("⚠️  Token lifetime is very long (%d days remaining)\n", tokenLifetimeDays)
 		} else {
@@ -192,6 +193,11 @@ func analyzeToken(token, clientID, clientSecret string) {
 		fmt.Println("⚠️  Client secret not provided, skipping token introspection")
 		fmt.Println("ℹ️  Performing basic format checks only")
 	}
+}
+
+// nowEpoch returns the current time as a Unix epoch (seconds since Jan 1, 1970)
+func nowEpoch() int64 {
+	return time.Now().UTC().Unix()
 }
 
 // isValidTokenFormat checks if a token has a valid format

@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/compute"
 )
 
 // Define a function that requires specific dependencies
@@ -161,7 +162,7 @@ requests==2.28.2
 	fmt.Println("\n=== Registering Function ===")
 	functionName := fmt.Sprintf("image_analysis_function_%s", timestamp)
 
-	registerRequest := &pkg.FunctionRegisterRequest{
+	registerRequest := &compute.FunctionRegisterRequest{
 		Function:    dependencyBasedFunction,
 		Name:        functionName,
 		Description: "An image analysis function that uses OpenCV",
@@ -218,7 +219,7 @@ requests==2.28.2
 
 	// Execute the function with dependency
 	fmt.Println("\n=== Running Function with Dependency ===")
-	taskRequest := &pkg.TaskRequest{
+	taskRequest := &compute.TaskRequest{
 		FunctionID: function.ID,
 		EndpointID: selectedEndpoint.ID,
 		Args:       []interface{}{imageURL},
