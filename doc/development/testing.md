@@ -757,7 +757,7 @@ The Globus Go SDK provides the following Git hooks:
 1. **Pre-commit Hook**:
    - Runs license header checks
    - Formats code with `go fmt`
-   - Runs linting with `golint` (if installed)
+   - Runs linting with `staticcheck` (if installed)
    - Performs static analysis with `go vet`
    - Runs unit tests in short mode
 
