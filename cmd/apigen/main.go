@@ -12,7 +12,6 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"reflect"
@@ -91,7 +90,7 @@ func main() {
 		os.Exit(1)
 	}
 
-	err = ioutil.WriteFile(*output, data, 0644)
+	err = os.WriteFile(*output, data, 0644)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error writing API signatures to file: %v\n", err)
 		os.Exit(1)
