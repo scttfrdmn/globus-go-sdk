@@ -9,13 +9,14 @@ GOLANGCILINT := $(GOBIN)/golangci-lint
 GOIMPORTS := $(GOBIN)/goimports
 GOCOV := $(GOBIN)/gocov
 GOCOVXML := $(GOBIN)/gocov-xml
+STATICCHECK := $(GOBIN)/staticcheck
 PRE_COMMIT := $(shell which pre-commit)
 
 .PHONY: all
-all: lint lint-shell test
+all: lint staticcheck lint-shell test
 
 .PHONY: setup
-setup: $(GOLANGCILINT) $(GOIMPORTS) $(GOCOV) $(GOCOVXML) setup-pre-commit install-bats
+setup: $(GOLANGCILINT) $(GOIMPORTS) $(GOCOV) $(GOCOVXML) $(STATICCHECK) setup-pre-commit install-bats
 	$(GO) mod download
 
 .PHONY: setup-pre-commit
@@ -38,6 +39,9 @@ $(GOCOV):
 $(GOCOVXML):
 	$(GO) install github.com/AlekSi/gocov-xml@latest
 
+$(STATICCHECK):
+	$(GO) install honnef.co/go/tools/cmd/staticcheck@latest
+
 .PHONY: lint
 lint: $(GOLANGCILINT)
 	$(GOLANGCILINT) run --config .golangci.yml
@@ -50,6 +54,10 @@ fmt: $(GOIMPORTS)
 .PHONY: vet
 vet:
 	$(GO) vet ./...
+
+.PHONY: staticcheck
+staticcheck: $(STATICCHECK)
+	$(STATICCHECK) ./...
 
 .PHONY: test
 test:
@@ -116,6 +124,7 @@ help:
 	@echo "  setup              - Install development tools"
 	@echo "  setup-pre-commit   - Install pre-commit hooks"
 	@echo "  lint               - Run Go linters"
+	@echo "  staticcheck        - Run staticcheck linter"
 	@echo "  lint-shell         - Run shell script linters"
 	@echo "  fmt                - Format code"
 	@echo "  vet                - Run go vet"

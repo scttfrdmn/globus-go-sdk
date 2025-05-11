@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/services/compute"
 )
 
 // Define a function that uses environment variables
@@ -106,6 +107,9 @@ def process_data(data_url):
 `
 
 func main() {
+	// Define variable to track created resources for cleanup
+	var functionID string
+
 	// Create a new SDK configuration
 	config := pkg.NewConfigFromEnvironment().
 		WithClientID(os.Getenv("GLOBUS_CLIENT_ID")).
@@ -192,7 +196,7 @@ func main() {
 	fmt.Println("\n=== Creating Environment Configuration ===")
 	envName := fmt.Sprintf("data_processing_env_%s", timestamp)
 
-	envRequest := &pkg.EnvironmentCreateRequest{
+	envRequest := &compute.EnvironmentCreateRequest{
 		Name:        envName,
 		Description: "Environment for data processing functions",
 		Variables: map[string]string{
@@ -242,7 +246,7 @@ func main() {
 
 	// List environment configurations
 	fmt.Println("\n=== Listing Environment Configurations ===")
-	environments, err := computeClient.ListEnvironments(ctx, &pkg.ListEnvironmentsOptions{
+	environments, err := computeClient.ListEnvironments(ctx, &compute.ListEnvironmentsOptions{
 		PerPage: 10,
 	})
 	if err != nil {
@@ -262,7 +266,7 @@ func main() {
 	fmt.Println("\n=== Registering Function ===")
 	functionName := fmt.Sprintf("env_function_%s", timestamp)
 
-	registerRequest := &pkg.FunctionRegisterRequest{
+	registerRequest := &compute.FunctionRegisterRequest{
 		Function:    environmentBasedFunction,
 		Name:        functionName,
 		Description: "A function that uses environment configuration",
@@ -274,11 +278,11 @@ func main() {
 	}
 
 	fmt.Printf("Function registered: %s (%s)\n", function.Name, function.ID)
-	functionID := function.ID
+	functionID = function.ID
 
 	// Prepare a task request
 	dataURL := "https://jsonplaceholder.typicode.com/posts"
-	taskRequest := &pkg.TaskRequest{
+	taskRequest := &compute.TaskRequest{
 		FunctionID: function.ID,
 		EndpointID: selectedEndpoint.ID,
 		Args:       []interface{}{dataURL},
@@ -367,7 +371,7 @@ func main() {
 
 	// Update environment configuration
 	fmt.Println("\n=== Updating Environment Configuration ===")
-	updateRequest := &pkg.EnvironmentUpdateRequest{
+	updateRequest := &compute.EnvironmentUpdateRequest{
 		Variables: map[string]string{
 			"LOG_LEVEL": "INFO",
 			"DEBUG":     "false",

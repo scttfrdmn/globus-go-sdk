@@ -4,6 +4,21 @@
 /*
 Package tokens provides functionality for managing OAuth 2.0 tokens in Globus SDK applications.
 
+# STABILITY: BETA
+
+This package is approaching stability but may still undergo minor changes.
+Components listed below are considered relatively stable, but may have
+minor signature changes before the package is marked as stable:
+
+  - Storage interface - Core interface for token persistence
+  - TokenSet and Entry structs - Token data structures
+  - Manager struct - Token management capabilities
+  - MemoryStorage and FileStorage implementations
+  - RefreshHandler interface - Token refresh capabilities
+
+This package is expected to reach stable status in version v1.0.0.
+Until then, users should review the CHANGELOG when upgrading.
+
 This package is particularly useful for web applications and other applications that need
 to store, retrieve, and refresh OAuth 2.0 tokens. It provides interfaces and implementations
 for token storage and management, including automatic token refreshing.

@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2025 Scott Friedman and Project Contributors
-package main
+package debug
 
 import (
 	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"time"
@@ -16,23 +16,23 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
 )
 
-// testAuthorizer implements the authorizer interface for testing
-type testAuthorizer struct {
+// debugAuthorizer implements the authorizer interface for testing
+type debugAuthorizer struct {
 	token string
 }
 
 // GetAuthorizationHeader returns the authorization header value
-func (a *testAuthorizer) GetAuthorizationHeader(ctx ...context.Context) (string, error) {
+func (a *debugAuthorizer) GetAuthorizationHeader(ctx ...context.Context) (string, error) {
 	return "Bearer " + a.token, nil
 }
 
 // IsValid returns whether the authorization is valid
-func (a *testAuthorizer) IsValid() bool {
+func (a *debugAuthorizer) IsValid() bool {
 	return a.token != ""
 }
 
 // GetToken returns the token
-func (a *testAuthorizer) GetToken() string {
+func (a *debugAuthorizer) GetToken() string {
 	return a.token
 }
 
@@ -56,7 +56,7 @@ type EnhancedDeleteTaskRequest struct {
 	Items             []EnhancedDeleteItem `json:"DATA"`
 }
 
-func main() {
+func RunDeleteComprehensive() {
 	// Load environment variables
 	_ = godotenv.Load(".env.test")
 
@@ -78,7 +78,7 @@ func main() {
 
 	// Create Transfer client with debugging enabled
 	client, err := transfer.NewClient(
-		transfer.WithAuthorizer(&testAuthorizer{token: accessToken}),
+		transfer.WithAuthorizer(&debugAuthorizer{token: accessToken}),
 		transfer.WithHTTPDebugging(true),
 	)
 	if err != nil {
@@ -200,7 +200,7 @@ func main() {
 	defer resp.Body.Close()
 
 	// Read and parse the response
-	respBody, err := ioutil.ReadAll(resp.Body)
+	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		fmt.Printf("ERROR: Failed to read response: %v\n", err)
 		os.Exit(1)

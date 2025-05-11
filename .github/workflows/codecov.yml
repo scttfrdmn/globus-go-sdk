@@ -1,25 +1,110 @@
-name: Codecov
+name: Code Coverage
+
 on:
   push:
-    branches: [ main ]
+    branches: [ main, v*.*.* ]
   pull_request:
     branches: [ main ]
+  workflow_dispatch:
 
 jobs:
   codecov:
+    name: Test Coverage Report
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
       - name: Set up Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.21'
           cache: true
+      
       - name: Run tests with coverage
-        run: go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+        run: |
+          go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+          go tool cover -func=coverage.txt
+      
+      - name: Generate HTML coverage report
+        run: |
+          go tool cover -html=coverage.txt -o coverage.html
+          
+          # Create summary file with package-level coverage
+          echo "# Code Coverage Summary" > coverage-summary.md
+          echo "" >> coverage-summary.md
+          echo "| Package | Coverage |" >> coverage-summary.md
+          echo "|---------|----------|" >> coverage-summary.md
+          
+          # Extract package-level coverage
+          go tool cover -func=coverage.txt | grep -v "total:" | sed 's/\s\+/ /g' | 
+            awk '{print "| " $1 " | " $3 " |"}' >> coverage-summary.md
+          
+          # Add total coverage at the end
+          echo "" >> coverage-summary.md
+          echo "## Total Coverage" >> coverage-summary.md
+          go tool cover -func=coverage.txt | grep "total:" | 
+            awk '{print "**Total coverage:** " $3}' >> coverage-summary.md
+      
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
           file: ./coverage.txt
           fail_ci_if_error: false
-          verbose: true
+      
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: |
+            coverage.html
+            coverage-summary.md
+      
+      - name: Check package coverage thresholds
+        run: |
+          # Define coverage thresholds for different package types
+          CORE_THRESHOLD=75.0
+          SERVICE_THRESHOLD=65.0
+          UTIL_THRESHOLD=60.0
+          OVERALL_THRESHOLD=70.0
+          
+          # Extract total coverage
+          TOTAL_COV=$(go tool cover -func=coverage.txt | grep total | grep -o '[0-9]\+\.[0-9]\+')
+          
+          # Output total coverage
+          echo "Total coverage: ${TOTAL_COV}%"
+          
+          # Check if total coverage meets threshold
+          if (( $(echo "$TOTAL_COV < $OVERALL_THRESHOLD" | bc -l) )); then
+            echo "::warning::Total code coverage (${TOTAL_COV}%) is below the ${OVERALL_THRESHOLD}% threshold"
+          else
+            echo "::notice::Total code coverage meets threshold requirements"
+          fi
+          
+          # Check core packages
+          for PKG in $(go tool cover -func=coverage.txt | grep "github.com/scttfrdmn/globus-go-sdk/pkg/core" | cut -d: -f1 | sort | uniq); do
+            COV=$(go tool cover -func=coverage.txt | grep "$PKG" | grep "total:" | grep -o '[0-9]\+\.[0-9]\+')
+            if [ ! -z "$COV" ]; then
+              echo "$PKG coverage: ${COV}%"
+              if (( $(echo "$COV < $CORE_THRESHOLD" | bc -l) )); then
+                echo "::warning::Core package $PKG has coverage ${COV}%, below the ${CORE_THRESHOLD}% threshold"
+              fi
+            fi
+          done
+          
+          # Check service packages
+          for PKG in $(go tool cover -func=coverage.txt | grep "github.com/scttfrdmn/globus-go-sdk/pkg/services" | cut -d: -f1 | sort | uniq); do
+            COV=$(go tool cover -func=coverage.txt | grep "$PKG" | grep "total:" | grep -o '[0-9]\+\.[0-9]\+')
+            if [ ! -z "$COV" ]; then
+              echo "$PKG coverage: ${COV}%"
+              if (( $(echo "$COV < $SERVICE_THRESHOLD" | bc -l) )); then
+                echo "::warning::Service package $PKG has coverage ${COV}%, below the ${SERVICE_THRESHOLD}% threshold"
+              fi
+            fi
+          done
+      
+      - name: Post coverage comment
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          path: coverage-summary.md

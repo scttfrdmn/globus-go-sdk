@@ -1,0 +1,224 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
+
+name: API Stability Verification
+
+on:
+  push:
+    branches: [ main, v*.*.* ]
+  pull_request:
+    branches: [ main ]
+  workflow_dispatch:
+    inputs:
+      compatibility_level:
+        description: 'API compatibility level to check'
+        required: true
+        default: 'minor'
+        type: choice
+        options:
+          - patch
+          - minor
+          - major
+
+jobs:
+  api-compatibility:
+    name: API Compatibility Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for proper version comparison
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+          
+      - name: Build SDK
+        run: go build -v ./...
+      
+      - name: Run interface tests
+        run: go test -v ./pkg/core/interfaces/... ./pkg/core/contracts/...
+      
+      - name: Determine compatibility level
+        id: compat_level
+        run: |
+          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+            echo "level=${{ github.event.inputs.compatibility_level }}" >> $GITHUB_OUTPUT
+          else
+            echo "level=minor" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Get latest release tag
+        id: get_tag
+        run: |
+          LATEST_RELEASE=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "tag=$LATEST_RELEASE" >> $GITHUB_OUTPUT
+          echo "Latest release tag: $LATEST_RELEASE"
+      
+      # API Extraction for current version
+      - name: Extract current API signatures
+        run: |
+          go run ./cmd/apigen/main.go -dir ./pkg -version "$(git rev-parse --short HEAD)" -output api-current.json
+
+      # API Extraction for previous version
+      - name: Extract previous API signatures
+        run: |
+          # Checkout the latest release tag
+          git checkout ${{ steps.get_tag.outputs.tag }}
+          
+          # Build the API extraction tool in the previous version
+          go build -o apigen-prev ./cmd/apigen/main.go || echo "API extraction tool not found in previous version"
+          
+          if [ -f "apigen-prev" ]; then
+            # Use the built tool
+            ./apigen-prev -dir ./pkg -version "${{ steps.get_tag.outputs.tag }}" -output api-prev.json
+          else
+            # Fall back to the current version's tool
+            git checkout -
+            go run ./cmd/apigen/main.go -dir ./pkg -version "${{ steps.get_tag.outputs.tag }}" -output api-prev.json
+            git checkout ${{ steps.get_tag.outputs.tag }}
+          fi
+          
+          # Return to current version
+          git checkout -
+
+      # API Comparison
+      - name: Compare API signatures
+        id: compare
+        continue-on-error: true
+        run: |
+          go run ./cmd/apicompare/main.go \
+            -old api-prev.json \
+            -new api-current.json \
+            -level ${{ steps.compat_level.outputs.level }} \
+            -output api-comparison.json
+
+      # Generate deprecation report
+      - name: Generate deprecation report
+        run: |
+          go run ./cmd/depreport/main.go -dir ./pkg -o DEPRECATED_FEATURES.md
+      
+      # Run contract tests
+      - name: Run contract tests
+        run: |
+          go test -v ./pkg/core/contracts/...
+      
+      # Check dependent projects compatibility
+      - name: Test downstream compatibility
+        run: ./scripts/test_dependent_projects.sh
+      
+      # Upload artifacts
+      - name: Upload API comparison
+        uses: actions/upload-artifact@v3
+        with:
+          name: api-comparison
+          path: |
+            api-prev.json
+            api-current.json
+            api-comparison.json
+          
+      - name: Upload deprecation report
+        uses: actions/upload-artifact@v3
+        with:
+          name: deprecation-report
+          path: DEPRECATED_FEATURES.md
+      
+      # Check for breaking changes
+      - name: Check for breaking changes
+        if: steps.compare.outcome == 'success'
+        run: |
+          # Extract breaking changes count
+          BREAKING_CHANGES=$(jq '.breaking_changes | length' api-comparison.json)
+          echo "Found $BREAKING_CHANGES breaking changes"
+          
+          # Fail the build if breaking changes are found and level is not 'major'
+          if [ "$BREAKING_CHANGES" -gt 0 ] && [ "${{ steps.compat_level.outputs.level }}" != "major" ]; then
+            echo "::error::Breaking changes detected! Cannot proceed with ${{ steps.compat_level.outputs.level }} compatibility level."
+            exit 1
+          fi
+
+  # Code coverage job
+  coverage:
+    name: Code Coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+      
+      - name: Run tests with coverage
+        run: |
+          go test -race -coverprofile=coverage.txt -covermode=atomic ./...
+          go tool cover -func=coverage.txt
+      
+      - name: Generate HTML coverage report
+        run: go tool cover -html=coverage.txt -o coverage.html
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./coverage.txt
+          fail_ci_if_error: false
+      
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage-report
+          path: coverage.html
+      
+      - name: Verify coverage thresholds
+        run: |
+          # Extract total coverage
+          TOTAL_COV=$(go tool cover -func=coverage.txt | grep total | grep -o '[0-9]\+\.[0-9]\+')
+          echo "Total coverage: ${TOTAL_COV}%"
+          
+          # Check if coverage meets threshold
+          if (( $(echo "$TOTAL_COV < 70.0" | bc -l) )); then
+            echo "::warning::Total code coverage (${TOTAL_COV}%) is below the 70% threshold"
+          else
+            echo "::notice::Code coverage meets threshold requirements"
+          fi
+
+  # Integration testing job for comprehensive compatibility testing
+  compatibility-testing:
+    name: Compatibility Testing
+    runs-on: ubuntu-latest
+    needs: [api-compatibility]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.21'
+
+      - name: Build SDK versions
+        run: |
+          # Build current version
+          go build -o ./bin/current-sdk ./pkg/...
+          
+          # Get latest release tag
+          LATEST_RELEASE=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+          echo "Latest release: $LATEST_RELEASE"
+          
+          # Checkout previous version and build it
+          git checkout $LATEST_RELEASE
+          go build -o ./bin/prev-sdk ./pkg/...
+          
+          # Return to current version
+          git checkout -
+      
+      - name: Test backwards compatibility
+        if: ${{ false }}  # Disabled until we implement comprehensive compatibility tests
+        run: |
+          # Run the compatibility test suite
+          # This is a placeholder for future compatibility testing
+          echo "Comprehensive compatibility testing would run here"
+          # go test -v ./tests/compatibility/...

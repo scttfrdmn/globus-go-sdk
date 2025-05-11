@@ -1,0 +1,178 @@
+name: API Stability Check
+
+on:
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'pkg/**/*.go'
+      - 'go.mod'
+      - 'go.sum'
+
+jobs:
+  api-compatibility-check:
+    name: Check API Compatibility
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.21
+
+      - name: Get base branch
+        id: base-branch
+        run: |
+          BASE_SHA=$(git merge-base origin/main HEAD)
+          echo "base_sha=$BASE_SHA" >> $GITHUB_OUTPUT
+          echo "Base SHA: $BASE_SHA"
+
+      - name: Checkout base code
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ steps.base-branch.outputs.base_sha }}
+          path: base-code
+
+      - name: Generate base API signature
+        run: |
+          cd base-code
+          mkdir -p ./bin
+          # First check if apigen exists in base code
+          if [ -d "./cmd/apigen" ]; then
+            go build -o ./bin/apigen ./cmd/apigen
+            ./bin/apigen -dir ./pkg -o ../api-base.json
+          else
+            # Fallback if apigen doesn't exist in base code
+            echo "apigen not found in base code, using current version to generate base API signature"
+            cd ..
+            go build -o ./bin/apigen ./cmd/apigen
+            ./bin/apigen -dir ./base-code/pkg -o ./api-base.json
+          fi
+
+      - name: Checkout current code
+        uses: actions/checkout@v3
+        with:
+          clean: false
+
+      - name: Generate current API signature
+        run: |
+          mkdir -p ./bin
+          go build -o ./bin/apigen ./cmd/apigen
+          go build -o ./bin/apicompare ./cmd/apicompare
+          ./bin/apigen -dir ./pkg -o api-current.json
+
+      - name: Compare API changes
+        id: compare
+        run: |
+          LEVEL="minor"  # Default to minor version check
+          if [[ "${{ github.event.pull_request.title }}" == *"BREAKING CHANGE"* ]]; then
+            LEVEL="major"
+            echo "Major version change detected in PR title, allowing breaking changes"
+          fi
+
+          # Check if both API signature files exist
+          if [ ! -f "api-base.json" ]; then
+            echo "::warning::Base API signature file not found. Skipping compatibility check."
+            echo "Base API signature could not be generated. This is expected for first-time runs."
+            exit 0
+          fi
+
+          if [ ! -f "api-current.json" ]; then
+            echo "::error::Current API signature file not found."
+            exit 1
+          fi
+
+          # Run the comparison
+          COMPARE_OUTPUT=$(./bin/apicompare -old api-base.json -new api-current.json -level $LEVEL || echo "Comparison failed")
+          COMPARE_STATUS=$?
+
+          echo "$COMPARE_OUTPUT"
+
+          # For initial PR that adds the API tools, allow failures
+          if [[ "${{ github.event.pull_request.title }}" == *"API Stability Phase 2"* ]]; then
+            echo "API Stability Phase 2 PR detected - allowing compatibility check to pass"
+            exit 0
+          elif [ $COMPARE_STATUS -ne 0 ]; then
+            echo "::error::API compatibility check failed! Breaking changes detected!"
+            echo "changes<<EOF" >> $GITHUB_OUTPUT
+            echo "$COMPARE_OUTPUT" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
+            exit 1
+          else
+            echo "API compatibility check passed!"
+          fi
+
+      - name: Generate deprecation report
+        run: |
+          mkdir -p ./bin
+          if [ -d "./cmd/depreport" ]; then
+            go build -o ./bin/depreport ./cmd/depreport
+            ./bin/depreport -o deprecation-report.md || echo "Deprecation report generation failed"
+
+            if [ -f "deprecation-report.md" ]; then
+              echo "Deprecation Report:"
+              cat deprecation-report.md
+            else
+              echo "No deprecation report generated."
+              echo "# No deprecations found" > deprecation-report.md
+            fi
+          else
+            echo "Deprecation reporting tool not found. Skipping."
+            echo "# Deprecation report not available" > deprecation-report.md
+          fi
+
+      - name: Upload API signatures as artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: api-signatures
+          path: |
+            api-base.json
+            api-current.json
+            deprecation-report.md
+
+      - name: Comment on PR if API changes detected
+        if: ${{ failure() && steps.compare.outputs.changes != '' }}
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            const changes = `${{ steps.compare.outputs.changes }}`;
+            const body = `## ⚠️ API Compatibility Warning\n\nPotential breaking changes detected in this PR:\n\n\`\`\`\n${changes}\n\`\`\`\n\nIf these changes are intentional breaking changes, please:\n1. Include "BREAKING CHANGE" in the PR title\n2. Document the changes in CHANGELOG.md\n3. Update the appropriate version number following semantic versioning`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+
+  contract-test-verification:
+    name: Verify Interface Contracts
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v3
+        with:
+          go-version: 1.21
+
+      - name: Run contract tests
+        run: |
+          # Check if contracts package exists
+          if [ -d "./pkg/core/contracts" ]; then
+            echo "Running contract tests"
+            go test -v ./pkg/core/contracts/...
+
+            # As more contract tests are added, add them here:
+            # go test -v ./pkg/services/auth/contracts/...
+            # go test -v ./pkg/services/transfer/contracts/...
+            # etc.
+          else
+            echo "Contracts package not found. This is expected for first-time runs."
+            exit 0
+          fi

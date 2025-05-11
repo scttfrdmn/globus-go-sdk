@@ -10,6 +10,50 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Package stability indicators throughout the SDK
+  - Added doc.go files with STABILITY levels (stable, beta, alpha, experimental)
+  - Added explicit API component listings for each package
+  - Documented compatibility guarantees and examples
+- Updated CLAUDE.md with API stability guidelines and examples
+- Enhanced CHANGELOG structure to track API changes more explicitly
+- Comprehensive API stability verification tools:
+  - Added `cmd/apicompare` - Tool for comparing APIs between versions
+  - Added `cmd/apigen` - Tool for generating API signatures from source
+  - Added `cmd/depreport` - Tool for generating deprecation reports
+  - Added contract testing framework in `pkg/core/contracts`
+- New documentation for API stability implementation:
+  - Added API_STABILITY_PHASE2_SUMMARY.md with details on implemented tools
+  - Added API_DEPRECATION_SYSTEM.md explaining the deprecation system
+  - Added CONTRACT_TESTING.md with contract testing documentation
+- CI/CD integration for API compatibility verification
+- Improved organization of verification tools:
+  - Moved script utilities to proper cmd/ directories
+  - Created `internal/verification` package for common code
+
+### Changed
+- Updated documentation to clarify stability levels of different components
+- Core package marked as BETA due to ongoing connection pool improvements
+- Transfer package components now have explicit stability indicators
+- Switched from deprecated `golint` to `staticcheck` for code linting
+- Improved pre-commit hooks with enhanced verification
+- Restructured debug code to use proper package organization
+
+### Deprecated
+- No functionality has been deprecated in this release
+
+### Removed
+- No functionality has been removed in this release
+
+### Fixed
+- Fixed package conflicts in debug files
+- Resolved function redeclarations across the codebase
+- Updated auth and transfer client usage patterns
+- Replaced deprecated io/ioutil with io package functions
+- Fixed variable naming to avoid conflicts (e.g., `err` → `tokenErr`)
+- Improved error handling in contract tests
+- Fixed missing imports in compute example files
+
 ## [0.9.15] - 2025-05-08
 
 ### Fixed
