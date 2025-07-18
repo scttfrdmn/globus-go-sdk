@@ -969,8 +969,8 @@ func TestIntegration_GetEndpointActivationRequirements(t *testing.T) {
 		t.Logf("Activation might require additional steps: %v", err)
 	} else {
 		t.Log("Endpoint activated successfully")
-	*/
 	}
+	*/
 
 	// Get endpoint autoactivation status with retry
 	var endpoint *transfer.Endpoint
