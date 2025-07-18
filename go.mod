@@ -1,4 +1,4 @@
-module github.com/scttfrdmn/globus-go-sdk
+module github.com/scttfrdmn/globus-go-sdk/v3
 
 go 1.21
 
