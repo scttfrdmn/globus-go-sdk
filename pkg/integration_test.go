@@ -287,7 +287,7 @@ func TestIntegration_TokenManager(t *testing.T) {
 		Resource:     scopesKey,
 		AccessToken:  tokenResp.AccessToken,
 		RefreshToken: tokenResp.RefreshToken,
-		ExpiresAt:    tokenResp.ExpiresAt,
+		ExpiresAt:    tokenResp.ExpiresAt(),
 		Scope:        tokenResp.Scope,
 	}
 	err = tokenManager.StoreToken(ctx, entry)

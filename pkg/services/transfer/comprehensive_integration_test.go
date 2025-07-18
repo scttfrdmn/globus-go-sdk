@@ -99,7 +99,6 @@ func getTransferToken(t *testing.T, clientID, clientSecret string) string {
 	}
 
 	var tokenResp *auth.TokenResponse
-	var err error
 	var gotToken bool
 
 	// Try each scope until we get a token
