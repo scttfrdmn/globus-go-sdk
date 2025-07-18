@@ -15,6 +15,7 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/flows"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/tokens"
 )
 
 func init() {

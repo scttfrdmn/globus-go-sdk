@@ -85,7 +85,8 @@ func getTransferToken(t *testing.T, clientID, clientSecret string) string {
 	// If no static token, try to get one via client credentials
 	t.Log("Getting client credentials token for transfer")
 	authClient, err := auth.NewClient(
-		auth.WithClientCredentials(clientID, clientSecret),
+		auth.WithClientID(clientID),
+		auth.WithClientSecret(clientSecret),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create auth client: %v", err)
