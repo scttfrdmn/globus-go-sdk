@@ -14,6 +14,9 @@ import (
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/deprecation"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/errors"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/response"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/transport"
 )
 
@@ -21,6 +24,8 @@ import (
 const (
 	DefaultBaseURL = "https://auth.globus.org/v2/"
 	AuthScope      = "openid profile email"
+	ServiceName    = "auth"
+	APIVersion     = "v2"
 )
 
 // Client provides methods for interacting with Globus Auth
@@ -60,7 +65,9 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 }
 
 // SetRedirectURL sets the redirect URL for OAuth flows
+// Deprecated: Use WithRedirectURL option in NewClient instead
 func (c *Client) SetRedirectURL(redirectURL string) {
+	deprecation.WarnSimple("SetRedirectURL method", "3.60.0", "WithRedirectURL option in NewClient")
 	c.RedirectURL = redirectURL
 }
 
@@ -386,4 +393,62 @@ func (c *Client) CreateRefreshableTokenAuthorizer(accessToken, refreshToken stri
 // CreateStaticTokenAuthorizer creates an authorizer with a static token
 func (c *Client) CreateStaticTokenAuthorizer(accessToken string) *authorizers.StaticTokenAuthorizer {
 	return authorizers.NewStaticTokenAuthorizer(accessToken)
+}
+
+// New methods using unified response system
+
+// ExchangeAuthorizationCodeV2 exchanges an authorization code for tokens (returns unified response)
+func (c *Client) ExchangeAuthorizationCodeV2(ctx context.Context, code string) (*response.AuthResponse[TokenResponse], error) {
+	tokenResp, err := c.ExchangeAuthorizationCode(ctx, code)
+	if err != nil {
+		// Convert to unified error if not already
+		if _, ok := err.(*errors.GlobusError); !ok {
+			return nil, errors.NewAuthError("ExchangeError", err.Error()).WithUnderlying(err)
+		}
+		return nil, err
+	}
+	
+	return response.NewAuthResponse(*tokenResp), nil
+}
+
+// RefreshTokenV2 refreshes an access token using a refresh token (returns unified response)
+func (c *Client) RefreshTokenV2(ctx context.Context, refreshToken string) (*response.AuthResponse[TokenResponse], error) {
+	tokenResp, err := c.RefreshToken(ctx, refreshToken)
+	if err != nil {
+		// Convert to unified error if not already
+		if _, ok := err.(*errors.GlobusError); !ok {
+			return nil, errors.NewAuthError("RefreshError", err.Error()).WithUnderlying(err)
+		}
+		return nil, err
+	}
+	
+	return response.NewAuthResponse(*tokenResp), nil
+}
+
+// IntrospectTokenV2 introspects a token (returns unified response)
+func (c *Client) IntrospectTokenV2(ctx context.Context, token string) (*response.AuthResponse[TokenInfo], error) {
+	tokenInfo, err := c.IntrospectToken(ctx, token)
+	if err != nil {
+		// Convert to unified error if not already
+		if _, ok := err.(*errors.GlobusError); !ok {
+			return nil, errors.NewAuthError("IntrospectError", err.Error()).WithUnderlying(err)
+		}
+		return nil, err
+	}
+	
+	return response.NewAuthResponse(*tokenInfo), nil
+}
+
+// GetClientCredentialsTokenV2 gets a token using client credentials (returns unified response)
+func (c *Client) GetClientCredentialsTokenV2(ctx context.Context, scopes ...string) (*response.AuthResponse[TokenResponse], error) {
+	tokenResp, err := c.GetClientCredentialsToken(ctx, scopes...)
+	if err != nil {
+		// Convert to unified error if not already
+		if _, ok := err.(*errors.GlobusError); !ok {
+			return nil, errors.NewAuthError("ClientCredentialsError", err.Error()).WithUnderlying(err)
+		}
+		return nil, err
+	}
+	
+	return response.NewAuthResponse(*tokenResp), nil
 }

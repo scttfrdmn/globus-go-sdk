@@ -11,9 +11,12 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/errors"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/response"
 )
 
 // Constants for Globus Groups
@@ -229,6 +232,54 @@ func (c *Client) ListGroups(ctx context.Context, options *ListGroupsOptions) (*G
 	}
 
 	return &groupList, nil
+}
+
+// ListGroupsV2 retrieves groups with unified response system
+func (c *Client) ListGroupsV2(ctx context.Context, options *ListGroupsOptions) (*response.GroupsResponse[GroupList], error) {
+	// Convert options to query parameters
+	query := url.Values{}
+	if options != nil {
+		if options.IncludeGroupMembership {
+			query.Set("include_group_membership", "true")
+		}
+		if options.IncludeIdentitySet {
+			query.Set("include_identity_set", "true")
+		}
+		if options.ForUserID != "" {
+			query.Set("for_user_id", options.ForUserID)
+		}
+		if options.MyGroups {
+			query.Set("my_groups", "true")
+		}
+		if options.PageSize > 0 {
+			query.Set("per_page", strconv.Itoa(options.PageSize))
+		}
+		if options.PageToken != "" {
+			query.Set("marker", options.PageToken)
+		}
+	}
+
+	var groupList GroupList
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups", query, nil, &groupList)
+	if err != nil {
+		// Convert to GlobusError if it's not already
+		if _, ok := err.(*errors.GlobusError); !ok {
+			return nil, errors.NewGroupsError("GroupListError", err.Error()).WithUnderlying(err)
+		}
+		return nil, err
+	}
+
+	// Ensure all returned group objects have the DATA_TYPE set
+	for i := range groupList.Groups {
+		if groupList.Groups[i].DATA_TYPE == "" {
+			groupList.Groups[i].DATA_TYPE = "group"
+		}
+	}
+
+	groupsResp := response.NewGroupsResponse(groupList)
+	groupsResp.WithRequestID("groups-list-" + strconv.FormatInt(time.Now().UnixNano(), 10))
+
+	return groupsResp, nil
 }
 
 // GetGroup retrieves a specific group by ID

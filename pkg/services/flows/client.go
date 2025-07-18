@@ -15,6 +15,8 @@ import (
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/errors"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/response"
 )
 
 // Constants for Globus Flows
@@ -222,6 +224,58 @@ func (c *Client) ListFlows(ctx context.Context, options *ListFlowsOptions) (*Flo
 	}
 
 	return &flowList, nil
+}
+
+// ListFlowsV2 retrieves flows with unified response system
+func (c *Client) ListFlowsV2(ctx context.Context, options *ListFlowsOptions) (*response.FlowsResponse[FlowList], error) {
+	// Convert options to query parameters
+	query := url.Values{}
+	if options != nil {
+		if options.Limit > 0 {
+			query.Set("limit", strconv.Itoa(options.Limit))
+		} else if options.PerPage > 0 {
+			query.Set("per_page", strconv.Itoa(options.PerPage))
+		}
+		if options.Offset > 0 {
+			query.Set("offset", strconv.Itoa(options.Offset))
+		}
+		if options.Marker != "" {
+			query.Set("marker", options.Marker)
+		}
+		if options.OrderBy != "" {
+			query.Set("orderby", options.OrderBy)
+		}
+		if options.Q != "" {
+			query.Set("q", options.Q)
+		}
+		if options.FilterRoles != "" {
+			query.Set("filter_roles", options.FilterRoles)
+		}
+		if options.FilterOwner != "" {
+			query.Set("filter_owner", options.FilterOwner)
+		}
+		if options.FilterPublic {
+			query.Set("filter_public", "true")
+		}
+		if options.RolesOnly {
+			query.Set("roles_only", "true")
+		}
+	}
+
+	var flowList FlowList
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "flows", query, nil, &flowList)
+	if err != nil {
+		// Convert to GlobusError if it's not already
+		if _, ok := err.(*errors.GlobusError); !ok {
+			return nil, errors.NewFlowsError("FlowListError", err.Error()).WithUnderlying(err)
+		}
+		return nil, err
+	}
+
+	flowsResp := response.NewFlowsResponse(flowList)
+	flowsResp.WithRequestID("flows-list-" + strconv.FormatInt(time.Now().UnixNano(), 10))
+
+	return flowsResp, nil
 }
 
 // GetFlow retrieves a specific flow by ID

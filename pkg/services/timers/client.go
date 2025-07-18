@@ -15,6 +15,8 @@ import (
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/errors"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/response"
 )
 
 // DefaultBaseURL is the default base URL for the Timers service
@@ -215,6 +217,43 @@ func (c *Client) ListTimers(ctx context.Context, options *ListTimersOptions) (*T
 	}
 
 	return &timerList, nil
+}
+
+// ListTimersV2 retrieves timers with unified response system
+func (c *Client) ListTimersV2(ctx context.Context, options *ListTimersOptions) (*response.TimersResponse[TimerList], error) {
+	query := url.Values{}
+	if options != nil {
+		if options.Limit != nil {
+			query.Set("limit", strconv.Itoa(*options.Limit))
+		}
+		if options.Marker != nil {
+			query.Set("marker", *options.Marker)
+		}
+		if options.Status != nil {
+			query.Set("status", *options.Status)
+		}
+		if options.ScheduleType != nil {
+			query.Set("schedule_type", *options.ScheduleType)
+		}
+		if options.CallbackType != nil {
+			query.Set("callback_type", *options.CallbackType)
+		}
+	}
+
+	var timerList TimerList
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "timers", query, nil, &timerList)
+	if err != nil {
+		// Convert to GlobusError if it's not already
+		if _, ok := err.(*errors.GlobusError); !ok {
+			return nil, errors.NewTimersError("TimerListError", err.Error()).WithUnderlying(err)
+		}
+		return nil, err
+	}
+
+	timersResp := response.NewTimersResponse(timerList)
+	timersResp.WithRequestID("timers-list-" + strconv.FormatInt(time.Now().UnixNano(), 10))
+
+	return timersResp, nil
 }
 
 // PauseTimer pauses a timer

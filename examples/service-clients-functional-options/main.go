@@ -13,6 +13,8 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/client"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/deprecation"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/compute"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/flows"
@@ -28,8 +30,11 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
 
-	fmt.Println("=== Globus Go SDK v0.9.0 Service Clients with Functional Options ===")
+	fmt.Println("=== Globus Go SDK v3.60.0 Service Clients with Unified Systems ===")
 	fmt.Printf("SDK Version: %s\n\n", pkg.Version)
+
+	// Enable deprecation warnings for demonstration
+	deprecation.Enable()
 
 	// Check for Globus credentials
 	clientID := os.Getenv("GLOBUS_CLIENT_ID")
@@ -56,8 +61,18 @@ func main() {
 		WithClientID(clientID).
 		WithClientSecret(clientSecret)
 
-	// Example 1: Create Auth client with functional options
-	fmt.Println("1. Creating Auth client with functional options")
+	// Example 1: Create Auth client with unified configuration
+	fmt.Println("1. Creating Auth client with unified configuration")
+	authConfig, err := client.AuthConfig(
+		client.WithClientCredentials(clientID, clientSecret),
+		client.WithDebug(enableDebug),
+		client.WithTimeout(30*time.Second),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create auth config: %v", err)
+	}
+
+	// Create auth client using old method (triggers deprecation warning)
 	authClient, err := auth.NewClient(
 		auth.WithClientID(clientID),
 		auth.WithClientSecret(clientSecret),
@@ -69,6 +84,7 @@ func main() {
 	}
 
 	fmt.Printf("Auth client created successfully: %T\n", authClient)
+	fmt.Printf("Auth config base URL: %s\n", authConfig.BaseURL)
 
 	// Example 2: Create Auth client using SDK config
 	fmt.Println("\n2. Creating Auth client using SDK config")
@@ -79,8 +95,19 @@ func main() {
 
 	fmt.Printf("Auth client created successfully via SDK config: %T\n", authClient2)
 
-	// Example 3: Create Flows client with functional options
-	fmt.Println("\n3. Creating Flows client with functional options")
+	// Example 3: Create Flows client with unified configuration
+	fmt.Println("\n3. Creating Flows client with unified configuration")
+	flowsConfig, err := client.FlowsConfig(
+		client.WithAccessToken(accessToken),
+		client.WithDebug(enableDebug),
+		client.WithTimeout(60*time.Second),
+		client.WithMaxRetries(3),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create flows config: %v", err)
+	}
+
+	// Create flows client using old method
 	flowsClient, err := flows.NewClient(
 		flows.WithAccessToken(accessToken),
 		flows.WithHTTPDebugging(enableDebug),
@@ -91,6 +118,7 @@ func main() {
 	}
 
 	fmt.Printf("Flows client created successfully: %T\n", flowsClient)
+	fmt.Printf("Flows config base URL: %s\n", flowsConfig.BaseURL)
 
 	// Example 4: Create Flows client using SDK config
 	fmt.Println("\n4. Creating Flows client using SDK config")
@@ -101,8 +129,18 @@ func main() {
 
 	fmt.Printf("Flows client created successfully via SDK config: %T\n", flowsClient2)
 
-	// Example 5: Create Transfer client with functional options
-	fmt.Println("\n5. Creating Transfer client with functional options")
+	// Example 5: Create Transfer client with unified configuration
+	fmt.Println("\n5. Creating Transfer client with unified configuration")
+
+	transferConfig, err := client.TransferConfig(
+		client.WithAccessToken(accessToken),
+		client.WithDebug(enableDebug),
+		client.WithTimeout(120*time.Second),
+		client.WithMaxRetries(5),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create transfer config: %v", err)
+	}
 
 	// Create an authorizer from the access token
 	authorizer := authorizers.StaticTokenCoreAuthorizer(accessToken)
@@ -117,6 +155,7 @@ func main() {
 	}
 
 	fmt.Printf("Transfer client created successfully: %T\n", transferClient)
+	fmt.Printf("Transfer config base URL: %s\n", transferConfig.BaseURL)
 
 	// Example 6: Create Transfer client using SDK config
 	fmt.Println("\n6. Creating Transfer client using SDK config")
@@ -127,8 +166,17 @@ func main() {
 
 	fmt.Printf("Transfer client created successfully via SDK config: %T\n", transferClient2)
 
-	// Example 7: Create Search client with functional options
-	fmt.Println("\n7. Creating Search client with functional options")
+	// Example 7: Create Search client with unified configuration
+	fmt.Println("\n7. Creating Search client with unified configuration")
+	searchConfig, err := client.SearchConfig(
+		client.WithAccessToken(accessToken),
+		client.WithDebug(enableDebug),
+		client.WithTimeout(45*time.Second),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create search config: %v", err)
+	}
+
 	searchClient, err := search.NewClient(
 		search.WithAccessToken(accessToken),
 		search.WithHTTPDebugging(enableDebug),
@@ -139,6 +187,7 @@ func main() {
 	}
 
 	fmt.Printf("Search client created successfully: %T\n", searchClient)
+	fmt.Printf("Search config base URL: %s\n", searchConfig.BaseURL)
 
 	// Example 8: Create Search client using SDK config
 	fmt.Println("\n8. Creating Search client using SDK config")
@@ -149,8 +198,17 @@ func main() {
 
 	fmt.Printf("Search client created successfully via SDK config: %T\n", searchClient2)
 
-	// Example 9: Create Groups client with functional options
-	fmt.Println("\n9. Creating Groups client with functional options")
+	// Example 9: Create Groups client with unified configuration
+	fmt.Println("\n9. Creating Groups client with unified configuration")
+	groupsConfig, err := client.GroupsConfig(
+		client.WithAccessToken(accessToken),
+		client.WithDebug(enableDebug),
+		client.WithTimeout(30*time.Second),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create groups config: %v", err)
+	}
+
 	groupsClient, err := groups.NewClient(
 		groups.WithAuthorizer(authorizer),
 		groups.WithHTTPDebugging(enableDebug),
@@ -161,6 +219,7 @@ func main() {
 	}
 
 	fmt.Printf("Groups client created successfully: %T\n", groupsClient)
+	fmt.Printf("Groups config base URL: %s\n", groupsConfig.BaseURL)
 
 	// Example 10: Create Groups client using SDK config
 	fmt.Println("\n10. Creating Groups client using SDK config")
@@ -275,7 +334,11 @@ func main() {
 		fmt.Printf("Successfully made API call with context. Found %d flows.\n", len(flowsList.Flows))
 	}
 
-	fmt.Println("\n=== Functional Options Pattern Demonstration Complete ===")
-	fmt.Println("All service clients in the Globus Go SDK now use a consistent")
-	fmt.Println("functional options pattern for configuration and initialization.")
+	fmt.Println("\n=== Unified Systems Pattern Demonstration Complete ===")
+	fmt.Println("All service clients in the Globus Go SDK v3.60.0 now support:")
+	fmt.Println("- Unified configuration via client.Config")
+	fmt.Println("- Consistent error handling with GlobusError")
+	fmt.Println("- Response wrappers with metadata")
+	fmt.Println("- Deprecation warnings for outdated methods")
+	fmt.Println("- Backwards compatibility with existing code")
 }

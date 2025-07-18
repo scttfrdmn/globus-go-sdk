@@ -228,8 +228,14 @@ func (v *APIVersion) GetEndpoint() string {
 		return fmt.Sprintf("https://auth.globus.org/%s/", v.String())
 	case "search":
 		return fmt.Sprintf("https://search.api.globus.org/%s/", v.String())
+	case "groups":
+		return fmt.Sprintf("https://groups.api.globus.org/%s/", v.String())
 	case "flows":
-		return "https://flows.globus.org/api/"
+		return fmt.Sprintf("https://flows.globus.org/%s/", v.String())
+	case "compute":
+		return fmt.Sprintf("https://compute.api.globus.org/%s/", v.String())
+	case "timers":
+		return fmt.Sprintf("https://timer.automate.globus.org/api/%s/", v.String())
 	default:
 		return ""
 	}
@@ -254,17 +260,32 @@ func (v *APIVersion) IsCompatible(other interface{}) bool {
 	default:
 		return false
 	}
+	
+	// Different services are never compatible
+	if v.Service != otherVersion.Service {
+		return false
+	}
+	
 	// Different major versions are never compatible
 	if v.Major != otherVersion.Major {
 		return false
 	}
 
+	// Different beta status is not compatible
+	if v.Beta != otherVersion.Beta {
+		return false
+	}
+
 	// For services using semver (most services):
 	// - v1.0 is compatible with v1.1 (minor version increments are backward compatible)
+	// - v1.2 is NOT compatible with v1.1 (client has higher minor version)
 	// - v1.2 is compatible with v1.2.3 (patch version increments are backward compatible)
 	// - v2.0 is not compatible with v1.0 (major version increments are not backward compatible)
 
-	// Some services (like Auth) might have different conventions, but this is the default
+	// Client cannot have higher minor version than server
+	if v.Minor > otherVersion.Minor {
+		return false
+	}
 
 	// Everything else is compatible
 	return true
@@ -368,15 +389,62 @@ func (vc *VersionCheck) Enabled() bool {
 }
 
 // CheckServiceVersion checks the version of a service
-// This is a compatibility method that simply marks the service as checked
 func (vc *VersionCheck) CheckServiceVersion(service string, version string) error {
-	// Validate the version
-	_, err := ParseVersion(service, version)
+	vc.mu.Lock()
+	defer vc.mu.Unlock()
+	
+	// If version checking is disabled, always pass
+	if !vc.enabled {
+		vc.checkedServices[service] = true
+		return nil
+	}
+
+	// Parse the provided version
+	providedVersion, err := ParseVersion(service, version)
 	if err != nil {
 		return err
 	}
 
-	// Mark as checked
-	vc.MarkServiceChecked(service)
+	// Check if we have a custom version for this service
+	if customVersion, ok := vc.customVersions[service]; ok {
+		expectedVersion, err := ParseVersion(service, customVersion)
+		if err != nil {
+			return err
+		}
+		
+		if !expectedVersion.IsCompatible(providedVersion) {
+			return fmt.Errorf("service %s version %s is not compatible with expected version %s", service, version, customVersion)
+		}
+		
+		vc.checkedServices[service] = true
+		return nil
+	}
+
+	// Default supported versions for each service
+	supportedVersions := map[string]string{
+		"auth":     "v2",
+		"transfer": "v0.10",
+		"groups":   "v2",
+		"search":   "v1",
+		"flows":    "v1",
+		"compute":  "v2",
+		"timers":   "v1",
+	}
+
+	expectedVersionStr, ok := supportedVersions[service]
+	if !ok {
+		return fmt.Errorf("unsupported service: %s", service)
+	}
+
+	expectedVersion, err := ParseVersion(service, expectedVersionStr)
+	if err != nil {
+		return err
+	}
+
+	if !expectedVersion.IsCompatible(providedVersion) {
+		return fmt.Errorf("service %s version %s is not compatible with expected version %s", service, version, expectedVersionStr)
+	}
+
+	vc.checkedServices[service] = true
 	return nil
 }

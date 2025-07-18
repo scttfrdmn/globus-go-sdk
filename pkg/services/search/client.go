@@ -11,9 +11,12 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/errors"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/response"
 )
 
 // Constants for Globus Search
@@ -181,6 +184,52 @@ func (c *Client) ListIndexes(ctx context.Context, options *ListIndexesOptions) (
 	}
 
 	return &indexList, nil
+}
+
+// ListIndexesV2 retrieves indexes with unified response system
+func (c *Client) ListIndexesV2(ctx context.Context, options *ListIndexesOptions) (*response.SearchResponse[IndexList], error) {
+	// Convert options to query parameters
+	query := url.Values{}
+	if options != nil {
+		if options.Limit > 0 {
+			query.Set("limit", strconv.Itoa(options.Limit))
+		} else if options.PerPage > 0 {
+			query.Set("limit", strconv.Itoa(options.PerPage))
+		}
+		if options.Offset > 0 {
+			query.Set("offset", strconv.Itoa(options.Offset))
+		}
+		if options.Marker != "" {
+			query.Set("marker", options.Marker)
+		}
+		if options.IsPublic {
+			query.Set("is_public", "true")
+		}
+		if options.IsActive {
+			query.Set("is_active", "true")
+		}
+		if options.CreatedBy != "" {
+			query.Set("created_by", options.CreatedBy)
+		}
+		if options.ByPath != "" {
+			query.Set("by_path", options.ByPath)
+		}
+	}
+
+	var indexList IndexList
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "index_list", query, nil, &indexList)
+	if err != nil {
+		// Convert to GlobusError if it's not already
+		if _, ok := err.(*errors.GlobusError); !ok {
+			return nil, errors.NewSearchError("IndexListError", err.Error()).WithUnderlying(err)
+		}
+		return nil, err
+	}
+
+	searchResp := response.NewSearchResponse(indexList)
+	searchResp.WithRequestID("search-indexes-" + strconv.FormatInt(time.Now().UnixNano(), 10))
+
+	return searchResp, nil
 }
 
 // GetIndex retrieves a specific index by ID

@@ -9,6 +9,8 @@ import (
 	"os"
 	"time"
 
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/client"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/deprecation"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/tokens"
 )
@@ -18,12 +20,29 @@ func main() {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Minute)
 	defer cancel()
 
+	// Enable deprecation warnings
+	deprecation.Enable()
+
+	fmt.Println("=== Token Management with Globus Go SDK v3.60.0 ===")
+	fmt.Println("This example demonstrates unified token management systems.")
+	fmt.Println()
+
 	// Check for Globus credentials
 	clientID := os.Getenv("GLOBUS_CLIENT_ID")
 	clientSecret := os.Getenv("GLOBUS_CLIENT_SECRET")
 
 	if clientID != "" && clientSecret != "" {
-		// Initialize the Globus Auth client
+		// Create unified auth configuration
+		authConfig, err := client.AuthConfig(
+			client.WithClientCredentials(clientID, clientSecret),
+			client.WithTimeout(30*time.Second),
+		)
+		if err != nil {
+			log.Fatalf("Failed to create auth config: %v", err)
+		}
+		fmt.Printf("Using unified auth config: %s\n", authConfig.BaseURL)
+
+		// Initialize the Globus Auth client (legacy method)
 		authClient, err := auth.NewClient(
 			auth.WithClientID(clientID),
 			auth.WithClientSecret(clientSecret),
@@ -47,6 +66,12 @@ func main() {
 		demonstrateFileStorage(ctx, nil)
 		DemonstrateWithMockHandler()
 	}
+
+	fmt.Println("\n=== v3.60.0 Unified Systems Benefits ===")
+	fmt.Println("- Consistent error handling across all services")
+	fmt.Println("- Unified response wrappers with metadata")
+	fmt.Println("- Deprecation warnings for smooth migration")
+	fmt.Println("- Backwards compatibility maintained")
 }
 
 // demonstrateMemoryStorage shows how to use the in-memory token storage

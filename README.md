@@ -20,7 +20,7 @@
 
 A Go SDK for interacting with Globus services, providing a simple and idiomatic Go interface to Globus APIs.
 
-> **STATUS**: Version 0.9.0 is now available! This version introduces a consistent API pattern across all service clients using the functional options pattern, provides comprehensive token management capabilities, improves error handling, and enhances the Compute client with workflow and task group capabilities. See the [CHANGELOG](doc/project/changelog.md) for information on all features and improvements. If you're upgrading from v0.8.0, check the [Migration Guide](doc/V0.9.0_MIGRATION_GUIDE.md).
+> **STATUS**: Version 3.60.0 is now available! This major version introduces unified systems aligned with the Python SDK, including unified error handling, response wrappers, deprecation management, and consistent client configuration. All services now support the same patterns for better developer experience. See the [CHANGELOG](CHANGELOG.md) for complete information. If you're upgrading from v0.9.x, check the [Migration Guide](doc/V3.60.0_MIGRATION_GUIDE.md).
 
 > **DISCLAIMER**: The Globus Go SDK is an independent, community-developed project and is not officially affiliated with, endorsed by, or supported by Globus, the University of Chicago, or their affiliated organizations. This SDK is maintained by independent contributors and is not a product of Globus or the University of Chicago.
 
@@ -492,57 +492,57 @@ func main() {
 
 For detailed documentation, see:
 
-- [Online Documentation](https://scttfrdmn.github.io/globus-go-sdk/) ← New for v0.9.0! Comprehensive documentation hosted on GitHub Pages
+- [Online Documentation](https://scttfrdmn.github.io/globus-go-sdk/) ← Comprehensive documentation hosted on GitHub Pages
 - [GoDoc Reference](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/)
 - [User Guide](doc/user-guide.md)
 - [Quick Start Examples](doc/QUICK_START_EXAMPLES.md)
-- [v0.9.0 Migration Guide](doc/V0.9.0_MIGRATION_GUIDE.md)
+- [v3.60.0 Migration Guide](doc/V3.60.0_MIGRATION_GUIDE.md)
 - [v0.8.0 Migration Guide](doc/V0.8.0_MIGRATION_GUIDE.md)
 - [Client Initialization](doc/CLIENT_INITIALIZATION.md)
 - [Functional Options Pattern Best Practices](doc/functional-options-guide.md)
 - [Error Handling](doc/ERROR_HANDLING.md)
 
 ### API Reference Documentation
-- [API Reference Overview](doc/reference/README.md) ← New for v0.9.0
+- [API Reference Overview](doc/reference/README.md)
 - **Auth Service:**
-  - [Auth Client](doc/reference/auth/client.md) ← New for v0.9.0
-  - [OAuth2 Flows](doc/reference/auth/oauth2.md) ← New for v0.9.0
-  - [Token Validation](doc/reference/auth/token.md) ← New for v0.9.0
-  - [MFA Support](doc/reference/auth/mfa.md) ← New for v0.9.0
+  - [Auth Client](doc/reference/auth/client.md)
+  - [OAuth2 Flows](doc/reference/auth/oauth2.md)
+  - [Token Validation](doc/reference/auth/token.md)
+  - [MFA Support](doc/reference/auth/mfa.md)
 - **Tokens Package:**
-  - [Token Manager](doc/reference/tokens/manager.md) ← New for v0.9.0
-  - [Token Storage](doc/reference/tokens/storage.md) ← New for v0.9.0
-  - [Token Refresh](doc/reference/tokens/refresh.md) ← New for v0.9.0
+  - [Token Manager](doc/reference/tokens/manager.md)
+  - [Token Storage](doc/reference/tokens/storage.md)
+  - [Token Refresh](doc/reference/tokens/refresh.md)
 - **Transfer Service:**
-  - [Transfer Client](doc/reference/transfer/client.md) ← New for v0.9.0
-  - [Endpoint Operations](doc/reference/transfer/endpoints.md) ← New for v0.9.0
-  - [Transfer Operations](doc/reference/transfer/transfers.md) ← New for v0.9.0
-  - [Recursive Transfers](doc/reference/transfer/recursive.md) ← New for v0.9.0
-  - [Resumable Transfers](doc/reference/transfer/resumable.md) ← New for v0.9.0
+  - [Transfer Client](doc/reference/transfer/client.md)
+  - [Endpoint Operations](doc/reference/transfer/endpoints.md)
+  - [Transfer Operations](doc/reference/transfer/transfers.md)
+  - [Recursive Transfers](doc/reference/transfer/recursive.md)
+  - [Resumable Transfers](doc/reference/transfer/resumable.md)
 - **Search Service:**
-  - [Search Client](doc/reference/search/client.md) ← New for v0.9.0
-  - [Query Operations](doc/reference/search/queries.md) ← New for v0.9.0
-  - [Advanced Queries](doc/reference/search/advanced.md) ← New for v0.9.0
-  - [Batch Operations](doc/reference/search/batch.md) ← New for v0.9.0
+  - [Search Client](doc/reference/search/client.md)
+  - [Query Operations](doc/reference/search/queries.md)
+  - [Advanced Queries](doc/reference/search/advanced.md)
+  - [Batch Operations](doc/reference/search/batch.md)
 - **Flows Service:**
-  - [Flows Client](doc/reference/flows/client.md) ← New for v0.9.0
-  - [Flow Operations](doc/reference/flows/flows.md) ← New for v0.9.0
-  - [Run Operations](doc/reference/flows/runs.md) ← New for v0.9.0
-  - [Batch Operations](doc/reference/flows/batch.md) ← New for v0.9.0
+  - [Flows Client](doc/reference/flows/client.md)
+  - [Flow Operations](doc/reference/flows/flows.md)
+  - [Run Operations](doc/reference/flows/runs.md)
+  - [Batch Operations](doc/reference/flows/batch.md)
 - **Compute Service:**
-  - [Compute Client](doc/reference/compute/client.md) ← New for v0.9.0
-  - [Container Operations](doc/reference/compute/containers.md) ← New for v0.9.0
-  - [Batch Operations](doc/reference/compute/batch.md) ← New for v0.9.0
-  - [Environment Operations](doc/reference/compute/environments.md) ← New for v0.9.0
+  - [Compute Client](doc/reference/compute/client.md)
+  - [Container Operations](doc/reference/compute/containers.md)
+  - [Batch Operations](doc/reference/compute/batch.md)
+  - [Environment Operations](doc/reference/compute/environments.md)
 - **Groups Service:**
-  - [Groups Client](doc/reference/groups/client.md) ← New for v0.9.0
-  - [Group Operations](doc/reference/groups/groups.md) ← New for v0.9.0
-  - [Membership Operations](doc/reference/groups/members.md) ← New for v0.9.0
-  - [Role Operations](doc/reference/groups/roles.md) ← New for v0.9.0
+  - [Groups Client](doc/reference/groups/client.md)
+  - [Group Operations](doc/reference/groups/groups.md)
+  - [Membership Operations](doc/reference/groups/members.md)
+  - [Role Operations](doc/reference/groups/roles.md)
 - **Timers Service:**
-  - [Timers Client](doc/reference/timers/client.md) ← New for v0.9.0
-  - [Timer Operations](doc/reference/timers/timers.md) ← New for v0.9.0
-  - [Run Operations](doc/reference/timers/jobs.md) ← New for v0.9.0
+  - [Timers Client](doc/reference/timers/client.md)
+  - [Timer Operations](doc/reference/timers/timers.md)
+  - [Run Operations](doc/reference/timers/jobs.md)
 
 ### Guides and Examples
 - [Token Management Example](examples/token-management/README.md)
@@ -563,8 +563,10 @@ For detailed documentation, see:
 - [Data Schemas](doc/data-schemas.md)
 - [Extending the SDK](doc/extending-the-sdk.md)
 - [CLI Example](cmd/globus-cli/README.md)
-- [Compute Workflows Example](examples/compute-workflow/main.go) ← New for v0.9.0
-- [Compute Workflows Guide](doc/compute-workflows.md) ← New for v0.9.0
+- [Compute Workflows Example](examples/compute-workflow/main.go)
+- [Compute Workflows Guide](doc/compute-workflows.md)
+- [Unified Systems Example](examples/unified-systems/main.go) ← New for v3.60.0!
+- [Unified Systems Guide](examples/unified-systems/README.md) ← New for v3.60.0!
 
 ## Development
 
@@ -580,7 +582,7 @@ For more information, see [Git Hooks](doc/development/git-hooks.md).
 
 ## Development Status
 
-This SDK is under active development. Current version: **v0.9.0**
+This SDK is under active development. Current version: **v3.60.0**
 
 | Component | Status | Details |
 |-----------|--------|---------|

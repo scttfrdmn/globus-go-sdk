@@ -13,6 +13,8 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/client"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/deprecation"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
 )
 
@@ -23,11 +25,14 @@ const (
 )
 
 // This example demonstrates how to handle Multi-Factor Authentication (MFA)
-// when authenticating with Globus Auth.
+// when authenticating with Globus Auth using v3.60.0 unified systems.
 func main() {
 	// Create a context with a timeout
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
 	defer cancel()
+
+	// Enable deprecation warnings
+	deprecation.Enable()
 
 	// Get client ID from environment
 	clientID := os.Getenv("GLOBUS_CLIENT_ID")
@@ -37,7 +42,16 @@ func main() {
 
 	clientSecret := os.Getenv("GLOBUS_CLIENT_SECRET")
 
-	// Create SDK configuration
+	// Create unified client configuration
+	authConfig, err := client.AuthConfig(
+		client.WithClientCredentials(clientID, clientSecret),
+		client.WithTimeout(30*time.Second),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create auth config: %v", err)
+	}
+
+	// Create SDK configuration (legacy method)
 	config := pkg.NewConfigFromEnvironment().
 		WithClientID(clientID).
 		WithClientSecret(clientSecret)
@@ -48,8 +62,10 @@ func main() {
 		log.Fatalf("Failed to create auth client: %v", err)
 	}
 
-	// Set redirect URL
+	// Set redirect URL (triggers deprecation warning)
 	authClient.SetRedirectURL(callbackAddress)
+
+	fmt.Printf("Using unified auth config: %s\n", authConfig.BaseURL)
 
 	// Generate a random state value
 	state := fmt.Sprintf("state-%d", time.Now().UnixNano())
@@ -96,6 +112,15 @@ func main() {
 	fmt.Printf("Token Type: %s\n", tokenResp.TokenType)
 	fmt.Printf("Expires In: %d seconds\n", tokenResp.ExpiresIn)
 	fmt.Printf("Scopes: %s\n", tokenResp.Scope)
+
+	// Demonstrate unified response system (v3.60.0)
+	fmt.Println("\nTesting unified response system...")
+	if authResp, err := authClient.ExchangeAuthorizationCodeV2(ctx, code); err == nil {
+		fmt.Printf("Unified response - Request ID: %s\n", authResp.RequestID)
+		fmt.Printf("Service: %s, API Version: %s\n", authResp.Metadata.Service, authResp.Metadata.APIVersion)
+	} else {
+		fmt.Printf("Note: V2 method not available in this context: %v\n", err)
+	}
 
 	// Demonstrate token refreshing with MFA
 	if tokenResp.RefreshToken != "" {

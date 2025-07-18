@@ -11,9 +11,12 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/errors"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/response"
 )
 
 // Constants for Globus Compute
@@ -157,6 +160,50 @@ func (c *Client) ListEndpoints(ctx context.Context, options *ListEndpointsOption
 	}
 
 	return &endpointList, nil
+}
+
+// ListEndpointsV2 retrieves compute endpoints with unified response system
+func (c *Client) ListEndpointsV2(ctx context.Context, options *ListEndpointsOptions) (*response.ComputeResponse[ComputeEndpointList], error) {
+	// Convert options to query parameters
+	query := url.Values{}
+	if options != nil {
+		if options.PerPage > 0 {
+			query.Set("per_page", strconv.Itoa(options.PerPage))
+		}
+		if options.Marker != "" {
+			query.Set("marker", options.Marker)
+		}
+		if options.OrderBy != "" {
+			query.Set("orderby", options.OrderBy)
+		}
+		if options.Search != "" {
+			query.Set("search", options.Search)
+		}
+		if options.FilterScope != "" {
+			query.Set("filter_scope", options.FilterScope)
+		}
+		if options.FilterStatus != "" {
+			query.Set("filter_status", options.FilterStatus)
+		}
+		if options.IncludeInfo {
+			query.Set("include_info", "true")
+		}
+	}
+
+	var endpointList ComputeEndpointList
+	err := c.doRequest(ctx, http.MethodGet, "endpoints", query, nil, &endpointList)
+	if err != nil {
+		// Convert to GlobusError if it's not already
+		if _, ok := err.(*errors.GlobusError); !ok {
+			return nil, errors.NewComputeError("EndpointListError", err.Error()).WithUnderlying(err)
+		}
+		return nil, err
+	}
+
+	computeResp := response.NewComputeResponse(endpointList)
+	computeResp.WithRequestID("compute-endpoints-" + strconv.FormatInt(time.Now().UnixNano(), 10))
+
+	return computeResp, nil
 }
 
 // GetEndpoint retrieves a specific compute endpoint by ID

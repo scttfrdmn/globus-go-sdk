@@ -7,7 +7,7 @@ import (
 )
 
 func TestAPIVersionString(t *testing.T) {
-	t.Skip("Skipping due to API version changes")
+	// Re-enabled for v3.60.0 with updated API versions
 	tests := []struct {
 		name     string
 		version  APIVersion
@@ -20,7 +20,7 @@ func TestAPIVersionString(t *testing.T) {
 				Major:   2,
 				Minor:   0,
 			},
-			expected: "auth/v2.0",
+			expected: "v2",
 		},
 		{
 			name: "with patch version",
@@ -30,15 +30,16 @@ func TestAPIVersionString(t *testing.T) {
 				Minor:   10,
 				Patch:   5,
 			},
-			expected: "transfer/v0.10.5",
+			expected: "v0.10.5",
 		},
 		{
 			name: "beta version",
 			version: APIVersion{
 				Service: "flows",
+				Major:   0,
 				Beta:    true,
 			},
-			expected: "flows/Beta",
+			expected: "v0-beta",
 		},
 	}
 
@@ -53,7 +54,7 @@ func TestAPIVersionString(t *testing.T) {
 }
 
 func TestAPIVersionEndpoint(t *testing.T) {
-	t.Skip("Skipping due to API version changes")
+	// Re-enabled for v3.60.0 with updated API versions
 	tests := []struct {
 		name     string
 		version  APIVersion
@@ -99,9 +100,10 @@ func TestAPIVersionEndpoint(t *testing.T) {
 			name: "flows endpoint",
 			version: APIVersion{
 				Service: "flows",
-				Beta:    true,
+				Major:   1,
+				Minor:   0,
 			},
-			expected: "https://flows.globus.org/api/",
+			expected: "https://flows.globus.org/v1/",
 		},
 		{
 			name: "unknown service",
@@ -125,7 +127,7 @@ func TestAPIVersionEndpoint(t *testing.T) {
 }
 
 func TestParseAPIVersion(t *testing.T) {
-	t.Skip("Skipping due to API version changes")
+	// Re-enabled for v3.60.0 with updated API versions
 	tests := []struct {
 		name        string
 		service     string
@@ -169,9 +171,10 @@ func TestParseAPIVersion(t *testing.T) {
 		{
 			name:    "beta version",
 			service: "flows",
-			version: "beta",
+			version: "v0-beta",
 			expected: APIVersion{
 				Service: "flows",
+				Major:   0,
 				Beta:    true,
 			},
 		},
@@ -235,7 +238,7 @@ func TestParseAPIVersion(t *testing.T) {
 }
 
 func TestIsCompatible(t *testing.T) {
-	t.Skip("Skipping due to API version changes")
+	// Re-enabled for v3.60.0 with updated API versions
 	tests := []struct {
 		name       string
 		version1   APIVersion
@@ -350,7 +353,7 @@ func TestIsCompatible(t *testing.T) {
 }
 
 func TestVersionCheck(t *testing.T) {
-	t.Skip("Skipping due to API version changes")
+	// Re-enabled for v3.60.0 with updated API versions
 	tests := []struct {
 		name           string
 		service        string

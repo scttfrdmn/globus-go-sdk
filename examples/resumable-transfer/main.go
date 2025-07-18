@@ -9,8 +9,11 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/client"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/deprecation"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
 )
 
@@ -29,7 +32,10 @@ func main() {
 
 	// Set up logger
 	log.SetFlags(log.LstdFlags | log.Lshortfile)
-	log.Println("Resumable Transfer Example")
+	log.Println("Resumable Transfer Example - Globus Go SDK v3.60.0")
+
+	// Enable deprecation warnings
+	deprecation.Enable()
 
 	// Get access token from environment if not provided
 	if *accessToken == "" {
@@ -39,7 +45,20 @@ func main() {
 		}
 	}
 
-	// Create SDK configuration
+	// Create unified transfer configuration
+	transferConfig, err := client.TransferConfig(
+		client.WithAccessToken(*accessToken),
+		client.WithTimeout(300*time.Second), // 5 minutes for long transfers
+		client.WithMaxRetries(5),
+		client.WithDebug(os.Getenv("GLOBUS_SDK_DEBUG") == "1"),
+	)
+	if err != nil {
+		log.Fatalf("Failed to create transfer config: %v", err)
+	}
+
+	log.Printf("Using unified transfer config: %s", transferConfig.BaseURL)
+
+	// Create SDK configuration (legacy method)
 	config := pkg.NewConfigFromEnvironment()
 
 	// Create transfer client

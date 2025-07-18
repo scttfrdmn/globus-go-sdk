@@ -15,7 +15,9 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/errors"
 	"github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
+	"github.com/scttfrdmn/globus-go-sdk/pkg/core/response"
 )
 
 // Constants for Globus Transfer
@@ -23,6 +25,8 @@ const (
 	DefaultBaseURL    = "https://transfer.api.globus.org/v0.10/"
 	TransferScope     = "urn:globus:auth:scope:transfer.api.globus.org:all"
 	MinimumAPIVersion = "v0.10" // Minimum supported API version
+	ServiceName       = "transfer"
+	APIVersion        = "v0.10"
 )
 
 // Client provides methods for interacting with Globus Transfer
@@ -221,6 +225,53 @@ func (c *Client) ListEndpoints(ctx context.Context, options *ListEndpointsOption
 	return &endpointList, nil
 }
 
+// ListEndpointsV2 retrieves endpoints with unified response system
+func (c *Client) ListEndpointsV2(ctx context.Context, options *ListEndpointsOptions) (*response.TransferResponse[EndpointList], error) {
+	// Convert options to query parameters
+	query := url.Values{}
+	if options != nil {
+		if options.FilterFullText != "" {
+			query.Set("filter_fulltext", options.FilterFullText)
+		}
+		if options.FilterOwnerID != "" {
+			query.Set("filter_owner_id", options.FilterOwnerID)
+		}
+		if options.FilterHostEndpoint != "" {
+			query.Set("filter_host_endpoint", options.FilterHostEndpoint)
+		}
+		if options.FilterScope != "" {
+			query.Set("filter_scope", options.FilterScope)
+		}
+		if options.Limit > 0 {
+			query.Set("limit", strconv.Itoa(options.Limit))
+		}
+		if options.Offset > 0 {
+			query.Set("offset", strconv.Itoa(options.Offset))
+		}
+		if options.PageSize > 0 {
+			query.Set("page_size", strconv.Itoa(options.PageSize))
+		}
+		if options.PageToken != "" {
+			query.Set("page_token", options.PageToken)
+		}
+	}
+
+	var endpointList EndpointList
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "endpoint_search", query, nil, &endpointList)
+	if err != nil {
+		// Convert to GlobusError if it's not already
+		if _, ok := err.(*errors.GlobusError); !ok {
+			return nil, errors.NewTransferError("EndpointListError", err.Error()).WithUnderlying(err)
+		}
+		return nil, err
+	}
+
+	transferResp := response.NewTransferResponse(endpointList)
+	transferResp.WithRequestID("transfer-endpoints-" + strconv.FormatInt(time.Now().UnixNano(), 10))
+
+	return transferResp, nil
+}
+
 // GetEndpoint retrieves a specific endpoint by ID
 func (c *Client) GetEndpoint(ctx context.Context, endpointID string) (*Endpoint, error) {
 	if endpointID == "" {
@@ -344,6 +395,42 @@ func (c *Client) GetSubmissionID(ctx context.Context) (string, error) {
 		return response.SubmissionID, nil
 	}
 	return response.Value, nil
+}
+
+// GetSubmissionIDV2 obtains a submission ID for transfer operations with unified response system
+func (c *Client) GetSubmissionIDV2(ctx context.Context) (*response.TransferResponse[string], error) {
+	// Return a simulated submission ID only for unit tests, not integration tests
+	if os.Getenv("MOCK_SUBMISSION_ID") == "true" {
+		mockResponse := response.NewTransferResponse("mock-submission-id-for-testing")
+		mockResponse.WithRequestID("mock-request-id")
+		return mockResponse, nil
+	}
+
+	var resp struct {
+		Value        string `json:"value"`
+		SubmissionID string `json:"submission_id"`
+	}
+
+	// The API endpoint is a GET request, not POST
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "submission_id", nil, nil, &resp)
+	if err != nil {
+		// Convert to GlobusError if it's not already
+		if _, ok := err.(*errors.GlobusError); !ok {
+			return nil, errors.NewTransferError("SubmissionIDError", err.Error()).WithUnderlying(err)
+		}
+		return nil, err
+	}
+
+	// Depending on the API response format, one of these will be populated
+	submissionID := resp.SubmissionID
+	if submissionID == "" {
+		submissionID = resp.Value
+	}
+
+	transferResp := response.NewTransferResponse(submissionID)
+	transferResp.WithRequestID("transfer-" + submissionID)
+	
+	return transferResp, nil
 }
 
 // CreateTransferTask creates a new transfer task
