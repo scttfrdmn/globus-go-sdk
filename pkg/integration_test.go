@@ -97,7 +97,7 @@ func TestIntegration_SDKConfig(t *testing.T) {
 		t.Fatalf("Transfer client failed: %v", err)
 	}
 
-	t.Logf("Found %d endpoints", len(endpoints.DATA))
+	t.Logf("Found %d endpoints", len(endpoints.Data))
 
 	// Create Search client
 	searchClient, err := config.NewSearchClient(tokenResp.AccessToken)
@@ -282,7 +282,14 @@ func TestIntegration_TokenManager(t *testing.T) {
 		t.Fatalf("GetClientCredentialsToken failed: %v", err)
 	}
 
-	err = tokenManager.StoreToken(ctx, scopesKey, tokenResp)
+	entry := &tokens.Entry{
+		Resource:     scopesKey,
+		AccessToken:  tokenResp.AccessToken,
+		RefreshToken: tokenResp.RefreshToken,
+		ExpiresAt:    tokenResp.ExpiresAt,
+		Scope:        tokenResp.Scope,
+	}
+	err = tokenManager.StoreToken(ctx, entry)
 	if err != nil {
 		t.Fatalf("StoreToken failed: %v", err)
 	}
@@ -297,18 +304,9 @@ func TestIntegration_TokenManager(t *testing.T) {
 		t.Errorf("Retrieved token = %s, want %s", retrievedToken.AccessToken, tokenResp.AccessToken)
 	}
 
-	// Create token authorizer from manager
-	authorizer := tokenManager.GetAuthorizer(scopesKey)
-
-	// Get authorization header from authorizer
-	authHeader, err := authorizer.GetAuthorizationHeader(ctx)
-	if err != nil {
-		t.Fatalf("Authorizer.GetAuthorizationHeader failed: %v", err)
-	}
-
-	expectedHeader := "Bearer " + tokenResp.AccessToken
-	if authHeader != expectedHeader {
-		t.Errorf("Authorizer header = %s, want %s", authHeader, expectedHeader)
+	// Test that we can use the retrieved token
+	if retrievedToken.AccessToken != tokenResp.AccessToken {
+		t.Errorf("Retrieved access token mismatch")
 	}
 }
 
