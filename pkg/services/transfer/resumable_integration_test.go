@@ -28,7 +28,7 @@ func init() {
 }
 
 // getTestCredentials retrieves test credentials from environment variables
-func getTestCredentials(t *testing.T) (string, string, string, string) {
+func getTestCredentialsResumable(t *testing.T) (string, string, string, string) {
 	clientID := os.Getenv("GLOBUS_TEST_CLIENT_ID")
 	clientSecret := os.Getenv("GLOBUS_TEST_CLIENT_SECRET")
 	sourceEndpointID := os.Getenv("GLOBUS_TEST_SOURCE_ENDPOINT_ID")
@@ -46,7 +46,7 @@ func getTestCredentials(t *testing.T) (string, string, string, string) {
 }
 
 // getAccessToken gets an access token for testing
-func getAccessToken(t *testing.T, clientID, clientSecret string) string {
+func getAccessTokenResumable(t *testing.T, clientID, clientSecret string) string {
 	// First, check if there's a transfer token provided directly
 	staticToken := os.Getenv("GLOBUS_TEST_TRANSFER_TOKEN")
 	if staticToken != "" {
@@ -77,7 +77,7 @@ func getAccessToken(t *testing.T, clientID, clientSecret string) string {
 // TestIntegration_ResumableTransfer tests the resumable transfer functionality
 func TestIntegration_ResumableTransfer(t *testing.T) {
 	// Skip this test during automated CI runs if credentials aren't provided
-	clientID, clientSecret, sourceEndpointID, destEndpointID := getTestCredentials(t)
+	clientID, clientSecret, sourceEndpointID, destEndpointID := getTestCredentialsResumable(t)
 
 	// Skip if endpoints are not provided
 	if sourceEndpointID == "" {
@@ -89,11 +89,11 @@ func TestIntegration_ResumableTransfer(t *testing.T) {
 	}
 
 	// Get access token
-	accessToken := getAccessToken(t, clientID, clientSecret)
+	accessToken := getAccessTokenResumable(t, clientID, clientSecret)
 
 	// Create Transfer client with new pattern
 	client, err := transfer.NewClient(
-		transfer.WithAuthorizer(authorizers.NewStaticTokenAuthorizer(accessToken)),
+		transfer.WithAuthorizer(authorizers.StaticTokenCoreAuthorizer(accessToken)),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create transfer client: %v", err)
@@ -397,7 +397,7 @@ func TestIntegration_ResumableTransfer(t *testing.T) {
 // TestIntegration_ResumableTransferCancellation tests cancellation of resumable transfers
 func TestIntegration_ResumableTransferCancellation(t *testing.T) {
 	// Skip this test during automated CI runs if credentials aren't provided
-	clientID, clientSecret, sourceEndpointID, destEndpointID := getTestCredentials(t)
+	clientID, clientSecret, sourceEndpointID, destEndpointID := getTestCredentialsResumable(t)
 
 	// Skip if endpoints are not provided
 	if sourceEndpointID == "" || destEndpointID == "" {
@@ -405,11 +405,11 @@ func TestIntegration_ResumableTransferCancellation(t *testing.T) {
 	}
 
 	// Get access token
-	accessToken := getAccessToken(t, clientID, clientSecret)
+	accessToken := getAccessTokenResumable(t, clientID, clientSecret)
 
 	// Create Transfer client with new pattern
 	client, err := transfer.NewClient(
-		transfer.WithAuthorizer(authorizers.NewStaticTokenAuthorizer(accessToken)),
+		transfer.WithAuthorizer(authorizers.StaticTokenCoreAuthorizer(accessToken)),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create transfer client: %v", err)

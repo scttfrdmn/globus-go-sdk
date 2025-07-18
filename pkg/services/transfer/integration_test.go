@@ -106,7 +106,7 @@ func getAccessToken(t *testing.T, clientID, clientSecret string) string {
 
 	// Try each scope until we get a token
 	for _, scope := range scopes {
-		tokenResp, err = authClient.GetClientCredentialsToken(context.Background(), []string{scope})
+		tokenResp, err = authClient.GetClientCredentialsToken(context.Background(), scope)
 		if err != nil {
 			t.Logf("Failed to get token with scope %s: %v", scope, err)
 			continue
@@ -124,7 +124,7 @@ func getAccessToken(t *testing.T, clientID, clientSecret string) string {
 	// If we didn't get a transfer token, fall back to the default token
 	if !gotToken {
 		t.Log("Could not get a transfer token, falling back to default token")
-		tokenResp, err = authClient.GetClientCredentialsToken(context.Background(), nil)
+		tokenResp, err = authClient.GetClientCredentialsToken(context.Background())
 		if err != nil {
 			t.Fatalf("Failed to get any token: %v", err)
 		}
@@ -144,7 +144,7 @@ func TestIntegration_ListEndpoints(t *testing.T) {
 
 	// Create Transfer client
 	client, err := transfer.NewClient(
-		transfer.WithAuthorizer(authorizers.NewStaticTokenAuthorizer(accessToken)),
+		transfer.WithAuthorizer(authorizers.StaticTokenCoreAuthorizer(accessToken)),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create transfer client: %v", err)
@@ -256,7 +256,7 @@ func TestIntegration_TransferFlow(t *testing.T) {
 	// Create Transfer client with rate limiting and debugging
 	debug := os.Getenv("HTTP_DEBUG") != ""
 	client, err := transfer.NewClient(
-		transfer.WithAuthorizer(authorizers.NewStaticTokenAuthorizer(accessToken)),
+		transfer.WithAuthorizer(authorizers.StaticTokenCoreAuthorizer(accessToken)),
 		transfer.WithHTTPDebugging(debug),
 		transfer.WithHTTPTracing(debug),
 	)
@@ -695,7 +695,7 @@ func TestIntegration_RecursiveTransfer(t *testing.T) {
 
 	// Create Transfer client
 	client, err := transfer.NewClient(
-		transfer.WithAuthorizer(authorizers.NewStaticTokenAuthorizer(accessToken)),
+		transfer.WithAuthorizer(authorizers.StaticTokenCoreAuthorizer(accessToken)),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create transfer client: %v", err)
@@ -912,7 +912,7 @@ func TestIntegration_GetEndpointActivationRequirements(t *testing.T) {
 
 	// Create Transfer client
 	client, err := transfer.NewClient(
-		transfer.WithAuthorizer(authorizers.NewStaticTokenAuthorizer(accessToken)),
+		transfer.WithAuthorizer(authorizers.StaticTokenCoreAuthorizer(accessToken)),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create transfer client: %v", err)
@@ -1000,7 +1000,7 @@ func TestIntegration_TaskManagement(t *testing.T) {
 
 	// Create Transfer client
 	client, err := transfer.NewClient(
-		transfer.WithAuthorizer(authorizers.NewStaticTokenAuthorizer(accessToken)),
+		transfer.WithAuthorizer(authorizers.StaticTokenCoreAuthorizer(accessToken)),
 	)
 	if err != nil {
 		t.Fatalf("Failed to create transfer client: %v", err)
