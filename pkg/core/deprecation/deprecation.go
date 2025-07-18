@@ -7,7 +7,7 @@ import (
 	"os"
 	"sync"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/interfaces"
 )
 
 // Configuration options for deprecation warnings

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/pool"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/pool"
 )
 
 // This script simulates how a downstream project would use the SDK.

@@ -13,10 +13,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/errors"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/response"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/errors"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/response"
 )
 
 // Constants for Globus Flows

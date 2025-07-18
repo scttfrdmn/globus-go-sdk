@@ -10,7 +10,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg"
 )
 
 func main() {

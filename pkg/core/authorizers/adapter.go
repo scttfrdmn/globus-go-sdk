@@ -5,7 +5,7 @@ package authorizers
 import (
 	"context"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/auth"
 )
 
 // CoreAuthorizer adapts an Authorizer to the auth.Authorizer interface

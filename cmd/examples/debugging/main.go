@@ -11,9 +11,9 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
 )
 
 // customLogger adapts a standard log.Logger to the interfaces.Logger interface

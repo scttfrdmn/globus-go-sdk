@@ -10,9 +10,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/benchmark"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/benchmark"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
 )
 
 func main() {

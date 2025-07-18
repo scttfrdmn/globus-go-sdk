@@ -6,9 +6,9 @@ import (
 	"log"
 	"os"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/pool"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/transport"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/interfaces"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/pool"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/transport"
 )
 
 // InitTransport initializes a transport for a client

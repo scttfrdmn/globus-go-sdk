@@ -7,11 +7,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/contracts"
-	corehttp "github.com/scttfrdmn/globus-go-sdk/pkg/core/http"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/logging"
-	corepool "github.com/scttfrdmn/globus-go-sdk/pkg/core/pool"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/contracts"
+	corehttp "github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/http"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/logging"
+	corepool "github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/pool"
 )
 
 // TestClientImplementationContract verifies that a Client implementation

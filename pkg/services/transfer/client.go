@@ -14,10 +14,10 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/errors"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/response"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/errors"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/ratelimit"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/response"
 )
 
 // Constants for Globus Transfer

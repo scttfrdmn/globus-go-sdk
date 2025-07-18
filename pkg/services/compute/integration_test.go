@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
 )
 
 func init() {

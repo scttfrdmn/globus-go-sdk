@@ -5,7 +5,7 @@ package contracts_test
 import (
 	"testing"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/contracts"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/contracts"
 )
 
 // TestMockImplementations verifies that all mock implementations

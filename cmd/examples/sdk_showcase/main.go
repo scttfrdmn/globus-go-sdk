@@ -9,12 +9,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/compute"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/flows"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/groups"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/search"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/compute"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/flows"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/groups"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
 )
 
 func main() {

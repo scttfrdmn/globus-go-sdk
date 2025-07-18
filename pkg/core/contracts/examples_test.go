@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/contracts"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/contracts"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/interfaces"
 )
 
 // ExampleClient demonstrates how to use the contract tests

@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
 )
 
 // WithEnhancedLogger sets an enhanced logger for the client

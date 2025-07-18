@@ -13,8 +13,8 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/ratelimit"
 )
 
 func init() {

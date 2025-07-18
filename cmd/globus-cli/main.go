@@ -7,8 +7,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/scttfrdmn/globus-go-sdk/cmd/globus-cli/auth"
-	"github.com/scttfrdmn/globus-go-sdk/cmd/globus-cli/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/v3/cmd/globus-cli/auth"
+	"github.com/scttfrdmn/globus-go-sdk/v3/cmd/globus-cli/transfer"
 )
 
 // Command represents a CLI command

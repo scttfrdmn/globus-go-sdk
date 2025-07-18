@@ -3,8 +3,8 @@
 package auth
 
 import (
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/interfaces"
 )
 
 // ClientOption configures an Auth client

@@ -6,7 +6,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
 )
 
 // TestConfigHasVersionCheckField ensures that the Config struct has a VersionCheck field

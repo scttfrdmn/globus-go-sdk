@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/metrics"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/metrics"
 )
 
 func main() {

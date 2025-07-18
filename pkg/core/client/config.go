@@ -15,11 +15,11 @@ import (
 	"net/url"
 	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/deprecation"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/errors"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/deprecation"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/errors"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/interfaces"
 )
 
 // Config contains configuration for Globus service clients

@@ -11,10 +11,10 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/client"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/deprecation"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/client"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/deprecation"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
 )
 
 func main() {

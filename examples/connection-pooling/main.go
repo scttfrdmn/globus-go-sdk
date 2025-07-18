@@ -8,9 +8,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/http"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/http"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
 )
 
 // This example demonstrates the connection pooling functionality

@@ -6,8 +6,8 @@ import (
 	"os"
 	"testing"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg"
-	httppool "github.com/scttfrdmn/globus-go-sdk/pkg/core/http"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg"
+	httppool "github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/http"
 )
 
 // TestConnectionPoolInitialization verifies that the connection pool initialization

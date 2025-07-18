@@ -13,7 +13,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
 )
 
 // WaitOptions contains options for waiting on transfer tasks

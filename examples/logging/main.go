@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/logging"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/logging"
 )
 
 func main() {

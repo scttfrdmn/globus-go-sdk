@@ -8,8 +8,8 @@ import (
 	"log"
 	"os"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/groups"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/groups"
 )
 
 func main() {

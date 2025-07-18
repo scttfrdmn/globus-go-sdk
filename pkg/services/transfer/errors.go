@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
 )
 
 // Common error codes returned by the Globus Transfer API

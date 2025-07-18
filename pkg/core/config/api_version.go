@@ -3,7 +3,7 @@
 package config
 
 import (
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
 )
 
 // WithAPIVersionCheck configures whether API version checking is enabled

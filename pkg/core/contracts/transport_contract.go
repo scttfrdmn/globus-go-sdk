@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/interfaces"
 )
 
 // VerifyTransportContract verifies that a Transport implementation

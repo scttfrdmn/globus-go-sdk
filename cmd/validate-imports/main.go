@@ -8,11 +8,11 @@ import (
 	"runtime"
 
 	// Import each package separately to check for import cycles
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
-	coreconfig "github.com/scttfrdmn/globus-go-sdk/pkg/core/config"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/pool"
-	coretransport "github.com/scttfrdmn/globus-go-sdk/pkg/core/transport"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
+	coreconfig "github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/config"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/interfaces"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/pool"
+	coretransport "github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/transport"
 )
 
 // This script validates that there are no import cycles with our fix.

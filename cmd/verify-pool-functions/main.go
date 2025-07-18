@@ -9,8 +9,8 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/pool"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/pool"
 )
 
 // This script verifies that all connection pool functions referenced in issue #13

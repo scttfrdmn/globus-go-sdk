@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
 )
 
 // VerifyConnectionPoolFix verifies the fix for issue #13 in transport_init.go

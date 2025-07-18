@@ -7,13 +7,13 @@ import (
 	"os"
 	"testing"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/http"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/logging"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/transport"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/auth"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/http"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/interfaces"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/logging"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/transport"
 )
 
 // TestClientImplementsClientInterface verifies that the core.Client type

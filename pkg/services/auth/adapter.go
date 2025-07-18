@@ -5,8 +5,8 @@ package auth
 import (
 	"context"
 
-	coreauthlib "github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
+	coreauthlib "github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/auth"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/interfaces"
 )
 
 // AuthorizerAdapter adapts between the core.auth.Authorizer and interfaces.Authorizer

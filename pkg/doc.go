@@ -49,7 +49,7 @@ the following minimum Globus API versions:
 
 The recommended way to create service clients is through the main SDK entry point:
 
-	import "github.com/scttfrdmn/globus-go-sdk/pkg"
+	import "github.com/scttfrdmn/globus-go-sdk/v3/pkg"
 
 	// Create the SDK instance
 	sdk := pkg.NewSDK()
@@ -75,7 +75,7 @@ The recommended way to create service clients is through the main SDK entry poin
 
 For detailed documentation on each package, refer to:
 
-- https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/pkg
+- https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/v3/pkg
 - https://github.com/scttfrdmn/globus-go-sdk/tree/main/doc
 
 For examples, see:

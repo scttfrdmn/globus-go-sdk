@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/auth"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/interfaces"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/ratelimit"
 )
 
 // Client defines the base client used by all service-specific clients

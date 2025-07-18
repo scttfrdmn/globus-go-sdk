@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/interfaces"
 )
 
 // Client defines an HTTP client that uses a connection pool

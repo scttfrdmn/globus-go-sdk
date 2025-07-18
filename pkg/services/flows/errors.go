@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
 )
 
 // ErrorResponse represents an error response from the Globus Flows API.

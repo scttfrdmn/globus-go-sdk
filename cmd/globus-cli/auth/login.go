@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/pkg/browser"
-	"github.com/scttfrdmn/globus-go-sdk/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg"
 )
 
 // Config holds the CLI configuration

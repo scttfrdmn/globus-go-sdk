@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
 )
 
 // taskAuthorizer implements the authorizer interface for testing

@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/search"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search"
 )
 
 // VerifyCredentials checks that the provided Globus credentials are valid

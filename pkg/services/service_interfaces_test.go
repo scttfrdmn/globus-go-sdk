@@ -5,15 +5,15 @@ package services
 import (
 	"testing"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/compute"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/flows"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/groups"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/search"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/timers"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/interfaces"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/compute"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/flows"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/groups"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/timers"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
 )
 
 // TestServiceClientInterfaces verifies that all service clients use the core.Client

@@ -5,7 +5,7 @@ package main
 import (
 	"os"
 
-	"github.com/scttfrdmn/globus-go-sdk/internal/verification"
+	"github.com/scttfrdmn/globus-go-sdk/v3/internal/verification"
 )
 
 func main() {

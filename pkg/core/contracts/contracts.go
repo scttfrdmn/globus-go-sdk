@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/interfaces"
 )
 
 // VerifyAllContracts runs all applicable contract tests for the provided implementations.

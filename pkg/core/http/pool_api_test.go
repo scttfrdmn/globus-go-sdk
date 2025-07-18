@@ -6,8 +6,8 @@ import (
 	"reflect"
 	"testing"
 
-	httppool "github.com/scttfrdmn/globus-go-sdk/pkg/core/http"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
+	httppool "github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/http"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/interfaces"
 )
 
 // TestHTTPPoolFunctionAvailability verifies that all required HTTP pool functions are

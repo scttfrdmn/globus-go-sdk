@@ -5,7 +5,7 @@ package deprecation_test
 import (
 	"fmt"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/deprecation"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/deprecation"
 )
 
 // MockLogger implements the interfaces.Logger interface for example purposes

@@ -5,7 +5,7 @@ package contracts
 import (
 	"testing"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/interfaces"
 )
 
 // VerifyLoggerContract verifies that a Logger implementation

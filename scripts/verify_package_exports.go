@@ -14,9 +14,9 @@ import (
 	"reflect"
 
 	// Import SDK packages that we want to verify
-	"github.com/scttfrdmn/globus-go-sdk/pkg"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/http"
-	"github.com/scttfrdmn/globus-go-sdk/pkg/core/interfaces"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/http"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/interfaces"
 )
 
 // requiredExport defines a function or type that must be exported from a package
@@ -75,19 +75,19 @@ func VerifyPackageExports() bool {
 	// Define the critical exports we need to verify
 	criticalExports := []requiredExport{
 		// HTTP Package exports - these were problematic in issue #11
-		{"GetServicePool", "github.com/scttfrdmn/globus-go-sdk/pkg/core/http", http.GetServicePool, false},
-		{"GetHTTPClientForService", "github.com/scttfrdmn/globus-go-sdk/pkg/core/http", http.GetHTTPClientForService, false},
-		{"NewConnectionPool", "github.com/scttfrdmn/globus-go-sdk/pkg/core/http", http.NewConnectionPool, false},
-		{"NewConnectionPoolManager", "github.com/scttfrdmn/globus-go-sdk/pkg/core/http", http.NewConnectionPoolManager, false},
-		{"NewHttpConnectionPool", "github.com/scttfrdmn/globus-go-sdk/pkg/core/http", http.NewHttpConnectionPool, false},
-		{"NewHttpConnectionPoolManager", "github.com/scttfrdmn/globus-go-sdk/pkg/core/http", http.NewHttpConnectionPoolManager, false},
-		{"GlobalHttpPoolManager", "github.com/scttfrdmn/globus-go-sdk/pkg/core/http", http.GlobalHttpPoolManager, false},
+		{"GetServicePool", "github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/http", http.GetServicePool, false},
+		{"GetHTTPClientForService", "github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/http", http.GetHTTPClientForService, false},
+		{"NewConnectionPool", "github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/http", http.NewConnectionPool, false},
+		{"NewConnectionPoolManager", "github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/http", http.NewConnectionPoolManager, false},
+		{"NewHttpConnectionPool", "github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/http", http.NewHttpConnectionPool, false},
+		{"NewHttpConnectionPoolManager", "github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/http", http.NewHttpConnectionPoolManager, false},
+		{"GlobalHttpPoolManager", "github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/http", http.GlobalHttpPoolManager, false},
 
 		// SDK Package exports
-		{"Version", "github.com/scttfrdmn/globus-go-sdk/pkg", pkg.Version, true},
-		{"NewConfig", "github.com/scttfrdmn/globus-go-sdk/pkg", pkg.NewConfig, false},
-		{"NewConfigFromEnvironment", "github.com/scttfrdmn/globus-go-sdk/pkg", pkg.NewConfigFromEnvironment, false},
-		{"GetScopesByService", "github.com/scttfrdmn/globus-go-sdk/pkg", pkg.GetScopesByService, false},
+		{"Version", "github.com/scttfrdmn/globus-go-sdk/v3/pkg", pkg.Version, true},
+		{"NewConfig", "github.com/scttfrdmn/globus-go-sdk/v3/pkg", pkg.NewConfig, false},
+		{"NewConfigFromEnvironment", "github.com/scttfrdmn/globus-go-sdk/v3/pkg", pkg.NewConfigFromEnvironment, false},
+		{"GetScopesByService", "github.com/scttfrdmn/globus-go-sdk/v3/pkg", pkg.GetScopesByService, false},
 	}
 
 	// Check each export
