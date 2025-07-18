@@ -38,6 +38,16 @@ func (a *NullAuthorizer) IsExpired() bool {
 	return false
 }
 
+// IsValid for NullAuthorizer always returns false
+func (a *NullAuthorizer) IsValid() bool {
+	return false
+}
+
+// GetToken for NullAuthorizer returns empty string
+func (a *NullAuthorizer) GetToken() string {
+	return ""
+}
+
 // StaticTokenAuthorizer implements Authorizer with a static bearer token
 type StaticTokenAuthorizer struct {
 	Token string
@@ -64,6 +74,16 @@ func (a *StaticTokenAuthorizer) HandleMissingAuthorization(_ context.Context) bo
 // IsExpired for StaticTokenAuthorizer always returns false
 func (a *StaticTokenAuthorizer) IsExpired() bool {
 	return false
+}
+
+// IsValid for StaticTokenAuthorizer returns true if token is not empty
+func (a *StaticTokenAuthorizer) IsValid() bool {
+	return a.Token != ""
+}
+
+// GetToken for StaticTokenAuthorizer returns the token
+func (a *StaticTokenAuthorizer) GetToken() string {
+	return a.Token
 }
 
 // RefreshableTokenAuthorizer implements Authorizer with a refreshable token

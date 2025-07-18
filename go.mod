@@ -2,6 +2,8 @@ module github.com/scttfrdmn/globus-go-sdk
 
 go 1.21
 
+// Version: 3.60.0 - Aligned with Python SDK v3.60.0
+
 require (
 	github.com/google/uuid v1.6.0
 	github.com/joho/godotenv v1.5.1

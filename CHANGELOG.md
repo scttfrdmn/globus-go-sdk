@@ -11,41 +11,85 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Package stability indicators throughout the SDK
-  - Added doc.go files with STABILITY levels (stable, beta, alpha, experimental)
-  - Added explicit API component listings for each package
-  - Documented compatibility guarantees and examples
-- Updated CLAUDE.md with API stability guidelines and examples
-- Enhanced CHANGELOG structure to track API changes more explicitly
-- Comprehensive API stability verification tools:
-  - Added `cmd/apicompare` - Tool for comparing APIs between versions
-  - Added `cmd/apigen` - Tool for generating API signatures from source
-  - Added `cmd/depreport` - Tool for generating deprecation reports
-  - Added contract testing framework in `pkg/core/contracts`
-- New documentation for API stability implementation:
-  - Added API_STABILITY_PHASE2_SUMMARY.md with details on implemented tools
-  - Added API_DEPRECATION_SYSTEM.md explaining the deprecation system
-  - Added CONTRACT_TESTING.md with contract testing documentation
-- CI/CD integration for API compatibility verification
-- Improved organization of verification tools:
-  - Moved script utilities to proper cmd/ directories
-  - Created `internal/verification` package for common code
+- Keep a Changelog compliance improvements
+  - Enhanced changelog structure and consistency
+  - Added proper release documentation standards
+  - Implemented semantic versioning practices
 
 ### Changed
-- Updated documentation to clarify stability levels of different components
-- Core package marked as BETA due to ongoing connection pool improvements
-- Transfer package components now have explicit stability indicators
-- Switched from deprecated `golint` to `staticcheck` for code linting
-- Improved pre-commit hooks with enhanced verification
-- Restructured debug code to use proper package organization
+- Nothing changed yet
 
 ### Deprecated
-- No functionality has been deprecated in this release
+- Nothing deprecated yet
 
 ### Removed
-- No functionality has been removed in this release
+- Nothing removed yet
 
 ### Fixed
+- Nothing fixed yet
+
+### Security
+- Nothing security-related yet
+
+## [3.60.0] - TBD
+
+### Added
+- **Version synchronization with Python SDK**
+  - Updated versioning to match Python SDK v3.60.0
+  - Implemented parallel version tracking system
+  - Added version compatibility checking framework
+- **Unified error handling system**
+  - Standardized `GlobusError` type across all services
+  - Added consistent error context and debugging information
+  - Implemented service-specific error codes and messages
+- **Consistent client initialization patterns**
+  - Unified `NewClient()` functions across all services
+  - Standardized configuration and options handling
+  - Enhanced client lifecycle management
+- **Standardized response and pagination patterns**
+  - Unified `Response[T]` wrapper structures
+  - Consistent `PaginatedResponse[T]` across all services
+  - Enhanced metadata handling and request tracking
+- **Updated API versions to match current Globus APIs**
+  - Transfer API updated to latest v0.10+ endpoints
+  - Auth API aligned with current OAuth2 specifications
+  - Groups API updated to v2 endpoints
+  - Search API updated to v1 with latest features
+  - Flows API updated to v1 endpoints
+  - Compute API updated to v2 endpoints
+  - Timers API updated to v1 endpoints
+- **Enhanced deprecation system matching Python SDK**
+  - Added deprecation warnings and migration guidance
+  - Implemented deprecation lifecycle management
+  - Added deprecation reporting tools
+- **Keep a Changelog compliance**
+  - Improved changelog structure and consistency
+  - Added semantic versioning compliance
+  - Enhanced release documentation standards
+
+### Changed
+- **BREAKING**: Version updated from v0.9.15 to v3.60.0 to align with Python SDK
+- **BREAKING**: Unified error handling - all services now use `GlobusError` type
+- **BREAKING**: Standardized client initialization - all services use consistent `NewClient()` pattern
+- **BREAKING**: Consistent response structures - all services use `Response[T]` wrapper
+- **BREAKING**: Updated API endpoints to match current Globus APIs
+- **BREAKING**: Reorganized package structure for better consistency
+- Enhanced documentation structure and consistency
+- Updated examples and documentation for v3.60.0
+
+### Deprecated
+- Legacy error handling patterns (will be removed in v4.0.0)
+- Old client initialization methods (will be removed in v4.0.0)
+- Inconsistent response structures (will be removed in v4.0.0)
+
+### Removed
+- Legacy debugging utilities (moved to proper package structure)
+- Deprecated lint tools (replaced with modern alternatives)
+- Inconsistent internal APIs (replaced with unified patterns)
+
+### Fixed
+- Fixed internal consistency issues across services
+- Corrected API version mismatches
 - Fixed package conflicts in debug files
 - Resolved function redeclarations across the codebase
 - Updated auth and transfer client usage patterns
@@ -53,6 +97,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Fixed variable naming to avoid conflicts (e.g., `err` → `tokenErr`)
 - Improved error handling in contract tests
 - Fixed missing imports in compute example files
+
+### Security
+- Enhanced token handling security
+- Improved credential validation mechanisms
+- Updated security practices to match current standards
+
+## [0.9.15] - 2025-05-08
+
+### Fixed
+- Properly tagged release for the connection pool functions fix (issue #13)
+  - Ensured correct Git tag pointing to the fixed code
+  - Verified build works with downstream dependencies
+  - Fixed tagging issues from previous release attempts
 
 ## [0.9.15] - 2025-05-08
 
@@ -274,7 +331,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - HTTP transport layer
 - Basic authorization mechanisms
 
-[Unreleased]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.15...HEAD
+[Unreleased]: https://github.com/scttfrdmn/globus-go-sdk/compare/v3.60.0...HEAD
+[3.60.0]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.15...v3.60.0
 [0.9.15]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.14...v0.9.15
 [0.9.14]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.13...v0.9.14
 [0.9.13]: https://github.com/scttfrdmn/globus-go-sdk/compare/v0.9.12...v0.9.13
