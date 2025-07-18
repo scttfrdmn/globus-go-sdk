@@ -1,6 +1,6 @@
 module github.com/scttfrdmn/globus-go-sdk/v3
 
-go 1.21
+go 1.22
 
 // Version: 3.60.0 - Aligned with Python SDK v3.60.0
 
