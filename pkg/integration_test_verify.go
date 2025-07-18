@@ -12,7 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
 )
 
@@ -134,25 +133,19 @@ func verifyTransferEndpoints(t *testing.T, config *SDKConfig, sourceEndpointID, 
 	}
 	fmt.Printf("✅ Destination endpoint accessible: %s\n", destEndpoint.DisplayName)
 
-	// Check if endpoints are activated
-	sourceActivated, err := transferClient.EndpointIsActivated(ctx, sourceEndpointID)
-	if err != nil {
-		fmt.Printf("⚠️  Couldn't check if source endpoint is activated: %v\n", err)
-	} else if !sourceActivated {
-		fmt.Println("⚠️  Source endpoint is not activated. Some transfer tests may fail.")
+	// Check if endpoints have activation requirements 
+	if sourceEndpoint.ActivationRequirements != nil && len(sourceEndpoint.ActivationRequirements) > 0 {
+		fmt.Println("⚠️  Source endpoint has activation requirements. Some transfer tests may fail.")
 		fmt.Println("   Activate the endpoint in the Globus web interface or using the SDK.")
 	} else {
-		fmt.Println("✅ Source endpoint is activated")
+		fmt.Println("✅ Source endpoint appears to be activated")
 	}
 
-	destActivated, err := transferClient.EndpointIsActivated(ctx, destEndpointID)
-	if err != nil {
-		fmt.Printf("⚠️  Couldn't check if destination endpoint is activated: %v\n", err)
-	} else if !destActivated {
-		fmt.Println("⚠️  Destination endpoint is not activated. Some transfer tests may fail.")
+	if destEndpoint.ActivationRequirements != nil && len(destEndpoint.ActivationRequirements) > 0 {
+		fmt.Println("⚠️  Destination endpoint has activation requirements. Some transfer tests may fail.")
 		fmt.Println("   Activate the endpoint in the Globus web interface or using the SDK.")
 	} else {
-		fmt.Println("✅ Destination endpoint is activated")
+		fmt.Println("✅ Destination endpoint appears to be activated")
 	}
 
 	// Check test paths if specified

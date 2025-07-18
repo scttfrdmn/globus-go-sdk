@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
-	"github.com/scttfrdmn/globus-go-sdk/tests/compatibility"
+	"github.com/scttfrdmn/globus-go-sdk/v3/tests/compatibility"
 )
 
 // TransferClientTest verifies Transfer client compatibility
