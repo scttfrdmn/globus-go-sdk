@@ -22,8 +22,8 @@ You can enable logging when creating a client by using the appropriate client op
 
 ```go
 import (
-    "github.com/scttfrdmn/globus-go-sdk/pkg"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/logging"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/logging"
 )
 
 // Create a configuration with logging enabled
@@ -76,7 +76,7 @@ You can create a fully customized logger:
 ```go
 import (
     "os"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/logging"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/logging"
 )
 
 // Create a custom logger
@@ -263,8 +263,8 @@ import (
     "context"
     "os"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/logging"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/logging"
 )
 
 func main() {

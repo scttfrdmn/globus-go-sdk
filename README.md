@@ -8,8 +8,8 @@
 <h1 align="center">Globus Go SDK</h1>
 
 <p align="center">
-  <a href="https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk"><img src="https://pkg.go.dev/badge/github.com/scttfrdmn/globus-go-sdk.svg" alt="Go Reference"></a>
-  <a href="https://goreportcard.com/report/github.com/scttfrdmn/globus-go-sdk"><img src="https://goreportcard.com/badge/github.com/scttfrdmn/globus-go-sdk" alt="Go Report Card"></a>
+  <a href="https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/v3/v3"><img src="https://pkg.go.dev/badge/github.com/scttfrdmn/globus-go-sdk/v3.svg" alt="Go Reference"></a>
+  <a href="https://goreportcard.com/report/github.com/scttfrdmn/globus-go-sdk/v3/v3"><img src="https://goreportcard.com/badge/github.com/scttfrdmn/globus-go-sdk/v3/v3" alt="Go Report Card"></a>
   <a href="https://github.com/scttfrdmn/globus-go-sdk/actions/workflows/go.yml"><img src="https://github.com/scttfrdmn/globus-go-sdk/actions/workflows/go.yml/badge.svg" alt="Build Status"></a>
   <a href="https://github.com/scttfrdmn/globus-go-sdk/actions/workflows/deploy-docs.yml"><img src="https://github.com/scttfrdmn/globus-go-sdk/actions/workflows/deploy-docs.yml/badge.svg" alt="Documentation Status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/scttfrdmn/globus-go-sdk" alt="License"></a>
@@ -52,13 +52,13 @@ A Go SDK for interacting with Globus services, providing a simple and idiomatic 
 ### Using `go get`
 
 ```bash
-go get github.com/scttfrdmn/globus-go-sdk
+go get github.com/scttfrdmn/globus-go-sdk/v3
 ```
 
 ### Using Go modules in your project
 
 ```go
-import "github.com/scttfrdmn/globus-go-sdk/pkg"
+import "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg"
 ```
 
 ## Testing with Globus Credentials
@@ -141,9 +141,9 @@ import (
     "os"
     "time"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/tokens"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/auth"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/tokens"
 )
 
 func main() {
@@ -243,7 +243,7 @@ import (
     "log"
     "os"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg"
 )
 
 func main() {
@@ -281,8 +281,8 @@ import (
     "os"
     "time"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/transfer"
 )
 
 func main() {
@@ -383,7 +383,7 @@ import (
     "log"
     "os"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg"
 )
 
 func main() {
@@ -443,7 +443,7 @@ import (
     "os"
     "time"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg"
 )
 
 func main() {
@@ -493,7 +493,7 @@ func main() {
 For detailed documentation, see:
 
 - [Online Documentation](https://scttfrdmn.github.io/globus-go-sdk/) ← Comprehensive documentation hosted on GitHub Pages
-- [GoDoc Reference](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/)
+- [GoDoc Reference](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/v3/)
 - [User Guide](doc/user-guide.md)
 - [Quick Start Examples](doc/QUICK_START_EXAMPLES.md)
 - [v3.60.0 Migration Guide](doc/V3.60.0_MIGRATION_GUIDE.md)

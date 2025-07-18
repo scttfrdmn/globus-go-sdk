@@ -402,8 +402,8 @@ import (
     "os"
     "time"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/auth"
 )
 
 func main() {
@@ -497,7 +497,7 @@ import (
     "log"
     "os"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg"
 )
 
 func main() {
@@ -546,8 +546,8 @@ import (
     "os"
     "time"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/auth"
 )
 
 func main() {

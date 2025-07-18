@@ -16,8 +16,8 @@ The tokens package provides functionality for storing, retrieving, and refreshin
 
 ```go
 import (
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/tokens"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/auth"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/tokens"
 )
 
 // Initialize token storage

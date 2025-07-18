@@ -92,8 +92,8 @@ import (
     "net/http"
     "net/url"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/client"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/auth"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/client"
 )
 
 const (
@@ -150,7 +150,7 @@ import (
     "net/http"
     "path"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/client"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/client"
 )
 
 // ListItems retrieves a list of items
@@ -240,7 +240,7 @@ import (
     "errors"
     "strings"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/client"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/client"
 )
 
 // Common error codes
@@ -291,7 +291,7 @@ import (
     "testing"
     "time"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/auth"
 )
 
 func TestListItems(t *testing.T) {
@@ -619,7 +619,7 @@ import (
     "os"
     "testing"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/auth"
 )
 
 // skipIfNoToken skips the test if there's no token available

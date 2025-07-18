@@ -294,7 +294,7 @@ authURL := authClient.GetAuthorizationURL(
 
 ```go
 // Example: Using the SDK's rate limiting
-import "github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
+import "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/ratelimit"
 
 limiter := ratelimit.NewTokenBucketLimiter(10, 2)  // 10 tokens, 2 tokens/second
 handler := ratelimit.NewResponseHandler(limiter)

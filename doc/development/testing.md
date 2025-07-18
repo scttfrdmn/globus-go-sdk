@@ -297,7 +297,7 @@ import (
     "context"
     "os"
     
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/myservice"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/myservice"
 )
 
 func TestIntegration_MyFeature(t *testing.T) {
@@ -410,7 +410,7 @@ Example:
 // Add to verify_package_exports.go
 criticalExports := []requiredExport{
     // Existing exports...
-    {"MyNewFunction", "github.com/scttfrdmn/globus-go-sdk/pkg/mypackage", mypackage.MyNewFunction, false},
+    {"MyNewFunction", "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/mypackage", mypackage.MyNewFunction, false},
 }
 
 // Add interface implementation test

@@ -83,7 +83,7 @@ Once all the issues above have been addressed, follow these steps to create the 
    - Target: The tag created in step 3
 5. Publish to the Go module proxy:
    ```bash
-   GOPROXY=proxy.golang.org go list -m github.com/scttfrdmn/globus-go-sdk@v0.2.0
+   GOPROXY=proxy.golang.org go list -m github.com/scttfrdmn/globus-go-sdk/v3@v0.2.0
    ```
 6. Announce the release in relevant channels
 

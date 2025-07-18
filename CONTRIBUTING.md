@@ -100,7 +100,7 @@ This project targets Go 1.21 and above.
 Maintain the established package structure:
 
 ```
-github.com/scttfrdmn/globus-go-sdk/
+github.com/scttfrdmn/globus-go-sdk/v3/
 ├── pkg/                         # Main SDK code
 │   ├── core/                    # Core SDK functionality
 │   │   ├── authorizers/         # Authentication mechanisms

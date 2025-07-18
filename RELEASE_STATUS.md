@@ -88,7 +88,7 @@ We now follow a standardized release process as documented in `RELEASE_CHECKLIST
 
 To update to the latest version:
 ```
-go get github.com/scttfrdmn/globus-go-sdk@v0.9.17
+go get github.com/scttfrdmn/globus-go-sdk/v3@v0.9.17
 ```
 
 ### API Stability Tools

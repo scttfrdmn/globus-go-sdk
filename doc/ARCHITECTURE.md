@@ -11,7 +11,7 @@ The Globus Go SDK provides a Go language interface to Globus services. It follow
 ## Directory Structure
 
 ```
-github.com/scttfrdmn/globus-go-sdk/
+github.com/scttfrdmn/globus-go-sdk/v3/
 ├── .github/                     # GitHub actions and configurations
 ├── cmd/                         # Command-line tools and examples
 │   └── examples/                # Example applications for using the SDK

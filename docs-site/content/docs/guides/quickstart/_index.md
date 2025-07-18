@@ -27,7 +27,7 @@ Before using any of the services, make sure you have:
 1. **Go 1.18 or higher** installed
 2. Added the Globus Go SDK to your project:
    ```bash
-   go get github.com/scttfrdmn/globus-go-sdk
+   go get github.com/scttfrdmn/globus-go-sdk/v3
    ```
 3. **Globus Account** with appropriate permissions for the services you want to use
 4. **Client Credentials** (client ID and secret) for your application
@@ -43,9 +43,9 @@ import (
     "log"
     "os"
     
-    "github.com/scttfrdmn/globus-go-sdk/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg"
     // Service-specific imports, e.g.:
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/auth"
 )
 ```
 

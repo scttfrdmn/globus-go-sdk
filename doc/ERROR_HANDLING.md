@@ -46,8 +46,8 @@ The `RetryWithBackoff` function automatically retries operations when they fail 
 
 ```go
 import (
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/ratelimit"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/transfer"
 )
 
 // Retry a transfer operation with backoff
@@ -113,7 +113,7 @@ For more advanced error handling, the SDK includes a circuit breaker implementat
 
 ```go
 import (
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/ratelimit"
 )
 
 // Create a circuit breaker

@@ -23,16 +23,16 @@ This guide provides comprehensive information about using the Globus Go SDK for 
 Install the Globus Go SDK using `go get`:
 
 ```bash
-go get github.com/scttfrdmn/globus-go-sdk
+go get github.com/scttfrdmn/globus-go-sdk/v3
 ```
 
 Include it in your Go code:
 
 ```go
 import (
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/groups"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/auth"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/transfer"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/groups"
 )
 ```
 
@@ -45,7 +45,7 @@ package main
 
 import (
     "context"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/auth"
 )
 
 func main() {
@@ -357,8 +357,8 @@ import (
     "fmt"
     "time"
     
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/auth"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/auth"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/transfer"
 )
 
 func main() {

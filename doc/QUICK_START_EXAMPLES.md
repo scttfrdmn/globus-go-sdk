@@ -15,9 +15,9 @@ import (
     "os"
     "time"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/tokens"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/authorizers"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/auth"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/tokens"
 )
 
 func main() {
@@ -110,9 +110,9 @@ import (
     "os"
     "time"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/authorizers"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/ratelimit"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/transfer"
 )
 
 func main() {
@@ -250,9 +250,9 @@ import (
     "log"
     "os"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/groups"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/authorizers"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/ratelimit"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/groups"
 )
 
 func main() {
@@ -305,9 +305,9 @@ import (
     "log"
     "os"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/search"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/authorizers"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/ratelimit"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/search"
 )
 
 func main() {
@@ -397,9 +397,9 @@ import (
     "os"
     "time"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/flows"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/authorizers"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/ratelimit"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/flows"
 )
 
 func main() {
@@ -487,10 +487,10 @@ import (
     "os"
     "time"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/authorizers"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/transfer"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/authorizers"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/ratelimit"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/auth"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/transfer"
 )
 
 func main() {

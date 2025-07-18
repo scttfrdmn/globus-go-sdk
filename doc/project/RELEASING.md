@@ -65,7 +65,7 @@ Before starting the release process, ensure you have:
 
 5. **Update the Go module proxy**:
    ```bash
-   GOPROXY=proxy.golang.org go list -m github.com/scttfrdmn/globus-go-sdk@vX.Y.Z
+   GOPROXY=proxy.golang.org go list -m github.com/scttfrdmn/globus-go-sdk/v3@vX.Y.Z
    ```
 
 ## Post-Release Actions

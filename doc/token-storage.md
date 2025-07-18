@@ -156,8 +156,8 @@ The SDK now includes a new unified token management package in `pkg/services/tok
 
 ```go
 import (
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/tokens"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/auth"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/tokens"
 )
 
 // Create a storage backend (file or memory)

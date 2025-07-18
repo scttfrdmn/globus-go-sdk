@@ -21,9 +21,9 @@ import (
     "os"
     "time"
     
-    "github.com/scttfrdmn/globus-go-sdk/pkg"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/tokens"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/auth"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/tokens"
 )
 
 func main() {
@@ -259,9 +259,9 @@ import (
     "os"
     "time"
     
-    "github.com/scttfrdmn/globus-go-sdk/pkg"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/tokens"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/auth"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/tokens"
 )
 
 func main() {

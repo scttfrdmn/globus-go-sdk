@@ -131,7 +131,7 @@ Pre-commit hooks run automatically before each commit to catch issues early:
 ### Package Organization
 
 ```
-github.com/scttfrdmn/globus-go-sdk/
+github.com/scttfrdmn/globus-go-sdk/v3/
 ├── pkg/                         # Main SDK code
 │   ├── core/                    # Core SDK functionality
 │   │   ├── authorizers/         # Authentication mechanisms

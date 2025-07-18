@@ -18,8 +18,8 @@ The Globus Flows service provides a robust platform for defining and executing w
 
 ```go
 import (
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/flows"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/flows"
 )
 
 // Create a flows client with access token

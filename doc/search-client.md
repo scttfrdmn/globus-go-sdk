@@ -24,8 +24,8 @@ The Globus Search client in the Go SDK provides a comprehensive interface to the
 ```go
 import (
     "context"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/search"
-    "github.com/scttfrdmn/globus-go-sdk/pkg/core"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/search"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core"
 )
 
 // Create a search client with an access token
@@ -589,7 +589,7 @@ import (
     "os"
     "time"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/search"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/search"
 )
 
 func main() {

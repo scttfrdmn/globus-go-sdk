@@ -26,7 +26,7 @@ import (
     "context"
     "log"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg/globus"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/globus"
 )
 
 func main() {
@@ -63,7 +63,7 @@ func main() {
 ## Installation
 
 ```bash
-go get github.com/scttfrdmn/globus-go-sdk@v0.9.2
+go get github.com/scttfrdmn/globus-go-sdk/v3@v0.9.2
 ```
 
 ## Advanced Features

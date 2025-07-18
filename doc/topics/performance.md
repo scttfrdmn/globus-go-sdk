@@ -67,7 +67,7 @@ These components work together to help you build high-performance applications t
 The SDK provides comprehensive performance monitoring and metrics collection for transfer operations through the `metrics` package.
 
 ```go
-import "github.com/scttfrdmn/globus-go-sdk/pkg/metrics"
+import "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/metrics"
 ```
 
 ### Transfer Metrics Collection
@@ -408,7 +408,7 @@ The SDK includes comprehensive benchmarking tools to measure and optimize transf
 The benchmark package (`pkg/benchmark`) provides tools for testing and measuring performance:
 
 ```go
-import "github.com/scttfrdmn/globus-go-sdk/pkg/benchmark"
+import "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/benchmark"
 ```
 
 #### Key Components
@@ -793,7 +793,7 @@ The SDK provides robust mechanisms for handling API rate limits and transient fa
 The `RateLimiter` interface provides rate limiting functionality:
 
 ```go
-import "github.com/scttfrdmn/globus-go-sdk/pkg/core/ratelimit"
+import "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/ratelimit"
 ```
 
 #### Creating a Rate Limiter

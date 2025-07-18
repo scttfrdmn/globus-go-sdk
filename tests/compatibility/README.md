@@ -71,8 +71,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
-	"github.com/scttfrdmn/globus-go-sdk/tests/compatibility"
+	"github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/auth"
+	"github.com/scttfrdmn/globus-go-sdk/v3/tests/compatibility"
 )
 
 // TokenManagerTest verifies token manager compatibility

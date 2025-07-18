@@ -83,7 +83,7 @@ func InitTransport(client interfaces.ClientInterface, debug, trace bool) interfa
 
 ### 3. Updated `pkg/core/client.go`
 
-- Removed import of `github.com/scttfrdmn/globus-go-sdk/pkg/core/transport`
+- Removed import of `github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/transport`
 - Changed `Transport` field type from `*transport.Transport` to `interfaces.Transport`
 - Updated `NewClient()` to use `InitTransport()` function
 - Simplified HTTP debugging and tracing options

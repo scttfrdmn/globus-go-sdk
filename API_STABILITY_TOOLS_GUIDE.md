@@ -118,7 +118,7 @@ Located in `pkg/core/deprecation`, this package provides utilities for marking a
 **Example Usage:**
 
 ```go
-import "github.com/scttfrdmn/globus-go-sdk/pkg/core/deprecation"
+import "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/deprecation"
 
 func OldFunction() {
     // Log a deprecation warning
@@ -172,7 +172,7 @@ Located in `pkg/core/contracts`, this package provides utilities for verifying t
 **Example Usage:**
 
 ```go
-import "github.com/scttfrdmn/globus-go-sdk/pkg/core/contracts"
+import "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/core/contracts"
 
 func TestCustomTransport(t *testing.T) {
     transport := NewCustomTransport()

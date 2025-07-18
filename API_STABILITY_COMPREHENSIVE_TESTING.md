@@ -169,8 +169,8 @@ import (
     "context"
     "testing"
 
-    "github.com/scttfrdmn/globus-go-sdk/pkg/services/flows"
-    "github.com/scttfrdmn/globus-go-sdk/tests/compatibility"
+    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/flows"
+    "github.com/scttfrdmn/globus-go-sdk/v3/tests/compatibility"
 )
 
 // FlowsClientTest verifies Flows client compatibility
