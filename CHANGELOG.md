@@ -11,10 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Keep a Changelog compliance improvements
-  - Enhanced changelog structure and consistency
-  - Added proper release documentation standards
-  - Implemented semantic versioning practices
+- Nothing added yet
 
 ### Changed
 - Nothing changed yet
@@ -31,13 +28,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Nothing security-related yet
 
-## [3.60.0] - TBD
+## [3.60.0-1] - 2025-01-27
 
 ### Added
 - **Version synchronization with Python SDK**
-  - Updated versioning to match Python SDK v3.60.0
-  - Implemented parallel version tracking system
-  - Added version compatibility checking framework
+  - Updated versioning to hybrid format `[PYTHON_SDK_VERSION]-[GO_SDK_BUILD]` (v3.60.0-1)
+  - Implemented synchronized versioning with Python SDK v3.60.0  
+  - Added comprehensive versioning strategy documentation (VERSIONING_STRATEGY.md)
+  - Updated module path to github.com/scttfrdmn/globus-go-sdk/v3
+- **Globus Auth Requirements Error (GARE) support**
+  - Added GlobusAuthRequirementsError type for handling dependent consent errors
+  - Implemented recognition of `dependent_consent_required` errors from Auth API
+  - Added support for authorization parameters containing dependent scopes
+  - Added helper functions: IsGlobusAuthRequirementsError(), IsConsentRequired(), IsDependentConsentRequired()
 - **Unified error handling system**
   - Standardized `GlobusError` type across all services
   - Added consistent error context and debugging information
@@ -100,8 +103,32 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Security
 - Enhanced token handling security
-- Improved credential validation mechanisms
+- Improved credential validation mechanisms  
 - Updated security practices to match current standards
+
+### Migration from v0.9.x
+
+This release introduces **breaking changes** that require migration:
+
+1. **Update import paths**:
+   ```go
+   // OLD
+   import "github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
+   
+   // NEW  
+   import "github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
+   ```
+
+2. **Update go.mod**:
+   ```bash
+   go get github.com/scttfrdmn/globus-go-sdk/v3
+   ```
+
+3. **Version tracking**: The SDK now follows Python SDK versioning with format `[PYTHON_SDK_VERSION]-[GO_SDK_BUILD]`
+
+4. **GARE support**: New error handling for dependent consent scenarios - see auth package documentation
+
+For detailed migration guidance, see [VERSIONING_STRATEGY.md](VERSIONING_STRATEGY.md).
 
 ## [0.9.15] - 2025-05-08
 

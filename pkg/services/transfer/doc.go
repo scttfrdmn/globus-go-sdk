@@ -6,7 +6,8 @@ Package transfer provides a client for interacting with the Globus Transfer serv
 
 # STABILITY: MIXED
 
-This package contains components at different stability levels:
+This package is part of the Globus Go SDK v3.x which is synchronized with the
+Globus Python SDK. It contains components at different stability levels:
 
 ## STABLE Components
 
@@ -42,10 +43,15 @@ significantly or be removed:
 
 # Compatibility Notes
 
-- Stable components follow semantic versioning guarantees
+- Stable components follow semantic versioning guarantees and will not change incompatibly within a major version
 - Beta components may change in minor versions, but with migration guidance
 - Experimental components may change in any release with minimal notice
 - All changes will be documented in the CHANGELOG
+
+# Synchronized Versioning
+
+Starting with v3.60.0-1, this package follows synchronized versioning with the Globus Python SDK.
+This ensures API compatibility and feature parity across language implementations for stable components.
 
 # Basic Usage
 

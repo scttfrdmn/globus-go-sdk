@@ -1,0 +1,135 @@
+name: Deploy Versioned Documentation
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - v*
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to build (format: v0.x.y or "latest")'
+        required: true
+        default: 'latest'
+        type: string
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Hugo
+        uses: peaceiris/actions-hugo@v2
+        with:
+          hugo-version: "0.115.0"
+          extended: true
+
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.21"
+
+      - name: Setup Pages
+        id: pages
+        uses: actions/configure-pages@v4
+
+      - name: Install Hugo theme
+        run: |
+          cd docs-site
+          if [ ! -d "themes/hugo-book" ]; then
+            git clone https://github.com/alex-shpak/hugo-book.git themes/hugo-book
+          fi
+
+      - name: Determine version
+        id: version
+        run: |
+          # Set default version path
+          VERSION_PATH="latest"
+          
+          # If triggered by tag
+          if [[ $GITHUB_REF == refs/tags/v* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+            VERSION_PATH=${VERSION}
+            echo "Building for tagged version: $VERSION"
+          # If triggered manually with specific version
+          elif [[ "${{ github.event.inputs.version }}" != "" && "${{ github.event.inputs.version }}" != "latest" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+            VERSION_PATH=${VERSION}
+            echo "Building for specified version: $VERSION"
+          # Otherwise build for latest
+          else
+            VERSION="latest"
+            echo "Building for latest version"
+          fi
+          
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "VERSION_PATH=$VERSION_PATH" >> $GITHUB_ENV
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version_path=$VERSION_PATH" >> $GITHUB_OUTPUT
+
+      - name: Update config for version
+        run: |
+          # Update config to mark the current version as selected
+          if [[ -f "docs-site/config/_default/config.toml" ]]; then
+            sed -i -e 's/selected = true/selected = false/g' docs-site/config/_default/config.toml
+            
+            if [[ "$VERSION" == "latest" ]]; then
+              sed -i -e 's/{ version = "main", path = "\/developer-tools\/go-sdk\/latest" }/{ version = "main", path = "\/developer-tools\/go-sdk\/latest", selected = true }/g' docs-site/config/_default/config.toml
+            else
+              sed -i -e "s/{ version = \"$VERSION\", path = \"\/developer-tools\/go-sdk\/$VERSION\" }/{ version = \"$VERSION\", path = \"\/developer-tools\/go-sdk\/$VERSION\", selected = true }/g" docs-site/config/_default/config.toml
+            fi
+          fi
+          
+          # Set base URL for GitHub Pages
+          base_url="${{ steps.pages.outputs.base_url }}"
+          if [[ -n "$base_url" ]]; then
+            sed -i -e "s|baseURL = \"https://docs.globus.org/developer-tools/go-sdk/\"|baseURL = \"$base_url/\"|g" docs-site/config/_default/config.toml
+          else
+            # Fallback for local development
+            sed -i -e "s|baseURL = \"https://docs.globus.org/developer-tools/go-sdk/\"|baseURL = \"https://scttfrdmn.github.io/globus-go-sdk/\"|g" docs-site/config/_default/config.toml
+          fi
+
+      - name: Run sync-docs script
+        run: |
+          cd docs-site
+          bash ./sync-docs.sh
+          echo "Documentation synchronized from main doc directory"
+
+      - name: Generate API docs
+        run: |
+          go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
+          mkdir -p docs-site/content/docs/reference/api
+          gomarkdoc --output docs-site/content/docs/reference/api/{{.Dir}}.md ./pkg/...
+
+      - name: Build documentation
+        env:
+          HUGO_ENVIRONMENT: production
+          HUGO_ENV: production
+        run: |
+          cd docs-site
+          hugo --minify
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./docs-site/public
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

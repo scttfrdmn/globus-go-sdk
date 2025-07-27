@@ -1,0 +1,11 @@
+<!-- Version selector for documentation -->
+{{ if .Site.Params.BookVersions }}
+<div class="version-selector">
+  <span class="version-selector-label">Version:</span>
+  <select onchange="window.location.href = this.options[this.selectedIndex].value;">
+    {{ range .Site.Params.BookVersions }}
+    <option value="{{ .path }}" {{ if .selected }}selected{{ end }}>{{ .version }}</option>
+    {{ end }}
+  </select>
+</div>
+{{ end }}

@@ -18,6 +18,7 @@ within a major version:
   - Core model types (TokenResponse, TokenInfo, UserInfo)
   - Error checking functions (IsInvalidGrant, IsInvalidClient, etc.)
   - Client configuration options (WithClientID, WithClientSecret, etc.)
+  - GARE support (GlobusAuthRequirementsError, IsGlobusAuthRequirementsError, etc.) - Added in v3.60.0
 
 MFA-related components are considered BETA:
   - MFAChallenge and MFAResponse types

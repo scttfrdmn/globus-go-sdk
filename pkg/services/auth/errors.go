@@ -23,6 +23,10 @@ const (
 	// Error codes for authorization endpoint
 	ErrCodeServerError            = "server_error"
 	ErrCodeTemporarilyUnavailable = "temporarily_unavailable"
+	
+	// GARE (Globus Auth Requirements Error) codes - added in v3.60.0 parity
+	ErrCodeConsentRequired          = "consent_required"
+	ErrCodeDependentConsentRequired = "dependent_consent_required"
 )
 
 // Common errors that can be directly checked
@@ -47,6 +51,10 @@ var (
 
 	// ErrBadRequest is returned when the request is malformed
 	ErrBadRequest = errors.New("bad request")
+	
+	// GARE (Globus Auth Requirements Error) errors - added in v3.60.0 parity
+	ErrConsentRequired          = errors.New("consent required")
+	ErrDependentConsentRequired = errors.New("dependent consent required")
 )
 
 // AuthError represents an error from the Globus Auth API
@@ -56,12 +64,30 @@ type AuthError struct {
 	StatusCode  int    `json:"-"`
 }
 
+// GlobusAuthRequirementsError (GARE) represents auth requirements errors
+// that contain authorization parameters for handling dependent scopes
+// Added in v3.60.0 for Python SDK parity
+type GlobusAuthRequirementsError struct {
+	Code                string                 `json:"error"`
+	Description         string                 `json:"error_description,omitempty"`
+	AuthorizationParams map[string]interface{} `json:"authorization_parameters,omitempty"`
+	StatusCode          int                    `json:"-"`
+}
+
 // Error returns a string representation of the error
 func (e *AuthError) Error() string {
 	if e.Description != "" {
 		return fmt.Sprintf("%s: %s", e.Code, e.Description)
 	}
 	return e.Code
+}
+
+// Error returns a string representation of the GARE error
+func (e *GlobusAuthRequirementsError) Error() string {
+	if e.Description != "" {
+		return fmt.Sprintf("auth requirements error: %s: %s", e.Code, e.Description)
+	}
+	return fmt.Sprintf("auth requirements error: %s", e.Code)
 }
 
 // IsInvalidGrant checks if the error is an invalid grant error
@@ -127,6 +153,38 @@ func IsBadRequest(err error) bool {
 	return errors.Is(err, ErrBadRequest)
 }
 
+// IsGlobusAuthRequirementsError checks if the error is a GARE
+func IsGlobusAuthRequirementsError(err error) bool {
+	var gareErr *GlobusAuthRequirementsError
+	return errors.As(err, &gareErr)
+}
+
+// IsConsentRequired checks if the error is a consent required error
+func IsConsentRequired(err error) bool {
+	var gareErr *GlobusAuthRequirementsError
+	if errors.As(err, &gareErr) {
+		return gareErr.Code == ErrCodeConsentRequired
+	}
+	var authErr *AuthError
+	if errors.As(err, &authErr) {
+		return authErr.Code == ErrCodeConsentRequired
+	}
+	return errors.Is(err, ErrConsentRequired)
+}
+
+// IsDependentConsentRequired checks if the error is a dependent consent required error
+func IsDependentConsentRequired(err error) bool {
+	var gareErr *GlobusAuthRequirementsError
+	if errors.As(err, &gareErr) {
+		return gareErr.Code == ErrCodeDependentConsentRequired
+	}
+	var authErr *AuthError
+	if errors.As(err, &authErr) {
+		return authErr.Code == ErrCodeDependentConsentRequired
+	}
+	return errors.Is(err, ErrDependentConsentRequired)
+}
+
 // parseAuthError parses an error response from the Globus Auth API
 func parseAuthError(statusCode int, respBody []byte) error {
 	// If the response body is empty, return a generic error based on status code
@@ -150,6 +208,19 @@ func parseAuthError(statusCode int, respBody []byte) error {
 
 	// Set the status code for later checking
 	authErr.StatusCode = statusCode
+
+	// Handle GARE (Globus Auth Requirements Error) cases first
+	// These need special handling as they contain authorization parameters
+	if authErr.Code == ErrCodeConsentRequired || authErr.Code == ErrCodeDependentConsentRequired {
+		// Try to parse as GARE with authorization parameters
+		var gareErr GlobusAuthRequirementsError
+		if err := json.Unmarshal(respBody, &gareErr); err == nil && gareErr.AuthorizationParams != nil {
+			gareErr.StatusCode = statusCode
+			return &gareErr
+		}
+		// Fallback to regular AuthError if no authorization parameters
+		return &authErr
+	}
 
 	// Map common error codes to standard errors or return the AuthError directly
 	switch authErr.Code {

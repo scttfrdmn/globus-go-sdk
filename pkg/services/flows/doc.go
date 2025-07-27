@@ -4,11 +4,11 @@
 /*
 Package flows provides a client for interacting with the Globus Flows service.
 
-# STABILITY: BETA
+# STABILITY: STABLE
 
-This package is approaching stability but may still undergo minor changes.
-Components listed below are considered relatively stable, but may have
-minor signature changes before the package is marked as stable:
+This package is part of the Globus Go SDK v3.x which is synchronized with the
+Globus Python SDK and follows stable API guarantees. Components listed below are
+considered part of the public API and will not change incompatibly within a major version:
 
   - Client interface and implementation
   - Flow management methods (ListFlows, GetFlow, CreateFlow, etc.)
@@ -16,25 +16,24 @@ minor signature changes before the package is marked as stable:
   - Core model types (Flow, Run, ActionProvider, etc.)
   - Pagination support and iterators
   - Client configuration options
-
-The following components are less stable and more likely to evolve:
-
   - Error handling patterns
   - Batch operations
   - Polling mechanisms (WaitForRun)
   - Action provider interactions
 
-# Compatibility Notes
+# Compatibility Guarantees
 
-For beta packages:
-  - Minor backward-incompatible changes may still occur in minor releases
-  - Significant efforts will be made to maintain backward compatibility
-  - Changes will be clearly documented in the CHANGELOG
+For stable packages:
+  - Public API signatures will not change incompatibly in minor or patch releases
+  - New functionality will be added in backward-compatible ways
   - Deprecated functionality will be marked with appropriate notices
-  - Migration paths will be provided for any breaking changes
+  - Deprecated functionality will be maintained for at least one major release cycle
+  - Any breaking changes will only occur in major version bumps (e.g., v3.x to v4.x)
 
-This package is expected to reach stable status in version v1.0.0.
-Until then, users should review the CHANGELOG when upgrading.
+# Synchronized Versioning
+
+Starting with v3.60.0-1, this package follows synchronized versioning with the Globus Python SDK.
+This ensures API compatibility and feature parity across language implementations.
 
 # Basic Usage
 

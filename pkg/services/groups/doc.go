@@ -6,9 +6,9 @@ Package groups provides a client for interacting with the Globus Groups service.
 
 # STABILITY: STABLE
 
-This package follows semantic versioning. Components listed below are
-considered part of the public API and will not change incompatibly
-within a major version:
+This package is part of the Globus Go SDK v3.x which is synchronized with the
+Globus Python SDK and follows stable API guarantees. Components listed below are
+considered part of the public API and will not change incompatibly within a major version:
 
   - Client interface and implementation
   - Group management methods (ListGroups, GetGroup, CreateGroup, etc.)
@@ -27,7 +27,12 @@ For stable packages:
   - New functionality will be added in backward-compatible ways
   - Deprecated functionality will be marked with appropriate notices
   - Deprecated functionality will be maintained for at least one major release cycle
-  - Any breaking changes will only occur in major version bumps (e.g., v1.0.0 to v2.0.0)
+  - Any breaking changes will only occur in major version bumps (e.g., v3.x to v4.x)
+
+# Synchronized Versioning
+
+Starting with v3.60.0-1, this package follows synchronized versioning with the Globus Python SDK.
+This ensures API compatibility and feature parity across language implementations.
 
 # Basic Usage
 

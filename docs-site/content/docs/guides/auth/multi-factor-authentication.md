@@ -1,0 +1,659 @@
+---
+title: "Multi-Factor Authentication"
+weight: 20
+---
+
+# Multi-Factor Authentication (MFA)
+
+This guide explains how to implement Multi-Factor Authentication (MFA) support in your applications using the Globus Go SDK.
+
+## Overview
+
+Multi-Factor Authentication adds an additional layer of security to the authentication process by requiring users to provide a second form of verification beyond just their password. Globus Auth supports several MFA methods, including:
+
+- Time-based One-Time Passwords (TOTP)
+- WebAuthn (security keys like YubiKey)
+- Backup codes
+- SMS codes (on some accounts)
+
+The Globus Go SDK provides a comprehensive MFA implementation that allows your applications to:
+
+- Detect when MFA is required
+- Present MFA challenges to users
+- Process MFA responses
+- Support MFA during both initial authentication and token refresh
+
+## Understanding the MFA Flow
+
+When MFA is required, the authentication flow changes like this:
+
+1. **Initial Auth Request**: Your application starts the normal OAuth2 flow
+2. **MFA Challenge**: Globus Auth responds with an MFA challenge instead of tokens
+3. **MFA Response**: Your application collects MFA credentials from the user
+4. **MFA Verification**: The MFA credentials are submitted to Globus Auth
+5. **Token Issuance**: If correct, Globus Auth responds with the requested tokens
+
+The SDK handles the complexity of this flow, providing simple methods to manage MFA challenges.
+
+## Basic MFA Implementation
+
+Here's a simple example of implementing MFA support in your authentication flow:
+
+```go
+import (
+    "context"
+    "fmt"
+    "log"
+    "os"
+
+    "github.com/scttfrdmn/globus-go-sdk/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
+)
+
+// After obtaining an authorization code from the OAuth2 authorization flow...
+func handleAuthCallback(code string) {
+    // Create SDK configuration
+    config := pkg.NewConfigFromEnvironment()
+    
+    // Create auth client
+    authClient, err := config.NewAuthClient(
+        auth.WithClientID(os.Getenv("GLOBUS_CLIENT_ID")),
+        auth.WithClientSecret(os.Getenv("GLOBUS_CLIENT_SECRET")),
+    )
+    if err != nil {
+        log.Fatalf("Failed to create auth client: %v", err)
+    }
+    
+    // Set redirect URL (must match the one used in the auth request)
+    authClient.SetRedirectURL("http://localhost:8080/callback")
+    
+    // Exchange the code for tokens with MFA support
+    tokenResp, err := authClient.ExchangeAuthorizationCodeWithMFA(
+        context.Background(),
+        code,
+        handleMFAChallenge, // This function will be called if MFA is required
+    )
+    if err != nil {
+        log.Fatalf("Authentication failed: %v", err)
+    }
+    
+    // Success! Use the tokens
+    fmt.Printf("Authentication successful! Access token: %s...\n",
+               tokenResp.AccessToken[:10])
+}
+
+// Function to handle MFA challenges
+func handleMFAChallenge(challenge *auth.MFAChallenge) (*auth.MFAResponse, error) {
+    // Display MFA information to the user
+    fmt.Printf("Multi-factor authentication required!\n")
+    fmt.Printf("Type: %s\n", challenge.Type)
+    fmt.Printf("Prompt: %s\n", challenge.Prompt)
+    
+    // Ask the user for their MFA code
+    // This could be a GUI prompt, CLI input, etc.
+    var mfaCode string
+    fmt.Print("Enter your MFA code: ")
+    fmt.Scanln(&mfaCode)
+    
+    // Create and return the MFA response
+    return &auth.MFAResponse{
+        ChallengeID: challenge.ChallengeID,
+        Type:        challenge.Type,
+        Value:       mfaCode,
+    }, nil
+}
+```
+
+## MFA for Token Refresh
+
+MFA can also be required during token refresh. The SDK provides support for this scenario:
+
+```go
+// Refresh a token with MFA support
+tokenResp, err := authClient.RefreshTokenWithMFA(
+    context.Background(),
+    refreshToken,
+    handleMFAChallenge,  // Same handler as above
+)
+if err != nil {
+    log.Fatalf("Token refresh failed: %v", err)
+}
+
+fmt.Printf("Token refreshed successfully! New access token: %s...\n",
+           tokenResp.AccessToken[:10])
+```
+
+## MFA Challenge Details
+
+The `MFAChallenge` struct contains detailed information about the required authentication:
+
+```go
+type MFAChallenge struct {
+    // ChallengeID is the unique identifier for this challenge
+    ChallengeID string `json:"challenge_id"`
+
+    // Type indicates the type of MFA challenge (e.g., "totp", "webauthn", "backup_code")
+    Type string `json:"type"`
+
+    // Prompt is a human-readable prompt to display to the user
+    Prompt string `json:"prompt"`
+
+    // AllowedTypes contains all MFA types that can be used to satisfy this challenge
+    AllowedTypes []string `json:"allowed_types"`
+
+    // Additional information specific to the challenge type
+    Extra map[string]interface{} `json:"extra,omitempty"`
+}
+```
+
+### MFA Types
+
+The most common MFA types you'll encounter are:
+
+- `"totp"`: Time-based One-Time Password (e.g., Google Authenticator, Authy)
+- `"webauthn"`: WebAuthn/FIDO security keys (e.g., YubiKey)
+- `"backup_code"`: Backup codes generated by Globus
+- `"voice"`: Voice call verification (if available)
+- `"sms"`: SMS verification code (if available)
+
+## Building a Complete MFA Handler
+
+Here's a more comprehensive MFA handler that supports different MFA types:
+
+```go
+func handleMFAChallenge(challenge *auth.MFAChallenge) (*auth.MFAResponse, error) {
+    if challenge == nil {
+        return nil, fmt.Errorf("received nil MFA challenge")
+    }
+
+    fmt.Printf("\nMulti-Factor Authentication Required\n")
+    fmt.Printf("Challenge ID: %s\n", challenge.ChallengeID)
+    fmt.Printf("Type: %s\n", challenge.Type)
+    fmt.Printf("Prompt: %s\n", challenge.Prompt)
+    
+    if len(challenge.AllowedTypes) > 1 {
+        fmt.Printf("Available MFA methods: %s\n\n",
+                  strings.Join(challenge.AllowedTypes, ", "))
+        
+        // Ask the user which method they want to use
+        fmt.Print("Which MFA method would you like to use? ")
+        var selectedType string
+        fmt.Scanln(&selectedType)
+        
+        // Validate selection
+        valid := false
+        for _, t := range challenge.AllowedTypes {
+            if t == selectedType {
+                valid = true
+                break
+            }
+        }
+        
+        if !valid {
+            return nil, fmt.Errorf("invalid MFA type selected: %s", selectedType)
+        }
+        
+        // Update the challenge type
+        challenge.Type = selectedType
+    }
+    
+    // Different handling based on the MFA type
+    var mfaValue string
+    
+    switch challenge.Type {
+    case "totp":
+        fmt.Printf("Please enter your 6-digit authentication code: ")
+        fmt.Scanln(&mfaValue)
+        
+    case "backup_code":
+        fmt.Printf("Please enter one of your backup codes: ")
+        fmt.Scanln(&mfaValue)
+        
+    case "webauthn":
+        // WebAuthn requires special handling with browser integration
+        return nil, fmt.Errorf("webauthn not supported in this example")
+        
+    default:
+        fmt.Printf("Please enter your %s code: ", challenge.Type)
+        fmt.Scanln(&mfaValue)
+    }
+    
+    // Create the response
+    response := &auth.MFAResponse{
+        ChallengeID: challenge.ChallengeID,
+        Type:        challenge.Type,
+        Value:       mfaValue,
+    }
+    
+    return response, nil
+}
+```
+
+## WebAuthn Support
+
+WebAuthn (Web Authentication) is a more complex MFA method that requires browser integration. For CLI applications, you typically can't support WebAuthn directly, but web applications can implement it as follows:
+
+1. When a WebAuthn challenge is received, examine the `Extra` field for WebAuthn options
+2. Pass these options to a JavaScript WebAuthn library in your web application
+3. Collect the WebAuthn assertion from the browser
+4. Format and submit the assertion as the MFA response
+
+Example web application handler:
+
+```go
+// Server-side: When WebAuthn MFA is required
+if challenge.Type == "webauthn" {
+    // Extract WebAuthn options
+    webAuthnOptions, _ := json.Marshal(challenge.Extra["webauthn_options"])
+    
+    // Send to the browser
+    responseWriter.Header().Set("Content-Type", "application/json")
+    json.NewEncoder(responseWriter).Encode(map[string]interface{}{
+        "challenge_id": challenge.ChallengeID,
+        "type": "webauthn",
+        "webauthn_options": string(webAuthnOptions),
+    })
+    return
+}
+
+// Client-side JavaScript (simplified)
+async function handleWebAuthn(challengeData) {
+    // Parse the options from the server
+    const webAuthnOptions = JSON.parse(challengeData.webauthn_options);
+    
+    // Use the WebAuthn API to get an assertion
+    const assertion = await navigator.credentials.get({
+        publicKey: webAuthnOptions
+    });
+    
+    // Format the assertion
+    const assertionResponse = {
+        challenge_id: challengeData.challenge_id,
+        type: "webauthn",
+        value: JSON.stringify({
+            id: assertion.id,
+            rawId: arrayBufferToBase64(assertion.rawId),
+            response: {
+                clientDataJSON: arrayBufferToBase64(assertion.response.clientDataJSON),
+                authenticatorData: arrayBufferToBase64(assertion.response.authenticatorData),
+                signature: arrayBufferToBase64(assertion.response.signature),
+                userHandle: assertion.response.userHandle ? 
+                    arrayBufferToBase64(assertion.response.userHandle) : null
+            },
+            type: assertion.type
+        })
+    };
+    
+    // Submit to the server
+    fetch('/complete-mfa', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(assertionResponse)
+    });
+}
+```
+
+## Error Handling
+
+The SDK provides several utilities for handling MFA-related errors:
+
+```go
+import "github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
+
+// Check if an error is MFA-related
+if auth.IsMFAError(err) {
+    fmt.Println("MFA is required to complete authentication")
+    
+    // Extract the MFA challenge from the error
+    challenge := auth.GetMFAChallenge(err)
+    if challenge != nil {
+        fmt.Printf("MFA Type: %s\n", challenge.Type)
+        fmt.Printf("Prompt: %s\n", challenge.Prompt)
+    }
+}
+```
+
+The most common MFA-related error is `MFARequiredError`, which contains both an error message and the MFA challenge details.
+
+## MFA in Web Applications
+
+For web applications, you need to design your authentication flow to handle MFA challenges:
+
+1. Start the normal OAuth2 flow with authorization code
+2. When exchanging the code, check for MFA errors
+3. If MFA is required, render an MFA input form for the user
+4. Submit the MFA response and proceed with authentication
+
+Example flow in a web application:
+
+```go
+// Step 1: Exchange the code
+tokenResp, err := authClient.ExchangeAuthorizationCode(ctx, code)
+if err != nil {
+    // Check if this is an MFA error
+    if auth.IsMFAError(err) {
+        challenge := auth.GetMFAChallenge(err)
+        
+        // Store the challenge ID in the session
+        session.Values["mfa_challenge_id"] = challenge.ChallengeID
+        session.Values["mfa_type"] = challenge.Type
+        session.Save(r, w)
+        
+        // Redirect to MFA input page
+        http.Redirect(w, r, "/mfa-input", http.StatusFound)
+        return
+    }
+    
+    // Handle other errors
+    http.Error(w, "Authentication failed: "+err.Error(), http.StatusInternalServerError)
+    return
+}
+
+// ... normal auth success handling ...
+
+// Step 2: Handle MFA form submission
+func handleMFASubmission(w http.ResponseWriter, r *http.Request) {
+    // Get challenge details from session
+    session, _ := store.Get(r, "auth-session")
+    challengeID, ok := session.Values["mfa_challenge_id"].(string)
+    if !ok {
+        http.Error(w, "No MFA challenge in progress", http.StatusBadRequest)
+        return
+    }
+    
+    mfaType, _ := session.Values["mfa_type"].(string)
+    
+    // Get MFA code from form
+    if err := r.ParseForm(); err != nil {
+        http.Error(w, "Failed to parse form", http.StatusBadRequest)
+        return
+    }
+    
+    mfaCode := r.Form.Get("mfa_code")
+    
+    // Create MFA response
+    mfaResponse := &auth.MFAResponse{
+        ChallengeID: challengeID,
+        Type:        mfaType,
+        Value:       mfaCode,
+    }
+    
+    // Send the response
+    tokenResp, err := authClient.RespondToMFAChallenge(r.Context(), mfaResponse)
+    if err != nil {
+        http.Error(w, "MFA verification failed: "+err.Error(), http.StatusBadRequest)
+        return
+    }
+    
+    // MFA successful - store tokens and redirect
+    session.Values["access_token"] = tokenResp.AccessToken
+    session.Values["refresh_token"] = tokenResp.RefreshToken
+    session.Values["expires_at"] = time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second)
+    session.Values["mfa_challenge_id"] = "" // Clear MFA state
+    session.Save(r, w)
+    
+    http.Redirect(w, r, "/dashboard", http.StatusFound)
+}
+```
+
+## MFA in CLI Applications
+
+CLI applications need to prompt the user for MFA input. Here's a simple example:
+
+```go
+func mfaHandler(challenge *auth.MFAChallenge) (*auth.MFAResponse, error) {
+    fmt.Printf("\nMulti-Factor Authentication Required\n")
+    fmt.Printf("Type: %s\n", challenge.Type)
+    fmt.Printf("Prompt: %s\n", challenge.Prompt)
+    
+    // Read MFA code from stdin
+    reader := bufio.NewReader(os.Stdin)
+    fmt.Print("Enter your MFA code: ")
+    code, err := reader.ReadString('\n')
+    if err != nil {
+        return nil, fmt.Errorf("failed to read MFA code: %w", err)
+    }
+    
+    // Clean up the input
+    code = strings.TrimSpace(code)
+    
+    return &auth.MFAResponse{
+        ChallengeID: challenge.ChallengeID,
+        Type:        challenge.Type,
+        Value:       code,
+    }, nil
+}
+```
+
+## Complete Example
+
+Here's a complete example showing MFA handling in a CLI application:
+
+```go
+package main
+
+import (
+    "bufio"
+    "context"
+    "fmt"
+    "log"
+    "net/http"
+    "os"
+    "strings"
+    "time"
+
+    "github.com/scttfrdmn/globus-go-sdk/pkg"
+    "github.com/scttfrdmn/globus-go-sdk/pkg/services/auth"
+)
+
+const (
+    port            = 8080
+    callbackPath    = "/callback"
+    callbackAddress = "http://localhost:8080/callback"
+)
+
+func main() {
+    // Create a context with a timeout
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Minute)
+    defer cancel()
+
+    // Get client ID from environment
+    clientID := os.Getenv("GLOBUS_CLIENT_ID")
+    if clientID == "" {
+        log.Fatal("GLOBUS_CLIENT_ID environment variable is required")
+    }
+
+    clientSecret := os.Getenv("GLOBUS_CLIENT_SECRET")
+
+    // Create SDK configuration
+    config := pkg.NewConfigFromEnvironment().
+        WithClientID(clientID).
+        WithClientSecret(clientSecret)
+
+    // Create an Auth client
+    authClient, err := config.NewAuthClient()
+    if err != nil {
+        log.Fatalf("Failed to create auth client: %v", err)
+    }
+    authClient.SetRedirectURL(callbackAddress)
+
+    // Generate a random state value
+    state := fmt.Sprintf("state-%d", time.Now().UnixNano())
+
+    // Get the authorization URL
+    authURL := authClient.GetAuthorizationURL(state, 
+        pkg.AuthScope,           // Basic authentication
+        pkg.TransferScope,       // Transfer service access
+        pkg.GroupsScope,         // Groups service access
+    )
+
+    fmt.Printf("Please visit the following URL to log in:\n\n%s\n\n", authURL)
+    fmt.Println("After logging in, you'll be redirected to the callback URL.")
+
+    // Set up a channel to receive the authorization code
+    codeChan := make(chan string)
+    errChan := make(chan error)
+
+    // Start an HTTP server to handle the callback
+    server := startCallbackServer(codeChan, errChan, state)
+    defer server.Close()
+
+    // Wait for the code or an error
+    var code string
+    select {
+    case code = <-codeChan:
+        fmt.Println("Authorization code received!")
+    case err := <-errChan:
+        log.Fatalf("Error during authorization: %v", err)
+    case <-ctx.Done():
+        log.Fatalf("Timed out waiting for authorization")
+    }
+
+    // Exchange the code for tokens
+    fmt.Println("Exchanging code for tokens (this may require MFA)...")
+    tokenResp, err := authClient.ExchangeAuthorizationCodeWithMFA(ctx, code, mfaHandler)
+    if err != nil {
+        log.Fatalf("Failed to exchange code: %v", err)
+    }
+
+    // Print token information
+    fmt.Println("\nAuthentication successful!")
+    fmt.Printf("Access Token: %s...(truncated)\n", tokenResp.AccessToken[:10])
+    fmt.Printf("Token Type: %s\n", tokenResp.TokenType)
+    fmt.Printf("Expires In: %d seconds\n", tokenResp.ExpiresIn)
+    fmt.Printf("Scopes: %s\n", tokenResp.Scope)
+
+    // Demonstrate token refreshing with MFA
+    if tokenResp.RefreshToken != "" {
+        fmt.Println("\nDemonstrating token refresh (may require MFA again)...")
+        refreshedResp, err := authClient.RefreshTokenWithMFA(ctx, tokenResp.RefreshToken, mfaHandler)
+        if err != nil {
+            fmt.Printf("Token refresh failed: %v\n", err)
+        } else {
+            fmt.Println("Token refresh successful!")
+            fmt.Printf("New Access Token: %s...(truncated)\n", refreshedResp.AccessToken[:10])
+            fmt.Printf("Expires In: %d seconds\n", refreshedResp.ExpiresIn)
+        }
+    }
+}
+
+// startCallbackServer starts an HTTP server to handle the OAuth2 callback
+func startCallbackServer(codeChan chan string, errChan chan error, expectedState string) *http.Server {
+    // Create a server
+    server := &http.Server{
+        Addr: fmt.Sprintf(":%d", port),
+    }
+
+    // Set up the handler
+    http.HandleFunc(callbackPath, func(w http.ResponseWriter, r *http.Request) {
+        // Get the code and state from the query parameters
+        code := r.URL.Query().Get("code")
+        state := r.URL.Query().Get("state")
+        error := r.URL.Query().Get("error")
+
+        // Check for errors
+        if error != "" {
+            errDesc := r.URL.Query().Get("error_description")
+            errChan <- fmt.Errorf("%s: %s", error, errDesc)
+            http.Error(w, "Authentication failed", http.StatusInternalServerError)
+            return
+        }
+
+        // Validate state
+        if state != expectedState {
+            errChan <- fmt.Errorf("invalid state: got %s, expected %s", state, expectedState)
+            http.Error(w, "Invalid state", http.StatusBadRequest)
+            return
+        }
+
+        // Send the code to the channel
+        codeChan <- code
+
+        // Return a success message
+        w.Header().Set("Content-Type", "text/html")
+        fmt.Fprintf(w, `
+            <html>
+                <body>
+                    <h1>Authentication Successful</h1>
+                    <p>You can close this window now.</p>
+                </body>
+            </html>
+        `)
+    })
+
+    // Start the server in a goroutine
+    go func() {
+        if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+            log.Printf("HTTP server error: %v", err)
+            errChan <- err
+        }
+    }()
+
+    fmt.Printf("Callback server started on http://localhost:%d%s\n", port, callbackPath)
+    return server
+}
+
+// mfaHandler handles MFA challenges
+func mfaHandler(challenge *auth.MFAChallenge) (*auth.MFAResponse, error) {
+    if challenge == nil {
+        return nil, fmt.Errorf("received nil MFA challenge")
+    }
+
+    fmt.Printf("\nMulti-Factor Authentication Required\n")
+    fmt.Printf("Challenge ID: %s\n", challenge.ChallengeID)
+    fmt.Printf("Type: %s\n", challenge.Type)
+    fmt.Printf("Prompt: %s\n", challenge.Prompt)
+    
+    fmt.Printf("Allowed types: %s\n\n", strings.Join(challenge.AllowedTypes, ", "))
+
+    // Ask the user for the MFA code
+    fmt.Print("Enter your MFA code: ")
+    reader := bufio.NewReader(os.Stdin)
+    code, err := reader.ReadString('\n')
+    if err != nil {
+        return nil, fmt.Errorf("failed to read MFA code: %w", err)
+    }
+
+    // Clean up the code
+    code = strings.TrimSpace(code)
+
+    // Create the response
+    response := &auth.MFAResponse{
+        ChallengeID: challenge.ChallengeID,
+        Type:        challenge.Type, // Use the same type as the challenge
+        Value:       code,
+    }
+
+    return response, nil
+}
+```
+
+## Best Practices
+
+1. **Always include MFA support** in your authentication flows, even if you don't expect users to have MFA enabled.
+
+2. **Provide clear instructions** for users when MFA is required, explaining what they need to do.
+
+3. **Support multiple MFA types** when possible, allowing users to choose their preferred method.
+
+4. **Handle MFA errors gracefully**, displaying user-friendly error messages when MFA verification fails.
+
+5. **Test your MFA implementation** with accounts that have different MFA methods enabled.
+
+6. **Consider UX implications** of MFA - place MFA prompts where they won't disrupt the user experience.
+
+7. **Remember MFA can be required during token refresh**, not just during initial authentication.
+
+8. **Cache tokens securely** to minimize how often users need to provide MFA credentials.
+
+9. **Use a timeout** for MFA inputs, canceling the authentication flow if the user takes too long.
+
+10. **Update your application documentation** to include information about MFA support.
+
+## Next Steps
+
+Now that you understand MFA in the Globus Go SDK, you might want to explore:
+
+- [Token Management](../token-management) - Learn how to store and manage tokens
+- [Error Handling](../../error-handling) - Advanced error handling techniques
+- [Device Code Flow](../device-code-flow) - Alternative authentication for devices without browsers

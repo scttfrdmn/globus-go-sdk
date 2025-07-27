@@ -4,34 +4,42 @@
 /*
 Package pkg is the root package for the Globus Go SDK.
 
-# STABILITY: BETA
+# STABILITY: STABLE
 
-The Globus Go SDK is currently in a beta state, approaching v1.0.0.
-Individual packages have different stability levels, which are
+The Globus Go SDK v3.x is synchronized with the Globus Python SDK and follows
+a stable API guarantee. Individual packages have different stability levels,
 documented in their respective doc.go files.
 
 # Package Stability Overview
 
-- core: BETA - Foundation components with some evolving connection pool features
-- services/auth: STABLE - Authentication and token management
-- services/transfer: MIXED - Core features stable, advanced features in development
-- services/tokens: BETA - Token storage and management
-- services/search: BETA - Search index operations
-- services/flows: BETA - Globus Flows automation
-- services/groups: BETA - Group management
-- services/compute: BETA - Compute operations
-- services/timers: BETA - Timers service
+- core: STABLE - Foundation components with stable connection pool features
+- services/auth: STABLE - Authentication, token management, and GARE support  
+- services/transfer: STABLE - Data transfer operations
+- services/tokens: STABLE - Token storage and management
+- services/search: STABLE - Search index operations
+- services/flows: STABLE - Globus Flows automation
+- services/groups: STABLE - Group management
+- services/compute: STABLE - Compute operations
+- services/timers: STABLE - Timers service
+
+# Versioning Strategy
+
+Starting with v3.60.0-1, this SDK uses synchronized versioning with the Python SDK:
+
+Format: [PYTHON_SDK_VERSION]-[GO_SDK_BUILD]
+- v3.60.0-1 = First Go SDK release synchronized with Python SDK v3.60.0
+- v3.60.0-2 = Second Go SDK release (Go-specific improvements)
+- v3.61.0-1 = First Go SDK release synchronized with Python SDK v3.61.0
 
 # API Stability Guidelines
 
 The SDK follows semantic versioning (https://semver.org/) with these guarantees:
 
-1. PATCH versions (0.9.x) contain only backward-compatible bug fixes.
-2. MINOR versions (0.x.0) may add functionality in a backward-compatible manner.
-3. MAJOR versions (x.0.0) may contain breaking changes.
+1. BUILD increments (-1, -2) contain only backward-compatible changes
+2. MINOR Python SDK updates may add functionality in backward-compatible ways  
+3. MAJOR Python SDK updates may contain breaking changes
 
-As this SDK is pre-1.0, minor versions may occasionally contain
-breaking changes, but these will be clearly documented in the CHANGELOG.
+All stable components maintain API compatibility within the Python SDK major version.
 
 # Version Compatibility
 
