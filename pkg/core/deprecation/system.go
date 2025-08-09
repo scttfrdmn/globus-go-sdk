@@ -20,13 +20,13 @@ import (
 type DeprecationManager struct {
 	// warnings tracks which warnings have been issued to avoid spam
 	warnings map[string]bool
-	
+
 	// mu protects the warnings map
 	mu sync.RWMutex
-	
+
 	// enabled controls whether deprecation warnings are shown
 	enabled bool
-	
+
 	// logger is used for outputting deprecation warnings
 	logger Logger
 }
@@ -63,19 +63,19 @@ func GetManager() *DeprecationManager {
 type DeprecationInfo struct {
 	// Feature is the name of the deprecated feature
 	Feature string
-	
+
 	// Version is the version in which the feature was deprecated
 	DeprecatedIn string
-	
+
 	// RemovalVersion is the version in which the feature will be removed
 	RemovalVersion string
-	
+
 	// Alternative is the recommended alternative to use
 	Alternative string
-	
+
 	// Reason is the reason for deprecation
 	Reason string
-	
+
 	// MoreInfo provides additional information or links
 	MoreInfo string
 }
@@ -85,39 +85,39 @@ func (dm *DeprecationManager) Warn(info DeprecationInfo) {
 	if !dm.enabled {
 		return
 	}
-	
+
 	key := fmt.Sprintf("%s:%s", info.Feature, info.DeprecatedIn)
-	
+
 	dm.mu.Lock()
 	defer dm.mu.Unlock()
-	
+
 	// Only warn once per feature/version combination
 	if dm.warnings[key] {
 		return
 	}
-	
+
 	dm.warnings[key] = true
-	
+
 	// Format the warning message
-	message := fmt.Sprintf("DEPRECATION WARNING: %s is deprecated as of v%s", 
+	message := fmt.Sprintf("DEPRECATION WARNING: %s is deprecated as of v%s",
 		info.Feature, info.DeprecatedIn)
-	
+
 	if info.RemovalVersion != "" {
 		message += fmt.Sprintf(" and will be removed in v%s", info.RemovalVersion)
 	}
-	
+
 	if info.Alternative != "" {
 		message += fmt.Sprintf(". Use %s instead", info.Alternative)
 	}
-	
+
 	if info.Reason != "" {
 		message += fmt.Sprintf(". Reason: %s", info.Reason)
 	}
-	
+
 	if info.MoreInfo != "" {
 		message += fmt.Sprintf(". More info: %s", info.MoreInfo)
 	}
-	
+
 	dm.logger.Printf(message)
 }
 
@@ -237,16 +237,16 @@ func WarnLegacyResponseStructure(service string) {
 type DeprecationSchedule struct {
 	// Feature is the name of the feature
 	Feature string
-	
+
 	// DeprecatedIn is the version where the feature was deprecated
 	DeprecatedIn string
-	
+
 	// RemovalVersion is the version where the feature will be removed
 	RemovalVersion string
-	
+
 	// Status is the current status of the deprecation
 	Status DeprecationStatus
-	
+
 	// LastWarning is the timestamp of the last warning
 	LastWarning time.Time
 }
@@ -257,10 +257,10 @@ type DeprecationStatus string
 const (
 	// StatusActive indicates the feature is active but deprecated
 	StatusActive DeprecationStatus = "active"
-	
+
 	// StatusPendingRemoval indicates the feature is scheduled for removal
 	StatusPendingRemoval DeprecationStatus = "pending_removal"
-	
+
 	// StatusRemoved indicates the feature has been removed
 	StatusRemoved DeprecationStatus = "removed"
 )
@@ -282,7 +282,7 @@ func NewScheduleManager() *ScheduleManager {
 func (sm *ScheduleManager) AddDeprecation(feature, deprecatedIn, removalVersion string) {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
-	
+
 	sm.schedule[feature] = DeprecationSchedule{
 		Feature:        feature,
 		DeprecatedIn:   deprecatedIn,
@@ -295,7 +295,7 @@ func (sm *ScheduleManager) AddDeprecation(feature, deprecatedIn, removalVersion 
 func (sm *ScheduleManager) GetDeprecation(feature string) (DeprecationSchedule, bool) {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
-	
+
 	schedule, exists := sm.schedule[feature]
 	return schedule, exists
 }
@@ -304,7 +304,7 @@ func (sm *ScheduleManager) GetDeprecation(feature string) (DeprecationSchedule, 
 func (sm *ScheduleManager) IsDeprecated(feature string) bool {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
-	
+
 	schedule, exists := sm.schedule[feature]
 	return exists && schedule.Status == StatusActive
 }
@@ -313,7 +313,7 @@ func (sm *ScheduleManager) IsDeprecated(feature string) bool {
 func (sm *ScheduleManager) MarkRemoved(feature string) {
 	sm.mu.Lock()
 	defer sm.mu.Unlock()
-	
+
 	if schedule, exists := sm.schedule[feature]; exists {
 		schedule.Status = StatusRemoved
 		sm.schedule[feature] = schedule
@@ -324,14 +324,14 @@ func (sm *ScheduleManager) MarkRemoved(feature string) {
 func (sm *ScheduleManager) GetActiveDeprecations() []DeprecationSchedule {
 	sm.mu.RLock()
 	defer sm.mu.RUnlock()
-	
+
 	var active []DeprecationSchedule
 	for _, schedule := range sm.schedule {
 		if schedule.Status == StatusActive {
 			active = append(active, schedule)
 		}
 	}
-	
+
 	return active
 }
 
@@ -343,7 +343,7 @@ var scheduleOnce sync.Once
 func GetScheduleManager() *ScheduleManager {
 	scheduleOnce.Do(func() {
 		globalSchedule = NewScheduleManager()
-		
+
 		// Initialize with known deprecations for v3.60.0
 		globalSchedule.AddDeprecation("Legacy client initialization", "3.60.0", "4.0.0")
 		globalSchedule.AddDeprecation("Legacy error handling", "3.60.0", "4.0.0")

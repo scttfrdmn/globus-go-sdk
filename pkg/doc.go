@@ -13,7 +13,7 @@ documented in their respective doc.go files.
 # Package Stability Overview
 
 - core: STABLE - Foundation components with stable connection pool features
-- services/auth: STABLE - Authentication, token management, and GARE support  
+- services/auth: STABLE - Authentication, token management, and GARE support
 - services/transfer: STABLE - Data transfer operations
 - services/tokens: STABLE - Token storage and management
 - services/search: STABLE - Search index operations
@@ -36,7 +36,7 @@ Format: [PYTHON_SDK_VERSION]-[GO_SDK_BUILD]
 The SDK follows semantic versioning (https://semver.org/) with these guarantees:
 
 1. BUILD increments (-1, -2) contain only backward-compatible changes
-2. MINOR Python SDK updates may add functionality in backward-compatible ways  
+2. MINOR Python SDK updates may add functionality in backward-compatible ways
 3. MAJOR Python SDK updates may contain breaking changes
 
 All stable components maintain API compatibility within the Python SDK major version.

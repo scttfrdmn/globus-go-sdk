@@ -18,10 +18,10 @@ import (
 type Response[T any] struct {
 	// Data contains the actual response data
 	Data T `json:"data"`
-	
+
 	// Metadata contains response metadata
 	Metadata ResponseMetadata `json:"metadata"`
-	
+
 	// RequestID is the unique identifier for this request
 	RequestID string `json:"request_id"`
 }
@@ -30,22 +30,22 @@ type Response[T any] struct {
 type ResponseMetadata struct {
 	// APIVersion is the API version used for this request
 	APIVersion string `json:"api_version"`
-	
+
 	// Service is the name of the service that generated this response
 	Service string `json:"service"`
-	
+
 	// Timestamp is when the response was generated
 	Timestamp time.Time `json:"timestamp"`
-	
+
 	// HTTPStatus is the HTTP status code
 	HTTPStatus int `json:"http_status"`
-	
+
 	// Headers contains relevant HTTP headers
 	Headers map[string]string `json:"headers,omitempty"`
-	
+
 	// RateLimit contains rate limiting information
 	RateLimit *RateLimitInfo `json:"rate_limit,omitempty"`
-	
+
 	// ExecutionTime is how long the request took to process
 	ExecutionTime time.Duration `json:"execution_time,omitempty"`
 }
@@ -54,13 +54,13 @@ type ResponseMetadata struct {
 type RateLimitInfo struct {
 	// Limit is the maximum number of requests allowed
 	Limit int `json:"limit"`
-	
+
 	// Remaining is the number of requests remaining in the current window
 	Remaining int `json:"remaining"`
-	
+
 	// ResetTime is when the rate limit window resets
 	ResetTime time.Time `json:"reset_time"`
-	
+
 	// RetryAfter is the number of seconds to wait before retrying
 	RetryAfter int `json:"retry_after,omitempty"`
 }
@@ -69,13 +69,13 @@ type RateLimitInfo struct {
 type PaginatedResponse[T any] struct {
 	// Data contains the array of items
 	Data []T `json:"data"`
-	
+
 	// Metadata contains response metadata
 	Metadata ResponseMetadata `json:"metadata"`
-	
+
 	// RequestID is the unique identifier for this request
 	RequestID string `json:"request_id"`
-	
+
 	// Pagination contains pagination information
 	Pagination PaginationInfo `json:"pagination"`
 }
@@ -84,22 +84,22 @@ type PaginatedResponse[T any] struct {
 type PaginationInfo struct {
 	// NextToken is the token to use for the next page
 	NextToken string `json:"next_token,omitempty"`
-	
+
 	// HasMore indicates if there are more pages available
 	HasMore bool `json:"has_more"`
-	
+
 	// Limit is the maximum number of items per page
 	Limit int `json:"limit"`
-	
+
 	// Total is the total number of items (if known)
 	Total int `json:"total,omitempty"`
-	
+
 	// Offset is the starting offset for this page
 	Offset int `json:"offset,omitempty"`
-	
+
 	// Page is the current page number (1-based)
 	Page int `json:"page,omitempty"`
-	
+
 	// PageSize is the number of items in this page
 	PageSize int `json:"page_size"`
 }
@@ -137,30 +137,30 @@ func FromHTTPResponse(resp *http.Response, service string) ResponseMetadata {
 		Timestamp:  time.Now(),
 		Headers:    make(map[string]string),
 	}
-	
+
 	// Extract important headers
 	if apiVersion := resp.Header.Get("X-API-Version"); apiVersion != "" {
 		metadata.APIVersion = apiVersion
 	}
-	
+
 	// Extract rate limit information
 	if limit := resp.Header.Get("X-RateLimit-Limit"); limit != "" {
 		if remaining := resp.Header.Get("X-RateLimit-Remaining"); remaining != "" {
 			if resetTime := resp.Header.Get("X-RateLimit-Reset"); resetTime != "" {
 				metadata.RateLimit = &RateLimitInfo{}
-				
+
 				if l, err := strconv.Atoi(limit); err == nil {
 					metadata.RateLimit.Limit = l
 				}
-				
+
 				if r, err := strconv.Atoi(remaining); err == nil {
 					metadata.RateLimit.Remaining = r
 				}
-				
+
 				if rt, err := strconv.ParseInt(resetTime, 10, 64); err == nil {
 					metadata.RateLimit.ResetTime = time.Unix(rt, 0)
 				}
-				
+
 				if retryAfter := resp.Header.Get("Retry-After"); retryAfter != "" {
 					if ra, err := strconv.Atoi(retryAfter); err == nil {
 						metadata.RateLimit.RetryAfter = ra
@@ -169,7 +169,7 @@ func FromHTTPResponse(resp *http.Response, service string) ResponseMetadata {
 			}
 		}
 	}
-	
+
 	// Store other relevant headers
 	relevantHeaders := []string{
 		"X-Request-Id",
@@ -179,13 +179,13 @@ func FromHTTPResponse(resp *http.Response, service string) ResponseMetadata {
 		"ETag",
 		"Last-Modified",
 	}
-	
+
 	for _, header := range relevantHeaders {
 		if value := resp.Header.Get(header); value != "" {
 			metadata.Headers[header] = value
 		}
 	}
-	
+
 	return metadata
 }
 
@@ -243,13 +243,13 @@ func (r *PaginatedResponse[T]) GetTotalCount() int {
 type Iterator[T any] struct {
 	// current holds the current page of results
 	current *PaginatedResponse[T]
-	
+
 	// index is the current index within the current page
 	index int
-	
+
 	// fetchNext is a function to fetch the next page
 	fetchNext func(nextToken string) (*PaginatedResponse[T], error)
-	
+
 	// err holds any error that occurred during iteration
 	err error
 }
@@ -269,36 +269,36 @@ func NewIterator[T any](
 // Next returns the next item in the iteration
 func (i *Iterator[T]) Next() (T, bool) {
 	var zero T
-	
+
 	// Check if we have an error
 	if i.err != nil {
 		return zero, false
 	}
-	
+
 	// Check if we need to fetch the next page
 	if i.current == nil || i.index >= len(i.current.Data) {
 		if i.current == nil || !i.current.Pagination.HasMore {
 			return zero, false
 		}
-		
+
 		// Fetch the next page
 		nextPage, err := i.fetchNext(i.current.Pagination.NextToken)
 		if err != nil {
 			i.err = err
 			return zero, false
 		}
-		
+
 		i.current = nextPage
 		i.index = 0
 	}
-	
+
 	// Return the current item
 	if i.index < len(i.current.Data) {
 		item := i.current.Data[i.index]
 		i.index++
 		return item, true
 	}
-	
+
 	return zero, false
 }
 
@@ -316,7 +316,7 @@ func (i *Iterator[T]) Reset() {
 // ToSlice converts the iterator to a slice by consuming all remaining items
 func (i *Iterator[T]) ToSlice() ([]T, error) {
 	var results []T
-	
+
 	for {
 		item, ok := i.Next()
 		if !ok {
@@ -324,14 +324,14 @@ func (i *Iterator[T]) ToSlice() ([]T, error) {
 		}
 		results = append(results, item)
 	}
-	
+
 	return results, i.err
 }
 
 // Count returns the total number of items by consuming the iterator
 func (i *Iterator[T]) Count() (int, error) {
 	count := 0
-	
+
 	for {
 		_, ok := i.Next()
 		if !ok {
@@ -339,7 +339,7 @@ func (i *Iterator[T]) Count() (int, error) {
 		}
 		count++
 	}
-	
+
 	return count, i.err
 }
 

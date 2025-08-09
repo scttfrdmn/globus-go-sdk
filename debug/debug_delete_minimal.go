@@ -141,7 +141,7 @@ func RunDeleteMinimal() {
 
 	mkdirReq.Header.Set("Authorization", "Bearer "+accessToken)
 	mkdirReq.Header.Set("Content-Type", "application/json")
-	
+
 	client := http.Client{}
 	mkdirResp, err := client.Do(mkdirReq)
 	if err != nil {
@@ -149,19 +149,19 @@ func RunDeleteMinimal() {
 		os.Exit(1)
 	}
 	defer mkdirResp.Body.Close()
-	
+
 	if mkdirResp.StatusCode < 200 || mkdirResp.StatusCode >= 300 {
 		respBody, _ := io.ReadAll(mkdirResp.Body)
-		fmt.Printf("ERROR: Failed to create directory, status: %d, response: %s\n", 
+		fmt.Printf("ERROR: Failed to create directory, status: %d, response: %s\n",
 			mkdirResp.StatusCode, string(respBody))
 		os.Exit(1)
 	}
-	
+
 	fmt.Println("Directory created successfully")
 
 	// Now delete it
 	fmt.Printf("Deleting directory: %s\n", path)
-	
+
 	// Get a submission ID first
 	subIDReq, err := http.NewRequest(
 		"GET",
@@ -172,23 +172,23 @@ func RunDeleteMinimal() {
 		fmt.Printf("ERROR: Failed to create submission ID request: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	subIDReq.Header.Set("Authorization", "Bearer "+accessToken)
-	
+
 	subIDResp, err := client.Do(subIDReq)
 	if err != nil {
 		fmt.Printf("ERROR: Failed to get submission ID: %v\n", err)
 		os.Exit(1)
 	}
 	defer subIDResp.Body.Close()
-	
+
 	if subIDResp.StatusCode < 200 || subIDResp.StatusCode >= 300 {
 		respBody, _ := io.ReadAll(subIDResp.Body)
-		fmt.Printf("ERROR: Failed to get submission ID, status: %d, response: %s\n", 
+		fmt.Printf("ERROR: Failed to get submission ID, status: %d, response: %s\n",
 			subIDResp.StatusCode, string(respBody))
 		os.Exit(1)
 	}
-	
+
 	var subIDData struct {
 		Value string `json:"value"`
 	}
@@ -196,9 +196,9 @@ func RunDeleteMinimal() {
 		fmt.Printf("ERROR: Failed to decode submission ID response: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	fmt.Printf("Got submission ID: %s\n", subIDData.Value)
-	
+
 	// Create the delete request
 	deleteBody := map[string]interface{}{
 		"DATA_TYPE":     "delete",
@@ -212,7 +212,7 @@ func RunDeleteMinimal() {
 		},
 	}
 	deleteJSON, _ := json.Marshal(deleteBody)
-	
+
 	deleteReq, err := http.NewRequest(
 		"POST",
 		"https://transfer.api.globus.org/v0.10/delete",
@@ -222,24 +222,24 @@ func RunDeleteMinimal() {
 		fmt.Printf("ERROR: Failed to create delete request: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	deleteReq.Header.Set("Authorization", "Bearer "+accessToken)
 	deleteReq.Header.Set("Content-Type", "application/json")
-	
+
 	deleteResp, err := client.Do(deleteReq)
 	if err != nil {
 		fmt.Printf("ERROR: Failed to execute delete request: %v\n", err)
 		os.Exit(1)
 	}
 	defer deleteResp.Body.Close()
-	
+
 	if deleteResp.StatusCode < 200 || deleteResp.StatusCode >= 300 {
 		respBody, _ := io.ReadAll(deleteResp.Body)
-		fmt.Printf("ERROR: Failed to delete directory, status: %d, response: %s\n", 
+		fmt.Printf("ERROR: Failed to delete directory, status: %d, response: %s\n",
 			deleteResp.StatusCode, string(respBody))
 		os.Exit(1)
 	}
-	
+
 	var deleteData struct {
 		TaskID string `json:"task_id"`
 	}
@@ -247,6 +247,6 @@ func RunDeleteMinimal() {
 		fmt.Printf("ERROR: Failed to decode delete response: %v\n", err)
 		os.Exit(1)
 	}
-	
+
 	fmt.Printf("Delete task submitted successfully: %s\n", deleteData.TaskID)
 }

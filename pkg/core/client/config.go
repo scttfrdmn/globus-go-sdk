@@ -26,49 +26,49 @@ import (
 type Config struct {
 	// Authorizer handles authentication for requests
 	Authorizer interfaces.Authorizer
-	
+
 	// BaseURL is the base URL for the service
 	BaseURL string
-	
+
 	// HTTPClient is the HTTP client to use for requests
 	HTTPClient *http.Client
-	
+
 	// UserAgent is the User-Agent header to send with requests
 	UserAgent string
-	
+
 	// Logger is used for logging requests and responses
 	Logger interfaces.Logger
-	
+
 	// RetryPolicy defines retry behavior for failed requests
 	RetryPolicy *RetryPolicy
-	
+
 	// RateLimit defines rate limiting configuration
 	RateLimit *RateLimitConfig
-	
+
 	// Timeout is the default timeout for requests
 	Timeout time.Duration
-	
+
 	// MaxRetries is the maximum number of retries for failed requests
 	MaxRetries int
-	
+
 	// EnableTLS controls whether TLS is enabled
 	EnableTLS bool
-	
+
 	// TLSConfig provides custom TLS configuration
 	TLSConfig *TLSConfig
-	
+
 	// Service is the name of the service (e.g., "auth", "transfer")
 	Service string
-	
+
 	// APIVersion is the API version to use
 	APIVersion string
-	
+
 	// Environment is the environment to use (e.g., "production", "preview")
 	Environment string
-	
+
 	// Context is the default context for requests
 	Context context.Context
-	
+
 	// Debug enables debug logging
 	Debug bool
 }
@@ -77,22 +77,22 @@ type Config struct {
 type RetryPolicy struct {
 	// MaxRetries is the maximum number of retries
 	MaxRetries int
-	
+
 	// InitialDelay is the initial delay between retries
 	InitialDelay time.Duration
-	
+
 	// MaxDelay is the maximum delay between retries
 	MaxDelay time.Duration
-	
+
 	// Multiplier is the backoff multiplier
 	Multiplier float64
-	
+
 	// Jitter adds randomness to delays
 	Jitter bool
-	
+
 	// RetryableStatusCodes are HTTP status codes that should be retried
 	RetryableStatusCodes []int
-	
+
 	// RetryableErrors are error types that should be retried
 	RetryableErrors []error
 }
@@ -101,13 +101,13 @@ type RetryPolicy struct {
 type RateLimitConfig struct {
 	// Enabled controls whether rate limiting is enabled
 	Enabled bool
-	
+
 	// RequestsPerSecond is the maximum requests per second
 	RequestsPerSecond float64
-	
+
 	// BurstSize is the burst size for rate limiting
 	BurstSize int
-	
+
 	// RespectServerLimits controls whether to respect server-provided limits
 	RespectServerLimits bool
 }
@@ -116,16 +116,16 @@ type RateLimitConfig struct {
 type TLSConfig struct {
 	// InsecureSkipVerify controls whether to skip TLS verification
 	InsecureSkipVerify bool
-	
+
 	// ServerName is the server name for TLS verification
 	ServerName string
-	
+
 	// CertFile is the path to the client certificate file
 	CertFile string
-	
+
 	// KeyFile is the path to the client key file
 	KeyFile string
-	
+
 	// CAFile is the path to the CA certificate file
 	CAFile string
 }
@@ -169,19 +169,19 @@ func DefaultConfig() *Config {
 func NewConfig(service string, options ...ConfigOption) (*Config, error) {
 	config := DefaultConfig()
 	config.Service = service
-	
+
 	// Apply options
 	for _, option := range options {
 		if err := option(config); err != nil {
 			return nil, fmt.Errorf("failed to apply config option: %w", err)
 		}
 	}
-	
+
 	// Validate configuration
 	if err := config.Validate(); err != nil {
 		return nil, fmt.Errorf("invalid configuration: %w", err)
 	}
-	
+
 	return config, nil
 }
 
@@ -190,23 +190,23 @@ func (c *Config) Validate() error {
 	if c.Service == "" {
 		return errors.NewGlobusError("client", "InvalidConfig", "service name is required")
 	}
-	
+
 	if c.BaseURL == "" {
 		return errors.NewGlobusError("client", "InvalidConfig", "base URL is required")
 	}
-	
+
 	if _, err := url.Parse(c.BaseURL); err != nil {
 		return errors.NewGlobusError("client", "InvalidConfig", "invalid base URL").WithDetail(err.Error())
 	}
-	
+
 	if c.Timeout <= 0 {
 		return errors.NewGlobusError("client", "InvalidConfig", "timeout must be positive")
 	}
-	
+
 	if c.MaxRetries < 0 {
 		return errors.NewGlobusError("client", "InvalidConfig", "max retries must be non-negative")
 	}
-	
+
 	return nil
 }
 
@@ -351,7 +351,7 @@ func AuthConfig(options ...ConfigOption) (*Config, error) {
 		WithBaseURL("https://auth.globus.org/v2"),
 		WithAPIVersion("v2"),
 	}
-	
+
 	allOptions := append(baseOptions, options...)
 	return NewConfig("auth", allOptions...)
 }
@@ -362,7 +362,7 @@ func TransferConfig(options ...ConfigOption) (*Config, error) {
 		WithBaseURL("https://transfer.api.globus.org/v0.10"),
 		WithAPIVersion("v0.10"),
 	}
-	
+
 	allOptions := append(baseOptions, options...)
 	return NewConfig("transfer", allOptions...)
 }
@@ -373,7 +373,7 @@ func GroupsConfig(options ...ConfigOption) (*Config, error) {
 		WithBaseURL("https://groups.api.globus.org/v2"),
 		WithAPIVersion("v2"),
 	}
-	
+
 	allOptions := append(baseOptions, options...)
 	return NewConfig("groups", allOptions...)
 }
@@ -384,7 +384,7 @@ func SearchConfig(options ...ConfigOption) (*Config, error) {
 		WithBaseURL("https://search.api.globus.org/v1"),
 		WithAPIVersion("v1"),
 	}
-	
+
 	allOptions := append(baseOptions, options...)
 	return NewConfig("search", allOptions...)
 }
@@ -395,7 +395,7 @@ func FlowsConfig(options ...ConfigOption) (*Config, error) {
 		WithBaseURL("https://flows.globus.org/v1"),
 		WithAPIVersion("v1"),
 	}
-	
+
 	allOptions := append(baseOptions, options...)
 	return NewConfig("flows", allOptions...)
 }
@@ -406,7 +406,7 @@ func ComputeConfig(options ...ConfigOption) (*Config, error) {
 		WithBaseURL("https://compute.api.globus.org/v2"),
 		WithAPIVersion("v2"),
 	}
-	
+
 	allOptions := append(baseOptions, options...)
 	return NewConfig("compute", allOptions...)
 }
@@ -417,7 +417,7 @@ func TimersConfig(options ...ConfigOption) (*Config, error) {
 		WithBaseURL("https://timer.automate.globus.org/api/v1"),
 		WithAPIVersion("v1"),
 	}
-	
+
 	allOptions := append(baseOptions, options...)
 	return NewConfig("timers", allOptions...)
 }

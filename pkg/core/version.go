@@ -260,12 +260,12 @@ func (v *APIVersion) IsCompatible(other interface{}) bool {
 	default:
 		return false
 	}
-	
+
 	// Different services are never compatible
 	if v.Service != otherVersion.Service {
 		return false
 	}
-	
+
 	// Different major versions are never compatible
 	if v.Major != otherVersion.Major {
 		return false
@@ -392,7 +392,7 @@ func (vc *VersionCheck) Enabled() bool {
 func (vc *VersionCheck) CheckServiceVersion(service string, version string) error {
 	vc.mu.Lock()
 	defer vc.mu.Unlock()
-	
+
 	// If version checking is disabled, always pass
 	if !vc.enabled {
 		vc.checkedServices[service] = true
@@ -411,11 +411,11 @@ func (vc *VersionCheck) CheckServiceVersion(service string, version string) erro
 		if err != nil {
 			return err
 		}
-		
+
 		if !expectedVersion.IsCompatible(providedVersion) {
 			return fmt.Errorf("service %s version %s is not compatible with expected version %s", service, version, customVersion)
 		}
-		
+
 		vc.checkedServices[service] = true
 		return nil
 	}

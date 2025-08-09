@@ -10,6 +10,7 @@ import (
 	httppool "github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/http"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/compute"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/deprecation"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/flows"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/groups"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search"
@@ -21,7 +22,7 @@ import (
 )
 
 // Version is the SDK version
-const Version = "3.60.0"
+const Version = "3.61.0"
 
 // OAuth2 scopes for Globus services
 const (
@@ -472,4 +473,16 @@ func (a *simpleAuthorizer) GetAuthorizationHeader(_ ...context.Context) (string,
 		return "", nil
 	}
 	return "Bearer " + a.token, nil
+}
+
+// ComputeClient is a deprecated alias for compute.Client
+// Deprecated: Use compute.Client directly or compute.NewClient() instead.
+// This alias will be removed in v4.0.0.
+type ComputeClient = compute.Client
+
+// NewComputeClientV2 creates a new Compute client (deprecated alias)
+// Deprecated: Use compute.NewClient() instead. This function will be removed in v4.0.0.
+func NewComputeClientV2(opts ...compute.ClientOption) (*ComputeClient, error) {
+	deprecation.LogWarning(nil, "NewComputeClientV2", "3.61.0", "4.0.0", "Use compute.NewClient() instead.")
+	return compute.NewClient(opts...)
 }

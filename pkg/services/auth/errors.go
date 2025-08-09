@@ -23,7 +23,7 @@ const (
 	// Error codes for authorization endpoint
 	ErrCodeServerError            = "server_error"
 	ErrCodeTemporarilyUnavailable = "temporarily_unavailable"
-	
+
 	// GARE (Globus Auth Requirements Error) codes - added in v3.60.0 parity
 	ErrCodeConsentRequired          = "consent_required"
 	ErrCodeDependentConsentRequired = "dependent_consent_required"
@@ -51,7 +51,7 @@ var (
 
 	// ErrBadRequest is returned when the request is malformed
 	ErrBadRequest = errors.New("bad request")
-	
+
 	// GARE (Globus Auth Requirements Error) errors - added in v3.60.0 parity
 	ErrConsentRequired          = errors.New("consent required")
 	ErrDependentConsentRequired = errors.New("dependent consent required")

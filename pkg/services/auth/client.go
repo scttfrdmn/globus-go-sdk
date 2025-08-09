@@ -407,7 +407,7 @@ func (c *Client) ExchangeAuthorizationCodeV2(ctx context.Context, code string) (
 		}
 		return nil, err
 	}
-	
+
 	return response.NewAuthResponse(*tokenResp), nil
 }
 
@@ -421,7 +421,7 @@ func (c *Client) RefreshTokenV2(ctx context.Context, refreshToken string) (*resp
 		}
 		return nil, err
 	}
-	
+
 	return response.NewAuthResponse(*tokenResp), nil
 }
 
@@ -435,7 +435,7 @@ func (c *Client) IntrospectTokenV2(ctx context.Context, token string) (*response
 		}
 		return nil, err
 	}
-	
+
 	return response.NewAuthResponse(*tokenInfo), nil
 }
 
@@ -449,6 +449,6 @@ func (c *Client) GetClientCredentialsTokenV2(ctx context.Context, scopes ...stri
 		}
 		return nil, err
 	}
-	
+
 	return response.NewAuthResponse(*tokenResp), nil
 }

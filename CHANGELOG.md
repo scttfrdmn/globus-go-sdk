@@ -28,6 +28,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Nothing security-related yet
 
+## [3.61.0-1] - 2025-01-27
+
+### Added
+- **Python SDK v3.61.0 feature synchronization**
+  - Maintained synchronized versioning with Python SDK v3.61.0
+  - Added comprehensive deprecation warnings for legacy functionality
+
+### Deprecated
+- **Globus Connect Server v4 support**
+  - SetupGridFTPV4Server() method deprecated
+  - ConfigureGCSV4Endpoint() method deprecated  
+  - GetGCSV4ServerList() method deprecated
+  - GCSV4Config, GCSV4ServerList, GCSV4Server types deprecated
+  - All GCS v4 methods will emit deprecation warnings when used
+- **ComputeClient alias deprecated**
+  - ComputeClient type alias deprecated in favor of compute.Client
+  - NewComputeClientV2() function deprecated in favor of compute.NewClient()
+  - Users encouraged to use compute.Client directly
+
+### Changed
+- Updated SDK version to v3.61.0 to maintain Python SDK synchronization
+
 ## [3.60.0-1] - 2025-01-27
 
 ### Added

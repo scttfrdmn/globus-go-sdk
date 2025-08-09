@@ -674,7 +674,7 @@ func TestIntegration_TransferFlow(t *testing.T) {
 
 func TestIntegration_RecursiveTransfer(t *testing.T) {
 	t.Skip("Skipping recursive transfer test - RecursiveTransfer method not yet implemented")
-	
+
 	// Skip tests if the GLOBUS_TEST_SKIP_TRANSFER environment variable is set
 	if os.Getenv("GLOBUS_TEST_SKIP_TRANSFER") != "" {
 		t.Skip("Skipping transfer test due to GLOBUS_TEST_SKIP_TRANSFER environment variable")
@@ -846,37 +846,37 @@ func TestIntegration_RecursiveTransfer(t *testing.T) {
 	// 3. Test recursive transfer using the SDK's recursive transfer functionality with retry
 	// TODO: Uncomment when RecursiveTransfer is implemented
 	/*
-	options := &transfer.RecursiveTransferOptions{
-		SourceEndpointID:      sourceEndpointID,
-		DestinationEndpointID: destEndpointID,
-		SourcePath:            sourceDir,
-		DestinationPath:       destDir,
-		Label:                 fmt.Sprintf("Recursive Transfer Test %s", timestamp),
-		Sync:                  true,
-		VerifyChecksum:        true,
-	}
+		options := &transfer.RecursiveTransferOptions{
+			SourceEndpointID:      sourceEndpointID,
+			DestinationEndpointID: destEndpointID,
+			SourcePath:            sourceDir,
+			DestinationPath:       destDir,
+			Label:                 fmt.Sprintf("Recursive Transfer Test %s", timestamp),
+			Sync:                  true,
+			VerifyChecksum:        true,
+		}
 
-	err = ratelimit.RetryWithBackoff(
-		ctx,
-		func(ctx context.Context) error {
-			return client.RecursiveTransfer(ctx, options)
-		},
-		ratelimit.DefaultBackoff(),
-		transfer.IsRetryableTransferError,
-	)
+		err = ratelimit.RetryWithBackoff(
+			ctx,
+			func(ctx context.Context) error {
+				return client.RecursiveTransfer(ctx, options)
+			},
+			ratelimit.DefaultBackoff(),
+			transfer.IsRetryableTransferError,
+		)
 	*/
 
 	// TODO: Uncomment when RecursiveTransfer is implemented
 	/*
-	if err != nil {
-		if transfer.IsRateLimitExceeded(err) {
-			t.Logf("Rate limit exceeded during recursive transfer. Continuing test but transfer may not complete: %v", err)
-		} else {
-			t.Fatalf("RecursiveTransfer failed: %v", err)
+		if err != nil {
+			if transfer.IsRateLimitExceeded(err) {
+				t.Logf("Rate limit exceeded during recursive transfer. Continuing test but transfer may not complete: %v", err)
+			} else {
+				t.Fatalf("RecursiveTransfer failed: %v", err)
+			}
 		}
-	}
 
-	t.Log("Recursive transfer submitted successfully")
+		t.Log("Recursive transfer submitted successfully")
 	*/
 
 	// 4. List tasks to verify transfer was initiated
@@ -909,7 +909,7 @@ func TestIntegration_RecursiveTransfer(t *testing.T) {
 
 func TestIntegration_GetEndpointActivationRequirements(t *testing.T) {
 	t.Skip("Skipping activation requirements test - GetActivationRequirements method not yet implemented")
-	
+
 	clientID, clientSecret, sourceEndpointID, _ := getTestCredentials(t)
 
 	// Skip if endpoint is not provided
@@ -932,44 +932,44 @@ func TestIntegration_GetEndpointActivationRequirements(t *testing.T) {
 	// Get activation requirements with retry
 	// TODO: Uncomment when GetActivationRequirements is implemented
 	/*
-	var requirements *transfer.ActivationRequirements
-	err = ratelimit.RetryWithBackoff(
-		ctx,
-		func(ctx context.Context) error {
-			var getErr error
-			requirements, getErr = client.GetActivationRequirements(ctx, sourceEndpointID)
-			return getErr
-		},
-		ratelimit.DefaultBackoff(),
-		transfer.IsRetryableTransferError,
-	)
+		var requirements *transfer.ActivationRequirements
+		err = ratelimit.RetryWithBackoff(
+			ctx,
+			func(ctx context.Context) error {
+				var getErr error
+				requirements, getErr = client.GetActivationRequirements(ctx, sourceEndpointID)
+				return getErr
+			},
+			ratelimit.DefaultBackoff(),
+			transfer.IsRetryableTransferError,
+		)
 
-	if err != nil {
-		t.Fatalf("Failed to get activation requirements: %v", err)
-	}
+		if err != nil {
+			t.Fatalf("Failed to get activation requirements: %v", err)
+		}
 	*/
 
 	// Verified we got a response - exact requirements depend on the endpoint type
 	// TODO: Uncomment when ActivateEndpoint is implemented
 	/*
-	t.Logf("Activation requirements data type: %s", requirements.DataType)
-	t.Logf("Number of activation requirements: %d", len(requirements.ActivationRequirements))
+		t.Logf("Activation requirements data type: %s", requirements.DataType)
+		t.Logf("Number of activation requirements: %d", len(requirements.ActivationRequirements))
 
-	// Try to activate the endpoint (might already be activated)
-	err = ratelimit.RetryWithBackoff(
-		ctx,
-		func(ctx context.Context) error {
-			return client.ActivateEndpoint(ctx, sourceEndpointID)
-		},
-		ratelimit.DefaultBackoff(),
-		transfer.IsRetryableTransferError,
-	)
+		// Try to activate the endpoint (might already be activated)
+		err = ratelimit.RetryWithBackoff(
+			ctx,
+			func(ctx context.Context) error {
+				return client.ActivateEndpoint(ctx, sourceEndpointID)
+			},
+			ratelimit.DefaultBackoff(),
+			transfer.IsRetryableTransferError,
+		)
 
-	if err != nil {
-		t.Logf("Activation might require additional steps: %v", err)
-	} else {
-		t.Log("Endpoint activated successfully")
-	}
+		if err != nil {
+			t.Logf("Activation might require additional steps: %v", err)
+		} else {
+			t.Log("Endpoint activated successfully")
+		}
 	*/
 
 	// Get endpoint autoactivation status with retry
@@ -992,12 +992,12 @@ func TestIntegration_GetEndpointActivationRequirements(t *testing.T) {
 	// Check if the endpoint has the IsAutoActivateEnabled field (it might be a different name like AutoActivate)
 	// TODO: Uncomment when ActivationProfile field is implemented
 	/*
-	t.Logf("Endpoint activation details: %+v", endpoint)
+		t.Logf("Endpoint activation details: %+v", endpoint)
 
-	// If available, log auto-activation details
-	if endpoint.ActivationProfile != "" {
-		t.Logf("Endpoint activation profile: %s", endpoint.ActivationProfile)
-	}
+		// If available, log auto-activation details
+		if endpoint.ActivationProfile != "" {
+			t.Logf("Endpoint activation profile: %s", endpoint.ActivationProfile)
+		}
 	*/
 }
 

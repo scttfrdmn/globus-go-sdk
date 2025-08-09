@@ -22,30 +22,30 @@ import (
 func main() {
 	// Enable deprecation warnings for demonstration
 	deprecation.Enable()
-	
+
 	fmt.Println("=== Globus Go SDK v3.60.0 - Unified Systems Demo ===")
 	fmt.Println()
-	
+
 	// Demonstrate deprecation warnings
 	fmt.Println("1. Deprecation System Demo:")
 	demonstrateDeprecationWarnings()
 	fmt.Println()
-	
+
 	// Demonstrate unified client configuration
 	fmt.Println("2. Unified Client Configuration Demo:")
 	demonstrateUnifiedClientConfig()
 	fmt.Println()
-	
+
 	// Demonstrate unified error handling
 	fmt.Println("3. Unified Error Handling Demo:")
 	demonstrateUnifiedErrorHandling()
 	fmt.Println()
-	
+
 	// Demonstrate unified response system
 	fmt.Println("4. Unified Response System Demo:")
 	demonstrateUnifiedResponseSystem()
 	fmt.Println()
-	
+
 	fmt.Println("=== Demo Complete ===")
 	fmt.Println("All unified systems working correctly!")
 }
@@ -53,7 +53,7 @@ func main() {
 func demonstrateDeprecationWarnings() {
 	// This will trigger a deprecation warning
 	fmt.Println("   Calling deprecated method...")
-	
+
 	// Create a client and call the deprecated method
 	authClient, err := auth.NewClient(
 		auth.WithClientID("demo-client"),
@@ -63,17 +63,17 @@ func demonstrateDeprecationWarnings() {
 		log.Printf("Failed to create auth client: %v", err)
 		return
 	}
-	
+
 	// This will trigger a deprecation warning
 	authClient.SetRedirectURL("https://example.com/callback")
-	
+
 	fmt.Println("   ✓ Deprecation warning issued")
 }
 
 func demonstrateUnifiedClientConfig() {
 	// Demonstrate new unified client configuration
 	fmt.Println("   Creating clients with unified configuration...")
-	
+
 	// Auth client with unified config
 	authConfig, err := client.AuthConfig(
 		client.WithAccessToken("demo-token"),
@@ -84,9 +84,9 @@ func demonstrateUnifiedClientConfig() {
 		log.Printf("Failed to create auth config: %v", err)
 		return
 	}
-	
+
 	fmt.Printf("   ✓ Auth config created: %s\n", authConfig.BaseURL)
-	
+
 	// Transfer client with unified config
 	transferConfig, err := client.TransferConfig(
 		client.WithAccessToken("demo-token"),
@@ -97,9 +97,9 @@ func demonstrateUnifiedClientConfig() {
 		log.Printf("Failed to create transfer config: %v", err)
 		return
 	}
-	
+
 	fmt.Printf("   ✓ Transfer config created: %s\n", transferConfig.BaseURL)
-	
+
 	// Groups client with unified config
 	groupsConfig, err := client.GroupsConfig(
 		client.WithAccessToken("demo-token"),
@@ -109,31 +109,31 @@ func demonstrateUnifiedClientConfig() {
 		log.Printf("Failed to create groups config: %v", err)
 		return
 	}
-	
+
 	fmt.Printf("   ✓ Groups config created: %s\n", groupsConfig.BaseURL)
-	
+
 	fmt.Println("   ✓ All clients created with unified configuration")
 }
 
 func demonstrateUnifiedErrorHandling() {
 	// Demonstrate unified error handling
 	fmt.Println("   Creating and handling unified errors...")
-	
+
 	// Create different types of errors
 	authError := errors.NewAuthError("invalid_token", "The provided token is invalid")
 	transferError := errors.NewTransferError("TaskNotFound", "Transfer task not found")
 	groupsError := errors.NewGroupsError("GroupNotFound", "Group not found")
-	
+
 	// Add context to errors
 	authError.WithContext("endpoint", "/oauth2/token").WithRequestID("req-123")
 	transferError.WithContext("task_id", "abc-123").WithDetail("Task was cancelled")
 	groupsError.WithContext("group_id", "group-456").WithRequestID("req-456")
-	
+
 	// Handle errors consistently
 	handleError(authError, "auth operation")
 	handleError(transferError, "transfer operation")
 	handleError(groupsError, "groups operation")
-	
+
 	fmt.Println("   ✓ All errors handled consistently")
 }
 
@@ -143,13 +143,13 @@ func handleError(err error, operation string) {
 		fmt.Printf("   - %s: Non-Globus error: %v\n", operation, err)
 		return
 	}
-	
+
 	fmt.Printf("   - %s: [%s] %s", operation, globusErr.Service, globusErr.Code)
 	if globusErr.RequestID != "" {
 		fmt.Printf(" (Request: %s)", globusErr.RequestID)
 	}
 	fmt.Println()
-	
+
 	// Check error type
 	if globusErr.IsAuthenticationError() {
 		fmt.Printf("     → Authentication error detected\n")
@@ -163,7 +163,7 @@ func handleError(err error, operation string) {
 func demonstrateUnifiedResponseSystem() {
 	// Demonstrate unified response system
 	fmt.Println("   Creating unified responses...")
-	
+
 	// Create sample data
 	tokenData := auth.TokenResponse{
 		AccessToken: "sample-token",
@@ -171,11 +171,11 @@ func demonstrateUnifiedResponseSystem() {
 		ExpiresIn:   3600,
 		Scope:       "openid profile email",
 	}
-	
+
 	// Create unified response
 	authResponse := response.NewAuthResponse(tokenData)
 	authResponse.WithRequestID("req-789")
-	
+
 	// Add metadata
 	metadata := response.ResponseMetadata{
 		Service:    "auth",
@@ -184,16 +184,16 @@ func demonstrateUnifiedResponseSystem() {
 		Timestamp:  time.Now(),
 	}
 	authResponse.WithMetadata(metadata)
-	
+
 	fmt.Printf("   ✓ Auth response created with request ID: %s\n", authResponse.RequestID)
-	fmt.Printf("   ✓ Service: %s, API Version: %s\n", 
+	fmt.Printf("   ✓ Service: %s, API Version: %s\n",
 		authResponse.Metadata.Service, authResponse.Metadata.APIVersion)
-	
+
 	// Create paginated response
 	sampleData := []string{"item1", "item2", "item3"}
 	paginatedResponse := response.NewPaginatedResponse(sampleData, "transfer")
 	paginatedResponse.WithRequestID("req-101")
-	
+
 	// Add pagination info
 	paginationInfo := response.PaginationInfo{
 		HasMore:   true,
@@ -203,11 +203,11 @@ func demonstrateUnifiedResponseSystem() {
 		PageSize:  3,
 	}
 	paginatedResponse.WithPagination(paginationInfo)
-	
+
 	fmt.Printf("   ✓ Paginated response created with %d items\n", len(paginatedResponse.Data))
-	fmt.Printf("   ✓ Has more pages: %v, Next token: %s\n", 
+	fmt.Printf("   ✓ Has more pages: %v, Next token: %s\n",
 		paginatedResponse.Pagination.HasMore, paginatedResponse.Pagination.NextToken)
-	
+
 	// Create iterator from paginated response
 	iterator := response.NewIterator(paginatedResponse, func(nextToken string) (*response.PaginatedResponse[string], error) {
 		// This would normally fetch the next page
@@ -220,9 +220,9 @@ func demonstrateUnifiedResponseSystem() {
 			},
 		}, nil
 	})
-	
+
 	fmt.Printf("   ✓ Iterator created for paginated data\n")
-	
+
 	// Demonstrate iterator usage
 	count := 0
 	for {
@@ -233,9 +233,9 @@ func demonstrateUnifiedResponseSystem() {
 		count++
 		fmt.Printf("     - Item %d: %s\n", count, item)
 	}
-	
+
 	fmt.Printf("   ✓ Iterator processed %d items\n", count)
-	
+
 	if err := iterator.Error(); err != nil {
 		fmt.Printf("   ✗ Iterator error: %v\n", err)
 	} else {

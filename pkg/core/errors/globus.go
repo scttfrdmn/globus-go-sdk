@@ -68,12 +68,12 @@ func (e *GlobusError) Is(target error) bool {
 	if target == nil {
 		return false
 	}
-	
+
 	targetErr, ok := target.(*GlobusError)
 	if !ok {
 		return false
 	}
-	
+
 	return e.Service == targetErr.Service && e.Code == targetErr.Code
 }
 
@@ -84,19 +84,19 @@ func (e *GlobusError) String() string {
 		fmt.Sprintf("Code: %s", e.Code),
 		fmt.Sprintf("Message: %s", e.Message),
 	}
-	
+
 	if e.Detail != "" {
 		parts = append(parts, fmt.Sprintf("Detail: %s", e.Detail))
 	}
-	
+
 	if e.RequestID != "" {
 		parts = append(parts, fmt.Sprintf("RequestID: %s", e.RequestID))
 	}
-	
+
 	if e.HTTPStatus != 0 {
 		parts = append(parts, fmt.Sprintf("HTTPStatus: %d", e.HTTPStatus))
 	}
-	
+
 	if len(e.Context) > 0 {
 		contextParts := make([]string, 0, len(e.Context))
 		for k, v := range e.Context {
@@ -104,7 +104,7 @@ func (e *GlobusError) String() string {
 		}
 		parts = append(parts, fmt.Sprintf("Context: %s", strings.Join(contextParts, ", ")))
 	}
-	
+
 	return strings.Join(parts, "; ")
 }
 
@@ -136,18 +136,18 @@ func NewGlobusErrorFromHTTPResponse(service string, resp *http.Response) *Globus
 		Context:    make(map[string]string),
 		Retryable:  isRetryableHTTPStatus(resp.StatusCode),
 	}
-	
+
 	// Extract request ID from headers
 	if requestID := resp.Header.Get("X-Request-Id"); requestID != "" {
 		err.RequestID = requestID
 	} else if requestID := resp.Header.Get("Request-Id"); requestID != "" {
 		err.RequestID = requestID
 	}
-	
+
 	// Set default message based on HTTP status
 	err.Message = http.StatusText(resp.StatusCode)
 	err.Code = fmt.Sprintf("HTTP_%d", resp.StatusCode)
-	
+
 	return err
 }
 
@@ -191,30 +191,30 @@ func (e *GlobusError) IsRetryable() bool {
 
 // IsAuthenticationError returns true if the error is related to authentication
 func (e *GlobusError) IsAuthenticationError() bool {
-	return e.HTTPStatus == http.StatusUnauthorized || 
-		   strings.Contains(strings.ToLower(e.Code), "auth") ||
-		   strings.Contains(strings.ToLower(e.Message), "unauthorized")
+	return e.HTTPStatus == http.StatusUnauthorized ||
+		strings.Contains(strings.ToLower(e.Code), "auth") ||
+		strings.Contains(strings.ToLower(e.Message), "unauthorized")
 }
 
 // IsAuthorizationError returns true if the error is related to authorization
 func (e *GlobusError) IsAuthorizationError() bool {
 	return e.HTTPStatus == http.StatusForbidden ||
-		   strings.Contains(strings.ToLower(e.Code), "forbidden") ||
-		   strings.Contains(strings.ToLower(e.Message), "forbidden")
+		strings.Contains(strings.ToLower(e.Code), "forbidden") ||
+		strings.Contains(strings.ToLower(e.Message), "forbidden")
 }
 
 // IsNotFoundError returns true if the error indicates a resource was not found
 func (e *GlobusError) IsNotFoundError() bool {
 	return e.HTTPStatus == http.StatusNotFound ||
-		   strings.Contains(strings.ToLower(e.Code), "not_found") ||
-		   strings.Contains(strings.ToLower(e.Message), "not found")
+		strings.Contains(strings.ToLower(e.Code), "not_found") ||
+		strings.Contains(strings.ToLower(e.Message), "not found")
 }
 
 // IsRateLimitError returns true if the error indicates rate limiting
 func (e *GlobusError) IsRateLimitError() bool {
 	return e.HTTPStatus == http.StatusTooManyRequests ||
-		   strings.Contains(strings.ToLower(e.Code), "rate_limit") ||
-		   strings.Contains(strings.ToLower(e.Message), "rate limit")
+		strings.Contains(strings.ToLower(e.Code), "rate_limit") ||
+		strings.Contains(strings.ToLower(e.Message), "rate limit")
 }
 
 // IsServerError returns true if the error is a server-side error
@@ -231,10 +231,10 @@ func (e *GlobusError) IsClientError() bool {
 func isRetryableHTTPStatus(status int) bool {
 	switch status {
 	case http.StatusTooManyRequests, // 429
-		 http.StatusInternalServerError,     // 500
-		 http.StatusBadGateway,              // 502
-		 http.StatusServiceUnavailable,      // 503
-		 http.StatusGatewayTimeout:          // 504
+		http.StatusInternalServerError, // 500
+		http.StatusBadGateway,          // 502
+		http.StatusServiceUnavailable,  // 503
+		http.StatusGatewayTimeout:      // 504
 		return true
 	default:
 		return false
@@ -244,44 +244,44 @@ func isRetryableHTTPStatus(status int) bool {
 // Common error codes for each service
 const (
 	// Auth Service Error Codes
-	AuthInvalidGrant     = "invalid_grant"
-	AuthInvalidClient    = "invalid_client"
-	AuthInvalidScope     = "invalid_scope"
-	AuthInvalidToken     = "invalid_token"
-	AuthExpiredToken     = "expired_token"
+	AuthInvalidGrant      = "invalid_grant"
+	AuthInvalidClient     = "invalid_client"
+	AuthInvalidScope      = "invalid_scope"
+	AuthInvalidToken      = "invalid_token"
+	AuthExpiredToken      = "expired_token"
 	AuthInsufficientScope = "insufficient_scope"
-	
+
 	// Transfer Service Error Codes
 	TransferTaskNotFound     = "TaskNotFound"
 	TransferEndpointNotFound = "EndpointNotFound"
 	TransferPermissionDenied = "PermissionDenied"
 	TransferInvalidPath      = "InvalidPath"
 	TransferTaskSubmitError  = "TaskSubmitError"
-	
+
 	// Groups Service Error Codes
 	GroupsGroupNotFound    = "GroupNotFound"
 	GroupsMemberNotFound   = "MemberNotFound"
 	GroupsPermissionDenied = "PermissionDenied"
 	GroupsInvalidRequest   = "InvalidRequest"
-	
+
 	// Search Service Error Codes
 	SearchIndexNotFound    = "IndexNotFound"
 	SearchQueryError       = "QueryError"
 	SearchIngestError      = "IngestError"
 	SearchPermissionDenied = "PermissionDenied"
-	
+
 	// Flows Service Error Codes
-	FlowsFlowNotFound      = "FlowNotFound"
-	FlowsRunNotFound       = "RunNotFound"
-	FlowsExecutionError    = "ExecutionError"
-	FlowsPermissionDenied  = "PermissionDenied"
-	
+	FlowsFlowNotFound     = "FlowNotFound"
+	FlowsRunNotFound      = "RunNotFound"
+	FlowsExecutionError   = "ExecutionError"
+	FlowsPermissionDenied = "PermissionDenied"
+
 	// Compute Service Error Codes
 	ComputeFunctionNotFound = "FunctionNotFound"
 	ComputeTaskNotFound     = "TaskNotFound"
 	ComputeExecutionError   = "ExecutionError"
 	ComputeEndpointOffline  = "EndpointOffline"
-	
+
 	// Timers Service Error Codes
 	TimersJobNotFound      = "JobNotFound"
 	TimersScheduleError    = "ScheduleError"
@@ -334,16 +334,16 @@ func ParseGlobusErrorFromJSON(service string, data []byte) (*GlobusError, error)
 			Message string `json:"message"`
 			Detail  string `json:"detail"`
 		} `json:"error"`
-		Message   string `json:"message"`   // Some services use this format
+		Message   string `json:"message"`    // Some services use this format
 		ErrorCode string `json:"error_code"` // Alternative format
 	}
-	
+
 	if err := json.Unmarshal(data, &errorResponse); err != nil {
 		return nil, err
 	}
-	
+
 	globusErr := NewGlobusError(service, "", "")
-	
+
 	// Extract error information from various formats
 	if errorResponse.Error.Code != "" {
 		globusErr.Code = errorResponse.Error.Code
@@ -358,6 +358,6 @@ func ParseGlobusErrorFromJSON(service string, data []byte) (*GlobusError, error)
 	} else {
 		return nil, fmt.Errorf("unable to parse error from JSON")
 	}
-	
+
 	return globusErr, nil
 }
