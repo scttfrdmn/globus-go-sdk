@@ -28,6 +28,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Nothing security-related yet
 
+## [3.62.0-1] - 2025-01-27
+
+### Added
+- **Python SDK v3.62.0 feature synchronization**
+  - Maintained synchronized versioning with Python SDK v3.62.0
+  - Groups service subscription_id support
+  - SetSubscriptionAdminVerifiedID() method for setting group subscription IDs (admin-only)
+  - GetGroupSubscription() method for retrieving group subscription information
+  - GroupSubscription type for handling subscription data
+
+### Changed
+- **Version synchronization**
+  - Updated SDK version to 3.62.0 to match Python SDK v3.62.0
+  - All changes maintain backward compatibility with existing v3.61.x code
+
 ## [3.61.0-1] - 2025-01-27
 
 ### Added

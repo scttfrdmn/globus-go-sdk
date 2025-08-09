@@ -7,10 +7,10 @@ import (
 	"fmt"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/config"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/deprecation"
 	httppool "github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/http"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/compute"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/deprecation"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/flows"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/groups"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search"
@@ -22,7 +22,7 @@ import (
 )
 
 // Version is the SDK version
-const Version = "3.61.0"
+const Version = "3.62.0"
 
 // OAuth2 scopes for Globus services
 const (

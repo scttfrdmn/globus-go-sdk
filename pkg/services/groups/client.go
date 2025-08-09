@@ -593,3 +593,41 @@ func (c *Client) DeleteRole(ctx context.Context, groupID, roleID string) error {
 
 	return c.doRequestLowLevel(ctx, http.MethodDelete, "groups/"+groupID+"/roles/"+roleID, nil, nil, nil)
 }
+
+// SetSubscriptionAdminVerifiedID sets a subscription ID for a group (admin-only operation)
+func (c *Client) SetSubscriptionAdminVerifiedID(ctx context.Context, groupID, subscriptionID string) error {
+	if groupID == "" {
+		return fmt.Errorf("group ID is required")
+	}
+
+	if subscriptionID == "" {
+		return fmt.Errorf("subscription ID is required")
+	}
+
+	body := map[string]string{
+		"subscription_id": subscriptionID,
+		"DATA_TYPE":       "subscription_id_update",
+	}
+
+	return c.doRequestLowLevel(ctx, http.MethodPut, "groups/"+groupID+"/subscription_id", nil, body, nil)
+}
+
+// GetGroupSubscription retrieves the subscription information for a group
+func (c *Client) GetGroupSubscription(ctx context.Context, groupID string) (*GroupSubscription, error) {
+	if groupID == "" {
+		return nil, fmt.Errorf("group ID is required")
+	}
+
+	var subscription GroupSubscription
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups/"+groupID+"/subscription", nil, nil, &subscription)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ensure the returned object has the DATA_TYPE set
+	if subscription.DATA_TYPE == "" {
+		subscription.DATA_TYPE = "group_subscription"
+	}
+
+	return &subscription, nil
+}

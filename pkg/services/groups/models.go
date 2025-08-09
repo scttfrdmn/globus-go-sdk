@@ -173,3 +173,14 @@ type GroupMembership struct {
 	RoleID   string `json:"role_id,omitempty"`
 	Status   string `json:"status,omitempty"`
 }
+
+// GroupSubscription represents subscription information for a group
+type GroupSubscription struct {
+	DATA_TYPE        string    `json:"DATA_TYPE"`
+	SubscriptionID   string    `json:"subscription_id"`
+	GroupID          string    `json:"group_id"`
+	IsActive         bool      `json:"is_active"`
+	Created          time.Time `json:"created,omitempty"`
+	LastUpdated      time.Time `json:"last_updated,omitempty"`
+	SubscriptionType string    `json:"subscription_type,omitempty"`
+}
