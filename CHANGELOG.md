@@ -28,6 +28,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Nothing security-related yet
 
+## [3.62.0-2] - 2025-01-27
+
+### Fixed
+- **Version consistency fix**
+  - Corrected Version constant in `pkg/core/version.go` from "3.60.0" to "3.62.0"
+  - Ensures consistency with v3.62.0 release tags and numbering
+  - Addresses oversight from v3.62.0-1 release process
+
 ## [3.62.0-1] - 2025-01-27
 
 ### Added
