@@ -28,6 +28,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Nothing security-related yet
 
+## [3.62.0-3] - 2025-08-08
+
+### Added
+- **Comprehensive Testing Enhancement Infrastructure**
+  - Complete Phase 1 & Phase 2 testing infrastructure following Python SDK patterns
+  - **71 comprehensive tests** across unit, functional, and integration test suites
+  - **Metadata-driven testing system** with JSON test scenarios for enhanced test organization
+  - **Shared testing utilities** in `pkg/testhelpers/` for consistent test patterns across services
+  - **Enhanced error scenario testing** with systematic HTTP error code coverage (4xx, 5xx responses)
+  - **Workflow-based functional testing** for end-to-end user journey validation
+  - **Python SDK parity method testing** covering all 9 parity methods with comprehensive validation
+
+- **New Testing Infrastructure Files**
+  - `pkg/testhelpers/fixtures.go` - Shared testing infrastructure and utilities
+  - `pkg/services/groups/unit/*` - Comprehensive unit testing suite with 8 test files
+  - `pkg/services/groups/functional/*` - Workflow-based functional tests
+  - `pkg/services/groups/integration/*` - End-to-end integration testing
+  - `TESTING_ENHANCEMENT_PLAN.md` - Complete testing strategy and implementation roadmap
+
+- **Enhanced Test Coverage**
+  - **Error Scenario Testing**: Systematic testing of all HTTP error conditions with JSON error response parsing
+  - **Subscription Method Testing**: Complete test coverage for v3.62.0 subscription functionality
+  - **Python SDK Parity Validation**: Integration tests covering all 9 Python SDK parity methods
+  - **Metadata-Driven Test Scenarios**: 15+ structured test cases with variable substitution and templates
+  - **Network Error Handling**: Timeout, connection failure, and network-level error scenario testing
+
+### Changed
+- **Improved Error Handling in Groups Client**
+  - Enhanced `doRequestLowLevel` method to properly handle `core.Error` types
+  - Fixed JSON error response parsing with proper `GlobusError` creation
+  - Improved error propagation from core HTTP client to service-specific clients
+
+- **Enhanced Test Organization**
+  - Restructured groups service testing into unit, functional, and integration test suites
+  - Implemented consistent test patterns following upstream Python SDK approaches
+  - Added emoji-based test logging for better test output readability
+
+### Fixed
+- **Network Timeout Test Stability**
+  - Fixed hanging network timeout tests by replacing infinite blocking with controlled timeouts
+  - Improved test reliability and reduced CI/CD execution time
+
+### Technical Details
+- **Files Modified**: 4 files enhanced (422 lines added)
+- **New Files**: 13 new test infrastructure files (4,000+ lines)
+- **Test Suite Coverage**: Unit tests, functional workflows, integration scenarios, error handling, and model validation
+- **Python SDK Parity**: Complete testing of all subscription management, policy configuration, identity preferences, and membership field methods
+- **Infrastructure Improvements**: Mock server enhancements, variable substitution system, dependency resolution, and test case generation utilities
+
+This release significantly enhances the SDK's testing infrastructure to ensure robust quality assurance and maintainability, following proven patterns from the upstream Python SDK while maintaining full backward compatibility.
+
 ## [3.62.0-2] - 2025-01-27
 
 ### Fixed
