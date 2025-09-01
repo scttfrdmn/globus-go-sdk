@@ -184,3 +184,32 @@ type GroupSubscription struct {
 	LastUpdated      time.Time `json:"last_updated,omitempty"`
 	SubscriptionType string    `json:"subscription_type,omitempty"`
 }
+
+// GroupPolicies represents policy configuration for a group (Python SDK parity)
+type GroupPolicies struct {
+	DATA_TYPE                      string                 `json:"DATA_TYPE"`
+	GroupID                        string                 `json:"group_id"`
+	Policies                       map[string]interface{} `json:"policies"`
+	SignupFields                   []string               `json:"signup_fields,omitempty"`
+	JoinRequests                   bool                   `json:"join_requests,omitempty"`
+	IsHighRiskGroup                bool                   `json:"is_high_risk_group,omitempty"`
+	AuthenticationAssuranceTimeout int                    `json:"authentication_assurance_timeout,omitempty"`
+	LastUpdated                    time.Time              `json:"last_updated,omitempty"`
+}
+
+// IdentityPreferences represents user preferences for group identity (Python SDK parity)
+type IdentityPreferences struct {
+	DATA_TYPE   string                 `json:"DATA_TYPE"`
+	GroupID     string                 `json:"group_id"`
+	IdentityID  string                 `json:"identity_id"`
+	Preferences map[string]interface{} `json:"preferences"`
+	LastUpdated time.Time              `json:"last_updated,omitempty"`
+}
+
+// MembershipFields represents custom membership fields (Python SDK parity)
+type MembershipFields struct {
+	DATA_TYPE   string                 `json:"DATA_TYPE"`
+	GroupID     string                 `json:"group_id"`
+	Fields      map[string]interface{} `json:"fields"`
+	LastUpdated time.Time              `json:"last_updated,omitempty"`
+}

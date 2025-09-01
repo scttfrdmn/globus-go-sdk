@@ -1,0 +1,82 @@
+{
+  "subscription_set_admin_verified": {
+    "name": "Set subscription admin verified ID",
+    "group_id": "test-group-12345",
+    "subscription": {
+      "subscription_id": "sub-abcdef-67890",
+      "subscription_type": "premium"
+    },
+    "expected": {
+      "status": "success"
+    },
+    "http_status": 200
+  },
+  "subscription_get_group": {
+    "name": "Get group subscription",
+    "group_id": "test-group-12345", 
+    "subscription": {
+      "subscription_id": "sub-abcdef-67890",
+      "subscription_type": "premium",
+      "is_active": true
+    },
+    "expected": {
+      "data_type": "group_subscription"
+    },
+    "http_status": 200
+  },
+  "subscription_get_by_id": {
+    "name": "Get group by subscription ID",
+    "subscription": {
+      "subscription_id": "sub-abcdef-67890"
+    },
+    "expected": {
+      "group_id": "test-group-12345",
+      "name": "Test Premium Group"
+    },
+    "http_status": 200
+  },
+  "group_create_workflow": {
+    "name": "Complete group creation workflow",
+    "group_id": "workflow-group-123",
+    "expected": {
+      "name": "Test Workflow Group", 
+      "description": "A group for testing workflows"
+    },
+    "subscription": {
+      "subscription_id": "sub-workflow-123"
+    },
+    "user_id": "test-user-456",
+    "role_id": "admin",
+    "http_status": 200
+  },
+  "error_group_not_found": {
+    "name": "Group not found error",
+    "group_id": "nonexistent-group",
+    "expected": {
+      "error": "Group not found",
+      "code": "GROUP_NOT_FOUND"
+    },
+    "http_status": 404
+  },
+  "error_insufficient_permissions": {
+    "name": "Insufficient permissions error",
+    "group_id": "restricted-group-789",
+    "expected": {
+      "error": "Insufficient permissions",
+      "code": "FORBIDDEN"
+    },
+    "http_status": 403
+  },
+  "error_invalid_subscription": {
+    "name": "Invalid subscription ID error",
+    "group_id": "test-group-12345",
+    "subscription": {
+      "subscription_id": "invalid-sub-format"
+    },
+    "expected": {
+      "error": "Invalid subscription ID format",
+      "code": "INVALID_SUBSCRIPTION_ID"
+    },
+    "http_status": 400
+  }
+}

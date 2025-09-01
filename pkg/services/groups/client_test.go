@@ -674,3 +674,148 @@ func TestUpdateMemberRole(t *testing.T) {
 		t.Error("UpdateMemberRole() with empty role ID should return error")
 	}
 }
+
+// Tests for v3.62.0 subscription functionality
+
+func TestSetSubscriptionAdminVerifiedID(t *testing.T) {
+	// Setup test server
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		// Check request method
+		if r.Method != http.MethodPut {
+			t.Errorf("Expected PUT request, got %s", r.Method)
+		}
+
+		// Check path
+		if r.URL.Path != "/groups/group1/subscription_id" {
+			t.Errorf("Expected path /groups/group1/subscription_id, got %s", r.URL.Path)
+		}
+
+		// Check request body
+		var requestBody map[string]string
+		if err := json.NewDecoder(r.Body).Decode(&requestBody); err != nil {
+			t.Fatalf("Failed to decode request body: %v", err)
+		}
+
+		if requestBody["subscription_id"] != "sub-12345" {
+			t.Errorf("Expected subscription_id=sub-12345, got %s", requestBody["subscription_id"])
+		}
+		if requestBody["DATA_TYPE"] != "subscription_id_update" {
+			t.Errorf("Expected DATA_TYPE=subscription_id_update, got %s", requestBody["DATA_TYPE"])
+		}
+
+		// Return success response
+		w.WriteHeader(http.StatusOK)
+	}
+
+	server, client := setupMockServer(handler)
+	defer server.Close()
+
+	// Test set subscription admin verified ID
+	err := client.SetSubscriptionAdminVerifiedID(context.Background(), "group1", "sub-12345")
+	if err != nil {
+		t.Fatalf("SetSubscriptionAdminVerifiedID() error = %v", err)
+	}
+
+	// Test with empty group ID
+	err = client.SetSubscriptionAdminVerifiedID(context.Background(), "", "sub-12345")
+	if err == nil {
+		t.Error("SetSubscriptionAdminVerifiedID() with empty group ID should return error")
+	}
+
+	// Test with empty subscription ID
+	err = client.SetSubscriptionAdminVerifiedID(context.Background(), "group1", "")
+	if err == nil {
+		t.Error("SetSubscriptionAdminVerifiedID() with empty subscription ID should return error")
+	}
+}
+
+func TestGetGroupSubscription(t *testing.T) {
+	// Setup test server
+	now := time.Now()
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		// Check request method
+		if r.Method != http.MethodGet {
+			t.Errorf("Expected GET request, got %s", r.Method)
+		}
+
+		// Check path
+		if r.URL.Path != "/groups/group1/subscription" {
+			t.Errorf("Expected path /groups/group1/subscription, got %s", r.URL.Path)
+		}
+
+		// Return mock response
+		subscription := GroupSubscription{
+			DATA_TYPE:        "group_subscription",
+			SubscriptionID:   "sub-12345",
+			GroupID:          "group1",
+			IsActive:         true,
+			Created:          now,
+			LastUpdated:      now,
+			SubscriptionType: "premium",
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(subscription)
+	}
+
+	server, client := setupMockServer(handler)
+	defer server.Close()
+
+	// Test get group subscription
+	subscription, err := client.GetGroupSubscription(context.Background(), "group1")
+	if err != nil {
+		t.Fatalf("GetGroupSubscription() error = %v", err)
+	}
+
+	// Check response
+	if subscription.SubscriptionID != "sub-12345" {
+		t.Errorf("GetGroupSubscription() SubscriptionID = %v, want %v", subscription.SubscriptionID, "sub-12345")
+	}
+	if subscription.GroupID != "group1" {
+		t.Errorf("GetGroupSubscription() GroupID = %v, want %v", subscription.GroupID, "group1")
+	}
+	if !subscription.IsActive {
+		t.Errorf("GetGroupSubscription() IsActive = %v, want %v", subscription.IsActive, true)
+	}
+	if subscription.SubscriptionType != "premium" {
+		t.Errorf("GetGroupSubscription() SubscriptionType = %v, want %v", subscription.SubscriptionType, "premium")
+	}
+	if subscription.DATA_TYPE != "group_subscription" {
+		t.Errorf("GetGroupSubscription() DATA_TYPE = %v, want %v", subscription.DATA_TYPE, "group_subscription")
+	}
+
+	// Test with empty group ID
+	_, err = client.GetGroupSubscription(context.Background(), "")
+	if err == nil {
+		t.Error("GetGroupSubscription() with empty group ID should return error")
+	}
+
+	// Test DATA_TYPE is set when missing from response
+	handler = func(w http.ResponseWriter, r *http.Request) {
+		// Return response without DATA_TYPE
+		subscription := GroupSubscription{
+			SubscriptionID:   "sub-12345",
+			GroupID:          "group1",
+			IsActive:         true,
+			SubscriptionType: "premium",
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(subscription)
+	}
+
+	server, client = setupMockServer(handler)
+	defer server.Close()
+
+	subscription, err = client.GetGroupSubscription(context.Background(), "group1")
+	if err != nil {
+		t.Fatalf("GetGroupSubscription() with missing DATA_TYPE error = %v", err)
+	}
+
+	// Check that DATA_TYPE was set by the client
+	if subscription.DATA_TYPE != "group_subscription" {
+		t.Errorf("GetGroupSubscription() should set DATA_TYPE to 'group_subscription', got %v", subscription.DATA_TYPE)
+	}
+}

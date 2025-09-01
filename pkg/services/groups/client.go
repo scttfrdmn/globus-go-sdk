@@ -162,32 +162,37 @@ func (c *Client) doRequestLowLevel(ctx context.Context, method, path string, que
 
 	resp, err := c.Client.Do(ctx, req)
 	if err != nil {
+		// Check if it's a core.Error (from NewAPIError)
+		if coreErr, ok := err.(*core.Error); ok {
+			// Convert core error to groups error using the raw body
+			return parseGroupsError(coreErr.StatusCode, coreErr.RawBody)
+		}
+		// Other errors (network, etc.)
 		return err
 	}
 	defer resp.Body.Close()
 
-	// For non-GET requests with no response body, just check status
-	if method != http.MethodGet && response == nil {
-		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-			return nil
-		}
-
-		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(respBody))
-	}
-
-	// Read and decode response body
+	// Read response body for successful responses
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
 
+	// For non-GET requests with no response body expected, return success
+	if method != http.MethodGet && response == nil {
+		return nil
+	}
+
+	// If no response body expected or empty, return success
 	if len(respBody) == 0 {
 		return nil
 	}
 
-	if err := json.Unmarshal(respBody, response); err != nil {
-		return fmt.Errorf("failed to unmarshal response: %w", err)
+	// Decode successful response
+	if response != nil {
+		if err := json.Unmarshal(respBody, response); err != nil {
+			return fmt.Errorf("failed to unmarshal response: %w", err)
+		}
 	}
 
 	return nil
@@ -630,4 +635,173 @@ func (c *Client) GetGroupSubscription(ctx context.Context, groupID string) (*Gro
 	}
 
 	return &subscription, nil
+}
+
+// GetGroupBySubscriptionID retrieves a group by its subscription ID (Python SDK parity)
+func (c *Client) GetGroupBySubscriptionID(ctx context.Context, subscriptionID string) (*Group, error) {
+	if subscriptionID == "" {
+		return nil, fmt.Errorf("subscription ID is required")
+	}
+
+	// Query parameter for subscription-based lookup
+	query := url.Values{}
+	query.Set("subscription_id", subscriptionID)
+
+	var group Group
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups", query, nil, &group)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ensure the returned object has the DATA_TYPE set
+	if group.DATA_TYPE == "" {
+		group.DATA_TYPE = "group"
+	}
+
+	return &group, nil
+}
+
+// Python SDK Parity Methods - Additional functionality to match upstream
+
+// GetGroupPolicies retrieves policy configuration for a group (Python SDK parity)
+func (c *Client) GetGroupPolicies(ctx context.Context, groupID string) (*GroupPolicies, error) {
+	if groupID == "" {
+		return nil, fmt.Errorf("group ID is required")
+	}
+
+	var policies GroupPolicies
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups/"+groupID+"/policies", nil, nil, &policies)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ensure the returned object has the DATA_TYPE set
+	if policies.DATA_TYPE == "" {
+		policies.DATA_TYPE = "group_policies"
+	}
+
+	return &policies, nil
+}
+
+// SetGroupPolicies sets policy configuration for a group (Python SDK parity)
+func (c *Client) SetGroupPolicies(ctx context.Context, groupID string, policies *GroupPolicies) error {
+	if groupID == "" {
+		return fmt.Errorf("group ID is required")
+	}
+
+	if policies == nil {
+		return fmt.Errorf("policies are required")
+	}
+
+	// Set the DATA_TYPE field if not already set
+	if policies.DATA_TYPE == "" {
+		policies.DATA_TYPE = "group_policies_update"
+	}
+
+	return c.doRequestLowLevel(ctx, http.MethodPut, "groups/"+groupID+"/policies", nil, policies, nil)
+}
+
+// GetIdentityPreferences retrieves identity preferences for a group (Python SDK parity)
+func (c *Client) GetIdentityPreferences(ctx context.Context, groupID, identityID string) (*IdentityPreferences, error) {
+	if groupID == "" {
+		return nil, fmt.Errorf("group ID is required")
+	}
+	if identityID == "" {
+		return nil, fmt.Errorf("identity ID is required")
+	}
+
+	var preferences IdentityPreferences
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups/"+groupID+"/identity_preferences/"+identityID, nil, nil, &preferences)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ensure the returned object has the DATA_TYPE set
+	if preferences.DATA_TYPE == "" {
+		preferences.DATA_TYPE = "identity_preferences"
+	}
+
+	return &preferences, nil
+}
+
+// SetIdentityPreferences sets identity preferences for a group (Python SDK parity)
+func (c *Client) SetIdentityPreferences(ctx context.Context, groupID, identityID string, preferences *IdentityPreferences) error {
+	if groupID == "" {
+		return fmt.Errorf("group ID is required")
+	}
+	if identityID == "" {
+		return fmt.Errorf("identity ID is required")
+	}
+	if preferences == nil {
+		return fmt.Errorf("preferences are required")
+	}
+
+	// Set the DATA_TYPE field if not already set
+	if preferences.DATA_TYPE == "" {
+		preferences.DATA_TYPE = "identity_preferences_update"
+	}
+
+	return c.doRequestLowLevel(ctx, http.MethodPut, "groups/"+groupID+"/identity_preferences/"+identityID, nil, preferences, nil)
+}
+
+// GetMembershipFields retrieves custom membership fields for a group (Python SDK parity)
+func (c *Client) GetMembershipFields(ctx context.Context, groupID string) (*MembershipFields, error) {
+	if groupID == "" {
+		return nil, fmt.Errorf("group ID is required")
+	}
+
+	var fields MembershipFields
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups/"+groupID+"/membership_fields", nil, nil, &fields)
+	if err != nil {
+		return nil, err
+	}
+
+	// Ensure the returned object has the DATA_TYPE set
+	if fields.DATA_TYPE == "" {
+		fields.DATA_TYPE = "membership_fields"
+	}
+
+	return &fields, nil
+}
+
+// SetMembershipFields sets custom membership fields for a group (Python SDK parity)
+func (c *Client) SetMembershipFields(ctx context.Context, groupID string, fields *MembershipFields) error {
+	if groupID == "" {
+		return fmt.Errorf("group ID is required")
+	}
+	if fields == nil {
+		return fmt.Errorf("membership fields are required")
+	}
+
+	// Set the DATA_TYPE field if not already set
+	if fields.DATA_TYPE == "" {
+		fields.DATA_TYPE = "membership_fields_update"
+	}
+
+	return c.doRequestLowLevel(ctx, http.MethodPut, "groups/"+groupID+"/membership_fields", nil, fields, nil)
+}
+
+// parseGroupsError parses JSON error responses from the Groups API
+func parseGroupsError(statusCode int, responseBody []byte) error {
+	// Try to parse JSON error response with common formats
+	var errorResp struct {
+		Error string `json:"error"`
+		Code  string `json:"code"`
+	}
+
+	if len(responseBody) > 0 {
+		if err := json.Unmarshal(responseBody, &errorResp); err == nil {
+			if errorResp.Error != "" && errorResp.Code != "" {
+				// Create a proper GlobusError with full error details
+				return errors.NewGlobusErrorWithStatus("groups", errorResp.Code, errorResp.Error, statusCode)
+			} else if errorResp.Error != "" {
+				// Error message without code
+				return errors.NewGlobusErrorWithStatus("groups", "GROUPS_ERROR", errorResp.Error, statusCode)
+			}
+		}
+	}
+
+	// Fallback to generic error message with status
+	return errors.NewGlobusErrorWithStatus("groups", fmt.Sprintf("HTTP_%d", statusCode),
+		fmt.Sprintf("Request failed with status code %d", statusCode), statusCode)
 }

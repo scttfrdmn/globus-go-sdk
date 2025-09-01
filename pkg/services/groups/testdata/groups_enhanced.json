@@ -1,0 +1,276 @@
+{
+  "name": "Groups Service Test Suite",
+  "description": "Comprehensive test scenarios for Groups API following Python SDK patterns",
+  "setup": {
+    "base_url": "https://groups.api.globus.org/v2/",
+    "default_headers": {
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    }
+  },
+  "templates": {
+    "success_response": {
+      "status_code": 200,
+      "response_body": {
+        "DATA_TYPE": "group",
+        "id": "{{group_id}}",
+        "name": "{{group_name}}"
+      }
+    },
+    "not_found_error": {
+      "status_code": 404,
+      "response_body": {
+        "error": "Group not found",
+        "code": "GROUP_NOT_FOUND"
+      }
+    },
+    "forbidden_error": {
+      "status_code": 403,
+      "response_body": {
+        "error": "Insufficient permissions",
+        "code": "FORBIDDEN"
+      }
+    },
+    "subscription_response": {
+      "status_code": 200,
+      "response_body": {
+        "DATA_TYPE": "group_subscription",
+        "subscription_id": "{{subscription_id}}",
+        "group_id": "{{group_id}}",
+        "is_active": true
+      }
+    }
+  },
+  "scenarios": {
+    "group_get_success": {
+      "name": "Get group by ID - success",
+      "description": "Test successful retrieval of a group by its ID",
+      "method": "GET",
+      "path": "groups/{{group_id}}",
+      "group_id": "test-group-12345",
+      "expected": {
+        "template": "success_response",
+        "name": "Test Group",
+        "description": "A test group for validation"
+      },
+      "http_status": 200,
+      "tags": ["basic", "get", "success"],
+      "timeout": 5000
+    },
+    "group_get_not_found": {
+      "name": "Get group by ID - not found",
+      "description": "Test error handling when group does not exist",
+      "method": "GET", 
+      "path": "groups/{{group_id}}",
+      "group_id": "nonexistent-group-456",
+      "expected": {
+        "template": "not_found_error"
+      },
+      "http_status": 404,
+      "tags": ["error", "get", "not_found"],
+      "timeout": 2000
+    },
+    "group_create_workflow": {
+      "name": "Complete group creation workflow",
+      "description": "End-to-end workflow testing group creation, member addition, and cleanup",
+      "method": "POST",
+      "path": "groups",
+      "group_id": "workflow-group-123",
+      "request_body": {
+        "DATA_TYPE": "group_create",
+        "name": "Test Workflow Group",
+        "description": "A group for testing workflows"
+      },
+      "expected": {
+        "name": "Test Workflow Group",
+        "description": "A group for testing workflows"
+      },
+      "subscription": {
+        "subscription_id": "sub-workflow-123"
+      },
+      "user_id": "test-user-456",
+      "role_id": "admin",
+      "http_status": 200,
+      "tags": ["workflow", "create", "integration"],
+      "dependencies": ["auth_setup", "cleanup_previous"],
+      "timeout": 10000
+    },
+    "subscription_get_by_id": {
+      "name": "Get group by subscription ID",
+      "description": "Test Python SDK parity method for subscription-based group lookup",
+      "method": "GET",
+      "path": "groups",
+      "query_params": {
+        "subscription_id": "sub-abcdef-67890"
+      },
+      "subscription": {
+        "subscription_id": "sub-abcdef-67890"
+      },
+      "expected": {
+        "group_id": "test-group-12345",
+        "name": "Test Premium Group"
+      },
+      "http_status": 200,
+      "tags": ["subscription", "parity", "get"],
+      "timeout": 3000
+    },
+    "subscription_set_admin_verified": {
+      "name": "Set subscription admin verified ID",
+      "description": "Test admin-only subscription ID setting functionality",
+      "method": "PUT",
+      "path": "groups/{{group_id}}/subscription_id",
+      "group_id": "test-group-12345",
+      "request_body": {
+        "subscription_id": "sub-abcdef-67890",
+        "DATA_TYPE": "subscription_id_update"
+      },
+      "subscription": {
+        "subscription_id": "sub-abcdef-67890",
+        "subscription_type": "premium"
+      },
+      "expected": {
+        "status": "success"
+      },
+      "http_status": 200,
+      "tags": ["subscription", "admin", "update"],
+      "timeout": 5000
+    },
+    "group_policies_get": {
+      "name": "Get group policies",
+      "description": "Test retrieval of group policy configuration (Python SDK parity)",
+      "method": "GET",
+      "path": "groups/{{group_id}}/policies",
+      "group_id": "test-group-12345",
+      "expected": {
+        "DATA_TYPE": "group_policies",
+        "group_id": "test-group-12345",
+        "policies": {
+          "join_requests": true,
+          "is_high_risk_group": false
+        }
+      },
+      "http_status": 200,
+      "tags": ["policies", "parity", "get"],
+      "timeout": 3000
+    },
+    "group_policies_set": {
+      "name": "Set group policies", 
+      "description": "Test setting group policy configuration (Python SDK parity)",
+      "method": "PUT",
+      "path": "groups/{{group_id}}/policies",
+      "group_id": "test-group-12345",
+      "request_body": {
+        "DATA_TYPE": "group_policies_update",
+        "group_id": "test-group-12345",
+        "policies": {
+          "join_requests": false,
+          "is_high_risk_group": true
+        }
+      },
+      "expected": {
+        "status": "success"
+      },
+      "http_status": 200,
+      "tags": ["policies", "parity", "update"],
+      "timeout": 5000
+    },
+    "identity_preferences_get": {
+      "name": "Get identity preferences",
+      "description": "Test retrieval of identity preferences for a group (Python SDK parity)",
+      "method": "GET",
+      "path": "groups/{{group_id}}/identity_preferences/{{identity_id}}",
+      "group_id": "test-group-12345",
+      "user_id": "test-user-456",
+      "expected": {
+        "DATA_TYPE": "identity_preferences",
+        "group_id": "test-group-12345",
+        "identity_id": "test-user-456",
+        "preferences": {
+          "notification_email": true,
+          "visibility": "public"
+        }
+      },
+      "http_status": 200,
+      "tags": ["preferences", "parity", "get"],
+      "timeout": 3000
+    },
+    "membership_fields_get": {
+      "name": "Get membership fields",
+      "description": "Test retrieval of custom membership fields (Python SDK parity)",
+      "method": "GET",
+      "path": "groups/{{group_id}}/membership_fields",
+      "group_id": "test-group-12345",
+      "expected": {
+        "DATA_TYPE": "membership_fields",
+        "group_id": "test-group-12345",
+        "fields": {
+          "department": "string",
+          "employee_id": "number",
+          "start_date": "date"
+        }
+      },
+      "http_status": 200,
+      "tags": ["membership", "parity", "get"],
+      "timeout": 3000
+    },
+    "error_invalid_subscription": {
+      "name": "Invalid subscription ID error",
+      "description": "Test error handling for invalid subscription ID format",
+      "method": "PUT",
+      "path": "groups/{{group_id}}/subscription_id",
+      "group_id": "test-group-12345",
+      "request_body": {
+        "subscription_id": "invalid-sub-format",
+        "DATA_TYPE": "subscription_id_update"
+      },
+      "subscription": {
+        "subscription_id": "invalid-sub-format"
+      },
+      "expected": {
+        "error": "Invalid subscription ID format",
+        "code": "INVALID_SUBSCRIPTION_ID"
+      },
+      "http_status": 400,
+      "tags": ["error", "validation", "subscription"],
+      "timeout": 2000
+    },
+    "error_network_timeout": {
+      "name": "Network timeout error",
+      "description": "Test handling of network timeout scenarios",
+      "method": "GET",
+      "path": "groups/{{group_id}}",
+      "group_id": "timeout-test-group",
+      "expected": {
+        "error": "Request timeout",
+        "code": "NETWORK_TIMEOUT"
+      },
+      "http_status": 408,
+      "tags": ["error", "network", "timeout"],
+      "timeout": 100,
+      "skip": false
+    },
+    "complex_workflow_full_lifecycle": {
+      "name": "Full group lifecycle workflow",
+      "description": "Complex workflow testing complete group lifecycle with all operations",
+      "method": "POST",
+      "path": "groups",
+      "group_id": "lifecycle-group-789",
+      "request_body": {
+        "DATA_TYPE": "group_create",
+        "name": "Lifecycle Test Group",
+        "description": "Testing complete group lifecycle",
+        "public_group": true
+      },
+      "expected": {
+        "name": "Lifecycle Test Group",
+        "description": "Testing complete group lifecycle"
+      },
+      "user_id": "lifecycle-user-123",
+      "role_id": "manager",
+      "http_status": 200,
+      "tags": ["workflow", "lifecycle", "complex", "integration"],
+      "dependencies": ["auth_setup", "cleanup_previous", "role_setup"],
+      "timeout": 15000
+    }
+  }
+}

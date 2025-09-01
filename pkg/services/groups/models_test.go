@@ -371,3 +371,64 @@ func TestProvisionRule(t *testing.T) {
 		t.Errorf("ProvisionRule.MappedRoleID = %v, want %v", rule.MappedRoleID, "role-id")
 	}
 }
+
+// Test for v3.62.0 GroupSubscription model
+
+func TestGroupSubscription(t *testing.T) {
+	// Test creation of a GroupSubscription struct
+	now := time.Now()
+
+	subscription := GroupSubscription{
+		DATA_TYPE:        "group_subscription",
+		SubscriptionID:   "sub-12345",
+		GroupID:          "group-id",
+		IsActive:         true,
+		Created:          now,
+		LastUpdated:      now,
+		SubscriptionType: "premium",
+	}
+
+	// Check that fields are set correctly
+	if subscription.DATA_TYPE != "group_subscription" {
+		t.Errorf("GroupSubscription.DATA_TYPE = %v, want %v", subscription.DATA_TYPE, "group_subscription")
+	}
+	if subscription.SubscriptionID != "sub-12345" {
+		t.Errorf("GroupSubscription.SubscriptionID = %v, want %v", subscription.SubscriptionID, "sub-12345")
+	}
+	if subscription.GroupID != "group-id" {
+		t.Errorf("GroupSubscription.GroupID = %v, want %v", subscription.GroupID, "group-id")
+	}
+	if !subscription.IsActive {
+		t.Errorf("GroupSubscription.IsActive = %v, want %v", subscription.IsActive, true)
+	}
+	if !subscription.Created.Equal(now) {
+		t.Errorf("GroupSubscription.Created = %v, want %v", subscription.Created, now)
+	}
+	if !subscription.LastUpdated.Equal(now) {
+		t.Errorf("GroupSubscription.LastUpdated = %v, want %v", subscription.LastUpdated, now)
+	}
+	if subscription.SubscriptionType != "premium" {
+		t.Errorf("GroupSubscription.SubscriptionType = %v, want %v", subscription.SubscriptionType, "premium")
+	}
+
+	// Test with zero values for optional time fields
+	subscriptionMinimal := GroupSubscription{
+		DATA_TYPE:      "group_subscription",
+		SubscriptionID: "sub-67890",
+		GroupID:        "group-id",
+		IsActive:       false,
+	}
+
+	if subscriptionMinimal.SubscriptionID != "sub-67890" {
+		t.Errorf("GroupSubscription.SubscriptionID = %v, want %v", subscriptionMinimal.SubscriptionID, "sub-67890")
+	}
+	if subscriptionMinimal.IsActive {
+		t.Errorf("GroupSubscription.IsActive = %v, want %v", subscriptionMinimal.IsActive, false)
+	}
+	if !subscriptionMinimal.Created.IsZero() {
+		t.Errorf("GroupSubscription.Created should be zero time, got %v", subscriptionMinimal.Created)
+	}
+	if !subscriptionMinimal.LastUpdated.IsZero() {
+		t.Errorf("GroupSubscription.LastUpdated should be zero time, got %v", subscriptionMinimal.LastUpdated)
+	}
+}
