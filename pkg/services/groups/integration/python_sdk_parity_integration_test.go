@@ -17,31 +17,31 @@ import (
 func TestPythonSDKParityIntegration(t *testing.T) {
 	// Use enhanced metadata-driven test data
 	testSuite := testhelpers.LoadTestSuite(t, "groups_enhanced")
-	
+
 	// Create comprehensive mock response handler
 	mockHandler := testhelpers.NewMockResponseHandler()
-	
+
 	// Register all Python SDK parity method responses
 	setupPythonSDKParityMocks(t, mockHandler, testSuite)
-	
+
 	client, _, cleanup := testhelpers.MockGroupsClient(t, mockHandler.ServeHTTP)
 	defer cleanup()
-	
+
 	ctx := context.Background()
 	groupID := "test-group-12345"
 	subscriptionID := "sub-abcdef-67890"
 	identityID := "test-user-456"
-	
+
 	t.Log("🚀 Starting Python SDK Parity Integration Test")
-	
-	// Test 1: Subscription Management (v3.62.0 features)
+
+	// Test 1: Subscription Management (v3.63.0 updated method names)
 	t.Log("📋 Test 1: Subscription Management")
-	err := client.SetSubscriptionAdminVerifiedID(ctx, groupID, subscriptionID)
+	err := client.SetSubscriptionAdminVerified(ctx, groupID, subscriptionID)
 	if err != nil {
-		t.Fatalf("SetSubscriptionAdminVerifiedID failed: %v", err)
+		t.Fatalf("SetSubscriptionAdminVerified failed: %v", err)
 	}
-	t.Log("✅ Subscription admin verified ID set")
-	
+	t.Log("✅ Subscription admin verified set")
+
 	subscription, err := client.GetGroupSubscription(ctx, groupID)
 	if err != nil {
 		t.Fatalf("GetGroupSubscription failed: %v", err)
@@ -50,7 +50,7 @@ func TestPythonSDKParityIntegration(t *testing.T) {
 		t.Errorf("Expected subscription ID %s, got %s", subscriptionID, subscription.SubscriptionID)
 	}
 	t.Log("✅ Group subscription retrieved")
-	
+
 	group, err := client.GetGroupBySubscriptionID(ctx, subscriptionID)
 	if err != nil {
 		t.Fatalf("GetGroupBySubscriptionID failed: %v", err)
@@ -59,7 +59,7 @@ func TestPythonSDKParityIntegration(t *testing.T) {
 		t.Errorf("Expected group ID %s, got %s", groupID, group.ID)
 	}
 	t.Log("✅ Group retrieved by subscription ID")
-	
+
 	// Test 2: Group Policies Management
 	t.Log("📋 Test 2: Group Policies Management")
 	policies, err := client.GetGroupPolicies(ctx, groupID)
@@ -70,7 +70,7 @@ func TestPythonSDKParityIntegration(t *testing.T) {
 		t.Errorf("Expected DATA_TYPE group_policies, got %s", policies.DATA_TYPE)
 	}
 	t.Log("✅ Group policies retrieved")
-	
+
 	// Update policies
 	updatedPolicies := &groups.GroupPolicies{
 		Policies: map[string]interface{}{
@@ -84,7 +84,7 @@ func TestPythonSDKParityIntegration(t *testing.T) {
 		t.Fatalf("SetGroupPolicies failed: %v", err)
 	}
 	t.Log("✅ Group policies updated")
-	
+
 	// Test 3: Identity Preferences Management
 	t.Log("📋 Test 3: Identity Preferences Management")
 	preferences, err := client.GetIdentityPreferences(ctx, groupID, identityID)
@@ -95,7 +95,7 @@ func TestPythonSDKParityIntegration(t *testing.T) {
 		t.Errorf("Expected DATA_TYPE identity_preferences, got %s", preferences.DATA_TYPE)
 	}
 	t.Log("✅ Identity preferences retrieved")
-	
+
 	// Update preferences
 	updatedPreferences := &groups.IdentityPreferences{
 		Preferences: map[string]interface{}{
@@ -108,7 +108,7 @@ func TestPythonSDKParityIntegration(t *testing.T) {
 		t.Fatalf("SetIdentityPreferences failed: %v", err)
 	}
 	t.Log("✅ Identity preferences updated")
-	
+
 	// Test 4: Membership Fields Management
 	t.Log("📋 Test 4: Membership Fields Management")
 	fields, err := client.GetMembershipFields(ctx, groupID)
@@ -119,7 +119,7 @@ func TestPythonSDKParityIntegration(t *testing.T) {
 		t.Errorf("Expected DATA_TYPE membership_fields, got %s", fields.DATA_TYPE)
 	}
 	t.Log("✅ Membership fields retrieved")
-	
+
 	// Update membership fields
 	updatedFields := &groups.MembershipFields{
 		Fields: map[string]interface{}{
@@ -133,7 +133,7 @@ func TestPythonSDKParityIntegration(t *testing.T) {
 		t.Fatalf("SetMembershipFields failed: %v", err)
 	}
 	t.Log("✅ Membership fields updated")
-	
+
 	t.Log("🎉 Python SDK Parity Integration Test completed successfully!")
 	t.Log("📊 All 9 Python SDK parity methods tested in integrated workflow")
 }
@@ -141,13 +141,13 @@ func TestPythonSDKParityIntegration(t *testing.T) {
 // setupPythonSDKParityMocks sets up mock responses for all Python SDK parity methods
 func setupPythonSDKParityMocks(t *testing.T, handler *testhelpers.MockResponseHandler, testSuite *testhelpers.TestSuite) {
 	now := time.Now()
-	
+
 	// Mock responses for subscription management
 	handler.RegisterResponse("PUT", "/groups/test-group-12345/subscription_id", testhelpers.MockResponse{
 		StatusCode: 200,
 		Body:       map[string]string{"status": "success"},
 	})
-	
+
 	handler.RegisterResponse("GET", "/groups/test-group-12345/subscription", testhelpers.MockResponse{
 		StatusCode: 200,
 		Body: groups.GroupSubscription{
@@ -160,7 +160,7 @@ func setupPythonSDKParityMocks(t *testing.T, handler *testhelpers.MockResponseHa
 			SubscriptionType: "premium",
 		},
 	})
-	
+
 	handler.RegisterResponse("GET", "/groups", testhelpers.MockResponse{
 		StatusCode: 200,
 		Body: groups.Group{
@@ -172,7 +172,7 @@ func setupPythonSDKParityMocks(t *testing.T, handler *testhelpers.MockResponseHa
 			LastUpdated: now,
 		},
 	})
-	
+
 	// Mock responses for policies management
 	handler.RegisterResponse("GET", "/groups/test-group-12345/policies", testhelpers.MockResponse{
 		StatusCode: 200,
@@ -190,12 +190,12 @@ func setupPythonSDKParityMocks(t *testing.T, handler *testhelpers.MockResponseHa
 			LastUpdated:                    now,
 		},
 	})
-	
+
 	handler.RegisterResponse("PUT", "/groups/test-group-12345/policies", testhelpers.MockResponse{
 		StatusCode: 200,
 		Body:       map[string]string{"status": "success"},
 	})
-	
+
 	// Mock responses for identity preferences
 	handler.RegisterResponse("GET", "/groups/test-group-12345/identity_preferences/test-user-456", testhelpers.MockResponse{
 		StatusCode: 200,
@@ -210,12 +210,12 @@ func setupPythonSDKParityMocks(t *testing.T, handler *testhelpers.MockResponseHa
 			LastUpdated: now,
 		},
 	})
-	
+
 	handler.RegisterResponse("PUT", "/groups/test-group-12345/identity_preferences/test-user-456", testhelpers.MockResponse{
 		StatusCode: 200,
 		Body:       map[string]string{"status": "success"},
 	})
-	
+
 	// Mock responses for membership fields
 	handler.RegisterResponse("GET", "/groups/test-group-12345/membership_fields", testhelpers.MockResponse{
 		StatusCode: 200,
@@ -223,14 +223,14 @@ func setupPythonSDKParityMocks(t *testing.T, handler *testhelpers.MockResponseHa
 			DATA_TYPE: "membership_fields",
 			GroupID:   "test-group-12345",
 			Fields: map[string]interface{}{
-				"department":   "string",
-				"employee_id":  "number",
-				"start_date":   "date",
+				"department":  "string",
+				"employee_id": "number",
+				"start_date":  "date",
 			},
 			LastUpdated: now,
 		},
 	})
-	
+
 	handler.RegisterResponse("PUT", "/groups/test-group-12345/membership_fields", testhelpers.MockResponse{
 		StatusCode: 200,
 		Body:       map[string]string{"status": "success"},
@@ -241,7 +241,7 @@ func setupPythonSDKParityMocks(t *testing.T, handler *testhelpers.MockResponseHa
 func TestPythonSDKParityMethodCoverage(t *testing.T) {
 	// This test ensures comprehensive coverage of Python SDK parity methods
 	parityMethods := map[string]string{
-		"SetSubscriptionAdminVerifiedID": "v3.62.0 - Admin-only subscription ID setting",
+		"SetSubscriptionAdminVerified": "v3.63.0 - Admin-only subscription setting (renamed from SetSubscriptionAdminVerifiedID)",
 		"GetGroupSubscription":           "v3.62.0 - Retrieve group subscription information",
 		"GetGroupBySubscriptionID":       "v3.62.0 - Lookup group by subscription ID",
 		"GetGroupPolicies":               "Python SDK parity - Get group policy configuration",
@@ -251,15 +251,15 @@ func TestPythonSDKParityMethodCoverage(t *testing.T) {
 		"GetMembershipFields":            "Python SDK parity - Get custom membership fields",
 		"SetMembershipFields":            "Python SDK parity - Set custom membership fields",
 	}
-	
+
 	t.Logf("📋 Validating %d Python SDK parity methods", len(parityMethods))
-	
+
 	for method, description := range parityMethods {
 		t.Run(method, func(t *testing.T) {
 			t.Logf("✅ %s: %s", method, description)
 		})
 	}
-	
+
 	t.Log("🎯 All Python SDK parity methods are accounted for and tested")
 }
 
@@ -272,12 +272,12 @@ func TestPythonSDKParityModelCoverage(t *testing.T) {
 		"IdentityPreferences": "Python SDK parity - User preferences for group identity",
 		"MembershipFields":    "Python SDK parity - Custom membership fields",
 	}
-	
+
 	t.Logf("📋 Validating %d Python SDK parity models", len(parityModels))
-	
+
 	// Test model instantiation and JSON serialization
 	now := time.Now()
-	
+
 	// GroupSubscription
 	subscription := groups.GroupSubscription{
 		DATA_TYPE:        "group_subscription",
@@ -289,7 +289,7 @@ func TestPythonSDKParityModelCoverage(t *testing.T) {
 		SubscriptionType: "premium",
 	}
 	validateModelSerialization(t, "GroupSubscription", subscription)
-	
+
 	// GroupPolicies
 	policies := groups.GroupPolicies{
 		DATA_TYPE: "group_policies",
@@ -302,7 +302,7 @@ func TestPythonSDKParityModelCoverage(t *testing.T) {
 		LastUpdated:     now,
 	}
 	validateModelSerialization(t, "GroupPolicies", policies)
-	
+
 	// IdentityPreferences
 	preferences := groups.IdentityPreferences{
 		DATA_TYPE:  "identity_preferences",
@@ -314,7 +314,7 @@ func TestPythonSDKParityModelCoverage(t *testing.T) {
 		LastUpdated: now,
 	}
 	validateModelSerialization(t, "IdentityPreferences", preferences)
-	
+
 	// MembershipFields
 	fields := groups.MembershipFields{
 		DATA_TYPE: "membership_fields",
@@ -325,7 +325,7 @@ func TestPythonSDKParityModelCoverage(t *testing.T) {
 		LastUpdated: now,
 	}
 	validateModelSerialization(t, "MembershipFields", fields)
-	
+
 	t.Log("🎯 All Python SDK parity models validated successfully")
 }
 
@@ -337,7 +337,7 @@ func validateModelSerialization(t *testing.T, modelName string, model interface{
 		t.Errorf("%s: JSON marshal failed: %v", modelName, err)
 		return
 	}
-	
+
 	// Test JSON unmarshaling (basic validation)
 	var result map[string]interface{}
 	err = json.Unmarshal(data, &result)
@@ -345,7 +345,7 @@ func validateModelSerialization(t *testing.T, modelName string, model interface{
 		t.Errorf("%s: JSON unmarshal failed: %v", modelName, err)
 		return
 	}
-	
+
 	// Verify DATA_TYPE field exists
 	if dataType, ok := result["DATA_TYPE"]; !ok {
 		t.Errorf("%s: missing DATA_TYPE field", modelName)

@@ -443,7 +443,7 @@ func TestPythonSDKParityCompleteness(t *testing.T) {
 		method      string
 		description string
 	}{
-		{"SetSubscriptionAdminVerifiedID", "Set subscription admin verified ID"},
+		{"SetSubscriptionAdminVerified", "Set subscription admin verified ID"},
 		{"GetGroupSubscription", "Get group subscription information"},
 		{"GetGroupBySubscriptionID", "Get group by subscription ID"},
 		{"GetGroupPolicies", "Get group policy configuration"},

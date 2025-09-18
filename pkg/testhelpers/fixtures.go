@@ -46,31 +46,31 @@ type TestScenario struct {
 	Subscription map[string]interface{} `json:"subscription,omitempty"`
 	Expected     map[string]interface{} `json:"expected,omitempty"`
 	HTTPStatus   int                    `json:"http_status"`
-	
+
 	// Enhanced metadata for comprehensive testing
-	Method       string                 `json:"method,omitempty"`         // HTTP method
-	Path         string                 `json:"path,omitempty"`           // API endpoint path
-	RequestBody  map[string]interface{} `json:"request_body,omitempty"`   // Expected request payload
-	ResponseBody map[string]interface{} `json:"response_body,omitempty"`  // Mock response payload
-	Headers      map[string]string      `json:"headers,omitempty"`        // Additional headers
-	QueryParams  map[string]string      `json:"query_params,omitempty"`   // URL query parameters
-	
+	Method       string                 `json:"method,omitempty"`        // HTTP method
+	Path         string                 `json:"path,omitempty"`          // API endpoint path
+	RequestBody  map[string]interface{} `json:"request_body,omitempty"`  // Expected request payload
+	ResponseBody map[string]interface{} `json:"response_body,omitempty"` // Mock response payload
+	Headers      map[string]string      `json:"headers,omitempty"`       // Additional headers
+	QueryParams  map[string]string      `json:"query_params,omitempty"`  // URL query parameters
+
 	// Test behavior configuration
-	Timeout      int    `json:"timeout,omitempty"`      // Test timeout in milliseconds
-	Retry        bool   `json:"retry,omitempty"`        // Whether to retry on failure
-	Skip         bool   `json:"skip,omitempty"`         // Skip this test scenario
-	Tags         []string `json:"tags,omitempty"`       // Test categories/tags
+	Timeout      int      `json:"timeout,omitempty"`      // Test timeout in milliseconds
+	Retry        bool     `json:"retry,omitempty"`        // Whether to retry on failure
+	Skip         bool     `json:"skip,omitempty"`         // Skip this test scenario
+	Tags         []string `json:"tags,omitempty"`         // Test categories/tags
 	Dependencies []string `json:"dependencies,omitempty"` // Required test dependencies
 }
 
 // TestSuite represents a collection of related test scenarios
 type TestSuite struct {
-	Name         string                    `json:"name"`
-	Description  string                    `json:"description,omitempty"`
-	Setup        map[string]interface{}    `json:"setup,omitempty"`        // Global test setup data
-	Teardown     map[string]interface{}    `json:"teardown,omitempty"`     // Global test cleanup data
-	Scenarios    map[string]*TestScenario  `json:"scenarios"`              // Individual test scenarios
-	Templates    map[string]interface{}    `json:"templates,omitempty"`    // Reusable response templates
+	Name        string                   `json:"name"`
+	Description string                   `json:"description,omitempty"`
+	Setup       map[string]interface{}   `json:"setup,omitempty"`     // Global test setup data
+	Teardown    map[string]interface{}   `json:"teardown,omitempty"`  // Global test cleanup data
+	Scenarios   map[string]*TestScenario `json:"scenarios"`           // Individual test scenarios
+	Templates   map[string]interface{}   `json:"templates,omitempty"` // Reusable response templates
 }
 
 // ResponseTemplate represents reusable response patterns
@@ -83,7 +83,7 @@ type ResponseTemplate struct {
 // LoadTestScenario loads test metadata from JSON files (Python SDK pattern)
 func LoadTestScenario(t *testing.T, service, scenario string) *TestScenario {
 	testSuite := LoadTestSuite(t, service)
-	
+
 	testScenario, exists := testSuite.Scenarios[scenario]
 	if !exists {
 		t.Fatalf("Test scenario %s not found in %s test suite", scenario, service)
@@ -130,18 +130,18 @@ func LoadTestSuite(t *testing.T, service string) *TestSuite {
 // LoadScenariosByTag loads all scenarios matching specific tags
 func LoadScenariosByTag(t *testing.T, service string, tags ...string) []*TestScenario {
 	testSuite := LoadTestSuite(t, service)
-	
+
 	var matchingScenarios []*TestScenario
 	for _, scenario := range testSuite.Scenarios {
 		if scenario.Skip {
 			continue // Skip disabled scenarios
 		}
-		
+
 		if hasAnyTag(scenario.Tags, tags) {
 			matchingScenarios = append(matchingScenarios, scenario)
 		}
 	}
-	
+
 	return matchingScenarios
 }
 
@@ -164,7 +164,7 @@ func hasAnyTag(scenarioTags, searchTags []string) bool {
 	if len(searchTags) == 0 {
 		return true // No tag filter means include all
 	}
-	
+
 	for _, searchTag := range searchTags {
 		for _, scenarioTag := range scenarioTags {
 			if scenarioTag == searchTag {
@@ -172,7 +172,7 @@ func hasAnyTag(scenarioTags, searchTags []string) bool {
 			}
 		}
 	}
-	
+
 	return false
 }
 
@@ -192,7 +192,7 @@ func ValidateTestScenario(t *testing.T, scenario *TestScenario) {
 // ApplyVariableSubstitution applies variable substitution to string fields using scenario data
 func ApplyVariableSubstitution(template string, scenario *TestScenario) string {
 	result := template
-	
+
 	// Apply basic variable substitutions
 	if scenario.GroupID != "" {
 		result = strings.ReplaceAll(result, "{{group_id}}", scenario.GroupID)
@@ -204,21 +204,21 @@ func ApplyVariableSubstitution(template string, scenario *TestScenario) string {
 	if scenario.RoleID != "" {
 		result = strings.ReplaceAll(result, "{{role_id}}", scenario.RoleID)
 	}
-	
+
 	// Apply subscription variables
 	if scenario.Subscription != nil {
 		if subID, ok := scenario.Subscription["subscription_id"].(string); ok {
 			result = strings.ReplaceAll(result, "{{subscription_id}}", subID)
 		}
 	}
-	
+
 	// Apply expected variables
 	if scenario.Expected != nil {
 		if groupName, ok := scenario.Expected["name"].(string); ok {
 			result = strings.ReplaceAll(result, "{{group_name}}", groupName)
 		}
 	}
-	
+
 	return result
 }
 
@@ -228,10 +228,10 @@ func GenerateTestCaseFromScenario(scenario *TestScenario, handler func(*testing.
 		if scenario.Skip {
 			t.Skipf("Scenario '%s' is marked as skip", scenario.Name)
 		}
-		
+
 		// Validate scenario before running
 		ValidateTestScenario(t, scenario)
-		
+
 		// Set test timeout if specified
 		if scenario.Timeout > 0 {
 			oldDeadline, hasDeadline := t.Deadline()
@@ -242,7 +242,7 @@ func GenerateTestCaseFromScenario(scenario *TestScenario, handler func(*testing.
 				_ = ctx // Use context in test if needed
 			}
 		}
-		
+
 		// Run the test handler
 		handler(t, scenario)
 	}
@@ -251,11 +251,11 @@ func GenerateTestCaseFromScenario(scenario *TestScenario, handler func(*testing.
 // LoadScenariosByDependencies loads scenarios considering their dependencies
 func LoadScenariosByDependencies(t *testing.T, service string, rootScenario string) []*TestScenario {
 	testSuite := LoadTestSuite(t, service)
-	
+
 	var orderedScenarios []*TestScenario
 	visited := make(map[string]bool)
 	visiting := make(map[string]bool)
-	
+
 	var loadDependencies func(string)
 	loadDependencies = func(scenarioName string) {
 		if visited[scenarioName] {
@@ -264,24 +264,24 @@ func LoadScenariosByDependencies(t *testing.T, service string, rootScenario stri
 		if visiting[scenarioName] {
 			t.Fatalf("Circular dependency detected involving scenario '%s'", scenarioName)
 		}
-		
+
 		scenario, exists := testSuite.Scenarios[scenarioName]
 		if !exists {
 			t.Fatalf("Scenario '%s' not found", scenarioName)
 		}
-		
+
 		visiting[scenarioName] = true
-		
+
 		// Load dependencies first
 		for _, dep := range scenario.Dependencies {
 			loadDependencies(dep)
 		}
-		
+
 		visiting[scenarioName] = false
 		visited[scenarioName] = true
 		orderedScenarios = append(orderedScenarios, scenario)
 	}
-	
+
 	loadDependencies(rootScenario)
 	return orderedScenarios
 }

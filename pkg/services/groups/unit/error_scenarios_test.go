@@ -31,7 +31,7 @@ type ErrorScenario struct {
 // TestSubscriptionErrorScenarios tests comprehensive error handling for subscription methods
 func TestSubscriptionErrorScenarios(t *testing.T) {
 	scenarios := []ErrorScenario{
-		// SetSubscriptionAdminVerifiedID error cases
+		// SetSubscriptionAdminVerified error cases
 		{
 			Name:       "SetSubscription_GroupNotFound",
 			StatusCode: 404,
@@ -169,7 +169,7 @@ func TestSubscriptionErrorScenarios(t *testing.T) {
 			switch scenario.Name {
 			case "SetSubscription_GroupNotFound", "SetSubscription_Forbidden",
 				"SetSubscription_InvalidSubscriptionID", "SetSubscription_ServerError":
-				testErr = client.SetSubscriptionAdminVerifiedID(ctx, "test-group", "sub-123")
+				testErr = client.SetSubscriptionAdminVerified(ctx, "test-group", "sub-123")
 
 			case "GetSubscription_GroupNotFound", "GetSubscription_NoSubscription":
 				_, testErr = client.GetGroupSubscription(ctx, "test-group")
@@ -356,7 +356,7 @@ func TestNetworkErrorScenarios(t *testing.T) {
 		if err == nil {
 			t.Error("Expected timeout error, got nil")
 		}
-		
+
 		t.Logf("Timeout test correctly received error: %v", err)
 	})
 

@@ -28,6 +28,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Nothing security-related yet
 
+## [3.63.0-1] - 2025-09-18
+
+### Changed
+- **Python SDK v3.63.0 synchronization**
+  - **Method Rename**: `SetSubscriptionAdminVerifiedID` renamed to `SetSubscriptionAdminVerified` in Groups client
+  - Updated method naming to match upstream Python SDK v3.63.0 naming convention
+  - Updated all tests to use new method name for consistency
+
+### Deprecated
+- **Groups Client Method**
+  - `SetSubscriptionAdminVerifiedID()` method is now deprecated in favor of `SetSubscriptionAdminVerified()`
+  - Deprecated method remains functional and delegates to the new method for backward compatibility
+  - Will be removed in a future major version
+
+### Technical Details
+- **Version**: Updated SDK version constant to 3.63.0
+- **Backward Compatibility**: Full backward compatibility maintained through deprecated method delegation
+- **Testing**: All existing tests updated to use new method names while maintaining deprecated method testing
+- **Python SDK Parity**: Maintains synchronization with upstream Globus Python SDK v3.63.0
+
+This release maintains our commitment to tracking upstream Python SDK releases while ensuring backward compatibility for existing users.
+
 ## [3.62.0-3] - 2025-08-08
 
 ### Added

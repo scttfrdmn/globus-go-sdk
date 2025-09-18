@@ -14,8 +14,8 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/testhelpers"
 )
 
-// TestSetSubscriptionAdminVerifiedID tests the SetSubscriptionAdminVerifiedID method (v3.62.0 feature)
-func TestSetSubscriptionAdminVerifiedID(t *testing.T) {
+// TestSetSubscriptionAdminVerified tests the SetSubscriptionAdminVerified method (v3.63.0 updated naming)
+func TestSetSubscriptionAdminVerified(t *testing.T) {
 	// Setup mock server
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPut {
@@ -48,30 +48,52 @@ func TestSetSubscriptionAdminVerifiedID(t *testing.T) {
 	client, _, cleanup := testhelpers.MockGroupsClient(t, handler)
 	defer cleanup()
 
-	// Test SetSubscriptionAdminVerifiedID
-	err := client.SetSubscriptionAdminVerifiedID(context.Background(), "test-group-12345", "sub-abcdef-67890")
+	// Test SetSubscriptionAdminVerified
+	err := client.SetSubscriptionAdminVerified(context.Background(), "test-group-12345", "sub-abcdef-67890")
 	if err != nil {
-		t.Fatalf("SetSubscriptionAdminVerifiedID() error = %v", err)
+		t.Fatalf("SetSubscriptionAdminVerified() error = %v", err)
 	}
 
 	// Test error cases
-	err = client.SetSubscriptionAdminVerifiedID(context.Background(), "", "sub-12345")
+	err = client.SetSubscriptionAdminVerified(context.Background(), "", "sub-12345")
 	if err == nil {
-		t.Error("SetSubscriptionAdminVerifiedID() with empty group ID should return error")
+		t.Error("SetSubscriptionAdminVerified() with empty group ID should return error")
 	}
 
-	err = client.SetSubscriptionAdminVerifiedID(context.Background(), "test-group", "")
+	err = client.SetSubscriptionAdminVerified(context.Background(), "test-group", "")
 	if err == nil {
-		t.Error("SetSubscriptionAdminVerifiedID() with empty subscription ID should return error")
+		t.Error("SetSubscriptionAdminVerified() with empty subscription ID should return error")
 	}
 
-	t.Log("✅ SetSubscriptionAdminVerifiedID method tested successfully")
+	t.Log("✅ SetSubscriptionAdminVerified method tested successfully")
+}
+
+// TestSetSubscriptionAdminVerifiedID_Deprecated tests the deprecated method still works
+func TestSetSubscriptionAdminVerifiedID_Deprecated(t *testing.T) {
+	// Setup mock server
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut {
+			t.Errorf("Expected PUT request, got %s", r.Method)
+		}
+		w.WriteHeader(http.StatusOK)
+	}
+
+	client, _, cleanup := testhelpers.MockGroupsClient(t, handler)
+	defer cleanup()
+
+	// Test that deprecated method still works (should delegate to new method)
+	err := client.SetSubscriptionAdminVerifiedID(context.Background(), "test-group-12345", "sub-abcdef-67890")
+	if err != nil {
+		t.Fatalf("SetSubscriptionAdminVerifiedID() deprecated method error = %v", err)
+	}
+
+	t.Log("✅ Deprecated SetSubscriptionAdminVerifiedID method still works via delegation")
 }
 
 // TestGetGroupSubscription tests the GetGroupSubscription method (v3.62.0 feature)
 func TestGetGroupSubscription(t *testing.T) {
 	now := time.Now()
-	
+
 	// Setup mock server
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodGet {
@@ -137,16 +159,16 @@ func TestGetGroupSubscription(t *testing.T) {
 func TestSubscriptionWorkflow(t *testing.T) {
 	// Load test scenario using metadata-driven approach
 	scenario := testhelpers.LoadTestScenario(t, "groups_enhanced", "subscription_set_admin_verified")
-	
+
 	// Create mock response handler for workflow
 	mockHandler := testhelpers.NewMockResponseHandler()
-	
+
 	// Step 1: Set subscription ID (admin operation)
 	mockHandler.RegisterResponse("PUT", "/groups/test-group-12345/subscription_id", testhelpers.MockResponse{
 		StatusCode: 200,
 		Body:       map[string]interface{}{"status": "success"},
 	})
-	
+
 	// Step 2: Get subscription information
 	mockHandler.RegisterResponse("GET", "/groups/test-group-12345/subscription", testhelpers.MockResponse{
 		StatusCode: 200,
@@ -158,7 +180,7 @@ func TestSubscriptionWorkflow(t *testing.T) {
 			"subscription_type": "premium",
 		},
 	})
-	
+
 	// Step 3: Get group by subscription ID
 	mockHandler.RegisterResponse("GET", "/groups", testhelpers.MockResponse{
 		StatusCode: 200,
@@ -168,20 +190,20 @@ func TestSubscriptionWorkflow(t *testing.T) {
 			"name":      "Test Premium Group",
 		},
 	})
-	
+
 	client, server, cleanup := testhelpers.MockGroupsClient(t, mockHandler.ServeHTTP)
 	defer cleanup()
-	
+
 	ctx := context.Background()
-	
+
 	// Execute workflow steps
 	t.Log("🔄 Step 1: Setting subscription admin verified ID...")
-	err := client.SetSubscriptionAdminVerifiedID(ctx, scenario.GroupID, "sub-abcdef-67890")
+	err := client.SetSubscriptionAdminVerified(ctx, scenario.GroupID, "sub-abcdef-67890")
 	if err != nil {
 		t.Fatalf("Step 1 failed: %v", err)
 	}
 	t.Log("✅ Step 1: Subscription ID set successfully")
-	
+
 	t.Log("🔄 Step 2: Retrieving subscription information...")
 	subscription, err := client.GetGroupSubscription(ctx, scenario.GroupID)
 	if err != nil {
@@ -191,7 +213,7 @@ func TestSubscriptionWorkflow(t *testing.T) {
 		t.Errorf("Step 2: Expected subscription ID sub-abcdef-67890, got %s", subscription.SubscriptionID)
 	}
 	t.Log("✅ Step 2: Subscription information retrieved successfully")
-	
+
 	t.Log("🔄 Step 3: Getting group by subscription ID...")
 	group, err := client.GetGroupBySubscriptionID(ctx, "sub-abcdef-67890")
 	if err != nil {
@@ -201,23 +223,23 @@ func TestSubscriptionWorkflow(t *testing.T) {
 		t.Errorf("Step 3: Expected group ID %s, got %s", scenario.GroupID, group.ID)
 	}
 	t.Log("✅ Step 3: Group retrieved by subscription ID successfully")
-	
+
 	t.Log("✅ Complete subscription workflow executed successfully")
-	
+
 	_ = server // Avoid unused variable warning
 }
 
 // TestSubscriptionMethodErrorHandling tests error handling for subscription methods
 func TestSubscriptionMethodErrorHandling(t *testing.T) {
 	scenarios := []struct {
-		name           string
-		setupHandler   func() http.HandlerFunc
-		testOperation  func(*groups.Client) error
-		expectedError  bool
-		errorMsg       string
+		name          string
+		setupHandler  func() http.HandlerFunc
+		testOperation func(*groups.Client) error
+		expectedError bool
+		errorMsg      string
 	}{
 		{
-			name: "SetSubscriptionAdminVerifiedID - Group not found",
+			name: "SetSubscriptionAdminVerified - Group not found",
 			setupHandler: func() http.HandlerFunc {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					w.Header().Set("Content-Type", "application/json")
@@ -229,7 +251,7 @@ func TestSubscriptionMethodErrorHandling(t *testing.T) {
 				})
 			},
 			testOperation: func(client *groups.Client) error {
-				return client.SetSubscriptionAdminVerifiedID(context.Background(), "nonexistent-group", "sub-123")
+				return client.SetSubscriptionAdminVerified(context.Background(), "nonexistent-group", "sub-123")
 			},
 			expectedError: true,
 			errorMsg:      "Group not found error should be handled",
@@ -254,7 +276,7 @@ func TestSubscriptionMethodErrorHandling(t *testing.T) {
 			errorMsg:      "No subscription error should be handled",
 		},
 		{
-			name: "SetSubscriptionAdminVerifiedID - Permission denied",
+			name: "SetSubscriptionAdminVerified - Permission denied",
 			setupHandler: func() http.HandlerFunc {
 				return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 					w.Header().Set("Content-Type", "application/json")
@@ -266,26 +288,26 @@ func TestSubscriptionMethodErrorHandling(t *testing.T) {
 				})
 			},
 			testOperation: func(client *groups.Client) error {
-				return client.SetSubscriptionAdminVerifiedID(context.Background(), "restricted-group", "sub-123")
+				return client.SetSubscriptionAdminVerified(context.Background(), "restricted-group", "sub-123")
 			},
 			expectedError: true,
 			errorMsg:      "Permission denied error should be handled",
 		},
 	}
-	
+
 	for _, scenario := range scenarios {
 		t.Run(scenario.name, func(t *testing.T) {
 			client, _, cleanup := testhelpers.MockGroupsClient(t, scenario.setupHandler())
 			defer cleanup()
-			
+
 			err := scenario.testOperation(client)
-			
+
 			if scenario.expectedError && err == nil {
 				t.Errorf("%s: expected error but got none", scenario.errorMsg)
 			} else if !scenario.expectedError && err != nil {
 				t.Errorf("%s: unexpected error: %v", scenario.errorMsg, err)
 			}
-			
+
 			if err != nil {
 				t.Logf("✅ Error correctly handled: %v", err)
 			}
@@ -296,7 +318,7 @@ func TestSubscriptionMethodErrorHandling(t *testing.T) {
 // TestSubscriptionModelValidation tests the GroupSubscription model
 func TestSubscriptionModelValidation(t *testing.T) {
 	now := time.Now()
-	
+
 	subscription := groups.GroupSubscription{
 		DATA_TYPE:        "group_subscription",
 		SubscriptionID:   "sub-test-12345",
@@ -306,19 +328,19 @@ func TestSubscriptionModelValidation(t *testing.T) {
 		LastUpdated:      now,
 		SubscriptionType: "enterprise",
 	}
-	
+
 	// Test JSON marshaling/unmarshaling
 	data, err := json.Marshal(subscription)
 	if err != nil {
 		t.Fatalf("Failed to marshal GroupSubscription: %v", err)
 	}
-	
+
 	var unmarshaled groups.GroupSubscription
 	err = json.Unmarshal(data, &unmarshaled)
 	if err != nil {
 		t.Fatalf("Failed to unmarshal GroupSubscription: %v", err)
 	}
-	
+
 	// Validate fields
 	if unmarshaled.DATA_TYPE != "group_subscription" {
 		t.Errorf("Expected DATA_TYPE=group_subscription, got %s", unmarshaled.DATA_TYPE)
@@ -335,6 +357,6 @@ func TestSubscriptionModelValidation(t *testing.T) {
 	if unmarshaled.SubscriptionType != "enterprise" {
 		t.Errorf("Expected SubscriptionType=enterprise, got %s", unmarshaled.SubscriptionType)
 	}
-	
+
 	t.Log("✅ GroupSubscription model validation successful")
 }

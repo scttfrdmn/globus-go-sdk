@@ -12,7 +12,7 @@ import (
 )
 
 // Version is the current version of the Globus Go SDK
-const Version = "3.62.0"
+const Version = "3.63.0"
 
 // APIVersion represents a Globus API version
 type APIVersion struct {

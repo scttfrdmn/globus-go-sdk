@@ -677,7 +677,7 @@ func TestUpdateMemberRole(t *testing.T) {
 
 // Tests for v3.62.0 subscription functionality
 
-func TestSetSubscriptionAdminVerifiedID(t *testing.T) {
+func TestSetSubscriptionAdminVerified(t *testing.T) {
 	// Setup test server
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		// Check request method
@@ -711,21 +711,21 @@ func TestSetSubscriptionAdminVerifiedID(t *testing.T) {
 	defer server.Close()
 
 	// Test set subscription admin verified ID
-	err := client.SetSubscriptionAdminVerifiedID(context.Background(), "group1", "sub-12345")
+	err := client.SetSubscriptionAdminVerified(context.Background(), "group1", "sub-12345")
 	if err != nil {
-		t.Fatalf("SetSubscriptionAdminVerifiedID() error = %v", err)
+		t.Fatalf("SetSubscriptionAdminVerified() error = %v", err)
 	}
 
 	// Test with empty group ID
-	err = client.SetSubscriptionAdminVerifiedID(context.Background(), "", "sub-12345")
+	err = client.SetSubscriptionAdminVerified(context.Background(), "", "sub-12345")
 	if err == nil {
-		t.Error("SetSubscriptionAdminVerifiedID() with empty group ID should return error")
+		t.Error("SetSubscriptionAdminVerified() with empty group ID should return error")
 	}
 
 	// Test with empty subscription ID
-	err = client.SetSubscriptionAdminVerifiedID(context.Background(), "group1", "")
+	err = client.SetSubscriptionAdminVerified(context.Background(), "group1", "")
 	if err == nil {
-		t.Error("SetSubscriptionAdminVerifiedID() with empty subscription ID should return error")
+		t.Error("SetSubscriptionAdminVerified() with empty subscription ID should return error")
 	}
 }
 

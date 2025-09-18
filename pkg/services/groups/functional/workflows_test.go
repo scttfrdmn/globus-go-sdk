@@ -136,9 +136,9 @@ func TestCompleteGroupManagementWorkflow(t *testing.T) {
 	// Step 3: Set Subscription
 	t.Log("💳 Step 3: Setting group subscription")
 	subscriptionID := scenario.Subscription["subscription_id"].(string)
-	err = client.SetSubscriptionAdminVerifiedID(ctx, createdGroup.ID, subscriptionID)
+	err = client.SetSubscriptionAdminVerified(ctx, createdGroup.ID, subscriptionID)
 	if err != nil {
-		t.Fatalf("Step 3 failed - SetSubscriptionAdminVerifiedID(): %v", err)
+		t.Fatalf("Step 3 failed - SetSubscriptionAdminVerified(): %v", err)
 	}
 	t.Logf("✅ Step 3 complete: Subscription %s set for group", subscriptionID)
 
@@ -230,9 +230,9 @@ func TestSubscriptionManagementWorkflow(t *testing.T) {
 
 	// Step 1: Set Subscription
 	t.Log("💳 Step 1: Setting subscription for group")
-	err = client.SetSubscriptionAdminVerifiedID(ctx, groupID, subscriptionID)
+	err = client.SetSubscriptionAdminVerified(ctx, groupID, subscriptionID)
 	if err != nil {
-		t.Fatalf("Step 1 failed - SetSubscriptionAdminVerifiedID(): %v", err)
+		t.Fatalf("Step 1 failed - SetSubscriptionAdminVerified(): %v", err)
 	}
 	t.Log("✅ Step 1 complete: Subscription set")
 
