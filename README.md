@@ -15,7 +15,7 @@
   <a href="LICENSE"><img src="https://img.shields.io/github/license/scttfrdmn/globus-go-sdk" alt="License"></a>
   <a href="https://github.com/scttfrdmn/globus-go-sdk/releases"><img src="https://img.shields.io/github/v/release/scttfrdmn/globus-go-sdk" alt="Release"></a>
   <a href="https://codecov.io/gh/scttfrdmn/globus-go-sdk"><img src="https://codecov.io/gh/scttfrdmn/globus-go-sdk/branch/main/graph/badge.svg" alt="Coverage"></a>
-  <a href="https://scttfrdmn.github.io/globus-go-sdk/"><img src="https://img.shields.io/badge/docs-online-blue" alt="Documentation"></a>
+  <a href="https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/v3"><img src="https://img.shields.io/badge/docs-pkg.go.dev-blue" alt="Documentation"></a>
 </p>
 
 A Go SDK for interacting with Globus services, providing a simple and idiomatic Go interface to Globus APIs.
