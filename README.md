@@ -20,7 +20,7 @@
 
 A Go SDK for interacting with Globus services, providing a simple and idiomatic Go interface to Globus APIs.
 
-> **STATUS**: Version 3.60.0 is now available! This major version introduces unified systems aligned with the Python SDK, including unified error handling, response wrappers, deprecation management, and consistent client configuration. All services now support the same patterns for better developer experience. See the [CHANGELOG](CHANGELOG.md) for complete information. If you're upgrading from v0.9.x, check the [Migration Guide](doc/V3.60.0_MIGRATION_GUIDE.md).
+> **STATUS**: Version 3.63.0 is now available! This version maintains synchronization with the upstream Globus Python SDK, featuring comprehensive testing infrastructure, Python SDK parity methods, and production-ready reliability. The SDK includes unified error handling, response wrappers, deprecation management, and consistent client configuration across all services. See the [CHANGELOG](CHANGELOG.md) for complete information.
 
 > **DISCLAIMER**: The Globus Go SDK is an independent, community-developed project and is not officially affiliated with, endorsed by, or supported by Globus, the University of Chicago, or their affiliated organizations. This SDK is maintained by independent contributors and is not a product of Globus or the University of Chicago.
 
