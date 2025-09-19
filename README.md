@@ -8,14 +8,12 @@
 <h1 align="center">Globus Go SDK</h1>
 
 <p align="center">
-  <a href="https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/v3/v3"><img src="https://pkg.go.dev/badge/github.com/scttfrdmn/globus-go-sdk/v3.svg" alt="Go Reference"></a>
-  <a href="https://goreportcard.com/report/github.com/scttfrdmn/globus-go-sdk/v3/v3"><img src="https://goreportcard.com/badge/github.com/scttfrdmn/globus-go-sdk/v3/v3" alt="Go Report Card"></a>
+  <a href="https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/v3"><img src="https://pkg.go.dev/badge/github.com/scttfrdmn/globus-go-sdk/v3.svg" alt="Go Reference"></a>
+  <a href="https://goreportcard.com/report/github.com/scttfrdmn/globus-go-sdk/v3"><img src="https://goreportcard.com/badge/github.com/scttfrdmn/globus-go-sdk/v3" alt="Go Report Card"></a>
   <a href="https://github.com/scttfrdmn/globus-go-sdk/actions/workflows/go.yml"><img src="https://github.com/scttfrdmn/globus-go-sdk/actions/workflows/go.yml/badge.svg" alt="Build Status"></a>
-  <a href="https://github.com/scttfrdmn/globus-go-sdk/actions/workflows/deploy-docs.yml"><img src="https://github.com/scttfrdmn/globus-go-sdk/actions/workflows/deploy-docs.yml/badge.svg" alt="Documentation Status"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/scttfrdmn/globus-go-sdk" alt="License"></a>
   <a href="https://github.com/scttfrdmn/globus-go-sdk/releases"><img src="https://img.shields.io/github/v/release/scttfrdmn/globus-go-sdk" alt="Release"></a>
   <a href="https://codecov.io/gh/scttfrdmn/globus-go-sdk"><img src="https://codecov.io/gh/scttfrdmn/globus-go-sdk/branch/main/graph/badge.svg" alt="Coverage"></a>
-  <a href="https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/v3"><img src="https://img.shields.io/badge/docs-pkg.go.dev-blue" alt="Documentation"></a>
 </p>
 
 A Go SDK for interacting with Globus services, providing a simple and idiomatic Go interface to Globus APIs.
@@ -23,6 +21,22 @@ A Go SDK for interacting with Globus services, providing a simple and idiomatic 
 > **STATUS**: Version 3.63.0 is now available! This version maintains synchronization with the upstream Globus Python SDK, featuring comprehensive testing infrastructure, Python SDK parity methods, and production-ready reliability. The SDK includes unified error handling, response wrappers, deprecation management, and consistent client configuration across all services. See the [CHANGELOG](CHANGELOG.md) for complete information.
 
 > **DISCLAIMER**: The Globus Go SDK is an independent, community-developed project and is not officially affiliated with, endorsed by, or supported by Globus, the University of Chicago, or their affiliated organizations. This SDK is maintained by independent contributors and is not a product of Globus or the University of Chicago.
+
+## 📖 API Documentation
+
+**Complete API documentation is available at [pkg.go.dev](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/v3)**
+
+### Service-Specific Documentation
+
+- **[Core SDK](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/v3/pkg)** - Main SDK entry point and configuration
+- **[Authentication](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth)** - OAuth2 flows, token management, MFA support
+- **[Groups](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/groups)** - Group and membership management operations
+- **[Transfer](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer)** - File transfer with resumable and recursive support
+- **[Search](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search)** - Advanced search with query building and pagination
+- **[Flows](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/flows)** - Automation workflows and batch operations
+- **[Compute](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/compute)** - Function execution and endpoint management
+- **[Timers](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/timers)** - Timer and scheduling services
+- **[Tokens](https://pkg.go.dev/github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/tokens)** - Token introspection and validation
 
 ## Features
 

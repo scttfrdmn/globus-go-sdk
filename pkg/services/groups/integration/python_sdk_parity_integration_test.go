@@ -242,14 +242,14 @@ func TestPythonSDKParityMethodCoverage(t *testing.T) {
 	// This test ensures comprehensive coverage of Python SDK parity methods
 	parityMethods := map[string]string{
 		"SetSubscriptionAdminVerified": "v3.63.0 - Admin-only subscription setting (renamed from SetSubscriptionAdminVerifiedID)",
-		"GetGroupSubscription":           "v3.62.0 - Retrieve group subscription information",
-		"GetGroupBySubscriptionID":       "v3.62.0 - Lookup group by subscription ID",
-		"GetGroupPolicies":               "Python SDK parity - Get group policy configuration",
-		"SetGroupPolicies":               "Python SDK parity - Set group policy configuration",
-		"GetIdentityPreferences":         "Python SDK parity - Get identity preferences",
-		"SetIdentityPreferences":         "Python SDK parity - Set identity preferences",
-		"GetMembershipFields":            "Python SDK parity - Get custom membership fields",
-		"SetMembershipFields":            "Python SDK parity - Set custom membership fields",
+		"GetGroupSubscription":         "v3.62.0 - Retrieve group subscription information",
+		"GetGroupBySubscriptionID":     "v3.62.0 - Lookup group by subscription ID",
+		"GetGroupPolicies":             "Python SDK parity - Get group policy configuration",
+		"SetGroupPolicies":             "Python SDK parity - Set group policy configuration",
+		"GetIdentityPreferences":       "Python SDK parity - Get identity preferences",
+		"SetIdentityPreferences":       "Python SDK parity - Set identity preferences",
+		"GetMembershipFields":          "Python SDK parity - Get custom membership fields",
+		"SetMembershipFields":          "Python SDK parity - Set custom membership fields",
 	}
 
 	t.Logf("📋 Validating %d Python SDK parity methods", len(parityMethods))
