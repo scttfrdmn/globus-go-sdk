@@ -82,7 +82,7 @@ jobs:
         run: |
           go install github.com/princjef/gomarkdoc/cmd/gomarkdoc@latest
           mkdir -p docs-site/content/docs/reference/api
-          $(go env GOPATH)/bin/gomarkdoc --output docs-site/content/docs/reference/api/{{.Dir}}.md ./pkg/...
+          $(go env GOPATH)/bin/gomarkdoc --output docs-site/content/docs/reference/api/{{.Dir}}.md github.com/scttfrdmn/globus-go-sdk/v3/pkg/...
       
       - name: Build with Hugo
         env:
