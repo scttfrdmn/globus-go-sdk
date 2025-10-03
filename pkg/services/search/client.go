@@ -267,6 +267,7 @@ func (c *Client) CreateIndex(ctx context.Context, request *IndexCreateRequest) (
 }
 
 // UpdateIndex updates an existing index
+// v3.64.0: Method for modifying index names and descriptions
 func (c *Client) UpdateIndex(ctx context.Context, indexID string, request *IndexUpdateRequest) (*Index, error) {
 	if indexID == "" {
 		return nil, fmt.Errorf("index ID is required")

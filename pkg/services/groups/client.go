@@ -210,6 +210,12 @@ func (c *Client) ListGroups(ctx context.Context, options *ListGroupsOptions) (*G
 		if options.MyGroups {
 			query.Set("my_groups", "true")
 		}
+		// v3.65.0: Support statuses parameter
+		if len(options.Statuses) > 0 {
+			for _, status := range options.Statuses {
+				query.Add("statuses", status)
+			}
+		}
 		if options.PageSize > 0 {
 			query.Set("per_page", strconv.Itoa(options.PageSize))
 		}
@@ -251,6 +257,12 @@ func (c *Client) ListGroupsV2(ctx context.Context, options *ListGroupsOptions) (
 		if options.MyGroups {
 			query.Set("my_groups", "true")
 		}
+		// v3.65.0: Support statuses parameter
+		if len(options.Statuses) > 0 {
+			for _, status := range options.Statuses {
+				query.Add("statuses", status)
+			}
+		}
 		if options.PageSize > 0 {
 			query.Set("per_page", strconv.Itoa(options.PageSize))
 		}
@@ -280,6 +292,17 @@ func (c *Client) ListGroupsV2(ctx context.Context, options *ListGroupsOptions) (
 	groupsResp.WithRequestID("groups-list-" + strconv.FormatInt(time.Now().UnixNano(), 10))
 
 	return groupsResp, nil
+}
+
+// GetMyGroups retrieves groups the current user is a member of
+// This is a convenience method that sets MyGroups=true in ListGroupsOptions
+// v3.65.0: Added statuses parameter support for filtering by group status
+func (c *Client) GetMyGroups(ctx context.Context, statuses []string) (*GroupList, error) {
+	options := &ListGroupsOptions{
+		MyGroups: true,
+		Statuses: statuses,
+	}
+	return c.ListGroups(ctx, options)
 }
 
 // GetGroup retrieves a specific group by ID

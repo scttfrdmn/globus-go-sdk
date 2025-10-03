@@ -26,6 +26,12 @@ const (
 )
 
 // Client provides methods for interacting with Globus Compute
+// This client uses the v2 API by default.
+//
+// NOTE: As of Python SDK v3.61.0, the ComputeClient alias is deprecated
+// in favor of explicit version usage (ComputeClientV2, ComputeClientV3).
+// This Go SDK uses v2 by default. In v4.0.0 of this SDK, we may introduce
+// explicit versioning or require version specification.
 type Client struct {
 	Client *core.Client
 }

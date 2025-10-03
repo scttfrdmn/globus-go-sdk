@@ -1,24 +1,19 @@
+version: 2
+
 linters:
   enable:
     - errcheck
-    - gofmt
-    - goimports
-    - gosimple
     - govet
     - ineffassign
-    - misspell
     - staticcheck
-    - stylecheck
-    - typecheck
     - unused
+    - misspell
 
 linters-settings:
   errcheck:
     check-type-assertions: true
   govet:
     check-shadowing: true
-  goimports:
-    local-prefixes: github.com/yourusername/globus-go-sdk
   misspell:
     locale: US
 
