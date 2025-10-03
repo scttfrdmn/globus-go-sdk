@@ -673,8 +673,11 @@ func TestIntegration_TransferFlow(t *testing.T) {
 }
 
 func TestIntegration_RecursiveTransfer(t *testing.T) {
+<<<<<<< HEAD
 	t.Skip("Skipping recursive transfer test - RecursiveTransfer method not yet implemented")
 
+=======
+>>>>>>> 911fd99 (feat: align with Python SDK v3.61.0-v3.65.0)
 	// Skip tests if the GLOBUS_TEST_SKIP_TRANSFER environment variable is set
 	if os.Getenv("GLOBUS_TEST_SKIP_TRANSFER") != "" {
 		t.Skip("Skipping transfer test due to GLOBUS_TEST_SKIP_TRANSFER environment variable")
@@ -843,41 +846,40 @@ func TestIntegration_RecursiveTransfer(t *testing.T) {
 		t.Logf("Created nested directory: %s%s", sourceDir, subpath)
 	}
 
-	// 3. Test recursive transfer using the SDK's recursive transfer functionality with retry
-	// TODO: Uncomment when RecursiveTransfer is implemented
-	/*
-		options := &transfer.RecursiveTransferOptions{
-			SourceEndpointID:      sourceEndpointID,
-			DestinationEndpointID: destEndpointID,
-			SourcePath:            sourceDir,
-			DestinationPath:       destDir,
-			Label:                 fmt.Sprintf("Recursive Transfer Test %s", timestamp),
-			Sync:                  true,
-			VerifyChecksum:        true,
+	// 3. Test recursive transfer using the SDK's SubmitRecursiveTransfer method
+	options := &transfer.RecursiveTransferOptions{
+		Label:          fmt.Sprintf("Recursive Transfer Test %s", timestamp),
+		Sync:           false,
+		VerifyChecksum: true,
+	}
+
+	var result *transfer.RecursiveTransferResult
+	err = ratelimit.RetryWithBackoff(
+		ctx,
+		func(ctx context.Context) error {
+			var submitErr error
+			result, submitErr = client.SubmitRecursiveTransfer(
+				ctx,
+				sourceEndpointID, sourceDir,
+				destEndpointID, destDir,
+				options,
+			)
+			return submitErr
+		},
+		ratelimit.DefaultBackoff(),
+		transfer.IsRetryableTransferError,
+	)
+
+	if err != nil {
+		if transfer.IsRateLimitExceeded(err) {
+			t.Logf("Rate limit exceeded during recursive transfer. Continuing test but transfer may not complete: %v", err)
+		} else {
+			t.Fatalf("SubmitRecursiveTransfer failed: %v", err)
 		}
+	}
 
-		err = ratelimit.RetryWithBackoff(
-			ctx,
-			func(ctx context.Context) error {
-				return client.RecursiveTransfer(ctx, options)
-			},
-			ratelimit.DefaultBackoff(),
-			transfer.IsRetryableTransferError,
-		)
-	*/
-
-	// TODO: Uncomment when RecursiveTransfer is implemented
-	/*
-		if err != nil {
-			if transfer.IsRateLimitExceeded(err) {
-				t.Logf("Rate limit exceeded during recursive transfer. Continuing test but transfer may not complete: %v", err)
-			} else {
-				t.Fatalf("RecursiveTransfer failed: %v", err)
-			}
-		}
-
-		t.Log("Recursive transfer submitted successfully")
-	*/
+	t.Logf("Recursive transfer submitted successfully, task ID: %s, total files: %d",
+		result.TaskID, result.TotalFiles)
 
 	// 4. List tasks to verify transfer was initiated
 	listTasksOptions := &transfer.ListTasksOptions{
@@ -908,6 +910,7 @@ func TestIntegration_RecursiveTransfer(t *testing.T) {
 }
 
 func TestIntegration_GetEndpointActivationRequirements(t *testing.T) {
+<<<<<<< HEAD
 	t.Skip("Skipping activation requirements test - GetActivationRequirements method not yet implemented")
 
 	clientID, clientSecret, sourceEndpointID, _ := getTestCredentials(t)
@@ -999,6 +1002,19 @@ func TestIntegration_GetEndpointActivationRequirements(t *testing.T) {
 			t.Logf("Endpoint activation profile: %s", endpoint.ActivationProfile)
 		}
 	*/
+=======
+	// DEPRECATED: Endpoint activation methods were deprecated in Python SDK v3.61.0
+	// due to Globus Connect Server v4 end-of-life. Modern endpoints (v5+) use
+	// auto-activation with properly scoped tokens. This test has been removed.
+	//
+	// For modern endpoint usage:
+	// 1. Ensure your token has the proper transfer.api.globus.org scope
+	// 2. Endpoints will auto-activate when accessed with correct permissions
+	// 3. Use GetEndpoint() to check endpoint status and configuration
+	//
+	// See: https://docs.globus.org/api/transfer/endpoint_activation/
+	t.Skip("Endpoint activation methods deprecated - modern endpoints use auto-activation with scoped tokens")
+>>>>>>> 911fd99 (feat: align with Python SDK v3.61.0-v3.65.0)
 }
 
 func TestIntegration_TaskManagement(t *testing.T) {
@@ -1037,7 +1053,7 @@ func TestIntegration_TaskManagement(t *testing.T) {
 		Label:                 label,
 		SourceEndpointID:      sourceEndpointID,
 		DestinationEndpointID: destEndpointID,
-		Sync:                  false,
+		SyncLevel:             0,
 		Items: []transfer.TransferItem{
 			{
 				DataType:        "transfer_item",
@@ -1076,7 +1092,6 @@ func TestIntegration_TaskManagement(t *testing.T) {
 			},
 		}
 
-		var deleteErr error
 		err = ratelimit.RetryWithBackoff(
 			ctx,
 			func(ctx context.Context) error {
@@ -1123,7 +1138,10 @@ func TestIntegration_TaskManagement(t *testing.T) {
 		err = ratelimit.RetryWithBackoff(
 			ctx,
 			func(ctx context.Context) error {
-				return client.UpdateTaskLabel(ctx, taskResponse.TaskID, updatedLabel)
+				return client.UpdateTaskLabel(ctx, &transfer.UpdateTaskLabelOptions{
+					TaskID: taskResponse.TaskID,
+					Label:  updatedLabel,
+				})
 			},
 			ratelimit.DefaultBackoff(),
 			transfer.IsRetryableTransferError,
@@ -1166,7 +1184,8 @@ func TestIntegration_TaskManagement(t *testing.T) {
 		err = ratelimit.RetryWithBackoff(
 			ctx,
 			func(ctx context.Context) error {
-				return client.CancelTask(ctx, taskResponse.TaskID)
+				_, err := client.CancelTask(ctx, taskResponse.TaskID)
+				return err
 			},
 			ratelimit.DefaultBackoff(),
 			transfer.IsRetryableTransferError,
