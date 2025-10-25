@@ -168,15 +168,15 @@ func main() {
 
 	// Cleanup example (commented out - uncomment to actually delete)
 	/*
-	fmt.Println("\n=== Cleanup ===")
+		fmt.Println("\n=== Cleanup ===")
 
-	for _, timer := range []*timers.Timer{onceTimer, recurringTimer, cronTimer} {
-		if err := client.DeleteTimer(ctx, timer.ID); err != nil {
-			log.Printf("Failed to delete timer %s: %v", timer.ID, err)
-		} else {
-			fmt.Printf("✅ Deleted timer: %s\n", timer.ID)
+		for _, timer := range []*timers.Timer{onceTimer, recurringTimer, cronTimer} {
+			if err := client.DeleteTimer(ctx, timer.ID); err != nil {
+				log.Printf("Failed to delete timer %s: %v", timer.ID, err)
+			} else {
+				fmt.Printf("✅ Deleted timer: %s\n", timer.ID)
+			}
 		}
-	}
 	*/
 
 	fmt.Println("\n=== Example Complete ===")

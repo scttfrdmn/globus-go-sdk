@@ -920,7 +920,7 @@ func TestListGroupsWithStatusesAndOtherFilters(t *testing.T) {
 		// Verify both statuses and my_groups parameters
 		statuses := r.URL.Query()["statuses"]
 		myGroups := r.URL.Query().Get("my_groups")
-		
+
 		if len(statuses) == 0 {
 			t.Error("Expected statuses parameter")
 		}
