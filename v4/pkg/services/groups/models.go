@@ -1,0 +1,102 @@
+// SPDX-License-Identifier: Apache-2.0
+// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
+package groups
+
+import "time"
+
+// Group represents a Globus group
+type Group struct {
+	ID                    string                 `json:"id"`
+	Name                  string                 `json:"name"`
+	Description           string                 `json:"description"`
+	ParentID              string                 `json:"parent_id,omitempty"`
+	IdentityID            string                 `json:"identity_id"`
+	MemberCount           int                    `json:"member_count"`
+	IsGroupAdmin          bool                   `json:"is_group_admin"`
+	IsMember              bool                   `json:"is_member"`
+	Created               time.Time              `json:"created"`
+	LastUpdated           time.Time              `json:"last_updated"`
+	PublicGroup           bool                   `json:"public_group"`
+	RequiresSignAgreement bool                   `json:"requires_sign_agreement"`
+	SignAgreementMessage  string                 `json:"sign_agreement_message,omitempty"`
+	Policies              map[string]interface{} `json:"policies,omitempty"`
+	EnforceProvisionRules bool                   `json:"enforce_provision_rules,omitempty"`
+}
+
+// GroupCreate represents the data needed to create a new group
+type GroupCreate struct {
+	Name                  string                 `json:"name"`
+	Description           string                 `json:"description,omitempty"`
+	ParentID              string                 `json:"parent_id,omitempty"`
+	PublicGroup           bool                   `json:"public_group,omitempty"`
+	RequiresSignAgreement bool                   `json:"requires_sign_agreement,omitempty"`
+	SignAgreementMessage  string                 `json:"sign_agreement_message,omitempty"`
+	EnforceProvisionRules bool                   `json:"enforce_provision_rules,omitempty"`
+	Policies              map[string]interface{} `json:"policies,omitempty"`
+}
+
+// GroupUpdate represents the data to update in a group
+type GroupUpdate struct {
+	Name                  string                 `json:"name,omitempty"`
+	Description           string                 `json:"description,omitempty"`
+	ParentID              string                 `json:"parent_id,omitempty"`
+	PublicGroup           *bool                  `json:"public_group,omitempty"`
+	RequiresSignAgreement *bool                  `json:"requires_sign_agreement,omitempty"`
+	SignAgreementMessage  string                 `json:"sign_agreement_message,omitempty"`
+	EnforceProvisionRules *bool                  `json:"enforce_provision_rules,omitempty"`
+	Policies              map[string]interface{} `json:"policies,omitempty"`
+}
+
+// GroupList represents a paginated list of groups
+type GroupList struct {
+	Groups        []Group `json:"groups"`
+	HasNextPage   bool    `json:"has_next_page"`
+	NextPageToken string  `json:"next_page_token,omitempty"`
+}
+
+// ListGroupsOptions contains options for filtering group listings
+type ListGroupsOptions struct {
+	IncludeGroupMembership bool
+	IncludeIdentitySet     bool
+	ForUserID              string
+	MyGroups               bool
+	Statuses               []string // v4: Filter by group status (e.g., "active", "inactive")
+	PageSize               int
+	PageToken              string
+}
+
+// Member represents a group member
+type Member struct {
+	IdentityID        string    `json:"identity_id"`
+	Username          string    `json:"username"`
+	Email             string    `json:"email"`
+	Status            string    `json:"status"`
+	RoleID            string    `json:"role_id"`
+	Name              string    `json:"name,omitempty"`
+	Organization      string    `json:"organization,omitempty"`
+	JoinedDate        time.Time `json:"joined_date,omitempty"`
+	LastUpdateDate    time.Time `json:"last_update_date,omitempty"`
+	ProvisionedByRule string    `json:"provisioned_by_rule,omitempty"`
+}
+
+// MemberList represents a paginated list of group members
+type MemberList struct {
+	Members       []Member `json:"members"`
+	HasNextPage   bool     `json:"has_next_page"`
+	NextPageToken string   `json:"next_page_token,omitempty"`
+}
+
+// ListMembersOptions contains options for filtering member listings
+type ListMembersOptions struct {
+	RoleID    string
+	Status    string
+	PageSize  int
+	PageToken string
+}
+
+// Role represents a member's role in a group
+type Role struct {
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
+}
