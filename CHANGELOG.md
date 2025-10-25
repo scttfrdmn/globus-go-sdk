@@ -28,6 +28,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Nothing security-related yet
 
+## [3.65.0-1] - 2025-10-25
+
+### Added
+- **FlowTimer Helper (v3.65.0 feature)** -timers/flow_timer.go
+  - New `FlowTimer` struct for convenient flow-based timer creation
+  - `CreateFlowTimerOnce()` - Create one-time timers that run flows
+  - `CreateFlowTimerRecurring()` - Create recurring timers with ISO 8601 intervals
+  - `CreateFlowTimerCron()` - Create cron-scheduled timers
+  - Matches Python SDK v3.65.0 FlowTimer payload class functionality
+  - Comprehensive test coverage in `flow_timer_test.go`
+  - Example application in `cmd/examples/timers-flow/`
+
+- **Groups Statuses Filter (v3.65.0 feature)**
+  - Added `Statuses []string` field to `ListGroupsOptions`
+  - Filter groups by status (e.g., "active", "pending")
+  - Matches Python SDK v3.65.0 `get_my_groups(statuses=...)` parameter
+  - Works with both `ListGroups()` and `ListGroupsV2()` methods
+  - Test coverage for single and multiple status filtering
+
+### Technical Details
+- **Version**: Updated SDK version constant to 3.65.0
+- **Python SDK Parity**: Synchronized with upstream Globus Python SDK v3.65.0
+- **Backward Compatibility**: All changes are backward compatible additions
+- **Test Coverage**: Added comprehensive unit tests for all new features
+
+## [3.64.0] - 2025-09-24 (Python SDK sync)
+### Note
+- Python SDK v3.64.0 features already implemented:
+  - `SearchClient.UpdateIndex()` - Already present in Go SDK
+  - Transfer deprecations (symlinks, skip_activation_check) - Not applicable to Go SDK
+- No code changes required for v3.64.0 synchronization
+
 ## [3.63.0-1] - 2025-09-18
 
 ### Changed

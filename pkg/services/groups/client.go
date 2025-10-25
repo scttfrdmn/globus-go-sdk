@@ -215,6 +215,11 @@ func (c *Client) ListGroups(ctx context.Context, options *ListGroupsOptions) (*G
 		if options.MyGroups {
 			query.Set("my_groups", "true")
 		}
+		if len(options.Statuses) > 0 {
+			for _, status := range options.Statuses {
+				query.Add("statuses", status)
+			}
+		}
 		if options.PageSize > 0 {
 			query.Set("per_page", strconv.Itoa(options.PageSize))
 		}
@@ -255,6 +260,11 @@ func (c *Client) ListGroupsV2(ctx context.Context, options *ListGroupsOptions) (
 		}
 		if options.MyGroups {
 			query.Set("my_groups", "true")
+		}
+		if len(options.Statuses) > 0 {
+			for _, status := range options.Statuses {
+				query.Add("statuses", status)
+			}
 		}
 		if options.PageSize > 0 {
 			query.Set("per_page", strconv.Itoa(options.PageSize))

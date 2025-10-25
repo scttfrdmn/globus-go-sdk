@@ -22,7 +22,7 @@ import (
 )
 
 // Version is the SDK version
-const Version = "3.62.0"
+const Version = "3.65.0"
 
 // OAuth2 scopes for Globus services
 const (

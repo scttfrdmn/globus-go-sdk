@@ -819,3 +819,145 @@ func TestGetGroupSubscription(t *testing.T) {
 		t.Errorf("GetGroupSubscription() should set DATA_TYPE to 'group_subscription', got %v", subscription.DATA_TYPE)
 	}
 }
+
+// TestListGroupsWithStatuses tests the statuses parameter (added in v3.65.0)
+func TestListGroupsWithStatuses(t *testing.T) {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		// Verify statuses query parameter
+		statuses := r.URL.Query()["statuses"]
+		if len(statuses) != 2 {
+			t.Errorf("Expected 2 status values, got %d", len(statuses))
+		}
+		if statuses[0] != "active" || statuses[1] != "pending" {
+			t.Errorf("Expected statuses ['active', 'pending'], got %v", statuses)
+		}
+
+		response := GroupList{
+			Groups: []Group{
+				{
+					ID:   "group1",
+					Name: "Test Group 1",
+				},
+				{
+					ID:   "group2",
+					Name: "Test Group 2",
+				},
+			},
+			HasNextPage:   false,
+			NextPageToken: "",
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
+	}
+
+	server, client := setupMockServer(handler)
+	defer server.Close()
+
+	// Test with multiple statuses
+	options := &ListGroupsOptions{
+		Statuses: []string{"active", "pending"},
+	}
+
+	groupList, err := client.ListGroups(context.Background(), options)
+	if err != nil {
+		t.Fatalf("ListGroups() with statuses error = %v", err)
+	}
+
+	if len(groupList.Groups) != 2 {
+		t.Errorf("Expected 2 groups, got %d", len(groupList.Groups))
+	}
+}
+
+// TestListGroupsWithSingleStatus tests a single status filter
+func TestListGroupsWithSingleStatus(t *testing.T) {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		statuses := r.URL.Query()["statuses"]
+		if len(statuses) != 1 {
+			t.Errorf("Expected 1 status value, got %d", len(statuses))
+		}
+		if statuses[0] != "active" {
+			t.Errorf("Expected status 'active', got %v", statuses[0])
+		}
+
+		response := GroupList{
+			Groups: []Group{
+				{
+					ID:   "group1",
+					Name: "Active Group",
+				},
+			},
+			HasNextPage:   false,
+			NextPageToken: "",
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
+	}
+
+	server, client := setupMockServer(handler)
+	defer server.Close()
+
+	options := &ListGroupsOptions{
+		Statuses: []string{"active"},
+	}
+
+	groupList, err := client.ListGroups(context.Background(), options)
+	if err != nil {
+		t.Fatalf("ListGroups() with single status error = %v", err)
+	}
+
+	if len(groupList.Groups) != 1 {
+		t.Errorf("Expected 1 group, got %d", len(groupList.Groups))
+	}
+}
+
+// TestListGroupsWithStatusesAndOtherFilters tests combining statuses with other filters
+func TestListGroupsWithStatusesAndOtherFilters(t *testing.T) {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		// Verify both statuses and my_groups parameters
+		statuses := r.URL.Query()["statuses"]
+		myGroups := r.URL.Query().Get("my_groups")
+		
+		if len(statuses) == 0 {
+			t.Error("Expected statuses parameter")
+		}
+		if myGroups != "true" {
+			t.Errorf("Expected my_groups=true, got %s", myGroups)
+		}
+
+		response := GroupList{
+			Groups: []Group{
+				{
+					ID:   "group1",
+					Name: "My Active Group",
+				},
+			},
+			HasNextPage:   false,
+			NextPageToken: "",
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		json.NewEncoder(w).Encode(response)
+	}
+
+	server, client := setupMockServer(handler)
+	defer server.Close()
+
+	options := &ListGroupsOptions{
+		MyGroups: true,
+		Statuses: []string{"active"},
+	}
+
+	groupList, err := client.ListGroups(context.Background(), options)
+	if err != nil {
+		t.Fatalf("ListGroups() with combined filters error = %v", err)
+	}
+
+	if len(groupList.Groups) != 1 {
+		t.Errorf("Expected 1 group, got %d", len(groupList.Groups))
+	}
+}

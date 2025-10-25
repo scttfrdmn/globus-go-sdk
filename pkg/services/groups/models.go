@@ -76,6 +76,7 @@ type ListGroupsOptions struct {
 	IncludeIdentitySet     bool
 	ForUserID              string
 	MyGroups               bool
+	Statuses               []string // Filter by group status (e.g., "active", "pending") - added in v3.65.0
 	PageSize               int
 	PageToken              string
 }
