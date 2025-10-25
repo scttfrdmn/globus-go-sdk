@@ -195,5 +195,52 @@ Helper Methods:
 	if err != nil {
 		// Handle error
 	}
+
+FlowTimer Helper (Added in v3.65.0):
+
+The FlowTimer helper simplifies creating timers that run Globus Flows.
+This matches the Python SDK v3.65.0 FlowTimer payload class.
+
+	// Define a flow to run
+	flowTimer := &timers.FlowTimer{
+		FlowID:    "my-flow-id",
+		FlowScope: "https://auth.globus.org/scopes/my-flow-id/flow_run",
+		FlowInput: map[string]interface{}{
+			"source": "/path/to/source",
+			"dest":   "/path/to/dest",
+		},
+		FlowLabel: "My Flow Run",
+	}
+
+	// Create a one-time flow timer
+	timer, err := timersClient.CreateFlowTimerOnce(
+		ctx,
+		"Daily Backup",
+		time.Now().Add(1*time.Hour),
+		flowTimer,
+		nil, // Optional additional data
+	)
+
+	// Create a recurring flow timer (every 24 hours)
+	timer, err := timersClient.CreateFlowTimerRecurring(
+		ctx,
+		"Daily Backup",
+		time.Now(),
+		"P1D", // ISO 8601: 1 day
+		nil,   // No end time
+		flowTimer,
+		nil,
+	)
+
+	// Create a cron-scheduled flow timer (every Monday at 9 AM)
+	timer, err := timersClient.CreateFlowTimerCron(
+		ctx,
+		"Weekly Report",
+		"0 9 * * 1",        // Every Monday at 9:00 AM
+		"America/New_York", // Timezone
+		nil,                // No end time
+		flowTimer,
+		nil,
+	)
 */
 package timers
