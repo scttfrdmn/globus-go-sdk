@@ -1,0 +1,94 @@
+site_name: Globus Go SDK Documentation
+site_url: https://scttfrdmn.github.io/globus-go-sdk
+site_author: Scott Friedman
+site_description: Go SDK for interacting with Globus services
+
+repo_name: scttfrdmn/globus-go-sdk
+repo_url: https://github.com/scttfrdmn/globus-go-sdk
+
+theme:
+  name: material
+  palette:
+    # Light mode
+    - scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Dark mode
+    - scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.top
+    - navigation.tracking
+    - search.highlight
+    - search.suggest
+    - content.code.copy
+    - content.code.annotate
+
+plugins:
+  - search
+  - git-revision-date-localized:
+      enable_creation_date: true
+
+markdown_extensions:
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.details
+  - admonition
+  - tables
+  - attr_list
+  - md_in_html
+  - toc:
+      permalink: true
+
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Quick Start: getting-started/quickstart.md
+      - Authentication: getting-started/authentication.md
+      - Client Configuration: getting-started/configuration.md
+  - API Reference:
+      - Overview: api/index.md
+      - Auth Service: api/auth.md
+      - Transfer Service: api/transfer.md
+      - Search Service: api/search.md
+      - Groups Service: api/groups.md
+      - Flows Service: api/flows.md
+      - Timers Service: api/timers.md
+      - Compute Service: api/compute.md
+      - Error Handling: api/errors.md
+  - Guides:
+      - Common Patterns: guides/common-patterns.md
+      - Error Handling: guides/error-handling.md
+      - Rate Limiting: guides/rate-limiting.md
+      - Testing: guides/testing.md
+      - Migration from Python SDK: guides/migration.md
+  - Examples:
+      - Transfer Files: examples/transfer.md
+      - Search Queries: examples/search.md
+      - Group Management: examples/groups.md
+      - Workflow Automation: examples/flows.md
+  - About:
+      - Changelog: changelog.md
+      - Contributing: contributing.md
+      - License: license.md
+      - Python SDK Alignment: alignment.md
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/scttfrdmn/globus-go-sdk
+  version:
+    provider: mike
