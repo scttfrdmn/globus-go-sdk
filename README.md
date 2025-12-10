@@ -18,9 +18,23 @@
 
 A Go SDK for interacting with Globus services, providing a simple and idiomatic Go interface to Globus APIs.
 
-> **STATUS**: Version 3.63.0 is now available! This version maintains synchronization with the upstream Globus Python SDK, featuring comprehensive testing infrastructure, Python SDK parity methods, and production-ready reliability. The SDK includes unified error handling, response wrappers, deprecation management, and consistent client configuration across all services. See the [CHANGELOG](CHANGELOG.md) for complete information.
+> **STATUS**: **v3.65.0-1** is production-ready! ✅ Synchronized with Python SDK v3.65.0. **v4.2.0-1** is available with Close() methods for early adopters. See [Version Guide](#-version-guide) below.
 
 > **DISCLAIMER**: The Globus Go SDK is an independent, community-developed project and is not officially affiliated with, endorsed by, or supported by Globus, the University of Chicago, or their affiliated organizations. This SDK is maintained by independent contributors and is not a product of Globus or the University of Chicago.
+
+## 🚀 Version Guide
+
+**Choose the right version for your needs:**
+
+| Version | Status | When to Use | Installation |
+|---------|--------|-------------|--------------|
+| **v3.65.0-1** | ✅ **Production Ready** | All production applications | `go get github.com/scttfrdmn/globus-go-sdk/v3` |
+| **v4.2.0-1** | 🔶 Early Adopters | Testing v4 features, non-critical apps | `go get github.com/scttfrdmn/globus-go-sdk/v4` |
+
+**v3 Features:** Connection pooling, rate limiting, token storage, comprehensive tests
+**v4 Features:** Context-first API, explicit scopes, Close() methods, cleaner design
+
+**Recommendation:** Use **v3** for production. Try **v4** for new projects if you want the latest API design.
 
 ## 📚 Documentation
 
@@ -81,7 +95,11 @@ go get github.com/scttfrdmn/globus-go-sdk/v3
 ### Using Go modules in your project
 
 ```go
-import "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg"
+// v3 (Production - Recommended)
+import "github.com/scttfrdmn/globus-go-sdk/v3/pkg"
+
+// v4 (Early Adopters)
+import "github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
 ```
 
 ## Testing with Globus Credentials
@@ -151,7 +169,7 @@ This SDK follows the structure and patterns established by the official Globus P
 
 ## Quick Start
 
-### Authentication with Token Management
+### Simple Transfer Example (v3)
 
 ```go
 package main
@@ -160,14 +178,69 @@ import (
     "context"
     "fmt"
     "log"
-    "net/http"
-    "os"
-    "time"
 
-    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg"
-    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/auth"
-    "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg/services/tokens"
+    "github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
+    "github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
 )
+
+func main() {
+    // Create an authorizer with your access token
+    authorizer := authorizers.StaticTokenCoreAuthorizer("your-access-token")
+
+    // Create a transfer client
+    client, err := transfer.NewClient(
+        transfer.WithAuthorizer(authorizer),
+    )
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    // List your endpoints
+    endpoints, err := client.ListEndpoints(context.Background(), nil)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    fmt.Printf("Found %d endpoints\n", len(endpoints.Data))
+}
+```
+
+### Simple Transfer Example (v4 with Close())
+
+```go
+package main
+
+import (
+    "context"
+    "fmt"
+    "log"
+
+    "github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
+    "github.com/scttfrdmn/globus-go-sdk/v4/pkg/services/transfer"
+)
+
+func main() {
+    ctx := context.Background()
+
+    // Create config with explicit scopes
+    config := &core.Config{
+        AccessToken: "your-access-token",
+        Scopes:      []string{core.Scopes.TransferAll},
+    }
+
+    // Create transfer client
+    client, err := transfer.NewClient(ctx, config)
+    if err != nil {
+        log.Fatal(err)
+    }
+    defer client.Close() // Clean up resources
+
+    // Use the client...
+    fmt.Println("Client ready!")
+}
+```
+
+### Authentication with Token Management (v3)
 
 func main() {
     // Create a token storage for persisting tokens
@@ -605,28 +678,101 @@ For more information, see [Git Hooks](doc/development/git-hooks.md).
 
 ## Development Status
 
-This SDK is under active development. Current version: **v3.60.0**
+**Current versions:**
+- **v3.65.0-1**: Production-ready, Python SDK v3.65.0 parity ✅
+- **v4.2.0-1**: Close() methods, early adopters 🔶
 
-| Component | Status | Details |
-|-----------|--------|---------|
-| Core Infrastructure | ✅ Complete | Base client, transport, authorizers, logging |
-| Auth Client | ✅ Complete | OAuth flows, token management, validation utilities |
-| Token Storage | ✅ Complete | Interface with memory and file-based implementations |
-| Token Manager | ✅ Complete | Automatic token refreshing and management |
-| Tokens Package | ✅ Complete | Unified token management package with storage and refresh |
-| Groups Client | ✅ Complete | Group management, membership operations |
-| Transfer Client | ✅ Complete | Basic operations, recursive directory transfers, resumable transfers |
-| Search Client | ✅ Complete | Advanced queries, batch operations, pagination |
-| Flows Client | ✅ Complete | Flow discovery, execution, management |
-| Timers Client | ✅ Complete | Creating and managing scheduled tasks |
-| CLI Example | ✅ Complete | Command-line application showcasing SDK features |
-| Compute Client | ✅ Complete | Function execution, endpoint management, workflows, task groups |
+| Component | v3 Status | v4 Status |
+|-----------|-----------|-----------|
+| Core Infrastructure | ✅ Complete | ✅ Basic |
+| Auth Client | ✅ Complete | ✅ Basic |
+| Token Storage | ✅ Complete | ⚠️ Not yet |
+| Token Manager | ✅ Complete | ⚠️ Not yet |
+| Groups Client | ✅ Complete | ✅ Basic |
+| Transfer Client | ✅ Complete | ✅ Basic |
+| Search Client | ✅ Complete | ✅ Basic |
+| Flows Client | ✅ Complete | ✅ Basic |
+| Timers Client | ✅ Complete | ✅ Basic |
+| Compute Client | ✅ Complete | ✅ Basic |
+| Connection Pooling | ✅ Yes | ⚠️ Not yet |
+| Rate Limiting | ✅ Yes | ⚠️ Not yet |
+| Resource Cleanup | ❌ N/A | ✅ Close() |
 
-See [RELEASE_CHECKLIST.md](RELEASE_CHECKLIST.md) for detailed status, [KNOWN_ISSUES.md](doc/KNOWN_ISSUES.md) for current limitations, and [ROADMAP.md](doc/ROADMAP.md) for upcoming features.
+See [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md) for development strategy and [CHANGELOG.md](CHANGELOG.md) for release history.
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### Import Path Errors
+```bash
+# ❌ Wrong
+import "github.com/scttfrdmn/globus-go-sdk/v3/v3/pkg"
+
+# ✅ Correct
+import "github.com/scttfrdmn/globus-go-sdk/v3/pkg"
+```
+
+#### "Access token is required" (v4)
+v4 requires explicit scopes. Make sure you provide both token and scopes:
+```go
+config := &core.Config{
+    AccessToken: "your-token",
+    Scopes:      []string{core.Scopes.TransferAll}, // Required in v4!
+}
+```
+
+#### Rate Limiting / 429 Errors
+v3 has built-in rate limiting. For v4, this is not yet implemented:
+- **v3**: Automatically handles 429 responses with backoff
+- **v4**: You'll need to implement your own retry logic (for now)
+
+#### Token Expiration
+- **v3**: Use `tokens.NewManager()` for automatic token refresh
+- **v4**: Manual token management required (auto-refresh not yet implemented)
+
+#### Connection Leaks (v4)
+Always call `Close()` in v4 to prevent connection leaks:
+```go
+client, err := transfer.NewClient(ctx, config)
+if err != nil {
+    return err
+}
+defer client.Close() // Important!
+```
+
+### Getting Help
+
+1. **Check the documentation**: [https://scttfrdmn.github.io/globus-go-sdk/](https://scttfrdmn.github.io/globus-go-sdk/)
+2. **Search existing issues**: [GitHub Issues](https://github.com/scttfrdmn/globus-go-sdk/issues)
+3. **Check examples**: See the `examples/` directory
+4. **Ask questions**: Open a GitHub issue with the "question" label
+
+### FAQ
+
+**Q: Should I use v3 or v4?**
+A: Use v3 for production. It's feature-complete and battle-tested.
+
+**Q: When will v4 be production-ready?**
+A: When users request the missing features. See [DEVELOPMENT_ROADMAP.md](DEVELOPMENT_ROADMAP.md).
+
+**Q: Can I use both v3 and v4 in the same project?**
+A: Technically yes (different import paths), but not recommended. Pick one.
+
+**Q: How do I get an access token?**
+A: See the [Authentication Guide](https://scttfrdmn.github.io/globus-go-sdk/getting-started/authentication/)
+
+**Q: Is this officially supported by Globus?**
+A: No, this is a community project. See the disclaimer at the top of this README.
 
 ## Alignment with Official SDKs
 
-This SDK is designed to follow the patterns established by the official Globus SDKs for [Python](https://github.com/globus/globus-sdk-python) and [JavaScript](https://github.com/globus/globus-sdk-javascript). See [ALIGNMENT.md](ALIGNMENT.md) for details.
+This SDK follows the patterns established by the official Globus SDKs for [Python](https://github.com/globus/globus-sdk-python) and [JavaScript](https://github.com/globus/globus-sdk-javascript).
+
+- **v3.65.0-1** aligns with Python SDK v3.65.0
+- **v4.2.0-1** aligns with Python SDK v4.2.0 (partial)
+
+See [ALIGNMENT.md](ALIGNMENT.md) for details and [PYTHON_SDK_V4.2.0_TRACKING.md](PYTHON_SDK_V4.2.0_TRACKING.md) for v4 implementation status.
 
 ## Contributing
 
@@ -639,5 +785,7 @@ Apache 2.0
 ## Resources
 
 - [Globus API Documentation](https://docs.globus.org/api/)
+- [Python SDK Documentation](https://globus-sdk-python.readthedocs.io/)
 - [Go Code Review Comments](https://github.com/golang/go/wiki/CodeReviewComments)
 - [Effective Go](https://golang.org/doc/effective_go)
+- [SDK Development Roadmap](DEVELOPMENT_ROADMAP.md)
