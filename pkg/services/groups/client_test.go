@@ -686,8 +686,8 @@ func TestSetSubscriptionAdminVerified(t *testing.T) {
 		}
 
 		// Check path
-		if r.URL.Path != "/groups/group1/subscription_id" {
-			t.Errorf("Expected path /groups/group1/subscription_id, got %s", r.URL.Path)
+		if r.URL.Path != "/groups/group1/subscription" {
+			t.Errorf("Expected path /groups/group1/subscription, got %s", r.URL.Path)
 		}
 
 		// Check request body
@@ -699,8 +699,8 @@ func TestSetSubscriptionAdminVerified(t *testing.T) {
 		if requestBody["subscription_id"] != "sub-12345" {
 			t.Errorf("Expected subscription_id=sub-12345, got %s", requestBody["subscription_id"])
 		}
-		if requestBody["DATA_TYPE"] != "subscription_id_update" {
-			t.Errorf("Expected DATA_TYPE=subscription_id_update, got %s", requestBody["DATA_TYPE"])
+		if requestBody["DATA_TYPE"] != "subscription_update" {
+			t.Errorf("Expected DATA_TYPE=subscription_update, got %s", requestBody["DATA_TYPE"])
 		}
 
 		// Return success response

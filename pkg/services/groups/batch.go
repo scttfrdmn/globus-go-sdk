@@ -23,7 +23,7 @@ type BatchRoleChangeRequest struct {
 
 // BatchRoleChangeResult represents the result of a batch role change operation
 type BatchRoleChangeResult struct {
-	DATA_TYPE string                     `json:"DATA_TYPE"`
+	DATA_TYPE string                      `json:"DATA_TYPE"`
 	Results   []BatchRoleChangeItemResult `json:"results"`
 }
 

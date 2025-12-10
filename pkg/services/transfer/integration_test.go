@@ -673,11 +673,6 @@ func TestIntegration_TransferFlow(t *testing.T) {
 }
 
 func TestIntegration_RecursiveTransfer(t *testing.T) {
-<<<<<<< HEAD
-	t.Skip("Skipping recursive transfer test - RecursiveTransfer method not yet implemented")
-
-=======
->>>>>>> 911fd99 (feat: align with Python SDK v3.61.0-v3.65.0)
 	// Skip tests if the GLOBUS_TEST_SKIP_TRANSFER environment variable is set
 	if os.Getenv("GLOBUS_TEST_SKIP_TRANSFER") != "" {
 		t.Skip("Skipping transfer test due to GLOBUS_TEST_SKIP_TRANSFER environment variable")
@@ -910,99 +905,6 @@ func TestIntegration_RecursiveTransfer(t *testing.T) {
 }
 
 func TestIntegration_GetEndpointActivationRequirements(t *testing.T) {
-<<<<<<< HEAD
-	t.Skip("Skipping activation requirements test - GetActivationRequirements method not yet implemented")
-
-	clientID, clientSecret, sourceEndpointID, _ := getTestCredentials(t)
-
-	// Skip if endpoint is not provided
-	if sourceEndpointID == "" {
-		t.Skip("Integration test requires GLOBUS_TEST_SOURCE_ENDPOINT_ID environment variable")
-	}
-
-	// Get access token
-	accessToken := getAccessToken(t, clientID, clientSecret)
-
-	// Create Transfer client
-	client, err := transfer.NewClient(
-		transfer.WithAuthorizer(authorizers.StaticTokenCoreAuthorizer(accessToken)),
-	)
-	if err != nil {
-		t.Fatalf("Failed to create transfer client: %v", err)
-	}
-	ctx := context.Background()
-
-	// Get activation requirements with retry
-	// TODO: Uncomment when GetActivationRequirements is implemented
-	/*
-		var requirements *transfer.ActivationRequirements
-		err = ratelimit.RetryWithBackoff(
-			ctx,
-			func(ctx context.Context) error {
-				var getErr error
-				requirements, getErr = client.GetActivationRequirements(ctx, sourceEndpointID)
-				return getErr
-			},
-			ratelimit.DefaultBackoff(),
-			transfer.IsRetryableTransferError,
-		)
-
-		if err != nil {
-			t.Fatalf("Failed to get activation requirements: %v", err)
-		}
-	*/
-
-	// Verified we got a response - exact requirements depend on the endpoint type
-	// TODO: Uncomment when ActivateEndpoint is implemented
-	/*
-		t.Logf("Activation requirements data type: %s", requirements.DataType)
-		t.Logf("Number of activation requirements: %d", len(requirements.ActivationRequirements))
-
-		// Try to activate the endpoint (might already be activated)
-		err = ratelimit.RetryWithBackoff(
-			ctx,
-			func(ctx context.Context) error {
-				return client.ActivateEndpoint(ctx, sourceEndpointID)
-			},
-			ratelimit.DefaultBackoff(),
-			transfer.IsRetryableTransferError,
-		)
-
-		if err != nil {
-			t.Logf("Activation might require additional steps: %v", err)
-		} else {
-			t.Log("Endpoint activated successfully")
-		}
-	*/
-
-	// Get endpoint autoactivation status with retry
-	var endpoint *transfer.Endpoint
-	err = ratelimit.RetryWithBackoff(
-		ctx,
-		func(ctx context.Context) error {
-			var getErr error
-			endpoint, getErr = client.GetEndpoint(ctx, sourceEndpointID)
-			return getErr
-		},
-		ratelimit.DefaultBackoff(),
-		transfer.IsRetryableTransferError,
-	)
-
-	if err != nil {
-		t.Fatalf("Failed to get endpoint: %v", err)
-	}
-
-	// Check if the endpoint has the IsAutoActivateEnabled field (it might be a different name like AutoActivate)
-	// TODO: Uncomment when ActivationProfile field is implemented
-	/*
-		t.Logf("Endpoint activation details: %+v", endpoint)
-
-		// If available, log auto-activation details
-		if endpoint.ActivationProfile != "" {
-			t.Logf("Endpoint activation profile: %s", endpoint.ActivationProfile)
-		}
-	*/
-=======
 	// DEPRECATED: Endpoint activation methods were deprecated in Python SDK v3.61.0
 	// due to Globus Connect Server v4 end-of-life. Modern endpoints (v5+) use
 	// auto-activation with properly scoped tokens. This test has been removed.
@@ -1014,7 +916,6 @@ func TestIntegration_GetEndpointActivationRequirements(t *testing.T) {
 	//
 	// See: https://docs.globus.org/api/transfer/endpoint_activation/
 	t.Skip("Endpoint activation methods deprecated - modern endpoints use auto-activation with scoped tokens")
->>>>>>> 911fd99 (feat: align with Python SDK v3.61.0-v3.65.0)
 }
 
 func TestIntegration_TaskManagement(t *testing.T) {

@@ -22,7 +22,7 @@ func TestSetSubscriptionAdminVerified(t *testing.T) {
 			t.Errorf("Expected PUT request, got %s", r.Method)
 		}
 
-		expectedPath := "/groups/test-group-12345/subscription_id"
+		expectedPath := "/groups/test-group-12345/subscription"
 		if r.URL.Path != expectedPath {
 			t.Errorf("Expected path %s, got %s", expectedPath, r.URL.Path)
 		}
@@ -38,8 +38,8 @@ func TestSetSubscriptionAdminVerified(t *testing.T) {
 			t.Errorf("Expected subscription_id=%s, got %s", expectedSubscriptionID, requestBody["subscription_id"])
 		}
 
-		if requestBody["DATA_TYPE"] != "subscription_id_update" {
-			t.Errorf("Expected DATA_TYPE=subscription_id_update, got %s", requestBody["DATA_TYPE"])
+		if requestBody["DATA_TYPE"] != "subscription_update" {
+			t.Errorf("Expected DATA_TYPE=subscription_update, got %s", requestBody["DATA_TYPE"])
 		}
 
 		w.WriteHeader(http.StatusOK)
@@ -164,7 +164,7 @@ func TestSubscriptionWorkflow(t *testing.T) {
 	mockHandler := testhelpers.NewMockResponseHandler()
 
 	// Step 1: Set subscription ID (admin operation)
-	mockHandler.RegisterResponse("PUT", "/groups/test-group-12345/subscription_id", testhelpers.MockResponse{
+	mockHandler.RegisterResponse("PUT", "/groups/test-group-12345/subscription", testhelpers.MockResponse{
 		StatusCode: 200,
 		Body:       map[string]interface{}{"status": "success"},
 	})

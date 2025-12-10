@@ -62,7 +62,7 @@ func TestCompleteGroupManagementWorkflow(t *testing.T) {
 	})
 
 	// Step 3: Set Subscription Response
-	responseHandler.RegisterResponse(http.MethodPut, "/groups/"+scenario.GroupID+"/subscription_id", testhelpers.MockResponse{
+	responseHandler.RegisterResponse(http.MethodPut, "/groups/"+scenario.GroupID+"/subscription", testhelpers.MockResponse{
 		StatusCode: 200,
 		Body:       map[string]string{"status": "success"},
 	})
@@ -177,7 +177,7 @@ func TestSubscriptionManagementWorkflow(t *testing.T) {
 	responseHandler := testhelpers.NewMockResponseHandler()
 
 	// Step 1: Set subscription
-	responseHandler.RegisterResponse(http.MethodPut, "/groups/"+groupID+"/subscription_id", testhelpers.MockResponse{
+	responseHandler.RegisterResponse(http.MethodPut, "/groups/"+groupID+"/subscription", testhelpers.MockResponse{
 		StatusCode: 200,
 		Body: map[string]string{
 			"status":          "success",

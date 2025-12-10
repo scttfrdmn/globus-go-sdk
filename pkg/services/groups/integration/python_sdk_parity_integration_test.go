@@ -143,7 +143,7 @@ func setupPythonSDKParityMocks(t *testing.T, handler *testhelpers.MockResponseHa
 	now := time.Now()
 
 	// Mock responses for subscription management
-	handler.RegisterResponse("PUT", "/groups/test-group-12345/subscription_id", testhelpers.MockResponse{
+	handler.RegisterResponse("PUT", "/groups/test-group-12345/subscription", testhelpers.MockResponse{
 		StatusCode: 200,
 		Body:       map[string]string{"status": "success"},
 	})

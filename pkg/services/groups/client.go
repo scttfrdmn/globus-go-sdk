@@ -622,25 +622,6 @@ func (c *Client) DeleteRole(ctx context.Context, groupID, roleID string) error {
 	return c.doRequestLowLevel(ctx, http.MethodDelete, "groups/"+groupID+"/roles/"+roleID, nil, nil, nil)
 }
 
-// SetSubscriptionAdminVerified sets a subscription ID for a group (admin-only operation)
-// This method follows Python SDK v3.63.0 naming convention
-func (c *Client) SetSubscriptionAdminVerified(ctx context.Context, groupID, subscriptionID string) error {
-	if groupID == "" {
-		return fmt.Errorf("group ID is required")
-	}
-
-	if subscriptionID == "" {
-		return fmt.Errorf("subscription ID is required")
-	}
-
-	body := map[string]string{
-		"subscription_id": subscriptionID,
-		"DATA_TYPE":       "subscription_id_update",
-	}
-
-	return c.doRequestLowLevel(ctx, http.MethodPut, "groups/"+groupID+"/subscription_id", nil, body, nil)
-}
-
 // SetSubscriptionAdminVerifiedID sets a subscription ID for a group (admin-only operation)
 // Deprecated: Use SetSubscriptionAdminVerified instead. This method will be removed in a future version.
 func (c *Client) SetSubscriptionAdminVerifiedID(ctx context.Context, groupID, subscriptionID string) error {
