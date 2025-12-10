@@ -132,3 +132,8 @@ func (c *Client) ListRuns(ctx context.Context, options *ListRunsOptions) (*RunLi
 	}
 	return &runList, nil
 }
+// Close closes the client and releases resources
+func (c *Client) Close() error {
+	return c.baseClient.Close()
+}
+

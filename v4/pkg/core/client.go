@@ -16,7 +16,8 @@ import (
 // Client is the base client for all Globus SDK v4 service clients
 // It implements context-first design and enhanced error handling
 type Client struct {
-	config *Config
+	config            *Config
+	httpClientCreated bool // tracks if we created the HTTP client internally
 }
 
 // NewClient creates a new base client with the given configuration
@@ -27,6 +28,9 @@ func NewClient(config *Config) (*Client, error) {
 		}
 	}
 
+	// Track if we'll create the HTTP client
+	httpClientCreated := config.HTTPClient == nil
+
 	// Apply defaults
 	config = config.WithDefaults()
 
@@ -36,7 +40,8 @@ func NewClient(config *Config) (*Client, error) {
 	}
 
 	return &Client{
-		config: config,
+		config:            config,
+		httpClientCreated: httpClientCreated,
 	}, nil
 }
 
@@ -198,4 +203,16 @@ func (c *Client) buildURL(endpoint string, query url.Values) string {
 // GetConfig returns the client configuration (read-only)
 func (c *Client) GetConfig() *Config {
 	return c.config
+}
+
+// Close closes the client and releases resources
+// This implements the v4.2.0 context manager pattern from Python SDK
+// It's safe to call Close multiple times
+func (c *Client) Close() error {
+	// Only close the HTTP client if we created it internally
+	// If the user provided their own HTTP client, they're responsible for closing it
+	if c.httpClientCreated && c.config.HTTPClient != nil {
+		c.config.HTTPClient.CloseIdleConnections()
+	}
+	return nil
 }

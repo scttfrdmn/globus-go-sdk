@@ -346,3 +346,8 @@ func (c *Client) RemoveRole(ctx context.Context, indexID, roleID string) error {
 	path := fmt.Sprintf("/index/%s/role/%s", indexID, roleID)
 	return c.baseClient.DoRequest(ctx, http.MethodDelete, path, nil, nil, nil)
 }
+// Close closes the client and releases resources
+func (c *Client) Close() error {
+	return c.baseClient.Close()
+}
+

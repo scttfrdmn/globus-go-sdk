@@ -132,3 +132,8 @@ func (c *Client) ListFunctions(ctx context.Context, options *ListFunctionsOption
 	}
 	return &functionList, nil
 }
+// Close closes the client and releases resources
+func (c *Client) Close() error {
+	return c.baseClient.Close()
+}
+

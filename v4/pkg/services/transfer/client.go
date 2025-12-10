@@ -339,3 +339,8 @@ func (c *Client) Rename(ctx context.Context, endpointID, oldPath, newPath string
 
 	return &response, nil
 }
+// Close closes the client and releases resources
+func (c *Client) Close() error {
+	return c.baseClient.Close()
+}
+

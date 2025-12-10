@@ -174,3 +174,8 @@ func (c *Client) CreateRecurringTimer(ctx context.Context, name string, startTim
 
 	return c.CreateTimer(ctx, timer)
 }
+// Close closes the client and releases resources
+func (c *Client) Close() error {
+	return c.baseClient.Close()
+}
+

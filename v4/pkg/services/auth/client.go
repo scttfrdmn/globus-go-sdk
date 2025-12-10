@@ -229,3 +229,8 @@ func (c *Client) DeleteProject(ctx context.Context, projectID string) error {
 	endpoint := fmt.Sprintf("/v2/api/projects/%s", projectID)
 	return c.baseClient.DoRequest(ctx, http.MethodDelete, endpoint, nil, nil, nil)
 }
+// Close closes the client and releases resources
+func (c *Client) Close() error {
+	return c.baseClient.Close()
+}
+

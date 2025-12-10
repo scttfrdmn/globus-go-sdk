@@ -246,3 +246,8 @@ func (c *Client) RemoveMember(ctx context.Context, groupID, identityID string) e
 	endpoint := fmt.Sprintf("/groups/%s/members/%s", groupID, identityID)
 	return c.baseClient.DoRequest(ctx, http.MethodDelete, endpoint, nil, nil, nil)
 }
+// Close closes the client and releases resources
+func (c *Client) Close() error {
+	return c.baseClient.Close()
+}
+
