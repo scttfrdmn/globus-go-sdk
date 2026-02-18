@@ -390,7 +390,8 @@ func TestIsTokenValid(t *testing.T) {
 		token := r.Form.Get("token")
 
 		var response TokenInfo
-		if token == "valid-token" {
+		switch token {
+		case "valid-token":
 			response = TokenInfo{
 				Active:      true,
 				Scope:       "openid profile email",
@@ -400,7 +401,7 @@ func TestIsTokenValid(t *testing.T) {
 				Subject:     "test-subject",
 				SubjectType: "user",
 			}
-		} else if token == "invalid-token" {
+		case "invalid-token":
 			response = TokenInfo{
 				Active: false,
 			}
@@ -502,19 +503,20 @@ func TestShouldRefresh(t *testing.T) {
 		token := r.Form.Get("token")
 
 		var response TokenInfo
-		if token == "expiring-soon-token" {
+		switch token {
+		case "expiring-soon-token":
 			// Token expires in 30 seconds
 			response = TokenInfo{
 				Active: true,
 				Exp:    time.Now().Add(30 * time.Second).Unix(),
 			}
-		} else if token == "valid-token" {
+		case "valid-token":
 			// Token expires in 1 hour
 			response = TokenInfo{
 				Active: true,
 				Exp:    time.Now().Add(1 * time.Hour).Unix(),
 			}
-		} else {
+		default:
 			response = TokenInfo{
 				Active: false,
 			}

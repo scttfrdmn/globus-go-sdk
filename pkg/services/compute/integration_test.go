@@ -206,9 +206,10 @@ func TestIntegration_FunctionLifecycle(t *testing.T) {
 	}
 
 	t.Logf("Task status: %s", taskStatus.Status)
-	if taskStatus.Status == "SUCCESS" {
+	switch taskStatus.Status {
+	case "SUCCESS":
 		t.Logf("Task result: %v", taskStatus.Result)
-	} else if taskStatus.Status == "FAILED" {
+	case "FAILED":
 		t.Logf("Task exception: %s", taskStatus.Exception)
 	}
 }
@@ -316,9 +317,10 @@ func TestIntegration_BatchExecution(t *testing.T) {
 	// 4. Check individual task results
 	for taskID, status := range batchStatus.Tasks {
 		t.Logf("Task %s: Status = %s", taskID, status.Status)
-		if status.Status == "SUCCESS" {
+		switch status.Status {
+		case "SUCCESS":
 			t.Logf("  Result: %v", status.Result)
-		} else if status.Status == "FAILED" {
+		case "FAILED":
 			t.Logf("  Exception: %s", status.Exception)
 		}
 	}

@@ -88,7 +88,7 @@ func (c *Client) buildURLLowLevel(path string, query url.Values) string {
 	}
 
 	url := baseURL + path
-	if query != nil && len(query) > 0 {
+	if len(query) > 0 {
 		url += "?" + query.Encode()
 	}
 
@@ -130,7 +130,7 @@ func (c *Client) doRequestLowLevel(ctx context.Context, method, path string, que
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Check for non-success status code
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
@@ -145,7 +145,7 @@ func (c *Client) doRequestLowLevel(ctx context.Context, method, path string, que
 		reset := parseIntHeader(resp.Header, "X-RateLimit-Reset", -1)
 
 		if limit > 0 && remaining >= 0 && reset > 0 {
-			limiter.UpdateLimit(limit, remaining, reset)
+			_ = limiter.UpdateLimit(limit, remaining, reset)
 		}
 	}
 

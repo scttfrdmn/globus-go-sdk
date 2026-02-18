@@ -121,7 +121,8 @@ func (s *MemorySampler) PrintSummary() {
 	fmt.Printf("  Final Allocated:     %.2f MB\n", summary["final_alloc_mb"])
 	fmt.Printf("  Total Allocated:     %.2f MB\n", summary["total_alloc_mb"])
 	fmt.Printf("  GC Cycles:           %d\n", summary["gc_cycles"])
-	fmt.Printf("  GC CPU Fraction:     %.2f%%\n", summary["gc_cpu_fraction"].(float64)*100)
+	gcCPUFraction, _ := summary["gc_cpu_fraction"].(float64)
+	_, _ = fmt.Printf("  GC CPU Fraction:     %.2f%%\n", gcCPUFraction*100)
 }
 
 // collectStats gathers current memory statistics

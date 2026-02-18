@@ -63,7 +63,7 @@ func (c *Client) buildURLLowLevel(path string, query url.Values) string {
 	}
 
 	url := baseURL + path
-	if query != nil && len(query) > 0 {
+	if len(query) > 0 {
 		url += "?" + query.Encode()
 	}
 
@@ -98,7 +98,7 @@ func (c *Client) doRequestLowLevel(ctx context.Context, method, path string, que
 	if err != nil {
 		return err
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Read response body
 	respBody, err := io.ReadAll(resp.Body)

@@ -44,11 +44,11 @@ func TestWaitForTaskCompletion(t *testing.T) {
 			finalStatus:    "FAILED",
 		},
 		{
-			name:           "Task is cancelled",
-			statusSequence: []string{"ACTIVE", "CANCELLED"},
+			name:           "Task is canceled",
+			statusSequence: []string{"ACTIVE", "CANCELED"},
 			maxCalls:       2,
 			expectError:    false,
-			finalStatus:    "CANCELLED",
+			finalStatus:    "CANCELED",
 		},
 	}
 

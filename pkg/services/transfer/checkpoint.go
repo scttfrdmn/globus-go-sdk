@@ -192,7 +192,7 @@ func (s *FileCheckpointStorage) LoadCheckpoint(ctx context.Context, checkpointID
 	if err != nil {
 		return nil, fmt.Errorf("failed to open checkpoint file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	// Read the file
 	data, err := io.ReadAll(file)

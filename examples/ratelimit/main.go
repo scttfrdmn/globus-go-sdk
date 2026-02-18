@@ -123,7 +123,7 @@ func runDemoMode(accessToken string, concurrency int, duration time.Duration, re
 		go func(workerID int) {
 			defer wg.Done()
 
-			for _ = range tasks {
+			for range tasks {
 				// Track request
 				mu.Lock()
 				totalRequests++

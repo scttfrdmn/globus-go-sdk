@@ -112,7 +112,6 @@ func TestSearchIterator(t *testing.T) {
 	pageCount = 0
 	requestCount = 0
 	totalResults := 0
-	var results []SearchResult
 	for i := 0; i < totalPages; i++ {
 		if !it.Next() {
 			break
@@ -128,7 +127,6 @@ func TestSearchIterator(t *testing.T) {
 			t.Errorf("Expected 2 results, got %d", len(resp.Results))
 		}
 
-		results = append(results, resp.Results...)
 		totalResults += len(resp.Results)
 
 		// Check has more
@@ -265,7 +263,6 @@ func TestStructuredSearchIterator(t *testing.T) {
 	pageCount = 0
 	requestCount = 0
 	totalResults := 0
-	var results []SearchResult
 	for i := 0; i < totalPages; i++ {
 		if !it.Next() {
 			break
@@ -281,7 +278,6 @@ func TestStructuredSearchIterator(t *testing.T) {
 			t.Errorf("Expected 2 results, got %d", len(resp.Results))
 		}
 
-		results = append(results, resp.Results...)
 		totalResults += len(resp.Results)
 
 		// Check has more

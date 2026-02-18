@@ -66,7 +66,7 @@ func (t *Transport) logResponse(resp *http.Response, duration time.Duration) {
 		if resp.Body != nil {
 			// Read the body and replace it with a new reader
 			respBody, _ := io.ReadAll(resp.Body)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			resp.Body = io.NopCloser(bytes.NewBuffer(respBody))
 
 			if len(respBody) > 0 {

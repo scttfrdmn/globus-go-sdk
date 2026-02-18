@@ -179,6 +179,7 @@ func TestConnectionPoolManager(t *testing.T) {
 		client := GetHTTPClientForService("clientTest", nil)
 		if client == nil {
 			t.Error("Expected non-nil HTTP client")
+			return
 		}
 
 		// Client should be from a connection pool

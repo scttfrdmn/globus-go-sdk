@@ -32,7 +32,7 @@ func (c *Config) WithCustomAPIVersion(service, version string) *Config {
 	}
 
 	// Ignore errors here, they will be caught when the service is used
-	vc.SetCustomVersion(service, version)
+	_ = vc.SetCustomVersion(service, version)
 
 	return c
 }

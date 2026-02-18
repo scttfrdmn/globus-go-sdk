@@ -348,7 +348,7 @@ func verifyPooledClientDoMethod(t *testing.T, client interfaces.PooledHTTPClient
 		t.Error("Request succeeded but returned nil response")
 	} else {
 		// Clean up
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 
 	// Test with nil request (should return error)

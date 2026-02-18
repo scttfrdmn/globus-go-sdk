@@ -62,7 +62,7 @@ func (c *Client) WaitForMemoryOptimizedTransfer(
 		options.ProgressCallback(completed, total, "Starting to wait for tasks")
 	}
 
-	// Check each task until all are complete or context is cancelled
+	// Check each task until all are complete or context is canceled
 	for {
 		select {
 		case <-ctx.Done():
@@ -112,7 +112,7 @@ func (c *Client) WaitForMemoryOptimizedTransfer(
 
 // Helper function to check if a task status indicates it's done
 func isDone(status string) bool {
-	return status == "SUCCEEDED" || status == "FAILED" || status == "CANCELLED"
+	return status == "SUCCEEDED" || status == "FAILED" || status == "CANCELED"
 }
 
 func TestMemoryOptimizedTransfer(t *testing.T) {

@@ -3,6 +3,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"log"
@@ -148,7 +149,7 @@ func analyzeToken(token, clientID, clientSecret string) {
 	// Validate token if client secret is available
 	if clientSecret != "" {
 		fmt.Println("Introspecting token...")
-		tokenInfo, err := authClient.IntrospectToken(nil, token)
+		tokenInfo, err := authClient.IntrospectToken(context.TODO(), token)
 		if err != nil {
 			fmt.Printf("❌ Error introspecting token: %v\n", err)
 			return

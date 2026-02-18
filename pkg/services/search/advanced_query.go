@@ -304,7 +304,7 @@ type StructuredSearchRequest struct {
 	Extra   map[string]interface{} `json:"-"`
 }
 
-// MarshalJSON custom JSON marshalling for StructuredSearchRequest
+// MarshalJSON custom JSON marshaling for StructuredSearchRequest
 func (r *StructuredSearchRequest) MarshalJSON() ([]byte, error) {
 	if r.Query == nil {
 		return nil, fmt.Errorf("query is required")

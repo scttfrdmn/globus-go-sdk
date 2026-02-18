@@ -198,7 +198,7 @@ func main() {
 				entry.Code,
 				entry.Description)
 
-			if entry.Details != nil && len(entry.Details) > 0 {
+			if len(entry.Details) > 0 {
 				detailsJSON, _ := json.MarshalIndent(entry.Details, "", "  ")
 				fmt.Printf("   Details: %s\n", detailsJSON)
 			}

@@ -566,7 +566,7 @@ func TestIntegration_ResumableTransferCancellation(t *testing.T) {
 		time.Sleep(1 * time.Second)
 
 		// Delete the checkpoint to simulate cancellation
-		t.Log("Cancelling transfer by deleting checkpoint")
+		t.Log("Canceling transfer by deleting checkpoint")
 		storage, err := transfer.NewFileCheckpointStorage("")
 		if err != nil {
 			t.Errorf("Failed to create checkpoint storage: %v", err)

@@ -275,9 +275,10 @@ func compareAPISignatures(oldSigs, newSigs *APISignatures, level CompatibilityLe
 				result.Changes = append(result.Changes, change)
 
 				// All changes are breaking for patch level
-				if level == PatchLevel {
+				switch level {
+				case PatchLevel:
 					result.BreakingChanges = append(result.BreakingChanges, change)
-				} else if level == MinorLevel {
+				case MinorLevel:
 					// For minor level, only some changes are breaking
 					if isBreakingChange(oldSig, newSig) {
 						change.ChangeType = "breaking"

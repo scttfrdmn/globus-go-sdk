@@ -126,7 +126,7 @@ func demonstrateUnifiedErrorHandling() {
 
 	// Add context to errors
 	authError.WithContext("endpoint", "/oauth2/token").WithRequestID("req-123")
-	transferError.WithContext("task_id", "abc-123").WithDetail("Task was cancelled")
+	transferError.WithContext("task_id", "abc-123").WithDetail("Task was canceled")
 	groupsError.WithContext("group_id", "group-456").WithRequestID("req-456")
 
 	// Handle errors consistently

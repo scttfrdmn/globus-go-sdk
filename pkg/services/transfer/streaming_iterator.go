@@ -128,7 +128,7 @@ func (s *StreamingFileIterator) Error() error {
 
 // Reset restarts the iteration from the beginning
 func (s *StreamingFileIterator) Reset() error {
-	s.Close()
+	_ = s.Close()
 
 	// Clear channels
 	s.resultChan = make(chan FileListItem, s.concurrency*100)

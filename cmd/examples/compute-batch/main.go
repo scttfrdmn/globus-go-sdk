@@ -418,11 +418,12 @@ func demonstrateTaskGroupExecution(ctx context.Context, client *compute.Client, 
 	// Print task results
 	fmt.Println("\nTask results:")
 	for taskID, taskStatus := range status.TaskStatus {
-		if taskStatus.Status == "COMPLETED" {
+		switch taskStatus.Status {
+		case "COMPLETED":
 			fmt.Printf("Task %s: Completed successfully\n", taskID)
-		} else if taskStatus.Status == "FAILED" {
+		case "FAILED":
 			fmt.Printf("Task %s: Failed with error: %s\n", taskID, taskStatus.Error)
-		} else {
+		default:
 			fmt.Printf("Task %s: Status=%s\n", taskID, taskStatus.Status)
 		}
 	}
@@ -559,11 +560,12 @@ func demonstrateWorkflow(ctx context.Context, client *compute.Client, endpointID
 	// Print task results
 	fmt.Println("\nWorkflow task results:")
 	for taskID, taskStatus := range status.TaskStatus {
-		if taskStatus.Status == "COMPLETED" {
+		switch taskStatus.Status {
+		case "COMPLETED":
 			fmt.Printf("Task %s: Completed successfully\n", taskID)
-		} else if taskStatus.Status == "FAILED" {
+		case "FAILED":
 			fmt.Printf("Task %s: Failed with error: %s\n", taskID, taskStatus.Error)
-		} else {
+		default:
 			fmt.Printf("Task %s: Status=%s\n", taskID, taskStatus.Status)
 		}
 	}
@@ -688,11 +690,12 @@ func demonstrateDependencyGraph(ctx context.Context, client *compute.Client, end
 	// Print node results
 	fmt.Println("\nDependency graph node results:")
 	for nodeID, nodeStatus := range status.NodeStatus {
-		if nodeStatus.Status == "COMPLETED" {
+		switch nodeStatus.Status {
+		case "COMPLETED":
 			fmt.Printf("Node %s: Completed successfully\n", nodeID)
-		} else if nodeStatus.Status == "FAILED" {
+		case "FAILED":
 			fmt.Printf("Node %s: Failed with error: %s\n", nodeID, nodeStatus.Error)
-		} else {
+		default:
 			fmt.Printf("Node %s: Status=%s\n", nodeID, nodeStatus.Status)
 		}
 	}

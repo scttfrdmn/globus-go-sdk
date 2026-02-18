@@ -149,7 +149,9 @@ func LoadScenariosByTag(t *testing.T, service string, tags ...string) []*TestSce
 func applyTemplate(scenario *TestScenario, template interface{}) {
 	if templateMap, ok := template.(map[string]interface{}); ok {
 		if responseBody, exists := templateMap["response_body"]; exists {
-			scenario.ResponseBody = responseBody.(map[string]interface{})
+			if rb, ok := responseBody.(map[string]interface{}); ok {
+			scenario.ResponseBody = rb
+		}
 		}
 		if statusCode, exists := templateMap["status_code"]; exists {
 			if code, ok := statusCode.(float64); ok {
@@ -351,7 +353,7 @@ func (m *MockResponseHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) 
 	w.WriteHeader(response.StatusCode)
 
 	if response.Body != nil {
-		json.NewEncoder(w).Encode(response.Body)
+		_ = json.NewEncoder(w).Encode(response.Body)
 	}
 }
 
@@ -397,10 +399,9 @@ func AssertSubscriptionEquals(t *testing.T, actual *groups.GroupSubscription, ex
 
 // MockSleepDisabled prevents actual sleep during tests (Python SDK pattern)
 func MockSleepDisabled() {
-	if GlobalTestConfig.MockSleep {
-		// In Go, we can't easily mock time.Sleep globally like Python
-		// But we can configure clients to use minimal timeouts
-	}
+	// In Go, we can't easily mock time.Sleep globally like Python
+	// But we can configure clients to use minimal timeouts
+	_ = GlobalTestConfig.MockSleep
 }
 
 // TestTimeout returns appropriate timeout for tests

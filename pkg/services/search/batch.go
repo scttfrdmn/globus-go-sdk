@@ -365,7 +365,7 @@ func (c *Client) WaitForTasks(
 		pendingTasks[taskID] = i
 	}
 
-	// Poll until all tasks are complete or context is cancelled
+	// Poll until all tasks are complete or context is canceled
 	ticker := time.NewTicker(pollInterval)
 	defer ticker.Stop()
 

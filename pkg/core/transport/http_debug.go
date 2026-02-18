@@ -50,7 +50,7 @@ func (t *DebugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	var reqBody []byte
 	if t.Trace && req.Body != nil {
 		reqBody, _ = io.ReadAll(req.Body)
-		req.Body.Close()
+		_ = req.Body.Close()
 		req.Body = io.NopCloser(bytes.NewBuffer(reqBody))
 	}
 
@@ -85,7 +85,7 @@ func (t *DebugTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		// Clone and log the response body
 		if resp.Body != nil {
 			respBody, _ := io.ReadAll(resp.Body)
-			resp.Body.Close()
+			_ = resp.Body.Close()
 			resp.Body = io.NopCloser(bytes.NewBuffer(respBody))
 
 			if len(respBody) > 0 {

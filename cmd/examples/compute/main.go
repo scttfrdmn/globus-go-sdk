@@ -210,11 +210,12 @@ func main() {
 		fmt.Printf("Task ID: %s\n", taskStatus.TaskID)
 		fmt.Printf("Status: %s\n", taskStatus.Status)
 
-		if taskStatus.Status == "SUCCESS" {
+		switch taskStatus.Status {
+		case "SUCCESS":
 			fmt.Printf("Result: %v\n", taskStatus.Result)
-		} else if taskStatus.Status == "FAILED" {
+		case "FAILED":
 			fmt.Printf("Exception: %s\n", taskStatus.Exception)
-		} else {
+		default:
 			fmt.Println("Task is still running or in another state")
 		}
 	}
@@ -229,7 +230,8 @@ func main() {
 			fmt.Printf("Task ID: %s\n", advTaskStatus.TaskID)
 			fmt.Printf("Status: %s\n", advTaskStatus.Status)
 
-			if advTaskStatus.Status == "SUCCESS" {
+			switch advTaskStatus.Status {
+			case "SUCCESS":
 				// Pretty print the result
 				resultJSON, err := json.MarshalIndent(advTaskStatus.Result, "", "  ")
 				if err != nil {
@@ -237,9 +239,9 @@ func main() {
 				} else {
 					fmt.Printf("Result:\n%s\n", resultJSON)
 				}
-			} else if advTaskStatus.Status == "FAILED" {
+			case "FAILED":
 				fmt.Printf("Exception: %s\n", advTaskStatus.Exception)
-			} else {
+			default:
 				fmt.Println("Task is still running or in another state")
 			}
 		}
@@ -289,9 +291,10 @@ func main() {
 				}
 
 				fmt.Printf("Task %d (%s): Status = %s\n", i+1, taskID, status.Status)
-				if status.Status == "SUCCESS" {
+				switch status.Status {
+				case "SUCCESS":
 					fmt.Printf("  Result: %v\n", status.Result)
-				} else if status.Status == "FAILED" {
+				case "FAILED":
 					fmt.Printf("  Exception: %s\n", status.Exception)
 				}
 			}

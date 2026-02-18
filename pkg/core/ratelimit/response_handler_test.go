@@ -79,14 +79,14 @@ func TestExtractRateLimitInfo(t *testing.T) {
 	// Test with no rate limit headers
 	resp.Header = http.Header{}
 
-	info, found = ExtractRateLimitInfo(resp)
+	_, found = ExtractRateLimitInfo(resp)
 
 	if found {
 		t.Error("Expected to not find rate limit info, but info was found")
 	}
 
 	// Test with nil response
-	info, found = ExtractRateLimitInfo(nil)
+	_, found = ExtractRateLimitInfo(nil)
 
 	if found {
 		t.Error("Expected to not find rate limit info with nil response, but info was found")

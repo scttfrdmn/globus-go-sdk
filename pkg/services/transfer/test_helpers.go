@@ -170,7 +170,7 @@ func (c *Client) WaitForTaskCompletion(ctx context.Context, taskID string, inter
 			}
 
 			// Check if the task is done
-			if task.Status == "SUCCEEDED" || task.Status == "FAILED" || task.Status == "CANCELLED" {
+			if task.Status == "SUCCEEDED" || task.Status == "FAILED" || task.Status == "CANCELED" {
 				return task, nil
 			}
 		}

@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -28,14 +27,6 @@ func init() {
 	_ = godotenv.Load("../../../.env.test")
 	_ = godotenv.Load("../../.env.test")
 	_ = godotenv.Load(".env.test")
-}
-
-// min returns the minimum of two integers
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
 }
 
 // This is a comprehensive integration test for the Transfer service.
@@ -370,14 +361,14 @@ func TestComprehensiveTransfer(t *testing.T) {
 	testContent := fmt.Sprintf("This is a test file created at %s for Globus Transfer SDK integration testing.", timestamp)
 
 	// Create a temporary local file
-	tempDir, err := ioutil.TempDir("", "globus-transfer-test")
+	tempDir, err := os.MkdirTemp("", "globus-transfer-test")
 	if err != nil {
 		t.Fatalf("Failed to create temp directory: %v", err)
 	}
 	defer os.RemoveAll(tempDir)
 
 	localFilePath := filepath.Join(tempDir, testFileName)
-	err = ioutil.WriteFile(localFilePath, []byte(testContent), 0644)
+	err = os.WriteFile(localFilePath, []byte(testContent), 0644)
 	if err != nil {
 		t.Fatalf("Failed to create local test file: %v", err)
 	}

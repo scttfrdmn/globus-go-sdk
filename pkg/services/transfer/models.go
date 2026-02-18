@@ -96,7 +96,7 @@ type Task struct {
 	DataType               string                 `json:"data_type"`
 	TaskID                 string                 `json:"task_id"`
 	Type                   string                 `json:"type"`   // TRANSFER or DELETE
-	Status                 string                 `json:"status"` // ACTIVE, INACTIVE, FAILED, SUCCEEDED, CANCELLED
+	Status                 string                 `json:"status"` // ACTIVE, INACTIVE, FAILED, SUCCEEDED, CANCELED
 	Label                  string                 `json:"label,omitempty"`
 	SourceEndpointID       string                 `json:"source_endpoint_id,omitempty"`
 	SourceEndpointDisplay  string                 `json:"source_endpoint_display_name,omitempty"`
@@ -149,7 +149,7 @@ type TaskList struct {
 type ListTasksOptions struct {
 	FilterTaskID         string    `url:"filter_task_id,omitempty"`
 	FilterType           string    `url:"filter_type,omitempty"`   // TRANSFER or DELETE
-	FilterStatus         string    `url:"filter_status,omitempty"` // ACTIVE, INACTIVE, FAILED, SUCCEEDED, CANCELLED
+	FilterStatus         string    `url:"filter_status,omitempty"` // ACTIVE, INACTIVE, FAILED, SUCCEEDED, CANCELED
 	TaskType             string    `url:"task_type,omitempty"`     // Alias for FilterType
 	Status               string    `url:"status,omitempty"`        // Alias for FilterStatus
 	FilterCompletedSince time.Time `url:"filter_completion_time.min,omitempty"`

@@ -118,7 +118,7 @@ func main() {
 		if err := transferClient.CancelResumableTransfer(ctx, *cancelID); err != nil {
 			log.Fatalf("Failed to cancel transfer: %v", err)
 		}
-		fmt.Printf("Transfer with checkpoint ID %s has been cancelled.\n", *cancelID)
+		fmt.Printf("Transfer with checkpoint ID %s has been canceled.\n", *cancelID)
 		return
 	}
 

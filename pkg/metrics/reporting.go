@@ -218,7 +218,7 @@ func (r *TextReporter) ReportProgress(w io.Writer, metrics *TransferMetrics) err
 		if metrics.EstimatedTimeLeft > 0 {
 			status = fmt.Sprintf("%s, %s left", progressBar, formatDuration(metrics.EstimatedTimeLeft))
 		} else {
-			status = fmt.Sprintf("%s", progressBar)
+			status = progressBar
 		}
 	} else {
 		status = fmt.Sprintf("%s, %s", progressBar, metrics.Status)

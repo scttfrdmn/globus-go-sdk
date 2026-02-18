@@ -142,7 +142,7 @@ func (t *Transport) Request(
 	}
 	urlStr += strings.TrimPrefix(path, "/")
 
-	if query != nil && len(query) > 0 {
+	if len(query) > 0 {
 		urlStr += "?" + query.Encode()
 	}
 
@@ -165,11 +165,9 @@ func (t *Transport) Request(
 	}
 
 	// Add headers
-	if headers != nil {
-		for key, values := range headers {
-			for _, value := range values {
-				req.Header.Add(key, value)
-			}
+	for key, values := range headers {
+		for _, value := range values {
+			req.Header.Add(key, value)
 		}
 	}
 
@@ -302,7 +300,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 // DecodeResponse decodes the response body into the specified type
 func DecodeResponse(resp *http.Response, v interface{}) error {
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {

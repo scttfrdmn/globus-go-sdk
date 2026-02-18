@@ -129,15 +129,16 @@ func TestBatchGetFlows(t *testing.T) {
 		// Extract flow ID from path - be more flexible with path matching
 		flowID := ""
 		path := r.URL.Path
-		if path == "/flows/flow-1" {
+		switch path {
+		case "/flows/flow-1":
 			flowID = "flow-1"
-		} else if path == "/flows/flow-2" {
+		case "/flows/flow-2":
 			flowID = "flow-2"
-		} else if path == "/flows/flow-3" {
+		case "/flows/flow-3":
 			flowID = "flow-3"
-		} else if path == "/flows/error-id" {
+		case "/flows/error-id":
 			flowID = "error-id"
-		} else {
+		default:
 			t.Errorf("Unexpected path: %s", r.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
 			return

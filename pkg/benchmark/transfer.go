@@ -63,7 +63,7 @@ func BenchmarkTransfer(
 		output = os.Stdout
 	}
 
-	fmt.Fprintf(output, "Starting transfer benchmark with %d files of %.2f MB each (%.2f MB total)\n",
+	_, _ = fmt.Fprintf(output, "Starting transfer benchmark with %d files of %.2f MB each (%.2f MB total)\n",
 		config.FileCount, config.FileSizeMB, float64(config.FileCount)*config.FileSizeMB)
 
 	// Create a result to be populated
@@ -75,7 +75,7 @@ func BenchmarkTransfer(
 
 	// Generate test data if needed
 	if config.GenerateTestData {
-		fmt.Fprintf(output, "Generating test data on source endpoint...\n")
+		_, _ = fmt.Fprintf(output, "Generating test data on source endpoint...\n")
 		if err := generateTestData(ctx, client, config, output); err != nil {
 			return nil, fmt.Errorf("failed to generate test data: %w", err)
 		}
@@ -106,7 +106,7 @@ func BenchmarkTransfer(
 	}
 
 	// Submit the transfer
-	fmt.Fprintf(output, "Submitting transfer task...\n")
+	_, _ = fmt.Fprintf(output, "Submitting transfer task...\n")
 
 	var submitResult *transfer.TaskResponse
 
@@ -142,10 +142,10 @@ func BenchmarkTransfer(
 	}
 
 	result.TaskID = submitResult.TaskID
-	fmt.Fprintf(output, "Transfer task submitted with ID: %s\n", result.TaskID)
+	_, _ = fmt.Fprintf(output, "Transfer task submitted with ID: %s\n", result.TaskID)
 
 	// Wait for the transfer to complete
-	fmt.Fprintf(output, "Waiting for transfer to complete...\n")
+	_, _ = fmt.Fprintf(output, "Waiting for transfer to complete...\n")
 	_, err = waitForTaskCompletion(ctx, client, submitResult.TaskID, output)
 	if err != nil {
 		return nil, fmt.Errorf("error waiting for task completion: %w", err)
@@ -174,18 +174,18 @@ func BenchmarkTransfer(
 	result.SuccessRate = float64(taskInfo.FilesTransferred) / float64(config.FileCount) * 100
 
 	// Display results
-	fmt.Fprintf(output, "\nBenchmark Results:\n")
-	fmt.Fprintf(output, "  Files: %d (%.2f MB each, %.2f MB total)\n",
+	_, _ = fmt.Fprintf(output, "\nBenchmark Results:\n")
+	_, _ = fmt.Fprintf(output, "  Files: %d (%.2f MB each, %.2f MB total)\n",
 		config.FileCount, config.FileSizeMB, result.TotalSizeMB)
-	fmt.Fprintf(output, "  Time: %s\n", elapsedTime)
-	fmt.Fprintf(output, "  Speed: %.2f MB/s\n", result.TransferSpeedMBs)
-	fmt.Fprintf(output, "  Success Rate: %.2f%%\n", result.SuccessRate)
+	_, _ = fmt.Fprintf(output, "  Time: %s\n", elapsedTime)
+	_, _ = fmt.Fprintf(output, "  Speed: %.2f MB/s\n", result.TransferSpeedMBs)
+	_, _ = fmt.Fprintf(output, "  Success Rate: %.2f%%\n", result.SuccessRate)
 
 	// Clean up if requested
 	if config.DeleteAfter {
-		fmt.Fprintf(output, "\nCleaning up test data...\n")
+		_, _ = fmt.Fprintf(output, "\nCleaning up test data...\n")
 		if err := cleanupTestData(ctx, client, config, output); err != nil {
-			fmt.Fprintf(output, "Warning: Failed to clean up test data: %v\n", err)
+			_, _ = fmt.Fprintf(output, "Warning: Failed to clean up test data: %v\n", err)
 		}
 	}
 
@@ -200,8 +200,8 @@ func generateTestData(
 	config *TransferBenchmarkConfig,
 	output io.Writer,
 ) error {
-	fmt.Fprintf(output, "Note: Test data generation is disabled in this version\n")
-	fmt.Fprintf(output, "Please create test data manually at %s:%s/benchmark\n",
+	_, _ = fmt.Fprintf(output, "Note: Test data generation is disabled in this version\n")
+	_, _ = fmt.Fprintf(output, "Please create test data manually at %s:%s/benchmark\n",
 		config.SourceEndpoint, config.SourcePath)
 
 	return nil
@@ -214,8 +214,8 @@ func cleanupTestData(
 	config *TransferBenchmarkConfig,
 	output io.Writer,
 ) error {
-	fmt.Fprintf(output, "Note: Test data cleanup is disabled in this version\n")
-	fmt.Fprintf(output, "Please remove test data manually from %s:%s/benchmark\n",
+	_, _ = fmt.Fprintf(output, "Note: Test data cleanup is disabled in this version\n")
+	_, _ = fmt.Fprintf(output, "Please remove test data manually from %s:%s/benchmark\n",
 		config.SourceEndpoint, config.SourcePath)
 
 	return nil
@@ -242,17 +242,17 @@ func waitForTaskCompletion(
 		// Check if the task is complete
 		if task.Status == "SUCCEEDED" {
 			if output != nil {
-				fmt.Fprintf(output, "Task succeeded\n")
+				_, _ = fmt.Fprintf(output, "Task succeeded\n")
 			}
 			return true, nil
 		} else if task.Status == "FAILED" {
 			if output != nil {
-				fmt.Fprintf(output, "Task failed: %s\n", task.Status)
+				_, _ = fmt.Fprintf(output, "Task failed: %s\n", task.Status)
 			}
 			return false, nil
 		} else if task.Status != "ACTIVE" {
 			if output != nil {
-				fmt.Fprintf(output, "Task in unexpected state: %s\n", task.Status)
+				_, _ = fmt.Fprintf(output, "Task in unexpected state: %s\n", task.Status)
 			}
 			return false, nil
 		}
@@ -260,10 +260,10 @@ func waitForTaskCompletion(
 		// Task is still running, log progress if output is provided
 		if output != nil {
 			if task.BytesTransferred > 0 {
-				fmt.Fprintf(output, "Progress: %d bytes transferred\n",
+				_, _ = fmt.Fprintf(output, "Progress: %d bytes transferred\n",
 					task.BytesTransferred)
 			} else {
-				fmt.Fprintf(output, "Task is processing (status: %s)\n", task.Status)
+				_, _ = fmt.Fprintf(output, "Task is processing (status: %s)\n", task.Status)
 			}
 		}
 

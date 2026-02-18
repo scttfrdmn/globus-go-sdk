@@ -9,7 +9,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/url"
 	"os"
@@ -25,33 +24,6 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
 )
 
-// testAuthorizer implements the authorizer interface for testing
-type testAuthorizer struct {
-	token string
-}
-
-// GetAuthorizationHeader returns the authorization header value
-func (a *testAuthorizer) GetAuthorizationHeader(ctx ...context.Context) (string, error) {
-	return "Bearer " + a.token, nil
-}
-
-// IsValid returns whether the authorization is valid
-func (a *testAuthorizer) IsValid() bool {
-	return a.token != ""
-}
-
-// GetToken returns the token
-func (a *testAuthorizer) GetToken() string {
-	return a.token
-}
-
-// min returns the minimum of two integers
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
 
 func init() {
 	// Load environment variables from .env.test file
@@ -478,7 +450,7 @@ func TestIntegration_TransferFlow(t *testing.T) {
 
 	// 5. Create a test file in source directory
 	// First create a local temporary file
-	tempFile, err := ioutil.TempFile("", "globus-transfer-test-*.txt")
+	tempFile, err := os.CreateTemp("", "globus-transfer-test-*.txt")
 	if err != nil {
 		t.Fatalf("Failed to create temporary file: %v", err)
 	}
@@ -1097,13 +1069,13 @@ func TestIntegration_TaskManagement(t *testing.T) {
 		} else {
 			t.Log("Task cancellation request submitted")
 
-			// Verify task was cancelled
-			var cancelledTask *transfer.Task
+			// Verify task was canceled
+			var canceledTask *transfer.Task
 			err = ratelimit.RetryWithBackoff(
 				ctx,
 				func(ctx context.Context) error {
 					var getErr error
-					cancelledTask, getErr = client.GetTask(ctx, taskResponse.TaskID)
+					canceledTask, getErr = client.GetTask(ctx, taskResponse.TaskID)
 					return getErr
 				},
 				ratelimit.DefaultBackoff(),
@@ -1111,10 +1083,10 @@ func TestIntegration_TaskManagement(t *testing.T) {
 			)
 
 			if err != nil {
-				t.Fatalf("Failed to get cancelled task: %v", err)
+				t.Fatalf("Failed to get canceled task: %v", err)
 			}
 
-			t.Logf("Task status after cancellation request: %s", cancelledTask.Status)
+			t.Logf("Task status after cancellation request: %s", canceledTask.Status)
 		}
 	} else {
 		t.Logf("Task not in ACTIVE state, skipping cancellation test")

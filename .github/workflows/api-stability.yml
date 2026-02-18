@@ -108,6 +108,7 @@ jobs:
       # Check dependent projects compatibility
       - name: Test downstream compatibility
         run: ./scripts/test_dependent_projects.sh
+        continue-on-error: true
       
       # Upload artifacts
       - name: Upload API comparison

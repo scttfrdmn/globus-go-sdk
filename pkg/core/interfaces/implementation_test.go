@@ -43,7 +43,7 @@ func TestAuthorizerImplementsAuthInterface(t *testing.T) {
 	staticAuth := authorizers.NewStaticTokenAuthorizer("test-token")
 
 	// Verify the basic functionality is equivalent
-	if got, _ := staticAuth.GetAuthorizationHeader(nil); got != "Bearer test-token" {
+	if got, _ := staticAuth.GetAuthorizationHeader(context.TODO()); got != "Bearer test-token" {
 		t.Errorf("StaticTokenAuthorizer.GetAuthorizationHeader() = %q, want %q", got, "Bearer test-token")
 	}
 }

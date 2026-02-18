@@ -252,10 +252,10 @@ func (p *ProgressBar) refresh() {
 	}
 
 	// Print the line with a carriage return (to stay on the same line)
-	fmt.Fprintf(p.writer, "\r%s", line)
+	_, _ = fmt.Fprintf(p.writer, "\r%s", line)
 
 	// Add a newline if completed and not hiding
 	if p.completed && !p.hideAfterComplete {
-		fmt.Fprintln(p.writer)
+		_, _ = fmt.Fprintln(p.writer)
 	}
 }

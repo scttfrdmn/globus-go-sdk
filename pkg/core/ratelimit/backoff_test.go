@@ -128,7 +128,7 @@ func TestRetryWithBackoff(t *testing.T) {
 	}
 
 	start := time.Now()
-	err = RetryWithBackoff(ctx, fn, backoff, shouldRetry)
+	_ = RetryWithBackoff(ctx, fn, backoff, shouldRetry)
 	elapsed := time.Since(start)
 
 	// We expect a fixed number of attempts, but the exact number can vary

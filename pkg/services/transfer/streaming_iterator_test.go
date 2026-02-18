@@ -94,14 +94,12 @@ func TestFileIteratorInterface(t *testing.T) {
 		}
 
 		// Read half the files
-		var firstHalf []FileListItem
 		halfCount := len(files) / 2
 		for i := 0; i < halfCount; i++ {
-			file, ok := iterator.Next()
+			_, ok := iterator.Next()
 			if !ok {
 				t.Fatalf("Unexpected end of iteration")
 			}
-			firstHalf = append(firstHalf, file)
 		}
 
 		// Reset the iterator

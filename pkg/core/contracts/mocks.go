@@ -431,7 +431,9 @@ func (p *MockConnectionPool) SetTimeout(timeout time.Duration) {
 
 // CloseIdleConnections closes all idle connections
 func (p *MockConnectionPool) CloseIdleConnections() {
-	p.Client.Transport.(*http.Transport).CloseIdleConnections()
+	if t, ok := p.Client.Transport.(*http.Transport); ok {
+		t.CloseIdleConnections()
+	}
 }
 
 // GetTransport returns the transport

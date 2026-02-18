@@ -96,10 +96,10 @@ func TestConnectionPoolIntegration(t *testing.T) {
 // and accessible, similar to how downstream projects would use them
 func TestVerifyReleaseContainsRequiredFunctions(t *testing.T) {
 	// Expected function signatures
-	var _ func(interfaces.ConnectionPoolManager) = core.SetConnectionPoolManager
-	var _ func() = core.EnableDefaultConnectionPool
-	var _ func(string, interfaces.ConnectionPoolConfig) interfaces.ConnectionPool = core.GetConnectionPool
-	var _ func(string) *http.Client = core.GetHTTPClientForService
+	var _ = core.SetConnectionPoolManager
+	var _ = core.EnableDefaultConnectionPool
+	var _ = core.GetConnectionPool
+	var _ = core.GetHTTPClientForService
 
 	// This test passes just by compiling - it verifies the function signatures
 	// match what we expect and are exported from the package

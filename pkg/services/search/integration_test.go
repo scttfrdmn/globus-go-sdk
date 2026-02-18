@@ -385,7 +385,7 @@ func TestIntegration_ExistingIndex(t *testing.T) {
 
 		// Log more info about the result
 		t.Logf("First result subject: %s", firstResult.Subject)
-		if firstResult.Content != nil && len(firstResult.Content) > 0 {
+		if len(firstResult.Content) > 0 {
 			// Log a few fields from the content if available
 			t.Log("First result has content data")
 		}

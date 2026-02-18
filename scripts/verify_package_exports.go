@@ -1,3 +1,5 @@
+//go:build ignore
+
 // SPDX-License-Identifier: Apache-2.0
 // SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 //
@@ -6,7 +8,7 @@
 // exports that would only be noticed during compilation of dependent projects.
 //
 // Run with: go run scripts/verify_package_exports.go
-package scripts
+package main
 
 import (
 	"fmt"

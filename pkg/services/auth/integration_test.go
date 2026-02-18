@@ -149,10 +149,7 @@ func TestIntegration_TokenUtils(t *testing.T) {
 		},
 		ratelimit.DefaultBackoff(),
 		func(err error) bool {
-			if err == nil {
-				return false
-			}
-			return true
+			return err != nil
 		},
 	)
 
@@ -177,10 +174,7 @@ func TestIntegration_TokenUtils(t *testing.T) {
 		},
 		ratelimit.DefaultBackoff(),
 		func(err error) bool {
-			if err == nil {
-				return false
-			}
-			return true
+			return err != nil
 		},
 	)
 
@@ -199,10 +193,7 @@ func TestIntegration_TokenUtils(t *testing.T) {
 		},
 		ratelimit.DefaultBackoff(),
 		func(err error) bool {
-			if err == nil {
-				return false
-			}
-			return true
+			return err != nil
 		},
 	)
 
@@ -228,10 +219,7 @@ func TestIntegration_TokenUtils(t *testing.T) {
 		},
 		ratelimit.DefaultBackoff(),
 		func(err error) bool {
-			if err == nil {
-				return false
-			}
-			return true
+			return err != nil
 		},
 	)
 
@@ -280,10 +268,7 @@ func TestIntegration_ClientCredentialsAuthorizer(t *testing.T) {
 		},
 		ratelimit.DefaultBackoff(),
 		func(err error) bool {
-			if err == nil {
-				return false
-			}
-			return true
+			return err != nil
 		},
 	)
 
@@ -331,10 +316,7 @@ func TestIntegration_StaticTokenAuthorizer(t *testing.T) {
 		},
 		ratelimit.DefaultBackoff(),
 		func(err error) bool {
-			if err == nil {
-				return false
-			}
-			return true
+			return err != nil
 		},
 	)
 

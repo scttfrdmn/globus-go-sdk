@@ -20,6 +20,9 @@ linters:
       - path: _test\.go
         linters:
           - errcheck
+      - path: ^(cmd|examples)/
+        linters:
+          - errcheck
     paths:
       - vendor
       - ".*\\.pb\\.go$"

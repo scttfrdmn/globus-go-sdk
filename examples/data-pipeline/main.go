@@ -601,39 +601,6 @@ func (p *Pipeline) Shutdown() {
 	p.cancelFunc()
 }
 
-// Helper function to check if an error is retryable
-func isRetryableError(err error) bool {
-	if err == nil {
-		return false
-	}
-
-	// Check for context cancellation
-	if errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
-		return false
-	}
-
-	// Check for specific retryable errors
-	knownRetryableErrors := []string{
-		"connection reset",
-		"timeout",
-		"temporary",
-		"deadline exceeded",
-		"too many requests",
-		"rate limit",
-		"503",
-		"429",
-	}
-
-	errStr := strings.ToLower(err.Error())
-	for _, retryable := range knownRetryableErrors {
-		if strings.Contains(errStr, retryable) {
-			return true
-		}
-	}
-
-	return false
-}
-
 // Helper function to load configuration from environment variables
 func loadConfig() (config, error) {
 	cfg := config{

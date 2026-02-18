@@ -68,7 +68,7 @@ func verifyRequestMethod(t *testing.T, transport interfaces.Transport) {
 		t.Logf("Request failed with error: %v (this may be expected)", err)
 	} else if resp != nil {
 		// Clean up if we got a response
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 
 	// Test with an invalid method
@@ -99,7 +99,7 @@ func verifyGetMethod(t *testing.T, transport interfaces.Transport) {
 		t.Logf("Get failed with error: %v (this may be expected)", err)
 	} else if resp != nil {
 		// Clean up
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 }
 
@@ -119,7 +119,7 @@ func verifyPostMethod(t *testing.T, transport interfaces.Transport) {
 		t.Logf("Post failed with error: %v (this may be expected)", err)
 	} else if resp != nil {
 		// Clean up
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 }
 
@@ -139,7 +139,7 @@ func verifyPutMethod(t *testing.T, transport interfaces.Transport) {
 		t.Logf("Put failed with error: %v (this may be expected)", err)
 	} else if resp != nil {
 		// Clean up
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 }
 
@@ -158,7 +158,7 @@ func verifyDeleteMethod(t *testing.T, transport interfaces.Transport) {
 		t.Logf("Delete failed with error: %v (this may be expected)", err)
 	} else if resp != nil {
 		// Clean up
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 }
 
@@ -178,7 +178,7 @@ func verifyPatchMethod(t *testing.T, transport interfaces.Transport) {
 		t.Logf("Patch failed with error: %v (this may be expected)", err)
 	} else if resp != nil {
 		// Clean up
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 }
 
@@ -199,7 +199,7 @@ func verifyRoundTripMethod(t *testing.T, transport interfaces.Transport) {
 		t.Logf("RoundTrip failed with error: %v (this may be expected)", err)
 	} else if resp != nil {
 		// Clean up
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 
 	// Test with nil request (should return error)

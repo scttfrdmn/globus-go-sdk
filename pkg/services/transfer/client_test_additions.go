@@ -58,7 +58,7 @@ func TestGetTask(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}
 
 	server, client := setupMockServerForTests(handler)
@@ -109,13 +109,13 @@ func TestCancelTask(t *testing.T) {
 		// Return mock response
 		response := TaskResponse{
 			Code:    "Canceled",
-			Message: "The task has been cancelled",
+			Message: "The task has been canceled",
 			TaskID:  "task-123456",
 		}
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}
 
 	server, client := setupMockServerForTests(handler)
@@ -132,8 +132,8 @@ func TestCancelTask(t *testing.T) {
 		t.Errorf("Code = %s, want 'Canceled'", result.Code)
 	}
 
-	if result.Message != "The task has been cancelled" {
-		t.Errorf("Message = %s, want 'The task has been cancelled'", result.Message)
+	if result.Message != "The task has been canceled" {
+		t.Errorf("Message = %s, want 'The task has been canceled'", result.Message)
 	}
 
 	if result.TaskID != "task-123456" {
@@ -176,7 +176,7 @@ func TestListTasks(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(response)
 	}
 
 	server, client := setupMockServerForTests(handler)
@@ -224,7 +224,7 @@ func TestErrorHandling(t *testing.T) {
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(errorResp)
+		_ = json.NewEncoder(w).Encode(errorResp)
 	}
 
 	server, client := setupMockServerForTests(handler)

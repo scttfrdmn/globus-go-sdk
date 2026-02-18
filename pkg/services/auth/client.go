@@ -159,7 +159,7 @@ func (c *Client) tokenRequest(ctx context.Context, form url.Values) (*TokenRespo
 	if err != nil {
 		return nil, fmt.Errorf("token request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Check for error response
 	if resp.StatusCode != http.StatusOK {
@@ -216,7 +216,7 @@ func (c *Client) IntrospectToken(ctx context.Context, token string) (*TokenInfo,
 	if err != nil {
 		return nil, fmt.Errorf("introspect request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Check for error response
 	if resp.StatusCode != http.StatusOK {
@@ -270,7 +270,7 @@ func (c *Client) RevokeToken(ctx context.Context, token string) error {
 	if err != nil {
 		return fmt.Errorf("revoke request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Check for error response
 	if resp.StatusCode != http.StatusOK {

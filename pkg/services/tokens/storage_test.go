@@ -345,11 +345,3 @@ func TestFileStorageErrors(t *testing.T) {
 	}
 }
 
-// Helper function to check if two time values are close enough.
-func isTimeClose(t1, t2 time.Time, threshold time.Duration) bool {
-	diff := t1.Sub(t2)
-	if diff < 0 {
-		diff = -diff
-	}
-	return diff < threshold
-}

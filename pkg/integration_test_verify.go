@@ -134,14 +134,14 @@ func verifyTransferEndpoints(t *testing.T, config *SDKConfig, sourceEndpointID, 
 	fmt.Printf("✅ Destination endpoint accessible: %s\n", destEndpoint.DisplayName)
 
 	// Check if endpoints have activation requirements
-	if sourceEndpoint.ActivationRequirements != nil && len(sourceEndpoint.ActivationRequirements) > 0 {
+	if len(sourceEndpoint.ActivationRequirements) > 0 {
 		fmt.Println("⚠️  Source endpoint has activation requirements. Some transfer tests may fail.")
 		fmt.Println("   Activate the endpoint in the Globus web interface or using the SDK.")
 	} else {
 		fmt.Println("✅ Source endpoint appears to be activated")
 	}
 
-	if destEndpoint.ActivationRequirements != nil && len(destEndpoint.ActivationRequirements) > 0 {
+	if len(destEndpoint.ActivationRequirements) > 0 {
 		fmt.Println("⚠️  Destination endpoint has activation requirements. Some transfer tests may fail.")
 		fmt.Println("   Activate the endpoint in the Globus web interface or using the SDK.")
 	} else {

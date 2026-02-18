@@ -99,9 +99,7 @@ func ParseVersion(service, version string) (*APIVersion, error) {
 	}
 
 	// Strip leading 'v' if present
-	if strings.HasPrefix(version, "v") {
-		version = version[1:]
-	}
+	version = strings.TrimPrefix(version, "v")
 
 	// Check for beta flag
 	beta := false

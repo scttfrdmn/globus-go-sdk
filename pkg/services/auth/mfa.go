@@ -157,7 +157,7 @@ func (c *Client) GetMFAChallenge(ctx context.Context, challengeID string) (*MFAC
 	if err != nil {
 		return nil, fmt.Errorf("MFA challenge request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Check for error response
 	if resp.StatusCode != http.StatusOK {
@@ -201,7 +201,7 @@ func (c *Client) RespondToMFAChallenge(ctx context.Context, response *MFARespons
 	if err != nil {
 		return nil, fmt.Errorf("MFA response request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Check for error response
 	if resp.StatusCode != http.StatusOK {
@@ -333,7 +333,7 @@ func (c *Client) tokenRequestMFA(ctx context.Context, form url.Values) (*TokenRe
 	if err != nil {
 		return nil, fmt.Errorf("token request failed: %w", err)
 	}
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 
 	// Check for error response
 	if resp.StatusCode != http.StatusOK {
