@@ -213,8 +213,10 @@ func (cb *CircuitBreaker) transitionState(newState CircuitBreakerState) {
 		cb.failures = 0
 	}
 
-	// Notify of state change if callback is provided
+	// Notify of state change if callback is provided.
+	// Called synchronously while holding the lock; callbacks must not
+	// call circuit breaker methods to avoid deadlock.
 	if cb.options.OnStateChange != nil {
-		go cb.options.OnStateChange(prevState, newState)
+		cb.options.OnStateChange(prevState, newState)
 	}
 }

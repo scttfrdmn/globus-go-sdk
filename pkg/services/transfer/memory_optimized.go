@@ -143,8 +143,13 @@ func (c *Client) SubmitMemoryOptimizedTransfer(
 					continue
 				}
 
+				// Capture batch number inside lock to avoid race
+				mu.Lock()
+				currentBatch := batchCount
+				mu.Unlock()
+
 				// Create transfer task label
-				label := fmt.Sprintf("%s (Batch %d)", options.Label, batchCount+1)
+				label := fmt.Sprintf("%s (Batch %d)", options.Label, currentBatch+1)
 
 				// Create the transfer task request
 				request := &TransferTaskRequest{
@@ -204,8 +209,9 @@ func (c *Client) SubmitMemoryOptimizedTransfer(
 			break
 		}
 
-		// Increment the total count
+		mu.Lock()
 		totalFiles++
+		mu.Unlock()
 
 		// Add to the current batch
 		fileBatch = append(fileBatch, file)
@@ -216,15 +222,20 @@ func (c *Client) SubmitMemoryOptimizedTransfer(
 			fileBatch = make([]FileListItem, 0, options.BatchSize)
 		}
 
-		// Increment the processed count
+		mu.Lock()
 		processedCount++
+		pc := processedCount
+		mu.Unlock()
 
 		// Update progress
-		if options.ProgressCallback != nil && processedCount%100 == 0 {
+		if options.ProgressCallback != nil && pc%100 == 0 {
+			mu.Lock()
+			bt := result.BytesTransferred
+			mu.Unlock()
 			options.ProgressCallback(
-				int(processedCount),
+				int(pc),
 				totalFiles,
-				result.BytesTransferred,
+				bt,
 				"Scanning files...",
 			)
 		}

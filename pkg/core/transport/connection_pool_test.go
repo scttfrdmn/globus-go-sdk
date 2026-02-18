@@ -212,8 +212,9 @@ func TestConnectionPoolTransport(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		requestMutex.Lock()
 		requestCount++
+		count := requestCount
 		requestMutex.Unlock()
-		fmt.Fprintf(w, "Response #%d", requestCount)
+		fmt.Fprintf(w, "Response #%d", count)
 	}))
 	defer server.Close()
 

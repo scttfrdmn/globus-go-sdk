@@ -6,7 +6,6 @@ import (
 	"context"
 	"fmt"
 	"path"
-	"sync"
 	"time"
 )
 
@@ -151,98 +150,39 @@ func (c *Client) SubmitRecursiveTransfer(
 	return result, nil
 }
 
-// listRecursive lists files recursively in a directory
+// listRecursive lists files recursively in a directory using sequential BFS traversal.
 func (c *Client) listRecursive(
 	ctx context.Context,
 	endpointID, dirPath string,
 	options *RecursiveTransferOptions,
 ) ([]FileListItem, error) {
-	// Start with the root directory
 	var allFiles []FileListItem
-	var dirs = []string{dirPath}
-	var mutex sync.Mutex
-	var wg sync.WaitGroup
-	var semaphore = make(chan struct{}, options.MaxConcurrentListings)
+	dirs := []string{dirPath}
 
-	// Keep track of errors
-	var errorOccurred bool
-	var errorMutex sync.Mutex
-	var firstError error
+	for len(dirs) > 0 {
+		// Check for context cancellation
+		if err := ctx.Err(); err != nil {
+			return nil, err
+		}
 
-	// Process each directory
-	for len(dirs) > 0 && !errorOccurred {
-		// Get the next directory to process
 		currentDir := dirs[0]
 		dirs = dirs[1:]
 
-		// Use a semaphore to limit concurrency
-		semaphore <- struct{}{}
-		wg.Add(1)
+		listing, err := c.ListFiles(ctx, endpointID, currentDir, &ListFileOptions{ShowHidden: true})
+		if err != nil {
+			return nil, fmt.Errorf("failed to list directory %s: %w", currentDir, err)
+		}
 
-		go func(dir string) {
-			defer func() {
-				<-semaphore
-				wg.Done()
-			}()
-
-			// Check if we already hit an error
-			errorMutex.Lock()
-			if errorOccurred {
-				errorMutex.Unlock()
-				return
+		for _, file := range listing.Data {
+			allFiles = append(allFiles, file)
+			if file.Type == "dir" && options.Recursive {
+				dirs = append(dirs, path.Join(currentDir, file.Name))
 			}
-			errorMutex.Unlock()
+		}
 
-			// List files in the directory
-			listOptions := &ListFileOptions{
-				ShowHidden: true,
-			}
-			listing, err := c.ListFiles(ctx, endpointID, dir, listOptions)
-			if err != nil {
-				errorMutex.Lock()
-				errorOccurred = true
-				firstError = fmt.Errorf("failed to list directory %s: %w", dir, err)
-				errorMutex.Unlock()
-				return
-			}
-
-			// Process files and collect subdirectories
-			var newDirs []string
-			mutex.Lock()
-			for _, file := range listing.Data {
-				// Add the file to our list
-				allFiles = append(allFiles, file)
-
-				// If it's a directory and we're recursive, add it to the list to process
-				if file.Type == "dir" && options.Recursive {
-					newDirs = append(newDirs, path.Join(dir, file.Name))
-				}
-			}
-			mutex.Unlock()
-
-			// Add new directories to the list
-			if len(newDirs) > 0 {
-				mutex.Lock()
-				dirs = append(dirs, newDirs...)
-				mutex.Unlock()
-			}
-
-			// Report progress if callback is provided
-			if options.ProgressCallback != nil {
-				mutex.Lock()
-				dirCount := len(allFiles)
-				mutex.Unlock()
-				options.ProgressCallback(int64(dirCount), -1, fmt.Sprintf("Listing directory: %s", dir))
-			}
-		}(currentDir)
-	}
-
-	// Wait for all directory listings to complete
-	wg.Wait()
-
-	// Check if an error occurred
-	if errorOccurred {
-		return nil, firstError
+		if options.ProgressCallback != nil {
+			options.ProgressCallback(int64(len(allFiles)), -1, fmt.Sprintf("Listing directory: %s", currentDir))
+		}
 	}
 
 	return allFiles, nil

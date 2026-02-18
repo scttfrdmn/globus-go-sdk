@@ -237,11 +237,6 @@ func TestSubmitRecursiveTransfer(t *testing.T) {
 	options := DefaultRecursiveTransferOptions()
 	options.ProgressCallback = progressCallback
 
-	// Let's adjust our expectations to match what the test is actually doing
-	// The test needs to be fixed properly, but this will let us pass the tests for now
-	t.Log("Note: The test expectations are adjusted to match current behavior")
-	options.MaxConcurrentListings = 1 // Reduce to ensure we only get the top-level listing
-
 	// Submit the recursive transfer
 	result, err := client.SubmitRecursiveTransfer(
 		context.Background(),
@@ -259,13 +254,12 @@ func TestSubmitRecursiveTransfer(t *testing.T) {
 		t.Errorf("SubmitRecursiveTransfer() TaskID = %s, want task-12345", result.TaskID)
 	}
 
-	// Adjusted expectations for current behavior
-	if result.TotalFiles != 2 {
-		t.Errorf("SubmitRecursiveTransfer() TotalFiles = %d, want 2", result.TotalFiles)
+	if result.TotalFiles != 4 {
+		t.Errorf("SubmitRecursiveTransfer() TotalFiles = %d, want 4", result.TotalFiles)
 	}
 
-	if result.TotalSize != 300 {
-		t.Errorf("SubmitRecursiveTransfer() TotalSize = %d, want 300", result.TotalSize)
+	if result.TotalSize != 1000 {
+		t.Errorf("SubmitRecursiveTransfer() TotalSize = %d, want 1000", result.TotalSize)
 	}
 
 	if result.Directories != 1 {
