@@ -111,7 +111,7 @@ jobs:
       
       # Upload artifacts
       - name: Upload API comparison
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: api-comparison
           path: |
@@ -120,7 +120,7 @@ jobs:
             api-comparison.json
           
       - name: Upload deprecation report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: deprecation-report
           path: DEPRECATED_FEATURES.md
@@ -167,7 +167,7 @@ jobs:
           fail_ci_if_error: false
       
       - name: Upload coverage report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: coverage.html
