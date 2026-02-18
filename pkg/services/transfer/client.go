@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/deprecation"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/errors"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/ratelimit"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/response"
@@ -837,57 +836,3 @@ func (c *Client) SetSubscriptionAdminVerified(ctx context.Context, endpointID, s
 	return c.doRequestLowLevel(ctx, http.MethodPut, "endpoint/"+endpointID+"/subscription", nil, body, nil)
 }
 
-// Deprecated Globus Connect Server v4 Methods
-// These methods are deprecated as of v3.61.0 and will be removed in v4.0.0
-
-// SetupGridFTPV4Server configures a GridFTP server for GCS v4
-// Deprecated: Globus Connect Server v4 is deprecated. Use Globus Connect Server v5 instead.
-// This method will be removed in v4.0.0.
-func (c *Client) SetupGridFTPV4Server(ctx context.Context, endpointID string, config map[string]interface{}) error {
-	deprecation.LogWarning(nil, "SetupGridFTPV4Server", "3.61.0", "4.0.0", "Use Globus Connect Server v5 instead.")
-	// Implementation would go here - for now return not implemented
-	return fmt.Errorf("SetupGridFTPV4Server is deprecated and not implemented")
-}
-
-// ConfigureGCSV4Endpoint configures a GCS v4 endpoint
-// Deprecated: Globus Connect Server v4 is deprecated. Use Globus Connect Server v5 instead.
-// This method will be removed in v4.0.0.
-func (c *Client) ConfigureGCSV4Endpoint(ctx context.Context, endpointID string, config *GCSV4Config) error {
-	deprecation.LogWarning(nil, "ConfigureGCSV4Endpoint", "3.61.0", "4.0.0", "Use Globus Connect Server v5 instead.")
-	// Implementation would go here - for now return not implemented
-	return fmt.Errorf("ConfigureGCSV4Endpoint is deprecated and not implemented")
-}
-
-// GetGCSV4ServerList retrieves a list of GCS v4 servers
-// Deprecated: Globus Connect Server v4 is deprecated. Use Globus Connect Server v5 instead.
-// This method will be removed in v4.0.0.
-func (c *Client) GetGCSV4ServerList(ctx context.Context, endpointID string) (*GCSV4ServerList, error) {
-	deprecation.LogWarning(nil, "GetGCSV4ServerList", "3.61.0", "4.0.0", "Use Globus Connect Server v5 instead.")
-	// Implementation would go here - for now return not implemented
-	return nil, fmt.Errorf("GetGCSV4ServerList is deprecated and not implemented")
-}
-
-// GCSV4Config represents configuration for a GCS v4 endpoint
-// Deprecated: This type is deprecated along with GCS v4 support.
-type GCSV4Config struct {
-	ServerName   string                 `json:"server_name,omitempty"`
-	GridFTPPort  int                    `json:"gridftp_port,omitempty"`
-	DataChannels string                 `json:"data_channels,omitempty"`
-	Settings     map[string]interface{} `json:"settings,omitempty"`
-}
-
-// GCSV4ServerList represents a list of GCS v4 servers
-// Deprecated: This type is deprecated along with GCS v4 support.
-type GCSV4ServerList struct {
-	Servers []GCSV4Server `json:"servers,omitempty"`
-}
-
-// GCSV4Server represents a GCS v4 server
-// Deprecated: This type is deprecated along with GCS v4 support.
-type GCSV4Server struct {
-	ID       string `json:"id,omitempty"`
-	Name     string `json:"name,omitempty"`
-	Hostname string `json:"hostname,omitempty"`
-	Port     int    `json:"port,omitempty"`
-	Status   string `json:"status,omitempty"`
-}
