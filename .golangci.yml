@@ -20,14 +20,13 @@ linters:
       - path: _test\.go
         linters:
           - errcheck
+    paths:
+      - vendor
+      - ".*\\.pb\\.go$"
+      - ".*\\.gen\\.go$"
 
 run:
   timeout: 5m
   tests: true
   build-tags:
     - integration
-  exclude-dirs:
-    - vendor
-  exclude-files:
-    - ".*\\.pb\\.go$"
-    - ".*\\.gen\\.go$"
