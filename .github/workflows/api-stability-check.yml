@@ -140,7 +140,7 @@ jobs:
           github-token: ${{secrets.GITHUB_TOKEN}}
           script: |
             const changes = `${{ steps.compare.outputs.changes }}`;
-            const body = `## ⚠️ API Compatibility Warning\n\nPotential breaking changes detected in this PR:\n\n\`\`\`\n${changes}\n\`\`\`\n\nIf these changes are intentional breaking changes, please:\n1. Include "BREAKING CHANGE" in the PR title\n2. Document the changes in CHANGELOG.md\n3. Update the appropriate version number following semantic versioning`;
+            const body = `## [WARNING] API Compatibility Warning\n\nPotential breaking changes detected in this PR:\n\n\`\`\`\n${changes}\n\`\`\`\n\nIf these changes are intentional breaking changes, please:\n1. Include "BREAKING CHANGE" in the PR title\n2. Document the changes in CHANGELOG.md\n3. Update the appropriate version number following semantic versioning`;
             
             github.rest.issues.createComment({
               issue_number: context.issue.number,

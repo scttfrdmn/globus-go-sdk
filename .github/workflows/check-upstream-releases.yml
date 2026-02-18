@@ -52,7 +52,7 @@ jobs:
               jq -r ".[].tagName" | grep -E "$version_pattern" | head -n1)
 
             if [ -z "$latest_tag" ]; then
-              echo "  ⚠️  Could not find $version_line release for $upstream_repo"
+              echo "  [WARNING]  Could not find $version_line release for $upstream_repo"
               return 0
             fi
 
@@ -60,7 +60,7 @@ jobs:
             latest_release=$(gh release view --repo "$upstream_repo" "$latest_tag" --json tagName,name,body,url,publishedAt 2>/dev/null || echo "")
 
             if [ -z "$latest_release" ]; then
-              echo "  ⚠️  Could not fetch release details for $latest_tag"
+              echo "  [WARNING]  Could not fetch release details for $latest_tag"
               return 0
             fi
 
@@ -77,7 +77,7 @@ jobs:
 
             # Check if version changed or force check
             if [ "$stored_version" = "$latest_tag" ] && [ "${{ github.event.inputs.force_check }}" != "true" ]; then
-              echo "  ✓ Already up to date"
+              echo "  [OK] Already up to date"
               return 0
             fi
 
@@ -87,11 +87,11 @@ jobs:
               --json number --jq '.[0].number' 2>/dev/null || echo "")
 
             if [ -n "$existing_issue" ]; then
-              echo "  ℹ️  Issue already exists: #$existing_issue"
+              echo "  [INFO]  Issue already exists: #$existing_issue"
               return 0
             fi
 
-            echo "  🆕 New release found: $latest_tag"
+            echo "  [NEW] New release found: $latest_tag"
 
             # Build comparison URL
             comparison_url="https://github.com/$upstream_repo/compare/$stored_version...$latest_tag"
@@ -105,9 +105,9 @@ jobs:
 **Version Line:** $version_line
 
 ### Links
-- 📦 [Release Page]($release_url)
-- 🔍 [Compare Changes]($comparison_url)
-- 📚 [Repository](https://github.com/$upstream_repo)
+- [PKG] [Release Page]($release_url)
+- [SEARCH] [Compare Changes]($comparison_url)
+- [DOCS] [Repository](https://github.com/$upstream_repo)
 
 ### Release Notes
 
@@ -133,7 +133,7 @@ $release_body
               --label "upstream-update,needs-review,dependencies,$version_line" \
               --json number --jq '.number')
 
-            echo "  ✓ Created issue #$issue_number"
+            echo "  [OK] Created issue #$issue_number"
 
             # Update the version tracking file
             jq --arg key "$version_key" --arg version "$latest_tag" \
@@ -173,7 +173,7 @@ $release_body
             git commit -m "$commit_msg"
             git push
 
-            echo "✓ Committed version update"
+            echo "[OK] Committed version update"
           else
             echo "No updates found"
           fi
@@ -189,10 +189,10 @@ $release_body
           echo "" >> $GITHUB_STEP_SUMMARY
 
           if [ -f /tmp/has_update ]; then
-            echo "### 🆕 New Releases Found" >> $GITHUB_STEP_SUMMARY
+            echo "### [NEW] New Releases Found" >> $GITHUB_STEP_SUMMARY
             while IFS= read -r line; do
               echo "- $line" >> $GITHUB_STEP_SUMMARY
             done < /tmp/updated_versions
           else
-            echo "✓ Already up to date with upstream" >> $GITHUB_STEP_SUMMARY
+            echo "[OK] Already up to date with upstream" >> $GITHUB_STEP_SUMMARY
           fi
