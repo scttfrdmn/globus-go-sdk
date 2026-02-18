@@ -339,6 +339,112 @@ func (c *Client) Rename(ctx context.Context, endpointID, oldPath, newPath string
 
 	return &response, nil
 }
+// CreateTunnel creates a new Globus Streams tunnel.
+// Added in Python SDK v4.3.0.
+func (c *Client) CreateTunnel(ctx context.Context, data *TunnelCreate) (*Tunnel, error) {
+	if data == nil {
+		return nil, &core.ValidationError{Field: "data", Message: "tunnel data is required"}
+	}
+	var tunnel Tunnel
+	if err := c.baseClient.DoRequest(ctx, http.MethodPost, "/tunnel", nil, data, &tunnel); err != nil {
+		return nil, err
+	}
+	return &tunnel, nil
+}
+
+// GetTunnel retrieves a tunnel by ID.
+// Added in Python SDK v4.3.0.
+func (c *Client) GetTunnel(ctx context.Context, tunnelID string) (*Tunnel, error) {
+	if tunnelID == "" {
+		return nil, &core.ValidationError{Field: "tunnelID", Message: "tunnel ID is required"}
+	}
+	var tunnel Tunnel
+	path := fmt.Sprintf("/tunnel/%s", tunnelID)
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, path, nil, nil, &tunnel); err != nil {
+		return nil, err
+	}
+	return &tunnel, nil
+}
+
+// UpdateTunnel updates an existing tunnel.
+// Added in Python SDK v4.3.0.
+func (c *Client) UpdateTunnel(ctx context.Context, tunnelID string, data *TunnelUpdate) (*Tunnel, error) {
+	if tunnelID == "" {
+		return nil, &core.ValidationError{Field: "tunnelID", Message: "tunnel ID is required"}
+	}
+	var tunnel Tunnel
+	path := fmt.Sprintf("/tunnel/%s", tunnelID)
+	if err := c.baseClient.DoRequest(ctx, http.MethodPut, path, nil, data, &tunnel); err != nil {
+		return nil, err
+	}
+	return &tunnel, nil
+}
+
+// DeleteTunnel deletes a tunnel by ID.
+// Added in Python SDK v4.3.0.
+func (c *Client) DeleteTunnel(ctx context.Context, tunnelID string) error {
+	if tunnelID == "" {
+		return &core.ValidationError{Field: "tunnelID", Message: "tunnel ID is required"}
+	}
+	return c.baseClient.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("/tunnel/%s", tunnelID), nil, nil, nil)
+}
+
+// ListTunnels retrieves the list of tunnels owned by the current user.
+// Added in Python SDK v4.3.0.
+func (c *Client) ListTunnels(ctx context.Context, options *ListTunnelsOptions) (*TunnelList, error) {
+	query := url.Values{}
+	if options != nil {
+		if options.Limit > 0 {
+			query.Set("limit", strconv.Itoa(options.Limit))
+		}
+		if options.Marker != "" {
+			query.Set("marker", options.Marker)
+		}
+	}
+	var list TunnelList
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, "/tunnel_list", query, nil, &list); err != nil {
+		return nil, err
+	}
+	return &list, nil
+}
+
+// GetStreamAccessPoint retrieves a Stream Access Point by ID.
+// Added in Python SDK v4.3.0.
+func (c *Client) GetStreamAccessPoint(ctx context.Context, accessPointID string) (*StreamAccessPoint, error) {
+	if accessPointID == "" {
+		return nil, &core.ValidationError{Field: "accessPointID", Message: "access point ID is required"}
+	}
+	var ap StreamAccessPoint
+	path := fmt.Sprintf("/stream_access_point/%s", accessPointID)
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, path, nil, nil, &ap); err != nil {
+		return nil, err
+	}
+	return &ap, nil
+}
+
+// GetTunnelEvents fetches events associated with a tunnel.
+// Added in Python SDK v4.4.0.
+func (c *Client) GetTunnelEvents(ctx context.Context, tunnelID string, options *ListTunnelEventsOptions) (*TunnelEventList, error) {
+	if tunnelID == "" {
+		return nil, &core.ValidationError{Field: "tunnelID", Message: "tunnel ID is required"}
+	}
+	query := url.Values{}
+	if options != nil {
+		if options.Limit > 0 {
+			query.Set("limit", strconv.Itoa(options.Limit))
+		}
+		if options.Marker != "" {
+			query.Set("marker", options.Marker)
+		}
+	}
+	var list TunnelEventList
+	path := fmt.Sprintf("/tunnel/%s/event_list", tunnelID)
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, path, query, nil, &list); err != nil {
+		return nil, err
+	}
+	return &list, nil
+}
+
 // Close closes the client and releases resources
 func (c *Client) Close() error {
 	return c.baseClient.Close()

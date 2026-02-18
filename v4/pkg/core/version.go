@@ -9,7 +9,7 @@ import (
 )
 
 // Version is the current version of the Globus Go SDK v4
-const Version = "4.2.0"
+const Version = "4.4.0"
 
 // VersionInfo provides additional info about the build
 type VersionInfo struct {

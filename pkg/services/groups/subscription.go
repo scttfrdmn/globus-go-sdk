@@ -26,8 +26,8 @@ func (c *Client) SetSubscriptionAdminVerified(ctx context.Context, groupID, subs
 
 	body := map[string]string{
 		"subscription_id": subscriptionID,
-		"DATA_TYPE":       "subscription_id_update",
+		"DATA_TYPE":       "subscription_update",
 	}
 
-	return c.doRequestLowLevel(ctx, "PUT", "groups/"+groupID+"/subscription_id", nil, body, nil)
+	return c.doRequestLowLevel(ctx, "PUT", "groups/"+groupID+"/subscription", nil, body, nil)
 }

@@ -31,6 +31,36 @@ type ListFlowsOptions struct {
 	Offset int
 }
 
+// FlowAuthenticationPolicy specifies authentication requirements for running a flow.
+// Added in Python SDK v4.1.0.
+type FlowAuthenticationPolicy struct {
+	HighAssurance   *bool    `json:"high_assurance,omitempty"`
+	RequiredMFA     *bool    `json:"required_mfa,omitempty"`
+	SessionPolicies []string `json:"session_policies,omitempty"`
+}
+
+// FlowCreate represents the payload for creating a flow
+type FlowCreate struct {
+	Title                string                     `json:"title"`
+	Definition           map[string]interface{}     `json:"definition"`
+	InputSchema          map[string]interface{}     `json:"input_schema,omitempty"`
+	Description          string                     `json:"description,omitempty"`
+	// AuthenticationPolicy specifies auth requirements for running this flow.
+	// Added in Python SDK v4.1.0; service support may be pending.
+	AuthenticationPolicy *FlowAuthenticationPolicy  `json:"authentication_policy,omitempty"`
+}
+
+// FlowUpdate represents the payload for updating a flow
+type FlowUpdate struct {
+	Title                string                     `json:"title,omitempty"`
+	Definition           map[string]interface{}     `json:"definition,omitempty"`
+	InputSchema          map[string]interface{}     `json:"input_schema,omitempty"`
+	Description          string                     `json:"description,omitempty"`
+	// AuthenticationPolicy specifies auth requirements for running this flow.
+	// Added in Python SDK v4.1.0; service support may be pending.
+	AuthenticationPolicy *FlowAuthenticationPolicy  `json:"authentication_policy,omitempty"`
+}
+
 // FlowInput represents input for running a flow
 type FlowInput struct {
 	Input map[string]interface{} `json:"input"`

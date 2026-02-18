@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
 )
@@ -346,6 +345,24 @@ func (c *Client) RemoveRole(ctx context.Context, indexID, roleID string) error {
 	path := fmt.Sprintf("/index/%s/role/%s", indexID, roleID)
 	return c.baseClient.DoRequest(ctx, http.MethodDelete, path, nil, nil, nil)
 }
+// ReopenIndex reopens a previously deleted index.
+// Added in Python SDK v4.0.0b1.
+func (c *Client) ReopenIndex(ctx context.Context, indexID string) (*Index, error) {
+	if indexID == "" {
+		return nil, &core.ValidationError{
+			Field:   "indexID",
+			Message: "index ID is required",
+		}
+	}
+
+	var index Index
+	path := fmt.Sprintf("/index/%s/reopen", indexID)
+	if err := c.baseClient.DoRequest(ctx, http.MethodPost, path, nil, nil, &index); err != nil {
+		return nil, err
+	}
+	return &index, nil
+}
+
 // Close closes the client and releases resources
 func (c *Client) Close() error {
 	return c.baseClient.Close()

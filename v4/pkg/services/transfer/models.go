@@ -202,3 +202,84 @@ type OperationResponse struct {
 	RequestID string `json:"request_id"`
 	Resource  string `json:"resource"`
 }
+
+// Tunnel represents a Globus Streams tunnel.
+// Added in Python SDK v4.3.0.
+type Tunnel struct {
+	ID               string                 `json:"id"`
+	DisplayName      string                 `json:"display_name,omitempty"`
+	Owner            string                 `json:"owner,omitempty"`
+	SourceEndpointID string                 `json:"source_endpoint_id,omitempty"`
+	SourcePath       string                 `json:"source_path,omitempty"`
+	Status           string                 `json:"status,omitempty"`
+	CreatedAt        *time.Time             `json:"created_at,omitempty"`
+	UpdatedAt        *time.Time             `json:"updated_at,omitempty"`
+	ExpiresAt        *time.Time             `json:"expires_at,omitempty"`
+	Metadata         map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// TunnelList represents a paginated list of tunnels
+type TunnelList struct {
+	Tunnels []Tunnel `json:"DATA"`
+	Total   int      `json:"total,omitempty"`
+	HasMore bool     `json:"has_next_page,omitempty"`
+	Marker  string   `json:"next_marker,omitempty"`
+}
+
+// TunnelCreate is the payload for creating a new tunnel
+type TunnelCreate struct {
+	DisplayName      string                 `json:"display_name"`
+	SourceEndpointID string                 `json:"source_endpoint_id"`
+	SourcePath       string                 `json:"source_path"`
+	ExpiresIn        *int                   `json:"expires_in,omitempty"`
+	Metadata         map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// TunnelUpdate is the payload for updating an existing tunnel
+type TunnelUpdate struct {
+	DisplayName string                 `json:"display_name,omitempty"`
+	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// ListTunnelsOptions contains options for listing tunnels
+type ListTunnelsOptions struct {
+	Limit  int
+	Marker string
+}
+
+// StreamAccessPoint represents a Globus Stream Access Point.
+// Added in Python SDK v4.3.0.
+type StreamAccessPoint struct {
+	ID         string                 `json:"id"`
+	TunnelID   string                 `json:"tunnel_id,omitempty"`
+	EndpointID string                 `json:"endpoint_id,omitempty"`
+	Path       string                 `json:"path,omitempty"`
+	AccessURL  string                 `json:"access_url,omitempty"`
+	ExpiresAt  *time.Time             `json:"expires_at,omitempty"`
+	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+}
+
+// TunnelEvent represents an event associated with a tunnel.
+// Added in Python SDK v4.4.0.
+type TunnelEvent struct {
+	ID          string                 `json:"id"`
+	TunnelID    string                 `json:"tunnel_id"`
+	Code        string                 `json:"code"`
+	Description string                 `json:"description,omitempty"`
+	Details     map[string]interface{} `json:"details,omitempty"`
+	OccurredAt  *time.Time             `json:"occurred_at,omitempty"`
+}
+
+// TunnelEventList represents a paginated list of tunnel events
+type TunnelEventList struct {
+	Events  []TunnelEvent `json:"DATA"`
+	Total   int           `json:"total,omitempty"`
+	HasMore bool          `json:"has_next_page,omitempty"`
+	Marker  string        `json:"next_marker,omitempty"`
+}
+
+// ListTunnelEventsOptions contains options for listing tunnel events
+type ListTunnelEventsOptions struct {
+	Limit  int
+	Marker string
+}
