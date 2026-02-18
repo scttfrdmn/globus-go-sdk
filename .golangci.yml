@@ -1,5 +1,3 @@
-version: 2
-
 linters:
   enable:
     - errcheck
@@ -13,8 +11,7 @@ linters-settings:
   errcheck:
     check-type-assertions: true
   govet:
-    enable:
-      - shadow
+    check-shadowing: false
   misspell:
     locale: US
 
@@ -35,8 +32,8 @@ run:
   tests: true
   build-tags:
     - integration
-  exclude-dirs:
+  skip-dirs:
     - vendor
-  exclude-files:
+  skip-files:
     - ".*\\.pb\\.go$"
     - ".*\\.gen\\.go$"
