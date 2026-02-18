@@ -13,7 +13,8 @@ linters-settings:
   errcheck:
     check-type-assertions: true
   govet:
-    check-shadowing: true
+    enable:
+      - shadow
   misspell:
     locale: US
 
@@ -30,21 +31,12 @@ issues:
   max-same-issues: 0
 
 run:
-  # Timeout for analysis, e.g. 30s, 5m.
   timeout: 5m
-
-  # Include test files.
   tests: true
-
-  # Build tags to include in the analysis
   build-tags:
     - integration
-
-  # Skip directories.
-  skip-dirs:
-    - "vendor"
-
-  # Skip files.
-  skip-files:
+  exclude-dirs:
+    - vendor
+  exclude-files:
     - ".*\\.pb\\.go$"
     - ".*\\.gen\\.go$"
