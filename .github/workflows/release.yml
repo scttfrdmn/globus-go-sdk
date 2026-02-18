@@ -9,6 +9,8 @@ jobs:
   goreleaser:
     name: Create Release
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
@@ -86,6 +88,7 @@ jobs:
         cache: true
 
     - name: Register module with Go proxy
+      continue-on-error: true  # v4.x.x tags don't match /v3 module path; best-effort registration
       run: GOPROXY=proxy.golang.org go list -m github.com/scttfrdmn/globus-go-sdk@${GITHUB_REF#refs/tags/}
 
   update-docs:
