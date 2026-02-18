@@ -96,35 +96,12 @@ jobs:
             # Build comparison URL
             comparison_url="https://github.com/$upstream_repo/compare/$stored_version...$latest_tag"
 
-            # Create issue body
-            issue_body="## New $repo_label Release Available
-
-**New Version:** \`$latest_tag\`
-**Previous Version:** \`$stored_version\`
-**Published:** $published_at
-**Version Line:** $version_line
-
-### Links
-- [PKG] [Release Page]($release_url)
-- [SEARCH] [Compare Changes]($comparison_url)
-- [DOCS] [Repository](https://github.com/$upstream_repo)
-
-### Release Notes
-
-$release_body
-
----
-
-### Action Items
-- [ ] Review release notes and changes
-- [ ] Check for breaking changes or deprecations
-- [ ] Port new features and improvements
-- [ ] Update tests for new functionality
-- [ ] Update documentation if needed
-- [ ] Update \`.github/upstream-versions.json\` after porting changes
-
-**Upstream Repository:** \`$upstream_repo\` ($version_line)
-"
+            # Create issue body (use printf to avoid un-indented lines breaking YAML block scalar)
+            issue_body=$(printf \
+              '## New %s Release Available\n\n**New Version:** `%s`\n**Previous Version:** `%s`\n**Published:** %s\n**Version Line:** %s\n\n### Links\n- [Release Page](%s)\n- [Compare Changes](%s)\n- [Repository](https://github.com/%s)\n\n### Release Notes\n\n%s\n\n---\n\n### Action Items\n- [ ] Review release notes and changes\n- [ ] Check for breaking changes or deprecations\n- [ ] Port new features and improvements\n- [ ] Update tests for new functionality\n- [ ] Update documentation if needed\n- [ ] Update `.github/upstream-versions.json` after porting changes\n\n**Upstream Repository:** `%s` (%s)\n' \
+              "$repo_label" "$latest_tag" "$stored_version" "$published_at" "$version_line" \
+              "$release_url" "$comparison_url" "$upstream_repo" \
+              "$release_body" "$upstream_repo" "$version_line")
 
             # Create the issue
             issue_number=$(gh issue create \
