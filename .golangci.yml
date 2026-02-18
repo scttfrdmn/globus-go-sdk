@@ -1,3 +1,5 @@
+version: 2
+
 linters:
   enable:
     - errcheck
@@ -7,33 +9,25 @@ linters:
     - unused
     - misspell
 
-linters-settings:
-  errcheck:
-    check-type-assertions: true
-  govet:
-    check-shadowing: false
-  misspell:
-    locale: US
+  settings:
+    errcheck:
+      check-type-assertions: true
+    misspell:
+      locale: US
 
-issues:
-  exclude-rules:
-    - path: _test\.go
-      linters:
-        - errcheck
-
-  # Maximum issues count per one linter.
-  max-issues-per-linter: 0
-
-  # Maximum count of issues with the same text.
-  max-same-issues: 0
+  exclusions:
+    rules:
+      - path: _test\.go
+        linters:
+          - errcheck
 
 run:
   timeout: 5m
   tests: true
   build-tags:
     - integration
-  skip-dirs:
+  exclude-dirs:
     - vendor
-  skip-files:
+  exclude-files:
     - ".*\\.pb\\.go$"
     - ".*\\.gen\\.go$"
