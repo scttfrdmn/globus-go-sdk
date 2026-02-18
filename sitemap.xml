@@ -2,110 +2,102 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/</loc>
-         <lastmod>2025-10-26</lastmod>
-    </url>
-    <url>
-         <loc>https://scttfrdmn.github.io/globus-go-sdk/alignment/</loc>
-         <lastmod>2025-10-26</lastmod>
-    </url>
-    <url>
-         <loc>https://scttfrdmn.github.io/globus-go-sdk/changelog/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/contributing/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/license/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/api/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/api/auth/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/api/compute/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/api/errors/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/api/flows/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/api/groups/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/api/search/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/api/timers/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/api/transfer/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/examples/flows/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/examples/groups/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/examples/search/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/examples/transfer/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/getting-started/authentication/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/getting-started/configuration/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/getting-started/installation/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/getting-started/quickstart/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/guides/common-patterns/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/guides/error-handling/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/guides/migration/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/guides/rate-limiting/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
     <url>
          <loc>https://scttfrdmn.github.io/globus-go-sdk/guides/testing/</loc>
-         <lastmod>2025-10-26</lastmod>
+         <lastmod>2026-02-18</lastmod>
     </url>
 </urlset>
