@@ -343,9 +343,9 @@ func generateReport(features []DeprecatedFeature) string {
 
 	// Summary
 	sb.WriteString("## Summary\n\n")
-	sb.WriteString(fmt.Sprintf("Total deprecated features: %d\n", len(features)))
-	sb.WriteString(fmt.Sprintf("Features with planned removal: %d\n", len(features)-len(noRemovalVersion)))
-	sb.WriteString(fmt.Sprintf("Features without planned removal: %d\n", len(noRemovalVersion)))
+	fmt.Fprintf(&sb, "Total deprecated features: %d\n", len(features))
+	fmt.Fprintf(&sb, "Features with planned removal: %d\n", len(features)-len(noRemovalVersion))
+	fmt.Fprintf(&sb, "Features without planned removal: %d\n", len(noRemovalVersion))
 
 	return sb.String()
 }

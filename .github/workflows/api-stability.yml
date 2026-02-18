@@ -206,15 +206,17 @@ jobs:
           go build ./pkg/...
 
           # Get latest release tag
-          LATEST_RELEASE=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
-          echo "Latest release: $LATEST_RELEASE"
+          LATEST_RELEASE=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          echo "Latest release: ${LATEST_RELEASE:-none}"
 
-          # Checkout previous version and build it
-          git checkout $LATEST_RELEASE
-          go build ./pkg/...
-
-          # Return to current version
-          git checkout -
+          # Checkout previous version and build it (only if a real tag exists)
+          if [ -n "$LATEST_RELEASE" ]; then
+            git checkout "$LATEST_RELEASE"
+            go build ./pkg/...
+            git checkout -
+          else
+            echo "No previous release tag found, skipping previous version build"
+          fi
       
       - name: Test backwards compatibility
         if: ${{ false }}  # Disabled until we implement comprehensive compatibility tests
