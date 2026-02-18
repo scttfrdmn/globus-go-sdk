@@ -28,16 +28,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Nothing security-related yet
 
+## [4.4.0-2] - 2026-02-17
+
+### Fixed
+- **Groups `SetSubscriptionAdminVerified` endpoint** (v3 module): Regression from rebase during v4.4.0-1 reverted the correct API path
+  - Endpoint corrected: `/groups/{id}/subscription_id` → `/groups/{id}/subscription`
+  - `DATA_TYPE` corrected: `subscription_id_update` → `subscription_update`
+
+### Added (v4 module — `github.com/scttfrdmn/globus-go-sdk/v4`)
+- **v4 module synced from 4.2.0 to 4.4.0**
+- **Search**: `ReopenIndex(ctx, indexID)` — reopen a previously deleted index (Python SDK v4.0.0b1)
+- **Flows**: `FlowAuthenticationPolicy` struct; `FlowCreate` and `FlowUpdate` types with `AuthenticationPolicy` field (Python SDK v4.1.0)
+- **Transfer**: Full Streams/Tunnel API (Python SDK v4.3.0–v4.4.0):
+  - `CreateTunnel`, `GetTunnel`, `UpdateTunnel`, `DeleteTunnel`, `ListTunnels`
+  - `GetStreamAccessPoint`
+  - `GetTunnelEvents`
+  - New types: `Tunnel`, `TunnelList`, `TunnelCreate`, `TunnelUpdate`, `StreamAccessPoint`, `TunnelEvent`, `TunnelEventList`, `ListTunnelsOptions`, `ListTunnelEventsOptions`
+- **Version**: v4 module version constant bumped to `4.4.0`
+
 ## [4.4.0-1] - 2026-02-17
 
 ### Added
-- **Python SDK v4.4.0 synchronization**
+- **Python SDK v4.4.0 synchronization** (v3 module)
   - **Transfer**: `GetTunnelEvents(ctx, tunnelID, options)` - fetch events associated with a Globus Streams tunnel
 
 ## [4.3.0-1] - 2026-01-15
 
 ### Added
-- **Python SDK v4.3.0 synchronization** - Comprehensive Globus Streams API support in TransferClient:
+- **Python SDK v4.3.0 synchronization** (v3 module) — Comprehensive Globus Streams API support in `TransferClient` (`pkg/services/transfer/streams.go`):
   - `CreateTunnel(ctx, data)` - create a new Globus Streams tunnel
   - `GetTunnel(ctx, tunnelID)` - retrieve a tunnel by ID
   - `UpdateTunnel(ctx, tunnelID, data)` - update an existing tunnel
@@ -45,19 +63,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `ListTunnels(ctx, options)` - list tunnels owned by current user
   - `GetStreamAccessPoint(ctx, accessPointID)` - fetch a Stream Access Point
   - New types: `Tunnel`, `TunnelList`, `CreateTunnelData`, `UpdateTunnelData`, `StreamAccessPoint`, `TunnelEvent`, `TunnelEventList`
-  - New file: `pkg/services/transfer/streams.go`
 
 ## [4.2.0-1] - 2025-12-10
 
 ### Added
-- **Python SDK v4.2.0 synchronization**
-  - **Timers**: `FlowUserScope(flowID string) string` - returns the scope string needed for a TimersClient to execute a specific flow. In the Python SDK this is `add_app_flow_user_scope()` on GlobusApp; in Go SDK it returns the scope string for manual authorization.
-  - **Timers**: `Close()` method on `Client` for releasing idle HTTP connections (resource cleanup equivalent of Python SDK's context manager support)
+- **Python SDK v4.2.0 synchronization** (v3 module)
+  - **Timers**: `FlowUserScope(flowID string) string` — returns the scope string needed for a TimersClient to execute a specific flow (Python SDK equivalent: `add_app_flow_user_scope()` on GlobusApp)
+  - **Timers**: `Close()` method on `Client` for releasing idle HTTP connections
+- **v4 module created** (`github.com/scttfrdmn/globus-go-sdk/v4`) — clean-room v4 implementation with context-first API design, explicit scopes, and `Close()` on all service clients
 
 ## [4.1.0-1] - 2025-11-01
 
 ### Added
-- **Python SDK v4.1.0 synchronization**
+- **Python SDK v4.1.0 synchronization** (v3 module)
   - **Flows**: `FlowAuthenticationPolicy` struct for specifying authentication requirements on flows
   - **Flows**: `AuthenticationPolicy *FlowAuthenticationPolicy` field added to `FlowCreateRequest` and `FlowUpdateRequest`
   - Note: Service support for authentication policy may be pending as of this release
@@ -65,15 +83,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [4.0.1-1] - 2025-10-20
 
 ### Fixed
-- **Python SDK v4.0.1 synchronization**
-  - **Transfer**: Corrected route for `SetSubscriptionAdminVerified()` - now uses proper endpoint path
-  - Added missing `TransferClient.SetSubscriptionAdminVerified(ctx, endpointID, subscriptionID)` method (was in Python SDK since v3.59.0 but missing from Go SDK)
+- **Python SDK v4.0.1 synchronization** (v3 module)
+  - **Transfer**: Added missing `SetSubscriptionAdminVerified(ctx, endpointID, subscriptionID)` with corrected route (Python SDK since v3.59.0, route-fixed in v4.0.1)
 
 ## [4.0.0-1] - 2025-10-15
 
 ### Added
-- **Python SDK v4.0.0 synchronization**
-  - **Search**: `ReopenIndex(ctx, indexID)` - reopen a previously deleted search index (Python SDK v4.0.0b1)
+- **Python SDK v4.0.0 synchronization** (v3 module)
+  - **Search**: `ReopenIndex(ctx, indexID)` — reopen a previously deleted search index (Python SDK v4.0.0b1)
   - **Flows**: `ListRuns()` was already present in the Go SDK
 
 ### Deprecated
