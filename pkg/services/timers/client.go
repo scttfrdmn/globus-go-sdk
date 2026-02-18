@@ -443,6 +443,27 @@ func (c *Client) CreateCronTimer(
 	return c.CreateTimer(ctx, request)
 }
 
+// Close releases any resources held by the client, such as idle HTTP connections.
+// It is safe to call Close multiple times.
+// Added in Python SDK v4.2.0 (context manager support).
+func (c *Client) Close() {
+	if c.Client != nil && c.Client.HTTPClient != nil {
+		if transport, ok := c.Client.HTTPClient.Transport.(interface{ CloseIdleConnections() }); ok {
+			transport.CloseIdleConnections()
+		}
+	}
+}
+
+// FlowUserScope returns the scope string required for a TimersClient to execute
+// a specific flow. This scope must be included when requesting authorization.
+// Use this when creating timers that will trigger flow executions.
+//
+// In the Python SDK v4.2.0, this is handled via GlobusApp's add_app_flow_user_scope().
+// In the Go SDK, add the returned scope to your authorization request.
+func FlowUserScope(flowID string) string {
+	return "https://auth.globus.org/scopes/" + flowID + "/flow_" + flowID + "_user"
+}
+
 // CreateFlowCallback creates a callback configuration for triggering a flow
 func CreateFlowCallback(flowID, flowLabel string, flowInput map[string]interface{}) Callback {
 	return Callback{

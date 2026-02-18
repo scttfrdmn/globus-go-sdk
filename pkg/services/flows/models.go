@@ -36,32 +36,49 @@ type FlowList struct {
 	Limit   int    `json:"limit"`
 }
 
+// FlowAuthenticationPolicy represents authentication policy parameters for a Flow.
+// Added in Python SDK v4.1.0.
+type FlowAuthenticationPolicy struct {
+	// HighAssurance requires high-assurance authentication for flow runs
+	HighAssurance *bool `json:"high_assurance,omitempty"`
+	// RequiredMFA requires multi-factor authentication for flow runs
+	RequiredMFA *bool `json:"required_mfa,omitempty"`
+	// SessionPolicies specifies named authentication policies required for flow runs
+	SessionPolicies []string `json:"session_policies,omitempty"`
+}
+
 // FlowCreateRequest represents a request to create a new Flow
 type FlowCreateRequest struct {
-	Title         string                 `json:"title"`
-	Description   string                 `json:"description,omitempty"`
-	Definition    map[string]interface{} `json:"definition"`
-	InputSchema   map[string]interface{} `json:"input_schema,omitempty"`
-	Keywords      []string               `json:"keywords,omitempty"`
-	Public        bool                   `json:"public,omitempty"`
-	Managed       bool                   `json:"managed,omitempty"`
-	AdminOnly     bool                   `json:"admin_only,omitempty"`
-	RunsRequired  bool                   `json:"runs_required,omitempty"`
-	RunAsApprover bool                   `json:"run_as_approver,omitempty"`
+	Title                string                     `json:"title"`
+	Description          string                     `json:"description,omitempty"`
+	Definition           map[string]interface{}     `json:"definition"`
+	InputSchema          map[string]interface{}     `json:"input_schema,omitempty"`
+	Keywords             []string                   `json:"keywords,omitempty"`
+	Public               bool                       `json:"public,omitempty"`
+	Managed              bool                       `json:"managed,omitempty"`
+	AdminOnly            bool                       `json:"admin_only,omitempty"`
+	RunsRequired         bool                       `json:"runs_required,omitempty"`
+	RunAsApprover        bool                       `json:"run_as_approver,omitempty"`
+	// AuthenticationPolicy specifies authentication requirements for running this flow.
+	// Added in Python SDK v4.1.0; service support may be pending.
+	AuthenticationPolicy *FlowAuthenticationPolicy  `json:"authentication_policy,omitempty"`
 }
 
 // FlowUpdateRequest represents a request to update a Flow
 type FlowUpdateRequest struct {
-	Title         string                 `json:"title,omitempty"`
-	Description   string                 `json:"description,omitempty"`
-	Definition    map[string]interface{} `json:"definition,omitempty"`
-	InputSchema   map[string]interface{} `json:"input_schema,omitempty"`
-	Keywords      []string               `json:"keywords,omitempty"`
-	Public        *bool                  `json:"public,omitempty"`
-	Managed       *bool                  `json:"managed,omitempty"`
-	AdminOnly     *bool                  `json:"admin_only,omitempty"`
-	RunsRequired  *bool                  `json:"runs_required,omitempty"`
-	RunAsApprover *bool                  `json:"run_as_approver,omitempty"`
+	Title                string                     `json:"title,omitempty"`
+	Description          string                     `json:"description,omitempty"`
+	Definition           map[string]interface{}     `json:"definition,omitempty"`
+	InputSchema          map[string]interface{}     `json:"input_schema,omitempty"`
+	Keywords             []string                   `json:"keywords,omitempty"`
+	Public               *bool                      `json:"public,omitempty"`
+	Managed              *bool                      `json:"managed,omitempty"`
+	AdminOnly            *bool                      `json:"admin_only,omitempty"`
+	RunsRequired         *bool                      `json:"runs_required,omitempty"`
+	RunAsApprover        *bool                      `json:"run_as_approver,omitempty"`
+	// AuthenticationPolicy specifies authentication requirements for running this flow.
+	// Added in Python SDK v4.1.0; service support may be pending.
+	AuthenticationPolicy *FlowAuthenticationPolicy  `json:"authentication_policy,omitempty"`
 }
 
 // ListFlowsOptions represents options for listing Flows

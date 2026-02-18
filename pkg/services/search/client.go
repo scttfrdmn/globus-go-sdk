@@ -295,6 +295,22 @@ func (c *Client) DeleteIndex(ctx context.Context, indexID string) error {
 	return c.doRequestLowLevel(ctx, http.MethodDelete, "index/"+indexID, nil, nil, nil)
 }
 
+// ReopenIndex reopens a previously deleted index.
+// Added in Python SDK v4.0.0b1.
+func (c *Client) ReopenIndex(ctx context.Context, indexID string) (*Index, error) {
+	if indexID == "" {
+		return nil, fmt.Errorf("index ID is required")
+	}
+
+	var index Index
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "index/"+indexID+"/reopen", nil, nil, &index)
+	if err != nil {
+		return nil, err
+	}
+
+	return &index, nil
+}
+
 // IngestDocuments ingests documents into an index
 func (c *Client) IngestDocuments(ctx context.Context, request *IngestRequest) (*IngestResponse, error) {
 	if request == nil {

@@ -817,6 +817,26 @@ func parseIntHeader(header http.Header, key string, defaultValue int) int {
 	return intValue
 }
 
+// SetSubscriptionAdminVerified sets the subscription ID for a collection/endpoint,
+// marking it as admin-verified. This is an admin-only operation.
+//
+// Added in Python SDK v3.59.0. The API route was corrected in Python SDK v4.0.1.
+func (c *Client) SetSubscriptionAdminVerified(ctx context.Context, endpointID, subscriptionID string) error {
+	if endpointID == "" {
+		return fmt.Errorf("endpoint ID is required")
+	}
+	if subscriptionID == "" {
+		return fmt.Errorf("subscription ID is required")
+	}
+
+	body := map[string]string{
+		"subscription_id": subscriptionID,
+		"DATA_TYPE":       "subscription_id_update",
+	}
+
+	return c.doRequestLowLevel(ctx, http.MethodPut, "endpoint/"+endpointID+"/subscription", nil, body, nil)
+}
+
 // Deprecated Globus Connect Server v4 Methods
 // These methods are deprecated as of v3.61.0 and will be removed in v4.0.0
 

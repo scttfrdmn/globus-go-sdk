@@ -28,37 +28,99 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Nothing security-related yet
 
-## [3.65.0-1] - 2025-10-25
+## [4.4.0-1] - 2026-02-17
 
 ### Added
-- **FlowTimer Helper (v3.65.0 feature)** -timers/flow_timer.go
-  - New `FlowTimer` struct for convenient flow-based timer creation
-  - `CreateFlowTimerOnce()` - Create one-time timers that run flows
-  - `CreateFlowTimerRecurring()` - Create recurring timers with ISO 8601 intervals
-  - `CreateFlowTimerCron()` - Create cron-scheduled timers
-  - Matches Python SDK v3.65.0 FlowTimer payload class functionality
-  - Comprehensive test coverage in `flow_timer_test.go`
-  - Example application in `cmd/examples/timers-flow/`
+- **Python SDK v4.4.0 synchronization**
+  - **Transfer**: `GetTunnelEvents(ctx, tunnelID, options)` - fetch events associated with a Globus Streams tunnel
 
-- **Groups Statuses Filter (v3.65.0 feature)**
-  - Added `Statuses []string` field to `ListGroupsOptions`
-  - Filter groups by status (e.g., "active", "pending")
-  - Matches Python SDK v3.65.0 `get_my_groups(statuses=...)` parameter
-  - Works with both `ListGroups()` and `ListGroupsV2()` methods
-  - Test coverage for single and multiple status filtering
+## [4.3.0-1] - 2026-01-15
+
+### Added
+- **Python SDK v4.3.0 synchronization** - Comprehensive Globus Streams API support in TransferClient:
+  - `CreateTunnel(ctx, data)` - create a new Globus Streams tunnel
+  - `GetTunnel(ctx, tunnelID)` - retrieve a tunnel by ID
+  - `UpdateTunnel(ctx, tunnelID, data)` - update an existing tunnel
+  - `DeleteTunnel(ctx, tunnelID)` - delete a tunnel
+  - `ListTunnels(ctx, options)` - list tunnels owned by current user
+  - `GetStreamAccessPoint(ctx, accessPointID)` - fetch a Stream Access Point
+  - New types: `Tunnel`, `TunnelList`, `CreateTunnelData`, `UpdateTunnelData`, `StreamAccessPoint`, `TunnelEvent`, `TunnelEventList`
+  - New file: `pkg/services/transfer/streams.go`
+
+## [4.2.0-1] - 2025-12-10
+
+### Added
+- **Python SDK v4.2.0 synchronization**
+  - **Timers**: `FlowUserScope(flowID string) string` - returns the scope string needed for a TimersClient to execute a specific flow. In the Python SDK this is `add_app_flow_user_scope()` on GlobusApp; in Go SDK it returns the scope string for manual authorization.
+  - **Timers**: `Close()` method on `Client` for releasing idle HTTP connections (resource cleanup equivalent of Python SDK's context manager support)
+
+## [4.1.0-1] - 2025-11-01
+
+### Added
+- **Python SDK v4.1.0 synchronization**
+  - **Flows**: `FlowAuthenticationPolicy` struct for specifying authentication requirements on flows
+  - **Flows**: `AuthenticationPolicy *FlowAuthenticationPolicy` field added to `FlowCreateRequest` and `FlowUpdateRequest`
+  - Note: Service support for authentication policy may be pending as of this release
+
+## [4.0.1-1] - 2025-10-20
+
+### Fixed
+- **Python SDK v4.0.1 synchronization**
+  - **Transfer**: Corrected route for `SetSubscriptionAdminVerified()` - now uses proper endpoint path
+  - Added missing `TransferClient.SetSubscriptionAdminVerified(ctx, endpointID, subscriptionID)` method (was in Python SDK since v3.59.0 but missing from Go SDK)
+
+## [4.0.0-1] - 2025-10-15
+
+### Added
+- **Python SDK v4.0.0 synchronization**
+  - **Search**: `ReopenIndex(ctx, indexID)` - reopen a previously deleted search index (Python SDK v4.0.0b1)
+  - **Flows**: `ListRuns()` was already present in the Go SDK
+
+### Deprecated
+- The following methods remain in the codebase with deprecation warnings but are scheduled for removal in Go SDK v5.0.0:
+  - `TransferClient.SetupGridFTPV4Server()` (deprecated v3.61.0)
+  - `TransferClient.ConfigureGCSV4Endpoint()` (deprecated v3.61.0)
+  - `TransferClient.GetGCSV4ServerList()` (deprecated v3.61.0)
+  - `NewComputeClientV2()` in pkg root (deprecated v3.61.0)
+  - `GroupsClient.SetSubscriptionAdminVerifiedID()` (deprecated v3.63.0)
+
+### Technical Notes
+- **Breaking changes from Python SDK v4.0.0 not yet applied to Go SDK v4.x**:
+  - `GlobusAPIError.code` still defaults to `"Error"` (Python SDK changed default to `nil`)
+  - Client base path handling unchanged (Python SDK removed automatic base_path prepending)
+  - Scope system changes (Python SDK made Scope immutable, added ScopeParser) not yet ported
+  - These breaking changes will be addressed in a future Go SDK v5.0.0 release
+
+## [3.65.0-1] - 2025-10-02
+
+### Added
+- **Python SDK v3.65.0 synchronization**
+  - **Groups**: `GetMyGroups()` now accepts `statuses []string` parameter for filtering groups by membership status (e.g., "active", "invited", "pending")
+  - **Groups**: New batch role change operations:
+    - `ChangeRole(ctx, groupID, identityID, roleID string) error` - single role change
+    - `ChangeRoles(ctx, changes []RoleChange) (*BatchRoleChangeResult, error)` - batch role changes
+    - `NewBatchMembershipActions() *BatchMembershipActions` - fluent batch builder with `ChangeRole()` and `Execute()` methods
+  - **Flows**: New `FlowTimer` payload class for creating Globus Timers that execute flows:
+    - `NewFlowTimer(name, flowID string, flowInput map[string]interface{}, schedule TimerSchedule) *FlowTimer`
+    - Schedule types: `NewCronSchedule()`, `NewIntervalSchedule()`, `NewOnceSchedule()`
+    - Builder methods: `WithCallbackURL()`, `WithFlowScope()`, `WithRunManagers()`, `WithRunMonitors()`
+    - `Validate()` method for pre-submission validation
 
 ### Technical Details
 - **Version**: Updated SDK version constant to 3.65.0
-- **Python SDK Parity**: Synchronized with upstream Globus Python SDK v3.65.0
-- **Backward Compatibility**: All changes are backward compatible additions
-- **Test Coverage**: Added comprehensive unit tests for all new features
+- **New Files**: `pkg/services/groups/batch.go`, `pkg/services/flows/timer.go`
+- **Python SDK Parity**: Maintains synchronization with upstream Globus Python SDK v3.65.0
+- **Backward Compatibility**: Full backward compatibility; `GetMyGroups()` `statuses` parameter is optional (nil = all statuses)
 
-## [3.64.0] - 2025-09-24 (Python SDK sync)
-### Note
-- Python SDK v3.64.0 features already implemented:
-  - `SearchClient.UpdateIndex()` - Already present in Go SDK
-  - Transfer deprecations (symlinks, skip_activation_check) - Not applicable to Go SDK
-- No code changes required for v3.64.0 synchronization
+## [3.64.0-1] - 2025-09-25
+
+### Added
+- **Python SDK v3.64.0 synchronization**
+  - **Search**: `UpdateIndex(ctx context.Context, indexID string, request *IndexUpdateRequest) (*Index, error)` method for updating search index metadata
+
+### Technical Details
+- **Version**: Updated SDK version constant to 3.64.0
+- **Python SDK Parity**: Maintains synchronization with upstream Globus Python SDK v3.64.0
 
 ## [3.63.0-1] - 2025-09-18
 
