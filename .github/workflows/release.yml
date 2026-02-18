@@ -106,6 +106,7 @@ jobs:
         cache: true
 
     - name: Generate latest API docs
+      continue-on-error: true  # pkgsite CLI flags change between versions
       run: |
         go install golang.org/x/pkgsite/cmd/pkgsite@latest
         mkdir -p api-docs
