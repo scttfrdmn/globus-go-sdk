@@ -299,19 +299,19 @@ func generateReport(features []DeprecatedFeature) string {
 		sb.WriteString("No features with planned removal date found.\n\n")
 	} else {
 		for version, versionFeatures := range byRemovalVersion {
-			sb.WriteString(fmt.Sprintf("### To be removed in %s\n\n", version))
+			fmt.Fprintf(&sb, "### To be removed in %s\n\n", version)
 			sb.WriteString("| Feature | File | Deprecated In | Guidance |\n")
 			sb.WriteString("|---------|------|--------------|----------|\n")
 
 			for _, feature := range versionFeatures {
 				relPath, _ := filepath.Rel(*srcDir, feature.FilePath)
-				sb.WriteString(fmt.Sprintf("| `%s` | %s:%d | %s | %s |\n",
+				fmt.Fprintf(&sb, "| `%s` | %s:%d | %s | %s |\n",
 					feature.Name,
 					relPath,
 					feature.Line,
 					feature.DeprecatedIn,
 					feature.Guidance,
-				))
+				)
 			}
 
 			sb.WriteString("\n")
@@ -329,13 +329,13 @@ func generateReport(features []DeprecatedFeature) string {
 
 		for _, feature := range noRemovalVersion {
 			relPath, _ := filepath.Rel(*srcDir, feature.FilePath)
-			sb.WriteString(fmt.Sprintf("| `%s` | %s:%d | %s | %s |\n",
+			fmt.Fprintf(&sb, "| `%s` | %s:%d | %s | %s |\n",
 				feature.Name,
 				relPath,
 				feature.Line,
 				feature.DeprecatedIn,
 				feature.Guidance,
-			))
+			)
 		}
 
 		sb.WriteString("\n")

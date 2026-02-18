@@ -203,16 +203,16 @@ jobs:
       - name: Build SDK versions
         run: |
           # Build current version
-          go build -o ./bin/current-sdk ./pkg/...
-          
+          go build ./pkg/...
+
           # Get latest release tag
           LATEST_RELEASE=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
           echo "Latest release: $LATEST_RELEASE"
-          
+
           # Checkout previous version and build it
           git checkout $LATEST_RELEASE
-          go build -o ./bin/prev-sdk ./pkg/...
-          
+          go build ./pkg/...
+
           # Return to current version
           git checkout -
       
