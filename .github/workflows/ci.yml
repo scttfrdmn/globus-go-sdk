@@ -161,6 +161,36 @@ jobs:
       - name: Run API availability tests
         run: go test -v ./pkg/core/http/...
 
+  build-v4:
+    name: Build v4 Module
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+          cache: true
+
+      - name: Get v4 dependencies
+        working-directory: v4
+        run: |
+          go mod download
+          go mod verify
+
+      - name: Build v4 module
+        working-directory: v4
+        run: go build -v ./...
+
+      - name: Test v4 module
+        working-directory: v4
+        run: go test ./...
+
+      - name: Build v4 examples
+        working-directory: v4
+        run: go build -v ./examples/...
+
   integration:
     name: Integration Tests
     runs-on: ubuntu-latest
