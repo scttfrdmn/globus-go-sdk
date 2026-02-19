@@ -219,9 +219,6 @@ jobs:
           fi
       
       - name: Test backwards compatibility
-        if: ${{ false }}  # Disabled until we implement comprehensive compatibility tests
         run: |
           # Run the compatibility test suite
-          # This is a placeholder for future compatibility testing
-          echo "Comprehensive compatibility testing would run here"
-          # go test -v ./tests/compatibility/...
+          go test -v ./tests/compatibility/...
