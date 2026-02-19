@@ -242,7 +242,7 @@ func TestDisableConnectionPoolEnvVar(t *testing.T) {
 	}
 }
 
-// TestDisableConnectionPoolEnvVarFalse verifies behaviour when the env var is
+// TestDisableConnectionPoolEnvVarFalse verifies behavior when the env var is
 // not "true" – pooled client should still be non-nil.
 func TestDisableConnectionPoolEnvVarFalse(t *testing.T) {
 	t.Setenv("GLOBUS_DISABLE_CONNECTION_POOL", "false")

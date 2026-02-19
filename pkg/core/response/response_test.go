@@ -263,7 +263,7 @@ func TestFromHTTPResponse_XRequestIDStored(t *testing.T) {
 	meta := response.FromHTTPResponse(httpResp, "auth")
 
 	if meta.Headers == nil {
-		t.Fatal("expected Headers map to be initialised")
+		t.Fatal("expected Headers map to be initialized")
 	}
 	if meta.Headers["X-Request-Id"] != "req-abc-123" {
 		t.Errorf("expected X-Request-Id 'req-abc-123', got %q", meta.Headers["X-Request-Id"])

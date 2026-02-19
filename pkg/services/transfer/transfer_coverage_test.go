@@ -1109,13 +1109,13 @@ func TestSubmitResumableTransfer(t *testing.T) {
 	// SubmitResumableTransfer delegates to CreateResumableTransfer which uses
 	// ListFiles and CreateTransferTask internally. We provide a minimal mock.
 	server, client := newTransferClient(t, func(w http.ResponseWriter, r *http.Request) {
-		switch {
-		case r.URL.Path == "/operation/endpoint/src-ep/ls":
+		switch r.URL.Path {
+		case "/operation/endpoint/src-ep/ls":
 			items := []transfer.FileListItem{{Name: "file.dat", Type: "file", Size: 100}}
 			resp := transfer.FileList{Data: items, Path: "/src"}
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(resp)
-		case r.URL.Path == "/transfer":
+		case "/transfer":
 			resp := transfer.TaskResponse{TaskID: "resumable-task-001", Code: "Accepted"}
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(resp)
