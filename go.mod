@@ -2,7 +2,7 @@ module github.com/scttfrdmn/globus-go-sdk/v3
 
 go 1.22
 
-// Version: 3.60.0-1 - Synchronized with Python SDK v3.60.0 (first Go SDK release)
+// Version: 4.5.0-1 - Synchronized with Python SDK v4.5.0 (v3 Go module)
 
 require (
 	github.com/google/uuid v1.6.0

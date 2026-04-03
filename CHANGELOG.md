@@ -28,7 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Nothing security-related yet
 
-## [4.6.0-1] - 2026-04-03
+## [4.5.0-2] - 2026-04-03
 
 ### Added (v4 module — `github.com/scttfrdmn/globus-go-sdk/v4`)
 
@@ -78,7 +78,7 @@ writing plumbing code. Mirrors `globus_sdk.authorizers`, `globus_sdk.token_stora
   - `UserApp` — interactive browser login; `GetAuthorizer` returns `RefreshTokenAuthorizer` (if refresh token available) or `AccessTokenAuthorizer`; `LoginRequired()` checks all registered resource servers
   - `ClientApp` — machine-to-machine; `GetAuthorizer` returns `ClientCredentialsAuthorizer`; `Login`/`Logout` are no-ops
 
-- **Version**: v4 module version bumped to `4.6.0`
+- **Version**: v4 module version bumped to `4.5.0-2`
 
 ## [4.5.0-1] - 2026-04-03
 
@@ -106,6 +106,13 @@ writing plumbing code. Mirrors `globus_sdk.authorizers`, `globus_sdk.token_stora
 - **Test coverage**: `v4/pkg/testhelpers` shared helpers; `client_test.go` for all 7 service packages; `tunnel_test.go` covering all 8 BETA Streams/Tunnel methods
 
 - **Version**: v4 module version bumped to `4.5.0`
+
+### Changed (v3 module — `github.com/scttfrdmn/globus-go-sdk/v3`)
+
+- **Version alignment**: v3 module version scheme now tracks the upstream Python SDK
+  version exactly. Previous version `3.60.0-1` is superseded by `4.5.0-1` to
+  reflect that this module implements the Python SDK v4.5.0 service client API
+  in Go v3-module style (stable, production-ready). No functional changes.
 
 
 ## [4.4.0-2] - 2026-02-17
