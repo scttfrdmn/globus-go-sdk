@@ -76,7 +76,19 @@ func (c *Client) DoRequest(ctx context.Context, method, endpoint string, query u
 
 	// Set headers
 	req.Header.Set("User-Agent", c.config.UserAgent)
-	req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.config.AccessToken))
+	if c.config.Authorizer != nil {
+		authHeader, authErr := c.config.Authorizer.GetAuthorizationHeader(ctx)
+		if authErr != nil {
+			return &NetworkError{
+				Operation: "get_auth_header",
+				Message:   "authorizer failed to provide authorization header",
+				Err:       authErr,
+			}
+		}
+		req.Header.Set("Authorization", authHeader)
+	} else {
+		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.config.AccessToken))
+	}
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}

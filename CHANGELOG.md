@@ -28,6 +28,58 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Nothing security-related yet
 
+## [4.6.0-1] - 2026-04-03
+
+### Added (v4 module — `github.com/scttfrdmn/globus-go-sdk/v4`)
+
+Implements the Python SDK's *application framework* layer — the pieces that manage
+credentials, refresh tokens, paginate results, and handle interactive login without
+writing plumbing code. Mirrors `globus_sdk.authorizers`, `globus_sdk.token_storage`,
+`globus_sdk.paging`, `globus_sdk.login_flows`, and `globus_sdk.globus_app`.
+
+- **`v4/pkg/core`** — `Authorizer` interface added to `core.Config`:
+  - New `Authorizer` interface: `GetAuthorizationHeader(ctx) (string, error)` + `HandleMissingAuthorization(ctx) bool`
+  - `Config.Authorizer` field: when set, `DoRequest` calls it for the Authorization header instead of using the static `AccessToken`
+  - `Config.Validate()` now accepts either `AccessToken` OR `Authorizer` (previously required `AccessToken`)
+
+- **`v4/pkg/authorizers`** — BETA — mirrors `globus_sdk.authorizers`:
+  - `AccessTokenAuthorizer` — static bearer token, never refreshes
+  - `RefreshTokenAuthorizer` — auto-refreshes using a refresh token; options: `WithInitialAccessToken`, `WithOnRefresh`, `WithAuthBaseURL`, `WithHTTPClient`
+  - `ClientCredentialsAuthorizer` — obtains tokens via OAuth2 client credentials grant; options: `WithClientCredentialsAuthBaseURL`, `WithClientCredentialsHTTPClient`
+  - Internal `renewingAuthorizer` base: mutex-protected, 60-second proactive refresh threshold
+
+- **`v4/pkg/tokenstorage`** — BETA — mirrors `globus_sdk.token_storage`:
+  - `TokenData` struct with `IsExpired()` and `ExpiresIn()` helpers
+  - `TokenStorage` interface: `Store`, `Get`, `Remove`, `GetAll`, `Close`
+  - `MemoryTokenStorage` — thread-safe, in-process storage
+  - `JSONTokenStorage` — atomic file-backed storage (write-then-rename); namespace-partitioned; format `{"version":"2.0","by_rs":{...}}`
+
+- **`v4/pkg/paging`** — BETA — mirrors `globus_sdk.paging`:
+  - Generic `Paginator[T any]` interface: `HasNext() bool` + `NextPage(ctx) ([]T, error)`
+  - `LimitOffsetPaginator[T]` — auto-increments offset until `fetched >= total`
+  - `MarkerPaginator[T]` — cursor-based, stops when server returns `hasMore = false`
+  - `NextTokenPaginator[T]` — token-based, stops when `hasNextPage = false`
+  - `JSONAPIPaginator[T]` — follows `Links.Next` absolute URLs (JSON:API spec)
+  - `gcs.CollectionPager` migrated to use `JSONAPIPaginator` internally (API unchanged)
+  - `NewPager()` factory methods added to service clients:
+    - `transfer.Client`: `NewEndpointsPager`, `NewTasksPager`, `NewTunnelsPager`
+    - `flows.Client`: `NewFlowsPager`, `NewRunsPager`
+    - `search.Client`: `NewIndexesPager`
+    - `groups.Client`: `NewGroupsPager`, `NewMembersPager`
+    - `compute.Client`: `NewEndpointsPager`, `NewTasksPager`
+
+- **`v4/pkg/login`** — BETA — mirrors `globus_sdk.login_flows`:
+  - `LoginFlowManager` interface + `AuthParams` + `LoginResult`
+  - `CommandLineLoginFlowManager` — prints authorization URL, reads auth code from stdin, exchanges for tokens; handles Globus Auth `other_tokens` extension for multi-resource-server responses; options: `WithCLIRedirectURI`, `WithCLIAuthBaseURL`, `WithCLIHTTPClient`
+
+- **`v4/pkg/app`** — BETA — mirrors `globus_sdk.globus_app`:
+  - `GlobusApp` interface: `Login`, `Logout`, `LoginRequired`, `GetAuthorizer`, `AddScopeRequirements`, `Close`
+  - `AppConfig`: `TokenStorage`, `LoginFlowManager`, `RequestRefreshTokens`, `Environment`
+  - `UserApp` — interactive browser login; `GetAuthorizer` returns `RefreshTokenAuthorizer` (if refresh token available) or `AccessTokenAuthorizer`; `LoginRequired()` checks all registered resource servers
+  - `ClientApp` — machine-to-machine; `GetAuthorizer` returns `ClientCredentialsAuthorizer`; `Login`/`Logout` are no-ops
+
+- **Version**: v4 module version bumped to `4.6.0`
+
 ## [4.5.0-1] - 2026-04-03
 
 ### Added (v4 module — `github.com/scttfrdmn/globus-go-sdk/v4`)

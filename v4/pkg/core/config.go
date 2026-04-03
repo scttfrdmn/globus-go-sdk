@@ -13,8 +13,12 @@ import (
 // This replaces the options pattern from v3 with explicit configuration
 type Config struct {
 	// AccessToken is the OAuth2 access token for authentication
-	// Required for all API calls
+	// Required if Authorizer is not set
 	AccessToken string
+
+	// Authorizer provides dynamic authorization headers (e.g., auto-refreshing tokens)
+	// If set, takes precedence over AccessToken
+	Authorizer Authorizer
 
 	// Scopes are the explicitly required OAuth2 scopes for this client
 	// v4 requires explicit scope specification for security
@@ -86,12 +90,11 @@ func DefaultRetryConfig() *RetryConfig {
 
 // Validate validates the configuration
 func (c *Config) Validate() error {
-	// In v4, access token is required for most operations
-	// (OAuth flow clients may not require it initially)
-	if c.AccessToken == "" {
+	// In v4, either an access token or an authorizer must be provided
+	if c.AccessToken == "" && c.Authorizer == nil {
 		return &ValidationError{
 			Field:   "AccessToken",
-			Message: "access token is required",
+			Message: "access token or authorizer is required",
 		}
 	}
 
@@ -133,6 +136,18 @@ func (c *Config) WithDefaults() *Config {
 	}
 
 	return &config
+}
+
+// Authorizer provides authorization headers for HTTP requests.
+// It is the primary abstraction for credential management in v4, mirroring
+// the Python SDK's globus_sdk.authorizers module.
+type Authorizer interface {
+	// GetAuthorizationHeader returns the full Authorization header value (e.g. "Bearer <token>")
+	GetAuthorizationHeader(ctx context.Context) (string, error)
+
+	// HandleMissingAuthorization is called when the server returns 401.
+	// Returns true if the authorizer believes a retry may succeed (e.g. after a refresh).
+	HandleMissingAuthorization(ctx context.Context) bool
 }
 
 // TokenProvider is an interface for providing access tokens

@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/paging"
 )
 
 // CollectionClient is an EXPERIMENTAL client for the Globus Connect Server (GCS)
@@ -192,11 +193,12 @@ func (c *CollectionClient) DeleteCollection(ctx context.Context, collectionID st
 
 // NewCollectionPager returns a pager for iterating through all collection pages.
 func (c *CollectionClient) NewCollectionPager(options *ListCollectionsOptions) *CollectionPager {
-	return &CollectionPager{
+	p := &CollectionPager{
 		client: c,
 		opts:   options,
-		done:   false,
 	}
+	p.inner = paging.NewJSONAPIPaginator(p.fetchPageFn)
+	return p
 }
 
 // Close releases resources held by the client.
