@@ -2,7 +2,7 @@ module github.com/scttfrdmn/globus-go-sdk/v4
 
 go 1.22
 
-// Version: 4.4.0 - Synchronized with Python SDK v4.4.0
+// Version: 4.5.0 - Synchronized with Python SDK v4.5.0
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

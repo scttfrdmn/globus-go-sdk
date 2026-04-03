@@ -28,6 +28,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Security
 - Nothing security-related yet
 
+## [4.5.0-1] - 2026-04-03
+
+### Added (v4 module — `github.com/scttfrdmn/globus-go-sdk/v4`)
+
+- **GCS package** (`v4/pkg/services/gcs`) — EXPERIMENTAL:
+  - `CollectionClient` with `GetCollection`, `ListCollections`, `UpdateCollection`, `DeleteCollection`, `NewCollectionPager`
+  - `Downloader` with `ReadFile`, `ReadFileAsText` for HTTPS file access without Transfer service
+  - `CollectionPager` — JSON:API cursor-based paginator
+
+- **Auth**: `GetAuthorizationURL`, `StartDeviceAuthorization`, `PollDeviceAuthorization`, `WaitForDeviceAuthorization` (RFC 8628 device flow, Python SDK v4.0.0)
+
+- **Compute**: `RegisterFunction`, `UpdateFunction`, `DeleteFunction`, `GetTaskStatus`, `ListTasks`, `CancelTask`, `RunBatch`, `GetBatchStatus`; models: `FunctionDefinition`, `FunctionRegistration`, `FunctionUpdate`, `BatchTaskRequest`, `BatchTaskResponse`, `BatchTaskStatus`
+
+- **Flows**: `CreateFlow`, `UpdateFlow`, `DeleteFlow`, `UpdateRun`, `GetRunLogs`, `WaitForRun`; action providers: `ListActionProviders`, `GetActionProvider`, `ListActionRoles`, `GetActionRole`; models: `ActionProvider`, `ActionProviderList`, `ActionRole`, `ActionRoleList`
+
+- **Groups**: `UpdateMemberRole`, `GetGroupPolicies`, `SetGroupPolicies`, `GetMyGroups`, `GetRole`, `ListRoles`, `CreateRole`, `UpdateRole`, `DeleteRole`, `GetIdentityPreferences`, `SetIdentityPreferences`, `GetMembershipFields`, `SetMembershipFields`; models: `RoleCreate`, `RoleUpdate`, `RoleList`, `IdentityPreferences`, `MembershipFields`
+
+- **Search**: `IndexList` (Python SDK v4.5.0), `GetTaskStatus`; models: `IndexList`, `ListIndexesOptions`, `IngestTaskStatus`
+
+- **Timers**: `CreateTransferTimer`, `RunTimer`, `ListRuns`, `GetRun`; models: `TimerRun`, `TimerRunList`, `ListRunsOptions`
+
+- **Transfer**: `GetSubmissionID`, `ListStreamAccessPoints`, `UpdateTunnel` nil-data validation
+
+- **Test coverage**: `v4/pkg/testhelpers` shared helpers; `client_test.go` for all 7 service packages; `tunnel_test.go` covering all 8 BETA Streams/Tunnel methods
+
+- **Version**: v4 module version bumped to `4.5.0`
+
+
 ## [4.4.0-2] - 2026-02-17
 
 ### Fixed
