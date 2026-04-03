@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors
 
 // Package authorizers provides implementations of the core.Authorizer interface,
 // mirroring the Python SDK's globus_sdk.authorizers module.

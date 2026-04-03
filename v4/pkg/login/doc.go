@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors
 
 // Package login provides interactive OAuth2 login flow implementations,
 // mirroring the Python SDK's globus_sdk.login_flows module.

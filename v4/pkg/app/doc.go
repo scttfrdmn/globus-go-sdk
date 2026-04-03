@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors
 
 // Package app provides high-level application abstractions for the Globus SDK,
 // mirroring the Python SDK's globus_sdk.globus_app module.

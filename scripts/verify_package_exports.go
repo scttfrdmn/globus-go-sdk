@@ -1,7 +1,7 @@
 //go:build ignore
 
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors
 //
 // This standalone tool verifies that required exported symbols are available
 // in the SDK packages. It's designed to catch issues like missing function

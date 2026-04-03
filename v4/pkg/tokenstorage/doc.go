@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
+// SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors
 
 // Package tokenstorage provides persistent storage for OAuth2 token data,
 // mirroring the Python SDK's globus_sdk.token_storage module.
