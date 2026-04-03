@@ -100,3 +100,46 @@ type Role struct {
 	Name        string `json:"name"`
 	Description string `json:"description"`
 }
+
+// RoleCreate represents the data needed to create a new group role
+type RoleCreate struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+}
+
+// RoleUpdate represents the data to update in a group role
+type RoleUpdate struct {
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
+// RoleList represents a list of group roles
+type RoleList struct {
+	Roles []Role `json:"roles"`
+}
+
+// GroupPolicies represents policy configuration for a group
+type GroupPolicies struct {
+	GroupID                        string                 `json:"group_id"`
+	Policies                       map[string]interface{} `json:"policies"`
+	SignupFields                   []string               `json:"signup_fields,omitempty"`
+	JoinRequests                   bool                   `json:"join_requests,omitempty"`
+	IsHighRiskGroup                bool                   `json:"is_high_risk_group,omitempty"`
+	AuthenticationAssuranceTimeout int                    `json:"authentication_assurance_timeout,omitempty"`
+	LastUpdated                    time.Time              `json:"last_updated,omitempty"`
+}
+
+// IdentityPreferences represents user preferences for a group identity
+type IdentityPreferences struct {
+	GroupID     string                 `json:"group_id"`
+	IdentityID  string                 `json:"identity_id"`
+	Preferences map[string]interface{} `json:"preferences"`
+	LastUpdated time.Time              `json:"last_updated,omitempty"`
+}
+
+// MembershipFields represents custom membership fields for a group
+type MembershipFields struct {
+	GroupID     string                 `json:"group_id"`
+	Fields      map[string]interface{} `json:"fields"`
+	LastUpdated time.Time             `json:"last_updated,omitempty"`
+}

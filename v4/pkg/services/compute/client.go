@@ -205,6 +205,43 @@ func (c *Client) ListTasks(ctx context.Context, options *ListTasksOptions) (*Tas
 	return &taskList, nil
 }
 
+// CancelTask cancels a running compute task.
+func (c *Client) CancelTask(ctx context.Context, taskID string) error {
+	if taskID == "" {
+		return &core.ValidationError{Field: "taskID", Message: "task ID is required"}
+	}
+	path := fmt.Sprintf("/tasks/%s/cancel", taskID)
+	return c.baseClient.DoRequest(ctx, http.MethodPost, path, nil, nil, nil)
+}
+
+// RunBatch submits multiple function calls in a single request.
+func (c *Client) RunBatch(ctx context.Context, request *BatchTaskRequest) (*BatchTaskResponse, error) {
+	if request == nil {
+		return nil, &core.ValidationError{Field: "request", Message: "batch task request is required"}
+	}
+	if len(request.Tasks) == 0 {
+		return nil, &core.ValidationError{Field: "Tasks", Message: "at least one task is required"}
+	}
+	var response BatchTaskResponse
+	if err := c.baseClient.DoRequest(ctx, http.MethodPost, "/batch", nil, request, &response); err != nil {
+		return nil, err
+	}
+	return &response, nil
+}
+
+// GetBatchStatus retrieves the status of multiple tasks by ID.
+func (c *Client) GetBatchStatus(ctx context.Context, taskIDs []string) (*BatchTaskStatus, error) {
+	if len(taskIDs) == 0 {
+		return nil, &core.ValidationError{Field: "taskIDs", Message: "at least one task ID is required"}
+	}
+	body := map[string][]string{"task_ids": taskIDs}
+	var status BatchTaskStatus
+	if err := c.baseClient.DoRequest(ctx, http.MethodPost, "/batch_status", nil, body, &status); err != nil {
+		return nil, err
+	}
+	return &status, nil
+}
+
 // Close closes the client and releases resources
 func (c *Client) Close() error {
 	return c.baseClient.Close()

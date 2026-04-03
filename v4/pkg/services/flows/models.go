@@ -120,3 +120,55 @@ type ListRunLogsOptions struct {
 	Limit  int
 	Offset int
 }
+
+// ActionProvider represents a Flows action provider
+type ActionProvider struct {
+	ID          string    `json:"id"`
+	DisplayName string    `json:"display_name"`
+	Description string    `json:"description,omitempty"`
+	Owner       string    `json:"owner"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	Type        string    `json:"type"`
+	Globus      bool      `json:"globus"`
+	Visible     bool      `json:"visible"`
+}
+
+// ActionProviderList represents a list of Flows action providers
+type ActionProviderList struct {
+	ActionProviders []ActionProvider `json:"action_providers"`
+	Total           int              `json:"total"`
+	HadMore         bool             `json:"had_more"`
+	Offset          int              `json:"offset"`
+	Limit           int              `json:"limit"`
+}
+
+// ActionRole represents a role in a Flows action provider
+type ActionRole struct {
+	ID           string                 `json:"id"`
+	Name         string                 `json:"name"`
+	Description  string                 `json:"description,omitempty"`
+	ActionFields map[string]interface{} `json:"action_fields,omitempty"`
+	InputSchema  map[string]interface{} `json:"input_schema,omitempty"`
+	Visible      bool                   `json:"visible"`
+}
+
+// ActionRoleList represents a list of Flows action roles
+type ActionRoleList struct {
+	ActionRoles []ActionRole `json:"action_roles"`
+	Total       int          `json:"total"`
+	HadMore     bool         `json:"had_more"`
+	Offset      int          `json:"offset"`
+	Limit       int          `json:"limit"`
+}
+
+// ListActionProvidersOptions controls which action providers are returned
+type ListActionProvidersOptions struct {
+	Limit       int
+	Offset      int
+	Marker      string
+	OrderBy     string
+	Q           string
+	FilterOwner string
+	FilterType  string
+}

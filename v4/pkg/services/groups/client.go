@@ -290,6 +290,143 @@ func (c *Client) SetGroupPolicies(ctx context.Context, groupID string, policies 
 	return c.baseClient.DoRequest(ctx, http.MethodPut, endpoint, nil, policies, nil)
 }
 
+// GetMyGroups lists groups the current user is a member of.
+func (c *Client) GetMyGroups(ctx context.Context, statuses []string) (*GroupList, error) {
+	return c.ListGroups(ctx, &ListGroupsOptions{MyGroups: true, Statuses: statuses})
+}
+
+// ListRoles lists all roles for a group.
+func (c *Client) ListRoles(ctx context.Context, groupID string) (*RoleList, error) {
+	if groupID == "" {
+		return nil, &core.ValidationError{Field: "groupID", Message: "group ID is required"}
+	}
+	var roleList RoleList
+	endpoint := fmt.Sprintf("/groups/%s/roles", groupID)
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, endpoint, nil, nil, &roleList); err != nil {
+		return nil, err
+	}
+	return &roleList, nil
+}
+
+// GetRole retrieves a specific role in a group.
+func (c *Client) GetRole(ctx context.Context, groupID, roleID string) (*Role, error) {
+	if groupID == "" {
+		return nil, &core.ValidationError{Field: "groupID", Message: "group ID is required"}
+	}
+	if roleID == "" {
+		return nil, &core.ValidationError{Field: "roleID", Message: "role ID is required"}
+	}
+	var role Role
+	endpoint := fmt.Sprintf("/groups/%s/roles/%s", groupID, roleID)
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, endpoint, nil, nil, &role); err != nil {
+		return nil, err
+	}
+	return &role, nil
+}
+
+// CreateRole creates a new role in a group.
+func (c *Client) CreateRole(ctx context.Context, groupID string, role *RoleCreate) (*Role, error) {
+	if groupID == "" {
+		return nil, &core.ValidationError{Field: "groupID", Message: "group ID is required"}
+	}
+	if role == nil {
+		return nil, &core.ValidationError{Field: "role", Message: "role data is required"}
+	}
+	var result Role
+	endpoint := fmt.Sprintf("/groups/%s/roles", groupID)
+	if err := c.baseClient.DoRequest(ctx, http.MethodPost, endpoint, nil, role, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// UpdateRole updates a role in a group.
+func (c *Client) UpdateRole(ctx context.Context, groupID, roleID string, update *RoleUpdate) (*Role, error) {
+	if groupID == "" {
+		return nil, &core.ValidationError{Field: "groupID", Message: "group ID is required"}
+	}
+	if roleID == "" {
+		return nil, &core.ValidationError{Field: "roleID", Message: "role ID is required"}
+	}
+	if update == nil {
+		return nil, &core.ValidationError{Field: "update", Message: "update data is required"}
+	}
+	var result Role
+	endpoint := fmt.Sprintf("/groups/%s/roles/%s", groupID, roleID)
+	if err := c.baseClient.DoRequest(ctx, http.MethodPut, endpoint, nil, update, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// DeleteRole deletes a role from a group.
+func (c *Client) DeleteRole(ctx context.Context, groupID, roleID string) error {
+	if groupID == "" {
+		return &core.ValidationError{Field: "groupID", Message: "group ID is required"}
+	}
+	if roleID == "" {
+		return &core.ValidationError{Field: "roleID", Message: "role ID is required"}
+	}
+	endpoint := fmt.Sprintf("/groups/%s/roles/%s", groupID, roleID)
+	return c.baseClient.DoRequest(ctx, http.MethodDelete, endpoint, nil, nil, nil)
+}
+
+// GetIdentityPreferences retrieves identity preferences for a member in a group.
+func (c *Client) GetIdentityPreferences(ctx context.Context, groupID, identityID string) (*IdentityPreferences, error) {
+	if groupID == "" {
+		return nil, &core.ValidationError{Field: "groupID", Message: "group ID is required"}
+	}
+	if identityID == "" {
+		return nil, &core.ValidationError{Field: "identityID", Message: "identity ID is required"}
+	}
+	var prefs IdentityPreferences
+	endpoint := fmt.Sprintf("/groups/%s/identity_preferences/%s", groupID, identityID)
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, endpoint, nil, nil, &prefs); err != nil {
+		return nil, err
+	}
+	return &prefs, nil
+}
+
+// SetIdentityPreferences sets identity preferences for a member in a group.
+func (c *Client) SetIdentityPreferences(ctx context.Context, groupID, identityID string, preferences *IdentityPreferences) error {
+	if groupID == "" {
+		return &core.ValidationError{Field: "groupID", Message: "group ID is required"}
+	}
+	if identityID == "" {
+		return &core.ValidationError{Field: "identityID", Message: "identity ID is required"}
+	}
+	if preferences == nil {
+		return &core.ValidationError{Field: "preferences", Message: "preferences are required"}
+	}
+	endpoint := fmt.Sprintf("/groups/%s/identity_preferences/%s", groupID, identityID)
+	return c.baseClient.DoRequest(ctx, http.MethodPut, endpoint, nil, preferences, nil)
+}
+
+// GetMembershipFields retrieves custom membership fields for a group.
+func (c *Client) GetMembershipFields(ctx context.Context, groupID string) (*MembershipFields, error) {
+	if groupID == "" {
+		return nil, &core.ValidationError{Field: "groupID", Message: "group ID is required"}
+	}
+	var fields MembershipFields
+	endpoint := fmt.Sprintf("/groups/%s/membership_fields", groupID)
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, endpoint, nil, nil, &fields); err != nil {
+		return nil, err
+	}
+	return &fields, nil
+}
+
+// SetMembershipFields sets custom membership fields for a group.
+func (c *Client) SetMembershipFields(ctx context.Context, groupID string, fields *MembershipFields) error {
+	if groupID == "" {
+		return &core.ValidationError{Field: "groupID", Message: "group ID is required"}
+	}
+	if fields == nil {
+		return &core.ValidationError{Field: "fields", Message: "fields are required"}
+	}
+	endpoint := fmt.Sprintf("/groups/%s/membership_fields", groupID)
+	return c.baseClient.DoRequest(ctx, http.MethodPut, endpoint, nil, fields, nil)
+}
+
 // Close closes the client and releases resources
 func (c *Client) Close() error {
 	return c.baseClient.Close()

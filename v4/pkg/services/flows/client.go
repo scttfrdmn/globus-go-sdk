@@ -246,6 +246,88 @@ func (c *Client) WaitForRun(ctx context.Context, runID string, pollInterval time
 	}
 }
 
+// ListActionProviders lists all Flows action providers.
+func (c *Client) ListActionProviders(ctx context.Context, options *ListActionProvidersOptions) (*ActionProviderList, error) {
+	query := url.Values{}
+	if options != nil {
+		if options.Limit > 0 {
+			query.Set("limit", strconv.Itoa(options.Limit))
+		}
+		if options.Offset > 0 {
+			query.Set("offset", strconv.Itoa(options.Offset))
+		}
+		if options.Marker != "" {
+			query.Set("marker", options.Marker)
+		}
+		if options.OrderBy != "" {
+			query.Set("orderby", options.OrderBy)
+		}
+		if options.Q != "" {
+			query.Set("q", options.Q)
+		}
+		if options.FilterOwner != "" {
+			query.Set("filter_owner", options.FilterOwner)
+		}
+		if options.FilterType != "" {
+			query.Set("filter_type", options.FilterType)
+		}
+	}
+	var list ActionProviderList
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, "/action_providers", query, nil, &list); err != nil {
+		return nil, err
+	}
+	return &list, nil
+}
+
+// GetActionProvider retrieves a specific action provider by ID.
+func (c *Client) GetActionProvider(ctx context.Context, providerID string) (*ActionProvider, error) {
+	if providerID == "" {
+		return nil, &core.ValidationError{Field: "providerID", Message: "action provider ID is required"}
+	}
+	var provider ActionProvider
+	path := fmt.Sprintf("/action_providers/%s", providerID)
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, path, nil, nil, &provider); err != nil {
+		return nil, err
+	}
+	return &provider, nil
+}
+
+// ListActionRoles lists all roles for an action provider.
+func (c *Client) ListActionRoles(ctx context.Context, providerID string, limit, offset int) (*ActionRoleList, error) {
+	if providerID == "" {
+		return nil, &core.ValidationError{Field: "providerID", Message: "action provider ID is required"}
+	}
+	query := url.Values{}
+	if limit > 0 {
+		query.Set("limit", strconv.Itoa(limit))
+	}
+	if offset > 0 {
+		query.Set("offset", strconv.Itoa(offset))
+	}
+	var list ActionRoleList
+	path := fmt.Sprintf("/action_providers/%s/roles", providerID)
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, path, query, nil, &list); err != nil {
+		return nil, err
+	}
+	return &list, nil
+}
+
+// GetActionRole retrieves a specific role for an action provider.
+func (c *Client) GetActionRole(ctx context.Context, providerID, roleID string) (*ActionRole, error) {
+	if providerID == "" {
+		return nil, &core.ValidationError{Field: "providerID", Message: "action provider ID is required"}
+	}
+	if roleID == "" {
+		return nil, &core.ValidationError{Field: "roleID", Message: "action role ID is required"}
+	}
+	var role ActionRole
+	path := fmt.Sprintf("/action_providers/%s/roles/%s", providerID, roleID)
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, path, nil, nil, &role); err != nil {
+		return nil, err
+	}
+	return &role, nil
+}
+
 // Close closes the client and releases resources
 func (c *Client) Close() error {
 	return c.baseClient.Close()

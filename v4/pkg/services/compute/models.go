@@ -107,3 +107,31 @@ type ListTasksOptions struct {
 	Limit      int
 	Offset     int
 }
+
+// TaskRequest is a single function invocation within a batch.
+type TaskRequest struct {
+	FunctionID string                 `json:"function_id"`
+	EndpointID string                 `json:"endpoint_id,omitempty"`
+	Args       []interface{}          `json:"args,omitempty"`
+	Kwargs     map[string]interface{} `json:"kwargs,omitempty"`
+}
+
+// BatchTaskRequest represents a request to execute multiple function calls.
+type BatchTaskRequest struct {
+	Tasks []TaskRequest `json:"tasks"`
+}
+
+// BatchTaskResponse represents the response from a batch execution request.
+type BatchTaskResponse struct {
+	TaskIDs []string `json:"task_ids,omitempty"`
+	Message string   `json:"message,omitempty"`
+	Status  string   `json:"status,omitempty"`
+}
+
+// BatchTaskStatus represents the combined status of multiple tasks.
+type BatchTaskStatus struct {
+	Tasks     map[string]TaskStatus `json:"tasks,omitempty"`
+	Failed    []string              `json:"failed,omitempty"`
+	Pending   []string              `json:"pending,omitempty"`
+	Completed []string              `json:"completed,omitempty"`
+}
