@@ -246,6 +246,50 @@ func (c *Client) RemoveMember(ctx context.Context, groupID, identityID string) e
 	endpoint := fmt.Sprintf("/groups/%s/members/%s", groupID, identityID)
 	return c.baseClient.DoRequest(ctx, http.MethodDelete, endpoint, nil, nil, nil)
 }
+// UpdateMemberRole changes the role of an existing member.
+func (c *Client) UpdateMemberRole(ctx context.Context, groupID, identityID, roleID string) error {
+	if groupID == "" {
+		return &core.ValidationError{Field: "groupID", Message: "group ID is required"}
+	}
+	if identityID == "" {
+		return &core.ValidationError{Field: "identityID", Message: "identity ID is required"}
+	}
+	if roleID == "" {
+		return &core.ValidationError{Field: "roleID", Message: "role ID is required"}
+	}
+
+	body := map[string]interface{}{"role_id": roleID}
+	endpoint := fmt.Sprintf("/groups/%s/members/%s", groupID, identityID)
+	return c.baseClient.DoRequest(ctx, http.MethodPut, endpoint, nil, body, nil)
+}
+
+// GetGroupPolicies retrieves the policy settings for a group.
+func (c *Client) GetGroupPolicies(ctx context.Context, groupID string) (map[string]interface{}, error) {
+	if groupID == "" {
+		return nil, &core.ValidationError{Field: "groupID", Message: "group ID is required"}
+	}
+
+	var policies map[string]interface{}
+	endpoint := fmt.Sprintf("/groups/%s/policies", groupID)
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, endpoint, nil, nil, &policies); err != nil {
+		return nil, err
+	}
+	return policies, nil
+}
+
+// SetGroupPolicies replaces the policy settings for a group.
+func (c *Client) SetGroupPolicies(ctx context.Context, groupID string, policies map[string]interface{}) error {
+	if groupID == "" {
+		return &core.ValidationError{Field: "groupID", Message: "group ID is required"}
+	}
+	if policies == nil {
+		return &core.ValidationError{Field: "policies", Message: "policies are required"}
+	}
+
+	endpoint := fmt.Sprintf("/groups/%s/policies", groupID)
+	return c.baseClient.DoRequest(ctx, http.MethodPut, endpoint, nil, policies, nil)
+}
+
 // Close closes the client and releases resources
 func (c *Client) Close() error {
 	return c.baseClient.Close()

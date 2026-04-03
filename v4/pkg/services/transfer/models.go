@@ -283,3 +283,9 @@ type ListTunnelEventsOptions struct {
 	Limit  int
 	Marker string
 }
+
+// StreamAccessPointList is a list of stream access points.
+type StreamAccessPointList struct {
+	DATA_TYPE string              `json:"DATA_TYPE"`
+	Data      []StreamAccessPoint `json:"DATA"`
+}

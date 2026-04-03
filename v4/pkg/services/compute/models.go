@@ -65,3 +65,45 @@ type ListFunctionsOptions struct {
 	Limit      int
 	Offset     int
 }
+
+// FunctionDefinition is used to register a new callable function.
+type FunctionDefinition struct {
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Serialized  string `json:"function_code"`
+}
+
+// FunctionRegistration is the response from RegisterFunction.
+type FunctionRegistration struct {
+	FunctionID string `json:"function_id"`
+}
+
+// FunctionUpdate contains fields that can be changed on a registered function.
+type FunctionUpdate struct {
+	Name        string `json:"name,omitempty"`
+	Description string `json:"description,omitempty"`
+}
+
+// TaskStatus represents the execution status of a single function task.
+type TaskStatus struct {
+	TaskID         string      `json:"task_id"`
+	Status         string      `json:"status"`
+	Result         interface{} `json:"result,omitempty"`
+	Exception      string      `json:"exception,omitempty"`
+	CompletionTime string      `json:"completion_time,omitempty"`
+}
+
+// TaskList is a paginated list of function task statuses.
+type TaskList struct {
+	Tasks  []TaskStatus `json:"tasks"`
+	Total  int          `json:"total"`
+	Offset int          `json:"offset"`
+	Limit  int          `json:"limit"`
+}
+
+// ListTasksOptions controls which tasks are returned.
+type ListTasksOptions struct {
+	EndpointID string
+	Limit      int
+	Offset     int
+}

@@ -74,3 +74,23 @@ type ProjectCreate struct {
 	PublicContactInfo string                 `json:"public_contact_info,omitempty"`
 	Metadata          map[string]interface{} `json:"metadata,omitempty"`
 }
+
+// AuthorizationURLOptions controls how the authorization URL is constructed.
+type AuthorizationURLOptions struct {
+	ClientID    string
+	RedirectURI string
+	Scopes      []string
+	State       string
+	AccessType  string
+	Prompt      string
+}
+
+// DeviceAuthorizationResponse is returned by StartDeviceAuthorization.
+type DeviceAuthorizationResponse struct {
+	DeviceCode              string `json:"device_code"`
+	UserCode                string `json:"user_code"`
+	VerificationURI         string `json:"verification_uri"`
+	VerificationURIComplete string `json:"verification_uri_complete,omitempty"`
+	ExpiresIn               int    `json:"expires_in"`
+	Interval                int    `json:"interval"`
+}

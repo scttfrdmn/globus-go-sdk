@@ -49,3 +49,27 @@ type ListTimersOptions struct {
 	Limit  int
 	Offset int
 }
+
+// TimerRun represents a single execution of a timer callback.
+type TimerRun struct {
+	ID        string    `json:"id"`
+	TimerID   string    `json:"timer_id"`
+	Status    string    `json:"status"`
+	StartTime time.Time `json:"start_time,omitempty"`
+	EndTime   time.Time `json:"end_time,omitempty"`
+	Error     string    `json:"error,omitempty"`
+}
+
+// TimerRunList is a paginated list of timer runs.
+type TimerRunList struct {
+	Runs   []TimerRun `json:"runs"`
+	Total  int        `json:"total"`
+	Offset int        `json:"offset"`
+	Limit  int        `json:"limit"`
+}
+
+// ListRunsOptions controls which timer runs are returned.
+type ListRunsOptions struct {
+	Limit  int
+	Offset int
+}

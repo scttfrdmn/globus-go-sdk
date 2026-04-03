@@ -118,3 +118,28 @@ type Role struct {
 type RoleList struct {
 	Roles []Role `json:"role_list"`
 }
+
+// IndexList is a paginated list of search indexes.
+type IndexList struct {
+	Indexes []Index `json:"index_list"`
+	Total   int     `json:"total"`
+	Offset  int     `json:"offset"`
+	Limit   int     `json:"limit"`
+}
+
+// ListIndexesOptions controls which indexes are returned.
+type ListIndexesOptions struct {
+	FilterRoles []string
+	Limit       int
+	Offset      int
+}
+
+// IngestTaskStatus represents the status of an asynchronous ingest or delete task.
+type IngestTaskStatus struct {
+	TaskID    string    `json:"task_id"`
+	Status    string    `json:"status"`
+	IndexID   string    `json:"index_id,omitempty"`
+	Created   time.Time `json:"creation_date,omitempty"`
+	Completed time.Time `json:"completion_date,omitempty"`
+	Message   string    `json:"message,omitempty"`
+}

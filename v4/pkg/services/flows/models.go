@@ -93,3 +93,30 @@ type ListRunsOptions struct {
 	Limit  int
 	Offset int
 }
+
+// RunUpdate contains fields that can be changed on a running flow execution.
+type RunUpdate struct {
+	Label string   `json:"label,omitempty"`
+	Tags  []string `json:"tags,omitempty"`
+}
+
+// RunLog is a single log entry for a flow run.
+type RunLog struct {
+	Code    string                 `json:"code"`
+	Details map[string]interface{} `json:"details,omitempty"`
+	Time    time.Time              `json:"time"`
+}
+
+// RunLogList is a paginated list of log entries for a flow run.
+type RunLogList struct {
+	Entries []RunLog `json:"entries"`
+	Total   int      `json:"total"`
+	Offset  int      `json:"offset"`
+	Limit   int      `json:"limit"`
+}
+
+// ListRunLogsOptions controls which run log entries are returned.
+type ListRunLogsOptions struct {
+	Limit  int
+	Offset int
+}

@@ -372,6 +372,9 @@ func (c *Client) UpdateTunnel(ctx context.Context, tunnelID string, data *Tunnel
 	if tunnelID == "" {
 		return nil, &core.ValidationError{Field: "tunnelID", Message: "tunnel ID is required"}
 	}
+	if data == nil {
+		return nil, &core.ValidationError{Field: "data", Message: "tunnel update data is required"}
+	}
 	var tunnel Tunnel
 	path := fmt.Sprintf("/tunnel/%s", tunnelID)
 	if err := c.baseClient.DoRequest(ctx, http.MethodPut, path, nil, data, &tunnel); err != nil {
@@ -443,6 +446,39 @@ func (c *Client) GetTunnelEvents(ctx context.Context, tunnelID string, options *
 		return nil, err
 	}
 	return &list, nil
+}
+
+// ListStreamAccessPoints lists all stream access points.
+// BETA: This feature is in beta and may change in future releases. (upstream v4.5.0)
+func (c *Client) ListStreamAccessPoints(ctx context.Context, options *ListTunnelsOptions) (*StreamAccessPointList, error) {
+	query := url.Values{}
+	if options != nil {
+		if options.Limit > 0 {
+			query.Set("limit", strconv.Itoa(options.Limit))
+		}
+		if options.Marker != "" {
+			query.Set("marker", options.Marker)
+		}
+	}
+
+	var sapList StreamAccessPointList
+	err := c.baseClient.DoRequest(ctx, http.MethodGet, "/stream_access_point_list", query, nil, &sapList)
+	if err != nil {
+		return nil, err
+	}
+	return &sapList, nil
+}
+
+// GetSubmissionID retrieves a fresh submission ID from the Transfer service.
+func (c *Client) GetSubmissionID(ctx context.Context) (string, error) {
+	var resp struct {
+		DataType string `json:"DATA_TYPE"`
+		Value    string `json:"value"`
+	}
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, "/submission_id", nil, nil, &resp); err != nil {
+		return "", err
+	}
+	return resp.Value, nil
 }
 
 // Close closes the client and releases resources

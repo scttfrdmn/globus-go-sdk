@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
 )
@@ -132,6 +133,119 @@ func (c *Client) ListRuns(ctx context.Context, options *ListRunsOptions) (*RunLi
 	}
 	return &runList, nil
 }
+// CreateFlow deploys a new flow definition.
+func (c *Client) CreateFlow(ctx context.Context, flow *FlowCreate) (*Flow, error) {
+	if flow == nil {
+		return nil, &core.ValidationError{Field: "flow", Message: "flow data is required"}
+	}
+	if flow.Title == "" {
+		return nil, &core.ValidationError{Field: "Title", Message: "flow title is required"}
+	}
+	if flow.Definition == nil {
+		return nil, &core.ValidationError{Field: "Definition", Message: "flow definition is required"}
+	}
+
+	var result Flow
+	if err := c.baseClient.DoRequest(ctx, http.MethodPost, "/flows", nil, flow, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// UpdateFlow modifies an existing flow.
+func (c *Client) UpdateFlow(ctx context.Context, flowID string, update *FlowUpdate) (*Flow, error) {
+	if flowID == "" {
+		return nil, &core.ValidationError{Field: "flowID", Message: "flow ID is required"}
+	}
+	if update == nil {
+		return nil, &core.ValidationError{Field: "update", Message: "update data is required"}
+	}
+
+	var result Flow
+	if err := c.baseClient.DoRequest(ctx, http.MethodPatch, fmt.Sprintf("/flows/%s", flowID), nil, update, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// DeleteFlow removes a flow definition.
+func (c *Client) DeleteFlow(ctx context.Context, flowID string) error {
+	if flowID == "" {
+		return &core.ValidationError{Field: "flowID", Message: "flow ID is required"}
+	}
+	return c.baseClient.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("/flows/%s", flowID), nil, nil, nil)
+}
+
+// UpdateRun modifies metadata on an active or completed run.
+func (c *Client) UpdateRun(ctx context.Context, runID string, update *RunUpdate) (*FlowRun, error) {
+	if runID == "" {
+		return nil, &core.ValidationError{Field: "runID", Message: "run ID is required"}
+	}
+	if update == nil {
+		return nil, &core.ValidationError{Field: "update", Message: "update data is required"}
+	}
+
+	var result FlowRun
+	if err := c.baseClient.DoRequest(ctx, http.MethodPatch, fmt.Sprintf("/runs/%s", runID), nil, update, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// GetRunLogs retrieves log entries for a flow run.
+func (c *Client) GetRunLogs(ctx context.Context, runID string, options *ListRunLogsOptions) (*RunLogList, error) {
+	if runID == "" {
+		return nil, &core.ValidationError{Field: "runID", Message: "run ID is required"}
+	}
+
+	query := url.Values{}
+	if options != nil {
+		if options.Limit > 0 {
+			query.Set("limit", strconv.Itoa(options.Limit))
+		}
+		if options.Offset > 0 {
+			query.Set("offset", strconv.Itoa(options.Offset))
+		}
+	}
+
+	var logList RunLogList
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, fmt.Sprintf("/runs/%s/log", runID), query, nil, &logList); err != nil {
+		return nil, err
+	}
+	return &logList, nil
+}
+
+var terminalRunStatuses = map[string]bool{
+	"SUCCEEDED": true,
+	"FAILED":    true,
+	"CANCELLED": true,
+}
+
+// WaitForRun polls GetRun until terminal state or ctx cancellation.
+func (c *Client) WaitForRun(ctx context.Context, runID string, pollInterval time.Duration) (*FlowRun, error) {
+	if runID == "" {
+		return nil, &core.ValidationError{Field: "runID", Message: "run ID is required"}
+	}
+	if pollInterval <= 0 {
+		pollInterval = 5 * time.Second
+	}
+
+	for {
+		run, err := c.GetRun(ctx, runID)
+		if err != nil {
+			return nil, err
+		}
+		if terminalRunStatuses[run.Status] {
+			return run, nil
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(pollInterval):
+		}
+	}
+}
+
 // Close closes the client and releases resources
 func (c *Client) Close() error {
 	return c.baseClient.Close()

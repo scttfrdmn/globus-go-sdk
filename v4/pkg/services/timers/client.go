@@ -174,6 +174,80 @@ func (c *Client) CreateRecurringTimer(ctx context.Context, name string, startTim
 
 	return c.CreateTimer(ctx, timer)
 }
+// CreateTransferTimer creates a timer that submits a Globus Transfer task.
+func (c *Client) CreateTransferTimer(ctx context.Context, name string, schedule *Schedule, transferScope string, transferBody map[string]interface{}) (*Timer, error) {
+	if name == "" {
+		return nil, &core.ValidationError{Field: "name", Message: "timer name is required"}
+	}
+	if schedule == nil {
+		return nil, &core.ValidationError{Field: "schedule", Message: "schedule is required"}
+	}
+	if transferBody == nil {
+		return nil, &core.ValidationError{Field: "transferBody", Message: "transfer body is required"}
+	}
+
+	timer := &Timer{
+		Name:     name,
+		Schedule: schedule,
+		Callback: &Callback{
+			Type:  "action",
+			URL:   "https://transfer.api.globus.org/v0.10/transfer",
+			Body:  transferBody,
+			Scope: transferScope,
+		},
+	}
+	return c.CreateTimer(ctx, timer)
+}
+
+// RunTimer manually triggers a timer, executing its callback immediately.
+func (c *Client) RunTimer(ctx context.Context, timerID string) error {
+	if timerID == "" {
+		return &core.ValidationError{Field: "timerID", Message: "timer ID is required"}
+	}
+	return c.baseClient.DoRequest(ctx, http.MethodPost, fmt.Sprintf("/timers/%s/run", timerID), nil, nil, nil)
+}
+
+// ListRuns returns the execution history for a timer.
+func (c *Client) ListRuns(ctx context.Context, timerID string, options *ListRunsOptions) (*TimerRunList, error) {
+	if timerID == "" {
+		return nil, &core.ValidationError{Field: "timerID", Message: "timer ID is required"}
+	}
+
+	query := url.Values{}
+	if options != nil {
+		if options.Limit > 0 {
+			query.Set("limit", strconv.Itoa(options.Limit))
+		}
+		if options.Offset > 0 {
+			query.Set("offset", strconv.Itoa(options.Offset))
+		}
+	}
+
+	var runList TimerRunList
+	err := c.baseClient.DoRequest(ctx, http.MethodGet, fmt.Sprintf("/timers/%s/runs", timerID), query, nil, &runList)
+	if err != nil {
+		return nil, err
+	}
+	return &runList, nil
+}
+
+// GetRun retrieves a specific timer run by ID.
+func (c *Client) GetRun(ctx context.Context, timerID, runID string) (*TimerRun, error) {
+	if timerID == "" {
+		return nil, &core.ValidationError{Field: "timerID", Message: "timer ID is required"}
+	}
+	if runID == "" {
+		return nil, &core.ValidationError{Field: "runID", Message: "run ID is required"}
+	}
+
+	var run TimerRun
+	err := c.baseClient.DoRequest(ctx, http.MethodGet, fmt.Sprintf("/timers/%s/runs/%s", timerID, runID), nil, nil, &run)
+	if err != nil {
+		return nil, err
+	}
+	return &run, nil
+}
+
 // Close closes the client and releases resources
 func (c *Client) Close() error {
 	return c.baseClient.Close()

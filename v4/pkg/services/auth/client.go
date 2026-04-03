@@ -4,9 +4,12 @@ package auth
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
+	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
 )
@@ -229,6 +232,136 @@ func (c *Client) DeleteProject(ctx context.Context, projectID string) error {
 	endpoint := fmt.Sprintf("/v2/api/projects/%s", projectID)
 	return c.baseClient.DoRequest(ctx, http.MethodDelete, endpoint, nil, nil, nil)
 }
+// GetAuthorizationURL constructs the Globus Auth authorization URL that the
+// user should be redirected to as the first step of the authorization code
+// flow.  It does not make an HTTP request.
+func (c *Client) GetAuthorizationURL(opts *AuthorizationURLOptions) (string, error) {
+	if opts == nil {
+		return "", &core.ValidationError{Field: "opts", Message: "options are required"}
+	}
+	if opts.ClientID == "" {
+		return "", &core.ValidationError{Field: "ClientID", Message: "client ID is required"}
+	}
+	if opts.RedirectURI == "" {
+		return "", &core.ValidationError{Field: "RedirectURI", Message: "redirect URI is required"}
+	}
+
+	base := c.baseURL
+	if base == "" {
+		base = "https://auth.globus.org/v2"
+	}
+
+	q := url.Values{}
+	q.Set("response_type", "code")
+	q.Set("client_id", opts.ClientID)
+	q.Set("redirect_uri", opts.RedirectURI)
+	if len(opts.Scopes) > 0 {
+		q.Set("scope", strings.Join(opts.Scopes, " "))
+	}
+	if opts.State != "" {
+		q.Set("state", opts.State)
+	}
+	if opts.AccessType != "" {
+		q.Set("access_type", opts.AccessType)
+	}
+	if opts.Prompt != "" {
+		q.Set("prompt", opts.Prompt)
+	}
+
+	return base + "/oauth2/authorize?" + q.Encode(), nil
+}
+
+// StartDeviceAuthorization initiates the RFC 8628 device authorization grant.
+func (c *Client) StartDeviceAuthorization(ctx context.Context, clientID string, scopes []string) (*DeviceAuthorizationResponse, error) {
+	if clientID == "" {
+		return nil, &core.ValidationError{Field: "clientID", Message: "client ID is required"}
+	}
+	if len(scopes) == 0 {
+		return nil, &core.ValidationError{Field: "scopes", Message: "at least one scope is required"}
+	}
+
+	data := url.Values{}
+	data.Set("client_id", clientID)
+	data.Set("scope", strings.Join(scopes, " "))
+
+	var resp DeviceAuthorizationResponse
+	if err := c.baseClient.DoRequest(ctx, http.MethodPost, "/oauth2/device/code", nil, data, &resp); err != nil {
+		return nil, err
+	}
+	return &resp, nil
+}
+
+// ErrAuthorizationPending is returned by PollDeviceAuthorization when the user
+// has not yet approved the request.
+var ErrAuthorizationPending = errors.New("auth: authorization pending — user has not yet approved the device request")
+
+// ErrSlowDown is returned by PollDeviceAuthorization when the server requests
+// a reduced polling rate.
+var ErrSlowDown = errors.New("auth: slow down — reduce polling frequency")
+
+// PollDeviceAuthorization polls /oauth2/token for a device code grant.
+func (c *Client) PollDeviceAuthorization(ctx context.Context, clientID, deviceCode string) (*TokenResponse, error) {
+	if clientID == "" {
+		return nil, &core.ValidationError{Field: "clientID", Message: "client ID is required"}
+	}
+	if deviceCode == "" {
+		return nil, &core.ValidationError{Field: "deviceCode", Message: "device code is required"}
+	}
+
+	data := url.Values{}
+	data.Set("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
+	data.Set("client_id", clientID)
+	data.Set("device_code", deviceCode)
+
+	var tokenResp TokenResponse
+	err := c.baseClient.DoRequest(ctx, http.MethodPost, "/oauth2/token", nil, data, &tokenResp)
+	if err != nil {
+		var apiErr *core.APIError
+		if errors.As(err, &apiErr) {
+			switch apiErr.Code {
+			case "authorization_pending":
+				return nil, ErrAuthorizationPending
+			case "slow_down":
+				return nil, ErrSlowDown
+			}
+		}
+		return nil, err
+	}
+	return &tokenResp, nil
+}
+
+// WaitForDeviceAuthorization polls until approval or ctx cancellation.
+func (c *Client) WaitForDeviceAuthorization(ctx context.Context, clientID string, resp *DeviceAuthorizationResponse) (*TokenResponse, error) {
+	if resp == nil {
+		return nil, &core.ValidationError{Field: "resp", Message: "device authorization response is required"}
+	}
+
+	interval := time.Duration(resp.Interval) * time.Second
+	if interval < time.Second {
+		interval = 5 * time.Second
+	}
+
+	for {
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(interval):
+			tokenResp, err := c.PollDeviceAuthorization(ctx, clientID, resp.DeviceCode)
+			if err == nil {
+				return tokenResp, nil
+			}
+			if errors.Is(err, ErrSlowDown) {
+				interval += 5 * time.Second
+				continue
+			}
+			if errors.Is(err, ErrAuthorizationPending) {
+				continue
+			}
+			return nil, err
+		}
+	}
+}
+
 // Close closes the client and releases resources
 func (c *Client) Close() error {
 	return c.baseClient.Close()

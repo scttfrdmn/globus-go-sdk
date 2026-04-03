@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"strconv"
 
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
 )
@@ -361,6 +362,47 @@ func (c *Client) ReopenIndex(ctx context.Context, indexID string) (*Index, error
 		return nil, err
 	}
 	return &index, nil
+}
+
+// IndexList lists search indexes with optional role filtering. (upstream v4.5.0)
+func (c *Client) IndexList(ctx context.Context, options *ListIndexesOptions) (*IndexList, error) {
+	query := url.Values{}
+
+	if options != nil {
+		for _, role := range options.FilterRoles {
+			query.Add("filter_roles", role)
+		}
+		if options.Limit > 0 {
+			query.Set("limit", strconv.Itoa(options.Limit))
+		}
+		if options.Offset > 0 {
+			query.Set("offset", strconv.Itoa(options.Offset))
+		}
+	}
+
+	var indexList IndexList
+	err := c.baseClient.DoRequest(ctx, http.MethodGet, "/index_list", query, nil, &indexList)
+	if err != nil {
+		return nil, err
+	}
+	return &indexList, nil
+}
+
+// GetTaskStatus retrieves the status of an asynchronous ingest or delete task.
+func (c *Client) GetTaskStatus(ctx context.Context, indexID, taskID string) (*IngestTaskStatus, error) {
+	if indexID == "" {
+		return nil, &core.ValidationError{Field: "indexID", Message: "index ID is required"}
+	}
+	if taskID == "" {
+		return nil, &core.ValidationError{Field: "taskID", Message: "task ID is required"}
+	}
+
+	var status IngestTaskStatus
+	path := fmt.Sprintf("/index/%s/task/%s", indexID, taskID)
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, path, nil, nil, &status); err != nil {
+		return nil, err
+	}
+	return &status, nil
 }
 
 // Close closes the client and releases resources
