@@ -835,4 +835,3 @@ func (c *Client) SetSubscriptionAdminVerified(ctx context.Context, endpointID, s
 
 	return c.doRequestLowLevel(ctx, http.MethodPut, "endpoint/"+endpointID+"/subscription", nil, body, nil)
 }
-

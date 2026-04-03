@@ -850,8 +850,8 @@ func TestDecodeResponse_BodyClosed(t *testing.T) {
 	// Verify that DecodeResponse closes the body
 	closed := false
 	body := &trackingReadCloser{
-		Reader:    strings.NewReader(`{"key":"val"}`),
-		onClose:   func() { closed = true },
+		Reader:  strings.NewReader(`{"key":"val"}`),
+		onClose: func() { closed = true },
 	}
 	resp := &http.Response{
 		StatusCode: http.StatusOK,

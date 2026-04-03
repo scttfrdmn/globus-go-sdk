@@ -103,15 +103,15 @@ func TestListFlowsAllOptions(t *testing.T) {
 	server, client := startMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		checks := map[string]string{
-			"per_page":     "10",
-			"offset":       "20",
-			"marker":       "tok-abc",
-			"orderby":      "created_at",
-			"q":            "search-term",
-			"filter_roles": "flow_owner",
-			"filter_owner": "user-123",
+			"per_page":      "10",
+			"offset":        "20",
+			"marker":        "tok-abc",
+			"orderby":       "created_at",
+			"q":             "search-term",
+			"filter_roles":  "flow_owner",
+			"filter_owner":  "user-123",
 			"filter_public": "true",
-			"roles_only":   "true",
+			"roles_only":    "true",
 		}
 		for k, v := range checks {
 			if got := q.Get(k); got != v {
@@ -290,13 +290,13 @@ func TestListActionProvidersAllOptions(t *testing.T) {
 	server, client := startMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
 		checks := map[string]string{
-			"per_page":     "10",
-			"offset":       "5",
-			"marker":       "m-tok",
-			"orderby":      "display_name",
-			"q":            "transfer",
-			"filter_owner": "globus",
-			"filter_type":  "action",
+			"per_page":      "10",
+			"offset":        "5",
+			"marker":        "m-tok",
+			"orderby":       "display_name",
+			"q":             "transfer",
+			"filter_owner":  "globus",
+			"filter_type":   "action",
 			"filter_globus": "true",
 		}
 		for k, v := range checks {

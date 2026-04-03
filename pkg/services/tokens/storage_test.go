@@ -344,4 +344,3 @@ func TestFileStorageErrors(t *testing.T) {
 		t.Error("NewFileStorage() error = nil, want error")
 	}
 }
-

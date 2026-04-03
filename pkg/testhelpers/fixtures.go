@@ -150,8 +150,8 @@ func applyTemplate(scenario *TestScenario, template interface{}) {
 	if templateMap, ok := template.(map[string]interface{}); ok {
 		if responseBody, exists := templateMap["response_body"]; exists {
 			if rb, ok := responseBody.(map[string]interface{}); ok {
-			scenario.ResponseBody = rb
-		}
+				scenario.ResponseBody = rb
+			}
 		}
 		if statusCode, exists := templateMap["status_code"]; exists {
 			if code, ok := statusCode.(float64); ok {

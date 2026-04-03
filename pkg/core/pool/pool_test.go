@@ -338,9 +338,9 @@ type mockConfig struct {
 	idleConnTimeout     time.Duration
 }
 
-func (m *mockConfig) GetMaxIdleConnsPerHost() int    { return m.maxIdleConnsPerHost }
-func (m *mockConfig) GetMaxIdleConns() int           { return m.maxIdleConns }
-func (m *mockConfig) GetMaxConnsPerHost() int        { return m.maxConnsPerHost }
+func (m *mockConfig) GetMaxIdleConnsPerHost() int       { return m.maxIdleConnsPerHost }
+func (m *mockConfig) GetMaxIdleConns() int              { return m.maxIdleConns }
+func (m *mockConfig) GetMaxConnsPerHost() int           { return m.maxConnsPerHost }
 func (m *mockConfig) GetIdleConnTimeout() time.Duration { return m.idleConnTimeout }
 
 func TestPoolManager_GetPool_WithInterfaceConfig(t *testing.T) {

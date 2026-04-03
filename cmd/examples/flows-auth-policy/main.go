@@ -8,11 +8,13 @@
 // permitted.
 //
 // Required environment variables:
-//   GLOBUS_CLIENT_ID      - Globus application client ID
-//   GLOBUS_CLIENT_SECRET  - Globus application client secret
+//
+//	GLOBUS_CLIENT_ID      - Globus application client ID
+//	GLOBUS_CLIENT_SECRET  - Globus application client secret
 //
 // Optional environment variables:
-//   GLOBUS_FLOW_ID        - An existing flow ID to query and run
+//
+//	GLOBUS_FLOW_ID        - An existing flow ID to query and run
 package main
 
 import (

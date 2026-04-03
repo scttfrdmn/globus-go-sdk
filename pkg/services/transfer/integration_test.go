@@ -24,7 +24,6 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
 )
 
-
 func init() {
 	// Load environment variables from .env.test file
 	_ = godotenv.Load("../../../.env.test")

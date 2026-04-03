@@ -24,7 +24,7 @@ type fakeAuthorizer struct{ token string }
 func (a *fakeAuthorizer) GetAuthorizationHeader(...context.Context) (string, error) {
 	return "Bearer " + a.token, nil
 }
-func (a *fakeAuthorizer) IsValid() bool  { return a.token != "" }
+func (a *fakeAuthorizer) IsValid() bool    { return a.token != "" }
 func (a *fakeAuthorizer) GetToken() string { return a.token }
 
 // newTransferClient creates a transfer Client pointed at the given test server.

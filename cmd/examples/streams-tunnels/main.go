@@ -8,10 +8,12 @@
 // v4.4.0 (tunnel events).
 //
 // Required environment variables:
-//   GLOBUS_ACCESS_TOKEN  - A valid Globus Transfer access token
+//
+//	GLOBUS_ACCESS_TOKEN  - A valid Globus Transfer access token
 //
 // Optional environment variables:
-//   GLOBUS_TUNNEL_ID     - An existing tunnel ID to query events for
+//
+//	GLOBUS_TUNNEL_ID     - An existing tunnel ID to query events for
 package main
 
 import (
