@@ -281,6 +281,7 @@ func TestListRunsNilOptions(t *testing.T) {
 		t.Fatalf("ListRuns with nil options: %v", err)
 	}
 }
+
 // ---------------------------------------------------------------------------
 // TestGetRunLogsWithOffset
 // ---------------------------------------------------------------------------
@@ -464,6 +465,7 @@ func TestListAllRuns(t *testing.T) {
 		t.Fatalf("expected 2 runs, got %d", len(runList))
 	}
 }
+
 // ---------------------------------------------------------------------------
 // TestListAllRunLogs
 // ---------------------------------------------------------------------------
@@ -569,6 +571,7 @@ func TestGetRunsIterator(t *testing.T) {
 		t.Fatalf("expected 1 run, got %d", len(runs))
 	}
 }
+
 // ---------------------------------------------------------------------------
 // TestGetRunLogsIterator
 // ---------------------------------------------------------------------------
@@ -919,6 +922,7 @@ func TestListFlowsHTTPError400(t *testing.T) {
 		t.Errorf("expected ValidationError, got %T: %v", err, err)
 	}
 }
+
 // TestListFlowsV2ErrorWrapping exercises the GlobusError wrapping in ListFlowsV2.
 func TestListFlowsV2ErrorWrapping(t *testing.T) {
 	server, client := startMockServer(t, func(w http.ResponseWriter, r *http.Request) {

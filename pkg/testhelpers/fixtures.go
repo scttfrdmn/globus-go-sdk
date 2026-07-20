@@ -384,7 +384,6 @@ func AssertGroupEquals(t *testing.T, actual *groups.Group, expected *TestScenari
 	}
 }
 
-
 // MockSleepDisabled prevents actual sleep during tests (Python SDK pattern)
 func MockSleepDisabled() {
 	// In Go, we can't easily mock time.Sleep globally like Python

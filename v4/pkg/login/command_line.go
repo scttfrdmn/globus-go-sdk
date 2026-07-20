@@ -17,8 +17,8 @@ import (
 )
 
 const (
-	defaultAuthBaseURL  = "https://auth.globus.org"
-	defaultRedirectURI  = "https://auth.globus.org/v2/web/auth-code"
+	defaultAuthBaseURL = "https://auth.globus.org"
+	defaultRedirectURI = "https://auth.globus.org/v2/web/auth-code"
 )
 
 // CommandLineLoginFlowManager drives an OAuth2 authorization code flow on the

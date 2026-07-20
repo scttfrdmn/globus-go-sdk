@@ -244,4 +244,3 @@ func (i *RunLogIterator) LogEntry() *RunLogEntry {
 func (i *RunLogIterator) Err() error {
 	return i.err
 }
-

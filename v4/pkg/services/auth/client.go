@@ -232,6 +232,7 @@ func (c *Client) DeleteProject(ctx context.Context, projectID string) error {
 	endpoint := fmt.Sprintf("/v2/api/projects/%s", projectID)
 	return c.baseClient.DoRequest(ctx, http.MethodDelete, endpoint, nil, nil, nil)
 }
+
 // GetAuthorizationURL constructs the Globus Auth authorization URL that the
 // user should be redirected to as the first step of the authorization code
 // flow.  It does not make an HTTP request.
@@ -366,4 +367,3 @@ func (c *Client) WaitForDeviceAuthorization(ctx context.Context, clientID string
 func (c *Client) Close() error {
 	return c.baseClient.Close()
 }
-

@@ -101,9 +101,9 @@ func TestMarkerPaginator_MultiplePages(t *testing.T) {
 func TestNextTokenPaginator_MultiplePages(t *testing.T) {
 	ctx := context.Background()
 	pages := []struct {
-		items    []string
-		hasNext  bool
-		token    string
+		items   []string
+		hasNext bool
+		token   string
 	}{
 		{[]string{"x", "y"}, true, "tok1"},
 		{[]string{"z"}, false, ""},

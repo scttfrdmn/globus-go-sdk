@@ -132,6 +132,7 @@ func (c *Client) ListFunctions(ctx context.Context, options *ListFunctionsOption
 	}
 	return &functionList, nil
 }
+
 // RegisterFunction registers a serialized function with Globus Compute.
 func (c *Client) RegisterFunction(ctx context.Context, fn *FunctionDefinition) (*FunctionRegistration, error) {
 	if fn == nil {
@@ -246,4 +247,3 @@ func (c *Client) GetBatchStatus(ctx context.Context, taskIDs []string) (*BatchTa
 func (c *Client) Close() error {
 	return c.baseClient.Close()
 }
-

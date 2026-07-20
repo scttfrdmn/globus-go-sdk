@@ -810,4 +810,3 @@ func TestGetRunLogs(t *testing.T) {
 		t.Error("GetRunLogs() with empty ID should return error")
 	}
 }
-
