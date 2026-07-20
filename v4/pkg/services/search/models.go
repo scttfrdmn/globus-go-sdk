@@ -20,42 +20,66 @@ type Index struct {
 	Settings       map[string]interface{} `json:"settings,omitempty"`
 }
 
-// IndexCreate represents the data needed to create a new search index
+// IndexCreate represents the data needed to create a new search index. Upstream
+// create_index sends only display_name and description.
 type IndexCreate struct {
-	DisplayName    string                 `json:"display_name"`
-	Description    string                 `json:"description,omitempty"`
-	SubscriptionID string                 `json:"subscription_id,omitempty"`
-	MaxSizeInMB    int                    `json:"max_size_in_mb,omitempty"`
-	Settings       map[string]interface{} `json:"settings,omitempty"`
+	DisplayName string `json:"display_name"`
+	Description string `json:"description,omitempty"`
 }
 
-// IndexUpdate represents the data to update in a search index
+// IndexUpdate represents the data to update in a search index. Upstream
+// update_index sends only display_name and description.
 type IndexUpdate struct {
-	DisplayName string                 `json:"display_name,omitempty"`
-	Description string                 `json:"description,omitempty"`
-	Settings    map[string]interface{} `json:"settings,omitempty"`
+	DisplayName string `json:"display_name,omitempty"`
+	Description string `json:"description,omitempty"`
 }
 
-// SearchQuery represents a search query
+// SearchQueryVersion is the envelope version SearchQueryV1 always carries.
+const SearchQueryVersion = "query#1.0.0"
+
+// SearchQuery represents a GSearchRequest (SearchQueryV1) posted to the search
+// endpoint. Version defaults to SearchQueryVersion when empty.
 type SearchQuery struct {
-	Q             string                   `json:"q"`                           // Query string
-	Filters       []map[string]interface{} `json:"filters,omitempty"`           // Filters
-	Facets        []string                 `json:"facets,omitempty"`            // Facets to return
-	Sort          []map[string]interface{} `json:"sort,omitempty"`              // Sort criteria
-	Offset        int                      `json:"offset,omitempty"`            // Pagination offset
-	Limit         int                      `json:"limit,omitempty"`             // Results per page
-	AdvancedQuery bool                     `json:"advanced,omitempty"`          // Use advanced query syntax
-	BypassVisible bool                     `json:"bypass_visible_to,omitempty"` // Bypass visibility checks
+	Version          string                   `json:"@version"`
+	Q                string                   `json:"q"`
+	Filters          []map[string]interface{} `json:"filters,omitempty"`
+	Facets           []map[string]interface{} `json:"facets,omitempty"`
+	PostFacetFilters []map[string]interface{} `json:"post_facet_filters,omitempty"`
+	Boosts           []map[string]interface{} `json:"boosts,omitempty"`
+	Sort             []map[string]interface{} `json:"sort,omitempty"`
+	Offset           int                      `json:"offset,omitempty"`
+	Limit            int                      `json:"limit,omitempty"`
+	AdvancedQuery    bool                     `json:"advanced,omitempty"`
 }
 
-// SearchResults represents search query results
+// ScrollQuery is the body for a scroll query (POST /index/{id}/scroll). Marker
+// carries the cursor from the previous page's response.
+type ScrollQuery struct {
+	Q             string `json:"q"`
+	Limit         int    `json:"limit,omitempty"`
+	AdvancedQuery bool   `json:"advanced,omitempty"`
+	Marker        string `json:"marker,omitempty"`
+}
+
+// SearchGetOptions holds query params for the GET search variant. Offset and
+// Limit are omitted from the request when zero.
+type SearchGetOptions struct {
+	Q        string
+	Offset   int
+	Limit    int
+	Advanced bool
+}
+
+// SearchResults represents search query results. Marker is populated by scroll
+// queries and carries the cursor for the next page.
 type SearchResults struct {
-	Count       int                    `json:"count"`
-	Offset      int                    `json:"offset"`
-	HasNextPage bool                   `json:"has_next_page"`
-	Total       int                    `json:"total"`
-	GMeta       []GMetaResult          `json:"gmeta"`
-	Facets      map[string]interface{} `json:"facets,omitempty"`
+	Count        int                      `json:"count"`
+	Offset       int                      `json:"offset"`
+	HasNextPage  bool                     `json:"has_next_page"`
+	Total        int                      `json:"total"`
+	GMeta        []GMetaResult            `json:"gmeta"`
+	FacetResults []map[string]interface{} `json:"facet_results,omitempty"`
+	Marker       string                   `json:"marker,omitempty"`
 }
 
 // GMetaResult represents a single search result
@@ -75,71 +99,84 @@ type GMetaEntry struct {
 	LastModified time.Time              `json:"last_modified,omitempty"`
 }
 
-// IngestEntry represents a document to ingest
-type IngestEntry struct {
+// GMetaEntryDocument builds a single-entry ingest document (ingest_type
+// "GMetaEntry"). Use NewGMetaEntryIngest to construct one.
+type GMetaEntryDocument struct {
 	Subject   string                 `json:"subject"`
 	VisibleTo []string               `json:"visible_to,omitempty"`
 	Content   map[string]interface{} `json:"content"`
 	ID        string                 `json:"id,omitempty"`
 }
 
-// IngestBatch represents multiple documents to ingest
-type IngestBatch struct {
-	Ingest  []IngestEntry `json:"ingest"`
-	Entries []IngestEntry `json:"entries"` // Alternative field name
+// NewGMetaEntryIngest builds a single-entry ingest document with the required
+// {ingest_type, ingest_data} envelope, suitable for passing to Ingest.
+func NewGMetaEntryIngest(entry GMetaEntryDocument) map[string]interface{} {
+	return map[string]interface{}{
+		"ingest_type": "GMetaEntry",
+		"ingest_data": entry,
+	}
 }
 
-// IngestResponse represents the response from ingesting a document
+// NewGMetaListIngest builds a bulk ingest document with the required
+// {ingest_type, ingest_data:{gmeta:[...]}} envelope, suitable for Ingest.
+func NewGMetaListIngest(entries []GMetaEntryDocument) map[string]interface{} {
+	return map[string]interface{}{
+		"ingest_type": "GMetaList",
+		"ingest_data": map[string]interface{}{"gmeta": entries},
+	}
+}
+
+// IngestResponse represents the response from an ingest/delete task submission.
 type IngestResponse struct {
-	TaskID   string `json:"task_id"`
-	Accepted int    `json:"accepted"`
-	Message  string `json:"message,omitempty"`
+	TaskID       string `json:"task_id"`
+	Acknowledged bool   `json:"acknowledged,omitempty"`
+	Success      bool   `json:"success,omitempty"`
+	Message      string `json:"message,omitempty"`
 }
 
-// IngestBatchResponse represents the response from batch ingest
-type IngestBatchResponse struct {
-	TaskID   string `json:"task_id"`
-	Accepted int    `json:"accepted"`
-	Rejected int    `json:"rejected,omitempty"`
-	Message  string `json:"message,omitempty"`
-}
-
-// Role represents a role assignment in a search index
+// Role represents a role assignment in a search index.
 type Role struct {
 	ID        string    `json:"id"`
 	IndexID   string    `json:"index_id"`
 	Principal string    `json:"principal"`
-	RoleID    string    `json:"role_id"`
 	RoleName  string    `json:"role_name,omitempty"`
 	Created   time.Time `json:"created,omitempty"`
 }
 
-// RoleList represents a list of roles
+// RoleCreate is the create-role body: role_name (owner|admin|writer) + principal.
+type RoleCreate struct {
+	RoleName  string `json:"role_name"`
+	Principal string `json:"principal"`
+}
+
+// RoleList represents a list of roles.
 type RoleList struct {
 	Roles []Role `json:"role_list"`
 }
 
-// IndexList is a paginated list of search indexes.
+// IndexList is a list of search indexes. index_list is not paginated upstream.
 type IndexList struct {
 	Indexes []Index `json:"index_list"`
-	Total   int     `json:"total"`
-	Offset  int     `json:"offset"`
-	Limit   int     `json:"limit"`
 }
 
-// ListIndexesOptions controls which indexes are returned.
+// ListIndexesOptions controls which indexes are returned. FilterRoles is
+// comma-joined into a single filter_roles query param.
 type ListIndexesOptions struct {
 	FilterRoles []string
-	Limit       int
-	Offset      int
 }
 
-// IngestTaskStatus represents the status of an asynchronous ingest or delete task.
-type IngestTaskStatus struct {
+// Task represents a Search task (get_task / task_list entry). The status field
+// is "state" upstream.
+type Task struct {
 	TaskID    string    `json:"task_id"`
-	Status    string    `json:"status"`
 	IndexID   string    `json:"index_id,omitempty"`
+	State     string    `json:"state,omitempty"`
 	Created   time.Time `json:"creation_date,omitempty"`
 	Completed time.Time `json:"completion_date,omitempty"`
 	Message   string    `json:"message,omitempty"`
+}
+
+// TaskList is the response envelope for GET /task_list/{index_id}.
+type TaskList struct {
+	Tasks []Task `json:"tasks"`
 }

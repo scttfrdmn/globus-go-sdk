@@ -51,9 +51,11 @@ func (c *Client) GetUserInfo(ctx context.Context) (*UserInfo, error) {
 	return &userInfo, nil
 }
 
-// IntrospectToken introspects an OAuth2 token
+// IntrospectToken introspects an OAuth2 token. The request is form-encoded per
+// the OAuth2 introspection spec. Pass opts.Include (e.g. "identity_set") to
+// request extra fields; opts may be nil.
 // v4: Context is always first parameter
-func (c *Client) IntrospectToken(ctx context.Context, token string) (*TokenIntrospection, error) {
+func (c *Client) IntrospectToken(ctx context.Context, token string, opts *IntrospectOptions) (*TokenIntrospection, error) {
 	if token == "" {
 		return nil, &core.ValidationError{
 			Field:   "token",
@@ -61,12 +63,14 @@ func (c *Client) IntrospectToken(ctx context.Context, token string) (*TokenIntro
 		}
 	}
 
-	body := map[string]interface{}{
-		"token": token,
+	data := url.Values{}
+	data.Set("token", token)
+	if opts != nil && opts.Include != "" {
+		data.Set("include", opts.Include)
 	}
 
 	var introspection TokenIntrospection
-	err := c.baseClient.DoRequest(ctx, http.MethodPost, "/oauth2/token/introspect", nil, body, &introspection)
+	err := c.baseClient.DoRequest(ctx, http.MethodPost, "/oauth2/token/introspect", nil, data, &introspection)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +78,7 @@ func (c *Client) IntrospectToken(ctx context.Context, token string) (*TokenIntro
 	return &introspection, nil
 }
 
-// RevokeToken revokes an OAuth2 token
+// RevokeToken revokes an OAuth2 token. The request is form-encoded.
 // v4: Context is always first parameter
 func (c *Client) RevokeToken(ctx context.Context, token string) error {
 	if token == "" {
@@ -84,11 +88,10 @@ func (c *Client) RevokeToken(ctx context.Context, token string) error {
 		}
 	}
 
-	body := map[string]interface{}{
-		"token": token,
-	}
+	data := url.Values{}
+	data.Set("token", token)
 
-	return c.baseClient.DoRequest(ctx, http.MethodPost, "/oauth2/token/revoke", nil, body, nil)
+	return c.baseClient.DoRequest(ctx, http.MethodPost, "/oauth2/token/revoke", nil, data, nil)
 }
 
 // ExchangeAuthorizationCode exchanges an authorization code for tokens
@@ -168,12 +171,14 @@ func (c *Client) RefreshToken(ctx context.Context, refreshToken, clientID, clien
 // GetProjects retrieves the user's projects (requires manage_projects scope)
 // v4: Context is always first parameter
 func (c *Client) GetProjects(ctx context.Context) ([]Project, error) {
-	var projects []Project
-	err := c.baseClient.DoRequest(ctx, http.MethodGet, "/v2/api/projects", nil, nil, &projects)
+	var envelope struct {
+		Projects []Project `json:"projects"`
+	}
+	err := c.baseClient.DoRequest(ctx, http.MethodGet, "/api/projects", nil, nil, &envelope)
 	if err != nil {
 		return nil, err
 	}
-	return projects, nil
+	return envelope.Projects, nil
 }
 
 // CreateProject creates a new project (requires manage_projects scope)
@@ -192,12 +197,15 @@ func (c *Client) CreateProject(ctx context.Context, project *ProjectCreate) (*Pr
 		}
 	}
 
-	var result Project
-	err := c.baseClient.DoRequest(ctx, http.MethodPost, "/v2/api/projects", nil, project, &result)
+	body := map[string]interface{}{"project": project}
+	var result struct {
+		Project Project `json:"project"`
+	}
+	err := c.baseClient.DoRequest(ctx, http.MethodPost, "/api/projects", nil, body, &result)
 	if err != nil {
 		return nil, err
 	}
-	return &result, nil
+	return &result.Project, nil
 }
 
 // GetProject retrieves a specific project by ID
@@ -210,13 +218,15 @@ func (c *Client) GetProject(ctx context.Context, projectID string) (*Project, er
 		}
 	}
 
-	var project Project
-	endpoint := fmt.Sprintf("/v2/api/projects/%s", projectID)
-	err := c.baseClient.DoRequest(ctx, http.MethodGet, endpoint, nil, nil, &project)
+	endpoint := fmt.Sprintf("/api/projects/%s", projectID)
+	var result struct {
+		Project Project `json:"project"`
+	}
+	err := c.baseClient.DoRequest(ctx, http.MethodGet, endpoint, nil, nil, &result)
 	if err != nil {
 		return nil, err
 	}
-	return &project, nil
+	return &result.Project, nil
 }
 
 // DeleteProject deletes a project
@@ -229,7 +239,7 @@ func (c *Client) DeleteProject(ctx context.Context, projectID string) error {
 		}
 	}
 
-	endpoint := fmt.Sprintf("/v2/api/projects/%s", projectID)
+	endpoint := fmt.Sprintf("/api/projects/%s", projectID)
 	return c.baseClient.DoRequest(ctx, http.MethodDelete, endpoint, nil, nil, nil)
 }
 
@@ -267,6 +277,21 @@ func (c *Client) GetAuthorizationURL(opts *AuthorizationURLOptions) (string, err
 	}
 	if opts.Prompt != "" {
 		q.Set("prompt", opts.Prompt)
+	}
+	if len(opts.SessionRequiredIdentities) > 0 {
+		q.Set("session_required_identities", strings.Join(opts.SessionRequiredIdentities, ","))
+	}
+	if len(opts.SessionRequiredSingleDomain) > 0 {
+		q.Set("session_required_single_domain", strings.Join(opts.SessionRequiredSingleDomain, ","))
+	}
+	if len(opts.SessionRequiredPolicies) > 0 {
+		q.Set("session_required_policies", strings.Join(opts.SessionRequiredPolicies, ","))
+	}
+	if opts.SessionRequiredMFA {
+		q.Set("session_required_mfa", "true")
+	}
+	if opts.SessionMessage != "" {
+		q.Set("session_message", opts.SessionMessage)
 	}
 
 	return base + "/oauth2/authorize?" + q.Encode(), nil

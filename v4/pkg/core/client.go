@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -46,22 +47,48 @@ func NewClient(config *Config) (*Client, error) {
 }
 
 // DoRequest performs an HTTP request with context, retry logic, and error handling
-// This is the core method used by all service clients
+// This is the core method used by all service clients. The endpoint is joined onto
+// the configured base URL.
 func (c *Client) DoRequest(ctx context.Context, method, endpoint string, query url.Values, body interface{}, result interface{}) error {
-	// Build URL
-	reqURL := c.buildURL(endpoint, query)
+	return c.DoRequestURL(ctx, method, c.buildURL(endpoint, query), body, result)
+}
 
-	// Marshal request body if provided
+// DoRequestNoAuth is like DoRequest but omits the Authorization header. It is
+// used for the few endpoints that must be called unauthenticated (e.g. the GCS
+// manager's GET /info).
+func (c *Client) DoRequestNoAuth(ctx context.Context, method, endpoint string, query url.Values, body interface{}, result interface{}) error {
+	return c.doRequestURL(ctx, method, c.buildURL(endpoint, query), body, result, true)
+}
+
+// DoRequestURL performs an HTTP request against a fully-formed URL, bypassing the
+// base-URL join. It is used for the handful of endpoints that live outside a
+// client's base path (e.g. Auth's host-root OIDC discovery / JWKS URIs). The
+// retry, auth, and decoding behavior matches DoRequest.
+func (c *Client) DoRequestURL(ctx context.Context, method, reqURL string, body interface{}, result interface{}) error {
+	return c.doRequestURL(ctx, method, reqURL, body, result, false)
+}
+
+func (c *Client) doRequestURL(ctx context.Context, method, reqURL string, body interface{}, result interface{}, skipAuth bool) error {
+	// Marshal request body if provided.
+	// A url.Values body is sent as application/x-www-form-urlencoded (required
+	// by the OAuth2 token/introspect/revoke endpoints); anything else is JSON.
 	var bodyReader io.Reader
+	contentType := ""
 	if body != nil {
-		bodyBytes, err := json.Marshal(body)
-		if err != nil {
-			return &ValidationError{
-				Message: fmt.Sprintf("failed to marshal request body: %v", err),
-				Value:   body,
+		if form, ok := body.(url.Values); ok {
+			bodyReader = strings.NewReader(form.Encode())
+			contentType = "application/x-www-form-urlencoded"
+		} else {
+			bodyBytes, err := json.Marshal(body)
+			if err != nil {
+				return &ValidationError{
+					Message: fmt.Sprintf("failed to marshal request body: %v", err),
+					Value:   body,
+				}
 			}
+			bodyReader = bytes.NewReader(bodyBytes)
+			contentType = "application/json"
 		}
-		bodyReader = bytes.NewReader(bodyBytes)
 	}
 
 	// Create HTTP request
@@ -76,21 +103,23 @@ func (c *Client) DoRequest(ctx context.Context, method, endpoint string, query u
 
 	// Set headers
 	req.Header.Set("User-Agent", c.config.UserAgent)
-	if c.config.Authorizer != nil {
-		authHeader, authErr := c.config.Authorizer.GetAuthorizationHeader(ctx)
-		if authErr != nil {
-			return &NetworkError{
-				Operation: "get_auth_header",
-				Message:   "authorizer failed to provide authorization header",
-				Err:       authErr,
+	if !skipAuth {
+		if c.config.Authorizer != nil {
+			authHeader, authErr := c.config.Authorizer.GetAuthorizationHeader(ctx)
+			if authErr != nil {
+				return &NetworkError{
+					Operation: "get_auth_header",
+					Message:   "authorizer failed to provide authorization header",
+					Err:       authErr,
+				}
 			}
+			req.Header.Set("Authorization", authHeader)
+		} else {
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.config.AccessToken))
 		}
-		req.Header.Set("Authorization", authHeader)
-	} else {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.config.AccessToken))
 	}
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
 	}
 	req.Header.Set("Accept", "application/json")
 
@@ -204,7 +233,11 @@ func (c *Client) buildURL(endpoint string, query url.Values) string {
 	}
 
 	u, _ := url.Parse(baseURL)
-	u.Path = endpoint
+	// Join the endpoint onto the base URL's path rather than overwriting it, so
+	// a base URL carrying a version prefix (e.g. .../v2, .../v0.10) is preserved.
+	// Endpoints are written as absolute-looking paths ("/oauth2/token"); trim the
+	// leading slash so JoinPath appends instead of treating it as already-joined.
+	u = u.JoinPath(strings.TrimPrefix(endpoint, "/"))
 	if query != nil {
 		u.RawQuery = query.Encode()
 	}

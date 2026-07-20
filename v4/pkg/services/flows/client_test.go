@@ -4,6 +4,7 @@ package flows_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -104,11 +105,17 @@ func TestRunFlow(t *testing.T) {
 		assert.True(t, ok, "expected ValidationError, got %T", err)
 	})
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("success sends input under body key", func(t *testing.T) {
 		expected := &flows.FlowRun{RunID: "run-123", FlowID: "flow-123", Status: "ACTIVE"}
 		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, http.MethodPost, r.Method)
-			assert.Contains(t, r.URL.Path, "flow-123")
+			assert.Equal(t, "/flows/flow-123/run", r.URL.Path)
+			var body map[string]json.RawMessage
+			require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+			_, hasBody := body["body"]
+			assert.True(t, hasBody, "flow input must be sent under the \"body\" key")
+			_, hasInput := body["input"]
+			assert.False(t, hasInput, "flow input must NOT be under \"input\"")
 			testhelpers.RespondJSON(w, http.StatusCreated, expected)
 		})
 		client, err := flows.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
@@ -116,7 +123,7 @@ func TestRunFlow(t *testing.T) {
 		defer client.Close()
 
 		result, err := client.RunFlow(context.Background(), "flow-123",
-			&flows.FlowInput{Input: map[string]interface{}{"key": "value"}})
+			&flows.FlowInput{Body: map[string]interface{}{"key": "value"}})
 		require.NoError(t, err)
 		assert.Equal(t, "run-123", result.RunID)
 		assert.Equal(t, "ACTIVE", result.Status)
@@ -127,7 +134,7 @@ func TestListRuns(t *testing.T) {
 	t.Run("nil options succeeds", func(t *testing.T) {
 		expected := &flows.RunList{Runs: []flows.FlowRun{{RunID: "run-1"}}}
 		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-			assert.Empty(t, r.URL.Query().Get("limit"))
+			assert.Equal(t, "/runs", r.URL.Path)
 			testhelpers.RespondJSON(w, http.StatusOK, expected)
 		})
 		client, err := flows.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
@@ -139,18 +146,62 @@ func TestListRuns(t *testing.T) {
 		assert.Len(t, result.Runs, 1)
 	})
 
-	t.Run("limit and offset passed as query params", func(t *testing.T) {
+	t.Run("filter_flow_id comma-joined into a single param", func(t *testing.T) {
 		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, "5", r.URL.Query().Get("limit"))
-			assert.Equal(t, "10", r.URL.Query().Get("offset"))
+			ids := r.URL.Query()["filter_flow_id"]
+			require.Len(t, ids, 1)
+			assert.Equal(t, "f1,f2", ids[0])
+			assert.Empty(t, r.URL.Query().Get("limit"))
 			testhelpers.RespondJSON(w, http.StatusOK, &flows.RunList{})
 		})
 		client, err := flows.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
 		require.NoError(t, err)
 		defer client.Close()
 
-		_, err = client.ListRuns(context.Background(), &flows.ListRunsOptions{Limit: 5, Offset: 10})
+		_, err = client.ListRuns(context.Background(), &flows.ListRunsOptions{FilterFlowID: []string{"f1", "f2"}})
 		assert.NoError(t, err)
+	})
+}
+
+func TestUpdateFlowUsesPut(t *testing.T) {
+	server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPut, r.Method)
+		assert.Equal(t, "/flows/flow-1", r.URL.Path)
+		testhelpers.RespondJSON(w, http.StatusOK, &flows.Flow{ID: "flow-1", Title: "T"})
+	})
+	client, err := flows.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
+	require.NoError(t, err)
+	defer client.Close()
+
+	_, err = client.UpdateFlow(context.Background(), "flow-1", &flows.FlowUpdate{Title: "T"})
+	require.NoError(t, err)
+}
+
+func TestValidateFlow(t *testing.T) {
+	t.Run("nil definition returns validation error", func(t *testing.T) {
+		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {})
+		client, err := flows.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
+		require.NoError(t, err)
+		defer client.Close()
+
+		_, err = client.ValidateFlow(context.Background(), nil, nil)
+		_, ok := err.(*core.ValidationError)
+		assert.True(t, ok)
+	})
+
+	t.Run("posts definition to /flows/validate", func(t *testing.T) {
+		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			assert.Equal(t, "/flows/validate", r.URL.Path)
+			testhelpers.RespondJSON(w, http.StatusOK, map[string]interface{}{"ok": true})
+		})
+		client, err := flows.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
+		require.NoError(t, err)
+		defer client.Close()
+
+		res, err := client.ValidateFlow(context.Background(), map[string]interface{}{"States": map[string]interface{}{}}, nil)
+		require.NoError(t, err)
+		assert.Equal(t, true, res["ok"])
 	})
 }
 

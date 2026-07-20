@@ -17,6 +17,18 @@ import (
 
 const testCollectionID = "aaaaaaaa-bbbb-cccc-dddd-eeeeeeeeeeee"
 
+// gcsEnvelope wraps one or more data objects in the GCS result#1.0.0 envelope.
+func gcsEnvelope(objs ...map[string]interface{}) map[string]interface{} {
+	data := make([]map[string]interface{}, len(objs))
+	copy(data, objs)
+	return map[string]interface{}{
+		"DATA_TYPE":          "result#1.0.0",
+		"code":               "success",
+		"http_response_code": 200,
+		"data":               data,
+	}
+}
+
 func newTestClient(t *testing.T, handler http.HandlerFunc) *gcs.CollectionClient {
 	t.Helper()
 	server := testhelpers.NewMockServer(t, handler)
@@ -109,26 +121,23 @@ func TestCollectionScopes(t *testing.T) {
 func TestGetCollection(t *testing.T) {
 	t.Run("empty collection ID returns validation error", func(t *testing.T) {
 		client := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {})
-		_, err := client.GetCollection(context.Background(), "")
+		_, err := client.GetCollection(context.Background(), "", nil)
 		require.Error(t, err)
 		valErr, ok := err.(*core.ValidationError)
 		require.True(t, ok, "expected ValidationError, got %T", err)
 		assert.Equal(t, "collectionID", valErr.Field)
 	})
 
-	t.Run("success", func(t *testing.T) {
-		expected := &gcs.Collection{
-			ID:          "col-123",
-			DisplayName: "My Collection",
-			DataType:    "collection#1.9.0",
-		}
+	t.Run("success unpacks result envelope", func(t *testing.T) {
 		client := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, http.MethodGet, r.Method)
-			assert.Contains(t, r.URL.Path, "col-123")
-			testhelpers.RespondJSON(w, http.StatusOK, expected)
+			assert.Equal(t, "/api/collections/col-123", r.URL.Path)
+			testhelpers.RespondJSON(w, http.StatusOK, gcsEnvelope(map[string]interface{}{
+				"DATA_TYPE": "collection#1.9.0", "id": "col-123", "display_name": "My Collection",
+			}))
 		})
 
-		result, err := client.GetCollection(context.Background(), "col-123")
+		result, err := client.GetCollection(context.Background(), "col-123", nil)
 		require.NoError(t, err)
 		assert.Equal(t, "col-123", result.ID)
 		assert.Equal(t, "My Collection", result.DisplayName)
@@ -139,7 +148,7 @@ func TestGetCollection(t *testing.T) {
 			testhelpers.RespondError(w, http.StatusNotFound, "collection not found", "NOT_FOUND")
 		})
 
-		_, err := client.GetCollection(context.Background(), "missing")
+		_, err := client.GetCollection(context.Background(), "missing", nil)
 		require.Error(t, err)
 		apiErr, ok := err.(*core.APIError)
 		require.True(t, ok)
@@ -149,14 +158,13 @@ func TestGetCollection(t *testing.T) {
 
 func TestListCollections(t *testing.T) {
 	t.Run("nil options — no query params", func(t *testing.T) {
-		expected := &gcs.CollectionPage{
-			Data: []gcs.Collection{{ID: "col-1"}, {ID: "col-2"}},
-		}
 		client := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, http.MethodGet, r.Method)
-			assert.Contains(t, r.URL.Path, "/collections")
+			assert.Equal(t, "/api/collections", r.URL.Path)
 			assert.Empty(t, r.URL.Query().Get("limit"))
-			testhelpers.RespondJSON(w, http.StatusOK, expected)
+			testhelpers.RespondJSON(w, http.StatusOK, &gcs.CollectionListResponse{
+				Data: []gcs.Collection{{ID: "col-1"}, {ID: "col-2"}},
+			})
 		})
 
 		result, err := client.ListCollections(context.Background(), nil)
@@ -164,27 +172,23 @@ func TestListCollections(t *testing.T) {
 		assert.Len(t, result.Data, 2)
 	})
 
-	t.Run("limit and offset passed as query params", func(t *testing.T) {
+	t.Run("filter and include comma-joined; page_size/marker", func(t *testing.T) {
 		client := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, "10", r.URL.Query().Get("limit"))
-			assert.Equal(t, "20", r.URL.Query().Get("offset"))
-			testhelpers.RespondJSON(w, http.StatusOK, &gcs.CollectionPage{})
+			q := r.URL.Query()
+			assert.Equal(t, "mapped_collections,guest_collections", q.Get("filter"))
+			assert.Equal(t, "private_policies", q.Get("include"))
+			assert.Equal(t, "50", q.Get("page_size"))
+			assert.Equal(t, "m1", q.Get("marker"))
+			assert.Empty(t, q.Get("filter_owned"))
+			assert.Empty(t, q.Get("limit"))
+			testhelpers.RespondJSON(w, http.StatusOK, &gcs.CollectionListResponse{})
 		})
 
 		_, err := client.ListCollections(context.Background(), &gcs.ListCollectionsOptions{
-			Limit: 10, Offset: 20,
-		})
-		assert.NoError(t, err)
-	})
-
-	t.Run("filter_owned query param", func(t *testing.T) {
-		client := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, "true", r.URL.Query().Get("filter_owned"))
-			testhelpers.RespondJSON(w, http.StatusOK, &gcs.CollectionPage{})
-		})
-
-		_, err := client.ListCollections(context.Background(), &gcs.ListCollectionsOptions{
-			FilterOwned: true,
+			Filter:   []string{"mapped_collections", "guest_collections"},
+			Include:  []string{"private_policies"},
+			PageSize: 50,
+			Marker:   "m1",
 		})
 		assert.NoError(t, err)
 	})
@@ -193,35 +197,58 @@ func TestListCollections(t *testing.T) {
 func TestUpdateCollection(t *testing.T) {
 	t.Run("empty collection ID returns validation error", func(t *testing.T) {
 		client := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {})
-		_, err := client.UpdateCollection(context.Background(), "", &gcs.CollectionUpdate{})
+		_, err := client.UpdateCollection(context.Background(), "", &gcs.CollectionDocument{})
 		require.Error(t, err)
 		valErr, ok := err.(*core.ValidationError)
 		require.True(t, ok)
 		assert.Equal(t, "collectionID", valErr.Field)
 	})
 
-	t.Run("nil update returns validation error", func(t *testing.T) {
-		client := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {})
-		_, err := client.UpdateCollection(context.Background(), "col-123", nil)
-		require.Error(t, err)
-		valErr, ok := err.(*core.ValidationError)
-		require.True(t, ok)
-		assert.Equal(t, "update", valErr.Field)
-	})
-
-	t.Run("success uses PATCH", func(t *testing.T) {
-		expected := &gcs.Collection{ID: "col-123", DisplayName: "Renamed"}
+	t.Run("success uses PATCH and unpacks envelope", func(t *testing.T) {
 		client := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, http.MethodPatch, r.Method)
-			assert.Contains(t, r.URL.Path, "col-123")
-			testhelpers.RespondJSON(w, http.StatusOK, expected)
+			assert.Equal(t, "/api/collections/col-123", r.URL.Path)
+			testhelpers.RespondJSON(w, http.StatusOK, gcsEnvelope(map[string]interface{}{
+				"DATA_TYPE": "collection#1.9.0", "id": "col-123", "display_name": "Renamed",
+			}))
 		})
 
 		result, err := client.UpdateCollection(context.Background(), "col-123",
-			&gcs.CollectionUpdate{DisplayName: "Renamed"})
+			&gcs.CollectionDocument{DisplayName: "Renamed"})
 		require.NoError(t, err)
 		assert.Equal(t, "Renamed", result.DisplayName)
 	})
+}
+
+func TestGetGCSInfoUnauthenticated(t *testing.T) {
+	client := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/api/info", r.URL.Path)
+		assert.Empty(t, r.Header.Get("Authorization"), "GET /info must be unauthenticated")
+		testhelpers.RespondJSON(w, http.StatusOK, gcsEnvelope(map[string]interface{}{
+			"DATA_TYPE": "info#1.0.0", "client_id": "client-xyz",
+		}))
+	})
+
+	info, err := client.GetGCSInfo(context.Background())
+	require.NoError(t, err)
+	assert.Equal(t, "client-xyz", info.ClientID)
+}
+
+func TestCreateRoleBody(t *testing.T) {
+	client := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "/api/roles", r.URL.Path)
+		testhelpers.RespondJSON(w, http.StatusOK, gcsEnvelope(map[string]interface{}{
+			"DATA_TYPE": "role#1.0.0", "id": "role-1", "role": "administrator",
+		}))
+	})
+
+	role, err := client.CreateRole(context.Background(), &gcs.GCSRoleDocument{
+		Principal: "urn:globus:auth:identity:x", Role: "administrator",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "role-1", role.ID)
+	assert.Equal(t, "administrator", role.Role)
 }
 
 func TestDeleteCollection(t *testing.T) {
@@ -246,38 +273,34 @@ func TestDeleteCollection(t *testing.T) {
 }
 
 func TestCollectionPager(t *testing.T) {
-	t.Run("single page — HasMore false after first NextPage", func(t *testing.T) {
+	t.Run("marker pagination across two pages", func(t *testing.T) {
 		calls := 0
 		client := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
+			marker := r.URL.Query().Get("marker")
 			calls++
-			// No Links.Next → last page
-			testhelpers.RespondJSON(w, http.StatusOK, &gcs.CollectionPage{
-				Data: []gcs.Collection{{ID: "col-1"}},
-			})
+			if marker == "" {
+				testhelpers.RespondJSON(w, http.StatusOK, &gcs.CollectionListResponse{
+					Data: []gcs.Collection{{ID: "col-1"}}, HasNextPage: true, Marker: "m1",
+				})
+			} else {
+				assert.Equal(t, "m1", marker)
+				testhelpers.RespondJSON(w, http.StatusOK, &gcs.CollectionListResponse{
+					Data: []gcs.Collection{{ID: "col-2"}}, HasNextPage: false,
+				})
+			}
 		})
 
 		pager := client.NewCollectionPager(nil)
-		assert.True(t, pager.HasMore())
-
-		page, err := pager.NextPage(context.Background())
-		require.NoError(t, err)
-		assert.Len(t, page.Data, 1)
-		assert.False(t, pager.HasMore())
-		assert.Equal(t, 1, calls)
-	})
-
-	t.Run("ErrNoPagesRemaining after last page", func(t *testing.T) {
-		client := newTestClient(t, func(w http.ResponseWriter, r *http.Request) {
-			testhelpers.RespondJSON(w, http.StatusOK, &gcs.CollectionPage{})
-		})
-
-		pager := client.NewCollectionPager(nil)
-		_, err := pager.NextPage(context.Background())
-		require.NoError(t, err)
-
-		_, err = pager.NextPage(context.Background())
-		require.Error(t, err)
-		assert.Equal(t, gcs.ErrNoPagesRemaining, err)
+		var got []string
+		for pager.HasNext() {
+			page, err := pager.NextPage(context.Background())
+			require.NoError(t, err)
+			for _, c := range page {
+				got = append(got, c.ID)
+			}
+		}
+		assert.Equal(t, []string{"col-1", "col-2"}, got)
+		assert.Equal(t, 2, calls)
 	})
 }
 

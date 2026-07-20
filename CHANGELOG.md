@@ -10,6 +10,183 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed (v4 module — `github.com/scttfrdmn/globus-go-sdk/v4`)
+
+Core wire-fidelity fixes from the Phase 2 parity audit against Python
+globus-sdk v4.8.1 (both bugs affected every service):
+
+- `core.Client.buildURL` no longer overwrites the base URL's path; it joins the
+  endpoint onto the base path so version prefixes (auth `/v2`, transfer
+  `/v0.10`, etc.) are preserved instead of silently dropped. Auth's project
+  endpoints were made relative to match.
+- `core.Client.DoRequest` now sends a `url.Values` request body as
+  `application/x-www-form-urlencoded` (required by the OAuth2
+  token/introspect/revoke endpoints); previously it JSON-marshalled every body.
+
+### Changed (v4 module — `github.com/scttfrdmn/globus-go-sdk/v4`)
+
+Timers client realigned to the Python globus-sdk 4.8.1 wire (Phase 2 audit).
+**Breaking** within the v4 line:
+
+- Base URL corrected to `https://timer.automate.globus.org`; paths moved to
+  `/jobs/` and `POST /v2/timer` (wrapped `{"timer": ...}`); update is now
+  `PATCH /jobs/{id}`.
+- Create document reshaped (`timer_type`/`name`/`schedule`/`body`, `flow_id` for
+  flow timers); `Schedule` now serializes upstream once/recurring shapes
+  (`interval_seconds`, structured `end`). New `NewOnceSchedule`,
+  `NewRecurringSchedule`, `NewTransferTimer`, `NewFlowTimer` builders.
+- `CreateTimer`/`UpdateTimer` accept an `interface{}` document; `ResumeTimer`
+  takes an optional `*bool` update-credentials flag; new `CreateJob` (POST /jobs/).
+- Removed phantom methods with no upstream route: `RunTimer`, `ListRuns`,
+  `GetRun`, `CreateOnceTimer`, `CreateRecurringTimer`, and the `Callback`,
+  `TimerRun`, `TimerRunList`, `ListRunsOptions` types.
+
+### Changed — Transfer (v4 module, Phase 2 parity audit)
+
+**Breaking** within the v4 line:
+
+- Base URL is the bare host; classic routes carry `/v0.10`, tunnel/stream routes
+  carry `/v2`. `SubmitTransfer`/`SubmitDelete` auto-fetch `submission_id`.
+- `MakeDirectory`/`Rename` gained a `localUser` argument. `ListTasks`
+  `filter_status`/`orderby` are comma-joined single params; `ListDirectoryOptions`
+  gained `OrderBy`/`Filter`/`LocalUser`.
+- Removed `ListEndpoints` (no `/endpoint_list` route) — use `EndpointSearch` +
+  `NewEndpointSearchPager`. Tunnels/stream access points now use the real
+  JSON:API `/v2/tunnels` and `/v2/stream_access_points`; `TunnelCreate`/
+  `TunnelUpdate` fields changed to the JSON:API attributes/relationships; removed
+  `NewTunnelsPager` (not paginated upstream).
+
+Added (classic surface): `UpdateEndpoint`, `DeleteEndpoint`, `SetSubscriptionID`,
+`SetSubscriptionAdminVerified`, `EndpointSearch`, `OperationStat`, `UpdateTask`,
+`TaskEventList`, `TaskPauseInfo`, `TaskSuccessfulTransfers`, `TaskSkippedErrors`,
+shared-endpoint methods, endpoint role/ACL/server methods,
+`MyEffectivePauseRuleList`, and the full `EndpointManager*` family (monitored
+endpoints, task inspection, admin cancel/pause/resume, pause-rule CRUD). Transfer/
+Delete documents gained `submission_id`, local-user, and `filter_rules` fields.
+
+### Changed — GCS (v4 module, Phase 2 parity audit)
+
+**Breaking** within the v4 line — the GCS client was rebuilt to parse the real
+`result#1.0.0` envelope (it previously could not decode GCS responses):
+
+- Added `GCSResponse` envelope + DATA_TYPE unpacking; every single-object method
+  unwraps `data[0]`. Marker pagination replaces JSON:API paging: removed
+  `CollectionPage`/`JSONAPILinks`/`JSONAPIMeta`, rebuilt `NewCollectionPager` on
+  the marker paginator, and added storage-gateway/role/user-credential pagers.
+- `GetCollection` takes `(ctx, id, *GetCollectionOptions)`; `UpdateCollection`
+  takes a `*CollectionDocument` (was the narrow `CollectionUpdate`).
+  `ListCollectionsOptions` reworked to `mapped_collection_id`/`filter`/`include`/
+  `page_size`/`marker` (removed `filter_owned`/`limit`/`offset`).
+- Added the full GCS Manager surface: `GetGCSInfo` (unauthenticated),
+  `GetEndpoint`/`UpdateEndpoint`, `CreateCollection`, storage gateways CRUD,
+  roles CRUD, user credentials CRUD, with `*Document` request builders and typed
+  responses.
+
+Added core `DoRequestNoAuth` for the unauthenticated GCS `/info` call.
+
+### Changed — Compute (v4 module, Phase 2 parity audit)
+
+**Breaking** within the v4 line — upstream compute has no models/pagination, so
+the client now uses passthrough `map[string]interface{}` bodies and results:
+
+- Base URL is the host root; endpoints carry `/v2` or `/v3`. V2 and V3 are folded
+  into one client with `V3`-suffixed methods.
+- Removed phantom methods (no upstream route): `SubmitFunction`,
+  `CancelFunction`, `ListFunctions`, `UpdateFunction`, `ListTasks`, `CancelTask`,
+  `RunBatch`, `NewEndpointsPager`, `NewTasksPager`, and all invented typed models.
+- `ListEndpoints`→`GetEndpoints` (only `role` param), `GetTaskStatus`→`GetTask`,
+  `GetBatchStatus`→`GetTaskBatch`.
+- Added: `GetVersion`, `GetResultAMQPURL`, `RegisterEndpoint`,
+  `GetEndpointStatus`, `DeleteEndpoint`, `LockEndpoint`, `GetTaskGroup`, `Submit`,
+  and the V3 methods (`RegisterEndpointV3`, `UpdateEndpointV3`, `LockEndpointV3`,
+  `GetEndpointAllowlistV3`, `RegisterFunctionV3`, `SubmitV3`).
+
+### Changed — Flows (v4 module, Phase 2 parity audit)
+
+**Breaking** within the v4 line:
+
+- `RunFlow`/`ValidateRun` send input under `body` (was `input`); `FlowInput`
+  gained label/tags/run_monitors/run_managers/activity_notification_policy.
+- `GetRun` takes `(ctx, runID, *GetRunOptions)`. `UpdateFlow`/`UpdateRun` use
+  PUT. Removed `FlowAuthenticationPolicy` (create/update take
+  `authentication_policy_id` string); `FlowCreate`/`FlowUpdate` gained the full
+  upstream field set; `CreateFlow` requires input_schema.
+- list_flows/list_runs/get_run_logs are marker-paginated; options reworked
+  (filter_roles/filter_fulltext/orderby/marker, filter_flow_id, limit/
+  reverse_order/marker). `NewFlowsPager`/`NewRunsPager` are marker-based;
+  `NewRunLogsPager` added. `ListRegisteredAPIsOptions.OrderBy` is now `[]string`.
+- Removed action-provider methods/types (no upstream route in globus-sdk flows).
+
+Added: `ValidateFlow`, `GetRunDefinition`, `DeleteRun`, `ResumeRun`,
+`ValidateRun`.
+
+### Changed — Search (v4 module, Phase 2 parity audit)
+
+**Breaking** within the v4 line:
+
+- `GetEntry`/`DeleteEntry` now take `(ctx, indexID, subject, entryID)` and hit
+  `/index/{id}/entry` with subject/entry_id as query params; added `GetSubject`/
+  `DeleteSubject` for `/index/{id}/subject`.
+- `UpdateIndex` uses PATCH. `AddRole` takes a `*RoleCreate` ({role_name,
+  principal}) and returns `*Role`. Removed `GetRole` (no upstream route).
+- Ingest consolidated into `Ingest(indexID, data)` with `NewGMetaEntryIngest`/
+  `NewGMetaListIngest` (the old `IngestEntry`/`IngestBatch` methods and
+  `IngestBatch`/`IngestBatchResponse` types are removed). Added `DeleteByQuery`,
+  `BatchDeleteBySubject`.
+- `GetTaskStatus` replaced by `GetTask` (`/task/{id}`) and `GetTaskList`
+  (`/task_list/{id}`); added `Task`/`TaskList` (status field is `state`).
+- `SearchQuery` now sends `@version`, `facets` is `[]map`, gained
+  `post_facet_filters`/`boosts`, dropped `bypass_visible_to`. Added GET
+  `SearchGet`, `Scroll`, `NewSearchPager`, `NewScrollPager`; removed the
+  non-upstream `NewIndexesPager` and IndexList `limit`/`offset`. `filter_roles`
+  is now a single comma-joined param.
+
+### Changed — Groups (v4 module, Phase 2 parity audit)
+
+**Breaking** within the v4 line — removed methods that hit nonexistent routes:
+
+- Removed the members sub-resource (`ListMembers`, `AddMember`, `RemoveMember`,
+  `UpdateMemberRole`) — use `BatchMembershipAction` (`POST /groups/{id}`) and
+  read memberships via `GetGroup` with `Include: ["memberships"]`.
+- Removed the roles resource entirely (`ListRoles`/`GetRole`/`CreateRole`/
+  `UpdateRole`/`DeleteRole` + `Role*` types); role is a string attribute.
+- Removed `ListGroups`/`ListGroupsOptions` and both pagers (Groups has no list
+  route and no pagination) — use `GetMyGroups`, which returns a `[]Group`.
+- `GetGroup` now takes `(ctx, groupID, *GetGroupOptions)` with a comma-joined
+  `include`. `GetIdentityPreferences`/`SetIdentityPreferences` drop the group/
+  identity args and hit `/preferences`. `GroupPolicies` reshaped to real keys.
+
+Added: `BatchMembershipAction`, `GetGroupBySubscriptionID`,
+`SetSubscriptionAdminVerified`, and the `BatchMembershipActions` document.
+
+### Added — Auth (v4 module, Phase 2 parity audit)
+
+- Identities: `GetIdentities`, `GetIdentityProviders`.
+- Policies CRUD: `GetPolicy`, `GetPolicies`, `CreatePolicy`, `UpdatePolicy`, `DeletePolicy`.
+- Clients CRUD: `GetClient` (by ID or FQDN), `GetClients`, `CreateClient`,
+  `UpdateClient`, `DeleteClient`, plus `CreateChildClient` and
+  `CreateNativeAppInstance`.
+- Client credentials: `GetClientCredentials`, `CreateClientCredential`, `DeleteClientCredential`.
+- Scopes CRUD: `GetScope`, `GetScopes`, `CreateScope`, `UpdateScope`, `DeleteScope`.
+- `GetConsents`, `UpdateProject`, `GetDependentTokens`, `ClientCredentialsTokens`.
+- OIDC: `GetOpenIDConfiguration`, `GetJWK` (host-root endpoints).
+- `TokenResponse` gained `other_tokens`/`id_token`/`state` and a
+  `ByResourceServer()` accessor; `TokenIntrospection` gained
+  `name`/`email`/`identity_set`; `Project` gained `admins`.
+- `GetAuthorizationURL` gained `session_required_*` and `session_message` params.
+- New core `DoRequestURL` for endpoints outside a client's base path.
+
+### Changed — Auth (v4 module, Phase 2 parity audit)
+
+**Breaking** within the v4 line:
+
+- `IntrospectToken` now takes `(ctx, token, *IntrospectOptions)` and is
+  form-encoded; `RevokeToken` is form-encoded.
+- `GetProjects`/`GetProject`/`CreateProject` now handle the upstream response and
+  request envelopes (they previously mishandled them and returned empty data).
+- `ProjectCreate` trimmed to upstream's four fields (`public_contact_info`,
+  `metadata`, `project_name` removed from the create body).
+
 ### Changed — Transfer (v3 module, Phase 2 parity audit vs 3.65.0)
 
 **Breaking** within the v3 line:

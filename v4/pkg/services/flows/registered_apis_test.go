@@ -109,7 +109,7 @@ func TestListRegisteredAPIs(t *testing.T) {
 
 		_, err = client.ListRegisteredAPIs(context.Background(), &flows.ListRegisteredAPIsOptions{
 			FilterRoles: []string{"owner", "administrator"},
-			OrderBy:     "name ASC",
+			OrderBy:     []string{"name ASC"},
 			PerPage:     50,
 			Marker:      "fake_marker_0",
 		})

@@ -89,13 +89,8 @@ func groupsExample(ctx context.Context, accessToken string) {
 		return
 	}
 
-	// List groups - context is always the first parameter in v4
-	options := &groups.ListGroupsOptions{
-		MyGroups: true,
-		PageSize: 10,
-	}
-
-	groupList, err := client.ListGroups(ctx, options)
+	// List the caller's groups - context is always the first parameter in v4.
+	myGroups, err := client.GetMyGroups(ctx, []string{"active"})
 	if err != nil {
 		if apiErr, ok := err.(*core.APIError); ok {
 			log.Printf("API error (HTTP %d): %s", apiErr.StatusCode, apiErr.Message)
@@ -108,13 +103,9 @@ func groupsExample(ctx context.Context, accessToken string) {
 		return
 	}
 
-	fmt.Printf("Found %d groups:\n", len(groupList.Groups))
-	for i, group := range groupList.Groups {
+	fmt.Printf("Found %d groups:\n", len(myGroups))
+	for i, group := range myGroups {
 		fmt.Printf("%d. %s (ID: %s)\n", i+1, group.Name, group.ID)
 		fmt.Printf("   Members: %d, Admin: %v\n", group.MemberCount, group.IsGroupAdmin)
-	}
-
-	if groupList.HasNextPage {
-		fmt.Printf("   (more groups available with next_page_token: %s)\n", groupList.NextPageToken)
 	}
 }

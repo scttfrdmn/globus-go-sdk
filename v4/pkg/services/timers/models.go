@@ -2,74 +2,123 @@
 // SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors
 package timers
 
-import "time"
+import (
+	"net/url"
+	"time"
+)
 
-// Timer represents a Globus timer
+// Timer represents a Globus Timers "job" as returned by the service. The Timers
+// API returns an untyped document; the commonly used fields are typed here, and
+// unrecognized fields are ignored on decode.
 type Timer struct {
-	ID          string    `json:"id,omitempty"`
-	Name        string    `json:"name"`
-	Description string    `json:"description,omitempty"`
-	Schedule    *Schedule `json:"schedule"`
-	Callback    *Callback `json:"callback"`
-	Status      string    `json:"status,omitempty"`
-	Created     time.Time `json:"created_at,omitempty"`
-	Updated     time.Time `json:"updated_at,omitempty"`
-	LastRun     time.Time `json:"last_run_at,omitempty"`
-	NextRun     time.Time `json:"next_run_at,omitempty"`
+	JobID    string    `json:"job_id,omitempty"`
+	Name     string    `json:"name,omitempty"`
+	Status   string    `json:"status,omitempty"`
+	Schedule *Schedule `json:"schedule,omitempty"`
+	Created  time.Time `json:"submitted_at,omitempty"`
+	LastRun  time.Time `json:"last_ran_at,omitempty"`
+	NextRun  time.Time `json:"next_run,omitempty"`
 }
 
-// Schedule represents a timer schedule
+// Schedule describes when a timer runs. It serializes to either a "once" or a
+// "recurring" schedule per the upstream OnceTimerSchedule / RecurringTimerSchedule.
+//
+//   - once:      {"type":"once","datetime":<ISO 8601>}
+//   - recurring: {"type":"recurring","interval_seconds":<int>,"start":<ISO 8601>,"end":{...}}
 type Schedule struct {
-	Type           string     `json:"type"` // "once", "recurring", "cron"
-	StartTime      time.Time  `json:"start,omitempty"`
-	EndTime        *time.Time `json:"end,omitempty"`
-	Interval       string     `json:"interval,omitempty"` // ISO 8601 duration for recurring
-	CronExpression string     `json:"cron,omitempty"`     // Cron expression
-	Timezone       string     `json:"timezone,omitempty"` // Timezone for cron
+	Type string `json:"type"` // "once" | "recurring"
+
+	// Once schedules.
+	Datetime string `json:"datetime,omitempty"`
+
+	// Recurring schedules.
+	IntervalSeconds int          `json:"interval_seconds,omitempty"`
+	Start           string       `json:"start,omitempty"`
+	End             *ScheduleEnd `json:"end,omitempty"`
 }
 
-// Callback represents a timer callback action
-type Callback struct {
-	Type  string                 `json:"type"` // "flow", "https"
-	URL   string                 `json:"url"`
-	Body  map[string]interface{} `json:"body,omitempty"`
-	Scope string                 `json:"scope,omitempty"` // Required scope for flow callbacks
+// ScheduleEnd is the optional end condition for a recurring schedule. Exactly one
+// of Iterations (condition "iterations") or Datetime (condition "time") applies.
+type ScheduleEnd struct {
+	Condition  string `json:"condition"` // "iterations" | "time"
+	Iterations int    `json:"iterations,omitempty"`
+	Datetime   string `json:"datetime,omitempty"`
 }
 
-// TimerList represents a list of timers
+// NewOnceSchedule builds a schedule that runs the timer exactly once at datetime
+// (an ISO 8601 string with timezone). Pass "" to run as soon as possible.
+func NewOnceSchedule(datetime string) *Schedule {
+	return &Schedule{Type: "once", Datetime: datetime}
+}
+
+// NewRecurringSchedule builds a schedule that runs every intervalSeconds. start
+// (ISO 8601, optional) sets the first run; end (optional) sets a stop condition.
+func NewRecurringSchedule(intervalSeconds int, start string, end *ScheduleEnd) *Schedule {
+	return &Schedule{Type: "recurring", IntervalSeconds: intervalSeconds, Start: start, End: end}
+}
+
+// TransferTimer is the create document for a data-transfer timer, posted to
+// POST /v2/timer via CreateTimer. Body is a preprocessed TransferData document.
+type TransferTimer struct {
+	TimerType string                 `json:"timer_type"` // always "transfer"
+	Name      string                 `json:"name,omitempty"`
+	Schedule  *Schedule              `json:"schedule"`
+	Body      map[string]interface{} `json:"body"`
+}
+
+// NewTransferTimer builds a transfer timer create document.
+func NewTransferTimer(name string, schedule *Schedule, body map[string]interface{}) *TransferTimer {
+	return &TransferTimer{TimerType: "transfer", Name: name, Schedule: schedule, Body: body}
+}
+
+// FlowTimer is the create document for a flow timer, posted to POST /v2/timer via
+// CreateTimer. Body is the flow run input document.
+type FlowTimer struct {
+	TimerType string                 `json:"timer_type"` // always "flow"
+	FlowID    string                 `json:"flow_id"`
+	Name      string                 `json:"name,omitempty"`
+	Schedule  *Schedule              `json:"schedule"`
+	Body      map[string]interface{} `json:"body"`
+}
+
+// NewFlowTimer builds a flow timer create document.
+func NewFlowTimer(name, flowID string, schedule *Schedule, body map[string]interface{}) *FlowTimer {
+	return &FlowTimer{TimerType: "flow", FlowID: flowID, Name: name, Schedule: schedule, Body: body}
+}
+
+// TimerJob is the legacy create document for CreateJob (POST /jobs/). Upstream
+// marks this deprecated for transfer use-cases in favor of TransferTimer, but it
+// remains supported for non-transfer callbacks.
+type TimerJob struct {
+	CallbackURL  string                 `json:"callback_url"`
+	CallbackBody map[string]interface{} `json:"callback_body"`
+	Start        string                 `json:"start"`
+	Interval     *int                   `json:"interval"` // seconds; nil when the job runs once
+	Name         string                 `json:"name,omitempty"`
+	StopAfter    string                 `json:"stop_after,omitempty"`
+	StopAfterN   int                    `json:"stop_after_n,omitempty"`
+	Scope        string                 `json:"scope,omitempty"`
+}
+
+// TimerList represents a list of timers as returned by GET /jobs/.
 type TimerList struct {
-	Timers []Timer `json:"timers"`
-	Offset int     `json:"offset"`
-	Limit  int     `json:"limit"`
-	Total  int     `json:"total"`
+	Timers []Timer `json:"jobs"`
 }
 
-// ListTimersOptions contains options for listing timers
+// ListTimersOptions carries extra query parameters for ListTimers. The upstream
+// list_jobs endpoint accepts arbitrary query params and is not paginated.
 type ListTimersOptions struct {
-	Limit  int
-	Offset int
+	// QueryParams are added verbatim to the request query string.
+	QueryParams map[string]string
 }
 
-// TimerRun represents a single execution of a timer callback.
-type TimerRun struct {
-	ID        string    `json:"id"`
-	TimerID   string    `json:"timer_id"`
-	Status    string    `json:"status"`
-	StartTime time.Time `json:"start_time,omitempty"`
-	EndTime   time.Time `json:"end_time,omitempty"`
-	Error     string    `json:"error,omitempty"`
-}
-
-// TimerRunList is a paginated list of timer runs.
-type TimerRunList struct {
-	Runs   []TimerRun `json:"runs"`
-	Total  int        `json:"total"`
-	Offset int        `json:"offset"`
-	Limit  int        `json:"limit"`
-}
-
-// ListRunsOptions controls which timer runs are returned.
-type ListRunsOptions struct {
-	Limit  int
-	Offset int
+func (o *ListTimersOptions) toQuery() url.Values {
+	if o == nil || len(o.QueryParams) == 0 {
+		return nil
+	}
+	q := url.Values{}
+	for k, v := range o.QueryParams {
+		q.Set(k, v)
+	}
+	return q
 }

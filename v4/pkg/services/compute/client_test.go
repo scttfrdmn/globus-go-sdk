@@ -4,6 +4,7 @@ package compute_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -45,12 +46,11 @@ func TestGetEndpoint(t *testing.T) {
 		assert.Equal(t, "endpointID", valErr.Field)
 	})
 
-	t.Run("success", func(t *testing.T) {
-		expected := &compute.Endpoint{ID: "ep-123", Name: "Test Endpoint", Status: "online"}
+	t.Run("success hits /v2/endpoints/{id}", func(t *testing.T) {
 		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, http.MethodGet, r.Method)
-			assert.Contains(t, r.URL.Path, "ep-123")
-			testhelpers.RespondJSON(w, http.StatusOK, expected)
+			assert.Equal(t, "/v2/endpoints/ep-123", r.URL.Path)
+			testhelpers.RespondJSON(w, http.StatusOK, map[string]interface{}{"uuid": "ep-123", "status": "online"})
 		})
 		client, err := compute.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
 		require.NoError(t, err)
@@ -58,100 +58,105 @@ func TestGetEndpoint(t *testing.T) {
 
 		result, err := client.GetEndpoint(context.Background(), "ep-123")
 		require.NoError(t, err)
-		assert.Equal(t, "ep-123", result.ID)
-		assert.Equal(t, "online", result.Status)
+		assert.Equal(t, "ep-123", result["uuid"])
+		assert.Equal(t, "online", result["status"])
 	})
+}
 
-	t.Run("not found", func(t *testing.T) {
+func TestGetEndpoints(t *testing.T) {
+	t.Run("role param sent, no limit/offset", func(t *testing.T) {
 		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-			testhelpers.RespondError(w, http.StatusNotFound, "endpoint not found", "NOT_FOUND")
+			assert.Equal(t, "/v2/endpoints", r.URL.Path)
+			assert.Equal(t, "owner", r.URL.Query().Get("role"))
+			assert.Empty(t, r.URL.Query().Get("limit"))
+			testhelpers.RespondJSON(w, http.StatusOK, map[string]interface{}{"endpoints": []interface{}{}})
 		})
 		client, err := compute.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
 		require.NoError(t, err)
 		defer client.Close()
 
-		_, err = client.GetEndpoint(context.Background(), "missing-ep")
-		require.Error(t, err)
-		apiErr, ok := err.(*core.APIError)
-		require.True(t, ok)
-		assert.True(t, apiErr.IsNotFound())
+		_, err = client.GetEndpoints(context.Background(), &compute.GetEndpointsOptions{Role: "owner"})
+		require.NoError(t, err)
 	})
 }
 
-func TestSubmitFunction(t *testing.T) {
-	t.Run("empty endpoint ID returns validation error", func(t *testing.T) {
+func TestSubmit(t *testing.T) {
+	t.Run("nil data returns validation error", func(t *testing.T) {
 		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {})
 		client, err := compute.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
 		require.NoError(t, err)
 		defer client.Close()
 
-		_, err = client.SubmitFunction(context.Background(), "", &compute.FunctionSubmission{FunctionID: "fn-1"})
+		_, err = client.Submit(context.Background(), nil)
 		require.Error(t, err)
 		valErr, ok := err.(*core.ValidationError)
 		require.True(t, ok)
-		assert.Equal(t, "endpointID", valErr.Field)
+		assert.Equal(t, "data", valErr.Field)
 	})
 
-	t.Run("nil submission returns validation error", func(t *testing.T) {
-		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {})
-		client, err := compute.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
-		require.NoError(t, err)
-		defer client.Close()
-
-		_, err = client.SubmitFunction(context.Background(), "ep-123", nil)
-		require.Error(t, err)
-		valErr, ok := err.(*core.ValidationError)
-		require.True(t, ok)
-		assert.Equal(t, "submission", valErr.Field)
-	})
-
-	t.Run("success", func(t *testing.T) {
-		expected := &compute.FunctionRun{ID: "run-123", Status: "running"}
+	t.Run("v2 submit hits /v2/submit", func(t *testing.T) {
 		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 			assert.Equal(t, http.MethodPost, r.Method)
-			assert.Contains(t, r.URL.Path, "ep-123")
-			testhelpers.RespondJSON(w, http.StatusOK, expected)
+			assert.Equal(t, "/v2/submit", r.URL.Path)
+			testhelpers.RespondJSON(w, http.StatusOK, map[string]interface{}{"request_id": "r1"})
 		})
 		client, err := compute.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
 		require.NoError(t, err)
 		defer client.Close()
 
-		result, err := client.SubmitFunction(context.Background(), "ep-123",
-			&compute.FunctionSubmission{FunctionID: "fn-1"})
+		res, err := client.Submit(context.Background(), map[string]interface{}{"tasks": []interface{}{}})
 		require.NoError(t, err)
-		assert.Equal(t, "run-123", result.ID)
+		assert.Equal(t, "r1", res["request_id"])
+	})
+
+	t.Run("v3 submit hits /v3/endpoints/{id}/submit", func(t *testing.T) {
+		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			assert.Equal(t, "/v3/endpoints/ep-1/submit", r.URL.Path)
+			testhelpers.RespondJSON(w, http.StatusOK, map[string]interface{}{"request_id": "r2"})
+		})
+		client, err := compute.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
+		require.NoError(t, err)
+		defer client.Close()
+
+		res, err := client.SubmitV3(context.Background(), "ep-1", map[string]interface{}{"tasks": []interface{}{}})
+		require.NoError(t, err)
+		assert.Equal(t, "r2", res["request_id"])
 	})
 }
 
-func TestListFunctions(t *testing.T) {
-	t.Run("nil options succeeds", func(t *testing.T) {
-		expected := &compute.FunctionList{Functions: []compute.FunctionRun{{ID: "run-1"}}}
-		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-			assert.Empty(t, r.URL.Query().Get("limit"))
-			testhelpers.RespondJSON(w, http.StatusOK, expected)
-		})
-		client, err := compute.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
-		require.NoError(t, err)
-		defer client.Close()
-
-		result, err := client.ListFunctions(context.Background(), nil)
-		require.NoError(t, err)
-		assert.Len(t, result.Functions, 1)
+func TestGetTaskBatchBody(t *testing.T) {
+	server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "/v2/batch_status", r.URL.Path)
+		var body map[string]interface{}
+		require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+		ids, ok := body["task_ids"].([]interface{})
+		require.True(t, ok)
+		assert.Len(t, ids, 2)
+		testhelpers.RespondJSON(w, http.StatusOK, map[string]interface{}{"results": map[string]interface{}{}})
 	})
+	client, err := compute.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
+	require.NoError(t, err)
+	defer client.Close()
 
-	t.Run("limit and offset are passed as query params", func(t *testing.T) {
-		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, "10", r.URL.Query().Get("limit"))
-			assert.Equal(t, "20", r.URL.Query().Get("offset"))
-			testhelpers.RespondJSON(w, http.StatusOK, &compute.FunctionList{})
-		})
-		client, err := compute.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
-		require.NoError(t, err)
-		defer client.Close()
+	_, err = client.GetTaskBatch(context.Background(), []string{"t1", "t2"})
+	require.NoError(t, err)
+}
 
-		_, err = client.ListFunctions(context.Background(), &compute.ListFunctionsOptions{Limit: 10, Offset: 20})
-		assert.NoError(t, err)
+func TestGetVersionServiceParam(t *testing.T) {
+	server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v2/version", r.URL.Path)
+		assert.Equal(t, "web", r.URL.Query().Get("service"))
+		testhelpers.RespondJSON(w, http.StatusOK, map[string]interface{}{"version": "1.0"})
 	})
+	client, err := compute.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
+	require.NoError(t, err)
+	defer client.Close()
+
+	res, err := client.GetVersion(context.Background(), &compute.GetVersionOptions{Service: "web"})
+	require.NoError(t, err)
+	assert.Equal(t, "1.0", res["version"])
 }
 
 func TestClose(t *testing.T) {

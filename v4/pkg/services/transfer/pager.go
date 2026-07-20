@@ -8,24 +8,40 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/paging"
 )
 
-// NewEndpointsPager returns a Paginator that iterates through all endpoints
-// matching opts. Pass nil for default options.
-func (c *Client) NewEndpointsPager(opts *ListEndpointsOptions) paging.Paginator[Endpoint] {
+// endpointSearchMaxResults matches the upstream endpoint_search cap.
+const endpointSearchMaxResults = 1000
+
+// NewEndpointSearchPager returns a Paginator over endpoint_search results,
+// advancing offset until has_next_page is false or the 1000-result cap is hit.
+func (c *Client) NewEndpointSearchPager(opts *EndpointSearchOptions) paging.Paginator[Endpoint] {
 	pageSize := 0
 	if opts != nil && opts.Limit > 0 {
 		pageSize = opts.Limit
 	}
-	return paging.NewLimitOffsetPaginator(
-		func(ctx context.Context, limit, offset int) ([]Endpoint, int, error) {
-			o := &ListEndpointsOptions{Limit: limit, Offset: offset}
+	offset := 0
+	if opts != nil {
+		offset = opts.Offset
+	}
+	fetched := 0
+	return paging.NewNextTokenPaginator(
+		func(ctx context.Context, limit int, _ string) ([]Endpoint, bool, string, error) {
+			o := EndpointSearchOptions{Limit: limit, Offset: offset}
 			if opts != nil {
-				o.Filter = opts.Filter
+				o.FilterFulltext = opts.FilterFulltext
+				o.FilterScope = opts.FilterScope
+				o.FilterOwnerID = opts.FilterOwnerID
+				o.FilterHostEndpoint = opts.FilterHostEndpoint
+				o.FilterNonFunctional = opts.FilterNonFunctional
+				o.FilterEntityType = opts.FilterEntityType
 			}
-			result, err := c.ListEndpoints(ctx, o)
+			result, err := c.EndpointSearch(ctx, &o)
 			if err != nil {
-				return nil, 0, err
+				return nil, false, "", err
 			}
-			return result.Data, result.Total, nil
+			offset += len(result.Data)
+			fetched += len(result.Data)
+			hasNext := result.HasNextPage && fetched < endpointSearchMaxResults
+			return result.Data, hasNext, "", nil
 		},
 		pageSize,
 	)
@@ -44,32 +60,13 @@ func (c *Client) NewTasksPager(opts *ListTasksOptions) paging.Paginator[Task] {
 			if opts != nil {
 				o.Filter = opts.Filter
 				o.FilterStatus = opts.FilterStatus
+				o.OrderBy = opts.OrderBy
 			}
 			result, err := c.ListTasks(ctx, o)
 			if err != nil {
 				return nil, 0, err
 			}
 			return result.Data, result.Total, nil
-		},
-		pageSize,
-	)
-}
-
-// NewTunnelsPager returns a Paginator that iterates through all tunnels
-// matching opts. Pass nil for default options.
-func (c *Client) NewTunnelsPager(opts *ListTunnelsOptions) paging.Paginator[Tunnel] {
-	pageSize := 0
-	if opts != nil && opts.Limit > 0 {
-		pageSize = opts.Limit
-	}
-	return paging.NewMarkerPaginator(
-		func(ctx context.Context, limit int, marker string) ([]Tunnel, bool, string, error) {
-			o := &ListTunnelsOptions{Limit: limit, Marker: marker}
-			result, err := c.ListTunnels(ctx, o)
-			if err != nil {
-				return nil, false, "", err
-			}
-			return result.Tunnels, result.HasMore, result.Marker, nil
 		},
 		pageSize,
 	)

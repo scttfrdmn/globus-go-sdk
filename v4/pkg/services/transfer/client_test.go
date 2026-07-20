@@ -4,6 +4,7 @@ package transfer_test
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 	"testing"
 
@@ -138,12 +139,23 @@ func TestSubmitTransfer(t *testing.T) {
 		assert.Equal(t, "Items", valErr.Field)
 	})
 
-	t.Run("success", func(t *testing.T) {
+	t.Run("success auto-fetches submission_id and posts to /v0.10/transfer", func(t *testing.T) {
 		expected := &transfer.TaskSubmitResponse{TaskID: "task-123", Code: "Accepted"}
+		var submittedID string
 		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-			assert.Equal(t, http.MethodPost, r.Method)
-			assert.Equal(t, "/transfer", r.URL.Path)
-			testhelpers.RespondJSON(w, http.StatusAccepted, expected)
+			switch r.URL.Path {
+			case "/v0.10/submission_id":
+				assert.Equal(t, http.MethodGet, r.Method)
+				testhelpers.RespondJSON(w, http.StatusOK, map[string]interface{}{"DATA_TYPE": "submission_id", "value": "sub-xyz"})
+			case "/v0.10/transfer":
+				assert.Equal(t, http.MethodPost, r.Method)
+				var body map[string]interface{}
+				require.NoError(t, json.NewDecoder(r.Body).Decode(&body))
+				submittedID, _ = body["submission_id"].(string)
+				testhelpers.RespondJSON(w, http.StatusAccepted, expected)
+			default:
+				t.Errorf("unexpected path %s", r.URL.Path)
+			}
 		})
 		client, err := transfer.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
 		require.NoError(t, err)
@@ -156,6 +168,7 @@ func TestSubmitTransfer(t *testing.T) {
 		})
 		require.NoError(t, err)
 		assert.Equal(t, "task-123", result.TaskID)
+		assert.Equal(t, "sub-xyz", submittedID, "submission_id should be auto-fetched and sent")
 	})
 }
 
@@ -176,10 +189,12 @@ func TestListTasks(t *testing.T) {
 		assert.Len(t, result.Data, 1)
 	})
 
-	t.Run("filter_status passed as repeated query param", func(t *testing.T) {
+	t.Run("filter_status comma-joined into a single param", func(t *testing.T) {
 		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, "/v0.10/task_list", r.URL.Path)
 			statuses := r.URL.Query()["filter_status"]
-			assert.ElementsMatch(t, []string{"ACTIVE", "INACTIVE"}, statuses)
+			require.Len(t, statuses, 1)
+			assert.Equal(t, "ACTIVE,INACTIVE", statuses[0])
 			testhelpers.RespondJSON(w, http.StatusOK, &transfer.TaskList{})
 		})
 		client, err := transfer.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
@@ -191,6 +206,24 @@ func TestListTasks(t *testing.T) {
 		})
 		assert.NoError(t, err)
 	})
+}
+
+func TestEndpointSearch(t *testing.T) {
+	server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v0.10/endpoint_search", r.URL.Path)
+		assert.Equal(t, "tutorial", r.URL.Query().Get("filter_fulltext"))
+		testhelpers.RespondJSON(w, http.StatusOK, &transfer.EndpointSearchResult{
+			Data: []transfer.Endpoint{{ID: "ep-1"}},
+		})
+	})
+	client, err := transfer.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
+	require.NoError(t, err)
+	defer client.Close()
+
+	res, err := client.EndpointSearch(context.Background(), &transfer.EndpointSearchOptions{FilterFulltext: "tutorial"})
+	require.NoError(t, err)
+	require.Len(t, res.Data, 1)
+	assert.Equal(t, "ep-1", res.Data[0].ID)
 }
 
 func TestClose(t *testing.T) {
