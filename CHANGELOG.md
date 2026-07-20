@@ -187,6 +187,129 @@ Added: `BatchMembershipAction`, `GetGroupBySubscriptionID`,
 - `ProjectCreate` trimmed to upstream's four fields (`public_contact_info`,
   `metadata`, `project_name` removed from the create body).
 
+### Changed — Transfer (v3 module, Phase 2 parity audit vs 3.65.0)
+
+**Breaking** within the v3 line:
+
+- List envelopes (`EndpointList`, `TaskList`, `FileList`) now decode items under
+  the uppercase `DATA` key — they previously deserialized empty. `FileList` uses
+  `endpoint` (not `endpoint_id`); `TaskList`/`FileList` gained total/offset/limit.
+- `TransferItem.Checksum` replaced with `ExternalChecksum` + `ChecksumAlgorithm`;
+  `TransferTaskRequest.PreserveMtime` now marshals `preserve_timestamp`.
+- `Mkdir`/`Rename` gained a trailing `*MkdirOptions`/`*RenameOptions` argument
+  (pass `nil` for none) carrying the optional `local_user` field.
+- Subscription API split into `SetSubscriptionID(collectionID, subscriptionID)`
+  and `SetSubscriptionAdminVerified(collectionID string, verified bool)` on their
+  correct routes.
+- `ListEndpoints`/`ListTasks`/`ListFiles` realigned to 3.65.0 wire params
+  (endpoint_search filters incl. `filter_non_functional`/`filter_entity_type`;
+  task_list combined `filter`+`orderby`; operation_ls `offset`+`local_user`).
+  `page_size`/`page_token`/individual task `filter_*`/`excluded_types`/
+  `continue_from`/`marker` are retained as divergent aliases and no longer sent.
+- Removed phantom Streams/tunnel methods (`streams.go`) and the `streams-tunnels`
+  example — no such routes at 3.65.0.
+
+Added: `UpdateEndpoint`, `DeleteEndpoint`, `CreateSharedEndpoint`; bookmark CRUD;
+endpoint ACL/role/server families; `OperationStat`; task `TaskEventList`/
+`TaskPauseInfo`/`TaskSuccessfulTransfers`/`TaskSkippedErrors`/`UpdateTask`;
+`MyEffectivePauseRuleList`/`MySharedEndpointList`/`GetSharedEndpointList`; and the
+full `EndpointManager*` surface (monitored/hosted endpoints, task list/get/events,
+admin cancel/pause/resume, pause-rule CRUD). New top-level request fields on
+`DeleteTaskRequest` (recursive/ignore_missing/interpret_globs/local_user) and
+`TransferTaskRequest` (source/destination_local_user, filter_rules).
+
+### Changed — Compute (v3 module, Phase 2 parity audit vs 3.65.0)
+
+**Breaking** within the v3 line:
+
+- Removed fabricated model types (`ComputeEndpoint`, `ComputeEndpointList`,
+  container/environment/dependency/batch helpers) and the `ListEndpoints`/
+  `ListEndpointsOptions` surface; the compute web service defines no models or
+  pagination at 3.65.0. All request bodies and responses are now
+  `map[string]interface{}` passthrough documents.
+- Base URL moved to the host root (`https://compute.api.globus.org/`); `/v2` and
+  `/v3` prefixes live in each endpoint path.
+
+Added V3 methods alongside their V2 counterparts: `RegisterEndpointV3`,
+`UpdateEndpointV3`, `LockEndpointV3`, `GetEndpointAllowlistV3`,
+`RegisterFunctionV3`, `SubmitV3`.
+
+### Changed — Auth (v3 module, Phase 2 parity audit vs 3.65.0)
+
+**Breaking** within the v3 line:
+
+- Removed phantom MFA REST methods `GetMFAChallenge` and
+  `RespondToMFAChallenge` (no `/oauth2/mfa/*` route at 3.65.0); MFA is completed
+  by resubmitting to the token endpoint. `Identity.IdentityID`→`Identity.ID`
+  (JSON `id`).
+
+Added: `GetIdentities`, `GetIdentityProviders`, projects CRUD, policies CRUD,
+clients CRUD (+`CreateChildClient`/`CreateNativeAppInstance`), client-credentials
+CRUD, scopes CRUD, `GetConsents`, `OAuth2GetDependentTokens`,
+`OAuth2ValidateToken`, and OIDC `GetOpenIDConfiguration`/`GetJWK`/`Userinfo`.
+
+### Changed — Flows (v3 module, Phase 2 parity audit vs 3.65.0)
+
+**Breaking** within the v3 line:
+
+- Base URL corrected to `https://flows.automate.globus.org/`. `RunFlow` posts to
+  `/flows/{id}/run` with input under `body` (was `/runs` + `input`).
+  `UpdateFlow`/`UpdateRun` use PUT; `DeleteRun` is `POST /runs/{id}/release`.
+- Removed the action-provider surface (`ListActionProviders`,
+  `GetActionProvider`, `ListActionRoles`, `GetActionRole`, their iterators/batch,
+  and `ActionProvider*`/`ActionRole*` types) — no upstream route at 3.65.0.
+- `RunResponse` timestamp keys → `start_time`/`completion_time`; `RunLogEntry`
+  timestamp → `time` (removed `run_id`).
+- Added `ValidateFlow`, `ValidateRun`, `GetRunDefinition`, `DeleteRun`,
+  `ResumeRun`.
+
+### Changed — Search (v3 module, Phase 2 parity audit vs 3.65.0)
+
+**Breaking** within the v3 line:
+
+- Ingest/search/delete now use index-scoped routes (`/index/{id}/ingest`,
+  `/index/{id}/search`, `/index/{id}/batch_delete_by_subject`).
+- `IndexList` decodes `index_list`; `SearchResponse` reads `gmeta` +
+  `has_next_page` (offset-paginated iterator); `DeleteDocumentsResponse` reads
+  top-level `task_id`; `TaskStatusResponse` gained `index_id` and dropped
+  unverified counters.
+- Added `GetSearch`, `Scroll`, `DeleteByQuery`, `GetSubject`/`DeleteSubject`,
+  `GetEntry`/`DeleteEntry`, `GetTaskList`, and role ops (`CreateRole`,
+  `GetRoleList`, `DeleteRole`).
+
+### Changed — Timers (v3 module, Phase 2 parity audit vs 3.65.0)
+
+**Breaking** within the v3 line:
+
+- Base URL corrected to `https://timer.automate.globus.org/`; paths moved to
+  `/jobs/` and `POST /v2/timer` (wrapped `{"timer": ...}`); update is
+  `PATCH /jobs/{id}`.
+- Create document reshaped (`timer_type`/`name`/`schedule`/`body`, `flow_id` for
+  flow timers); `Schedule` uses once/recurring shapes (`interval_seconds`,
+  structured `end`). New `NewOnceSchedule`/`NewRecurringSchedule`/
+  `NewTransferTimer`/`NewFlowTimer` builders and `CreateJob`.
+- `CreateTimer`/`UpdateTimer` take an `interface{}` document; `ResumeTimer` takes
+  an optional `*bool`; `CreateFlowTimer`/`CreateTransferTimer` reworked.
+- Removed phantom methods/types: `RunTimer`, `ListRuns`, `GetRun`,
+  `GetCurrentUser`, cron timers, and `TimerRun`/`RunResult`/`Callback`/
+  `CreateTimerRequest`/`UpdateTimerRequest`/`CurrentUserInfo`.
+
+### Changed — Groups (v3 module — `github.com/scttfrdmn/globus-go-sdk/v3`, Phase 2 parity audit vs 3.65.0)
+
+**Breaking** within the v3 line — removed methods that hit nonexistent routes:
+
+- Removed the members sub-resource and roles resource (`ListMembers`/`AddMember`/
+  `RemoveMember`/`UpdateMemberRole` + LowLevel variants; `ListRoles`/`GetRole`/
+  `CreateRole`/`UpdateRole`/`DeleteRole`; the `ChangeRole(s)`/batch builder;
+  `GetGroupSubscription`; and the `Role*`/`GroupSubscription` types). Use
+  `BatchMembershipAction` (`POST /groups/{id}`) and read memberships via
+  `GetGroup` with `include=memberships`.
+- Removed `ListGroups`/`ListGroupsV2` (no list route/pagination upstream) — use
+  `GetMyGroups` (`GET /groups/my_groups`, `[]Group`, comma-joined statuses).
+- `GetGroup` takes `(ctx, id, *GetGroupOptions)`; `UpdateGroup` uses PUT;
+  preferences hit `/preferences`; `GetGroupBySubscriptionID` hits
+  `/subscription_info/{id}`; `GroupPolicies` reshaped to real keys.
+
 ### Added (v4 module — `github.com/scttfrdmn/globus-go-sdk/v4`)
 
 Closes the wire-visible gap to upstream Python globus-sdk **v4.8.1**.

@@ -71,7 +71,7 @@ func main() {
 
 	// Create source directory
 	fmt.Printf("Creating source directory: %s\n", sourceDir)
-	err = client.Mkdir(ctx, sourceEndpointID, sourceDir)
+	err = client.Mkdir(ctx, sourceEndpointID, sourceDir, nil)
 	if err != nil {
 		fmt.Printf("ERROR: Failed to create source directory: %v\n", err)
 		os.Exit(1)
@@ -79,7 +79,7 @@ func main() {
 
 	// Create destination directory
 	fmt.Printf("Creating destination directory: %s\n", destDir)
-	err = client.Mkdir(ctx, destEndpointID, destDir)
+	err = client.Mkdir(ctx, destEndpointID, destDir, nil)
 	if err != nil {
 		fmt.Printf("ERROR: Failed to create destination directory: %v\n", err)
 		os.Exit(1)
@@ -89,7 +89,7 @@ func main() {
 	subSourceDir := sourceDir + "/subdir"
 
 	fmt.Printf("Creating subdirectory: %s\n", subSourceDir)
-	err = client.Mkdir(ctx, sourceEndpointID, subSourceDir)
+	err = client.Mkdir(ctx, sourceEndpointID, subSourceDir, nil)
 	if err != nil {
 		fmt.Printf("ERROR: Failed to create source subdirectory: %v\n", err)
 		os.Exit(1)

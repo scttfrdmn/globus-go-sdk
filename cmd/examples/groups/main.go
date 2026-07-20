@@ -23,10 +23,7 @@ func main() {
 	}
 
 	// List groups the user is a member of
-	groupList, err := groupsClient.ListGroups(context.Background(), &groups.ListGroupsOptions{
-		MyGroups: true,
-		PageSize: 100,
-	})
+	groupList, err := groupsClient.GetMyGroups(context.Background(), []string{"active"})
 	if err != nil {
 		log.Fatalf("Failed to list groups: %v", err)
 	}
@@ -50,8 +47,10 @@ func main() {
 
 	fmt.Printf("\nCreated group: %s (%s)\n", createdGroup.Name, createdGroup.ID)
 
-	// Add a member to the group
-	err = groupsClient.AddMember(context.Background(), createdGroup.ID, "user@example.com", "member")
+	// Add a member to the group via the batch membership action.
+	_, err = groupsClient.BatchMembershipAction(context.Background(), createdGroup.ID, &groups.BatchMembershipActions{
+		Add: []groups.MemberWithRole{{IdentityID: "user@example.com", Role: groups.RoleMember}},
+	})
 	if err != nil {
 		log.Fatalf("Failed to add member: %v", err)
 	}

@@ -340,7 +340,6 @@ func TestListFiles(t *testing.T) {
 			EndpointID:   "endpoint1",
 			Path:         "/path/to/dir",
 			HasNextPage:  true,
-			Marker:       "marker-value",
 			AbsolutePath: "/absolute/path/to/dir",
 		}
 

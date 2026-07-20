@@ -276,7 +276,7 @@ func TestIntegration_FlowLifecycle(t *testing.T) {
 			FlowID: createdFlow.ID,
 			Label:  "Integration Test Run",
 			Tags:   []string{"integration-test"},
-			Input: map[string]interface{}{
+			Body: map[string]interface{}{
 				"message": "Hello from integration test",
 			},
 		}
@@ -390,81 +390,5 @@ func TestIntegration_ExistingFlow(t *testing.T) {
 		}
 
 		t.Logf("Run has %d log entries", len(logs.Entries))
-	}
-}
-
-func TestIntegration_ActionProviders(t *testing.T) {
-	clientID, clientSecret, _ := getTestCredentials(t)
-
-	// Get access token
-	accessToken := getAccessToken(t, clientID, clientSecret)
-
-	// Create Flows client with proper options
-	client, err := NewClient(WithAccessToken(accessToken))
-	if err != nil {
-		t.Fatalf("Failed to create flows client: %v", err)
-	}
-	ctx := context.Background()
-
-	// List action providers
-	providers, err := client.ListActionProviders(ctx, &ListActionProvidersOptions{
-		Limit: 5,
-	})
-	if err != nil {
-		if core.IsNotFound(err) {
-			t.Logf("404 NOT FOUND: Client correctly made the request, but returned 404: %v", err)
-			t.Logf("This is acceptable for integration testing with limited-permission credentials")
-			t.Logf("To resolve, provide GLOBUS_TEST_FLOWS_TOKEN with proper permissions")
-			return // Skip the rest of the test
-		} else if core.IsForbidden(err) {
-			t.Logf("403 FORBIDDEN: Permission denied to list action providers: %v", err)
-			t.Logf("This is acceptable for integration testing with limited-permission credentials")
-			t.Logf("To resolve, set GLOBUS_TEST_FLOWS_TOKEN with a token that has flows permissions")
-			return // Skip the rest of the test
-		} else if core.IsUnauthorized(err) {
-			t.Logf("401 UNAUTHORIZED: Token not valid for listing action providers: %v", err)
-			t.Logf("To resolve, provide a valid GLOBUS_TEST_FLOWS_TOKEN with proper permissions")
-			return // Skip the rest of the test
-		} else {
-			t.Fatalf("Failed to list action providers with unexpected error: %v", err)
-		}
-	}
-
-	t.Logf("Found %d action providers", len(providers.ActionProviders))
-
-	if len(providers.ActionProviders) > 0 {
-		provider := providers.ActionProviders[0]
-		t.Logf("Example provider: %s (%s)", provider.DisplayName, provider.ID)
-
-		// Get a specific provider
-		providerDetail, err := client.GetActionProvider(ctx, provider.ID)
-		if err != nil {
-			t.Fatalf("Failed to get action provider: %v", err)
-		}
-
-		t.Logf("Provider detail: %s (Type: %s, Owner: %s)",
-			providerDetail.DisplayName, providerDetail.Type, providerDetail.Owner)
-
-		// List roles for the provider
-		roles, err := client.ListActionRoles(ctx, provider.ID, 5, 0)
-		if err != nil {
-			t.Fatalf("Failed to list action roles: %v", err)
-		}
-
-		t.Logf("Provider has %d roles", len(roles.ActionRoles))
-
-		if len(roles.ActionRoles) > 0 {
-			// Get a specific role
-			role := roles.ActionRoles[0]
-			t.Logf("Example role: %s (%s)", role.Name, role.ID)
-
-			roleDetail, err := client.GetActionRole(ctx, provider.ID, role.ID)
-			if err != nil {
-				t.Fatalf("Failed to get action role: %v", err)
-			}
-
-			t.Logf("Role detail: %s (Description: %s)",
-				roleDetail.Name, roleDetail.Description)
-		}
 	}
 }

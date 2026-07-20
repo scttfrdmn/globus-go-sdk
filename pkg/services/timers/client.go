@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2025 Scott Friedman and Project Contributors
+// Copyright (c) 2025-2026 Scott Friedman and Project Contributors
 package timers
 
 import (
@@ -10,17 +10,14 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
-	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/errors"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/response"
 )
 
-// DefaultBaseURL is the default base URL for the Timers service
-const DefaultBaseURL = "https://timer.automate.globus.org/api/v1/"
+// DefaultBaseURL is the default base URL for the Timers service. It is the bare
+// host; classic routes are under /jobs/ and timer creation is POST /v2/timer.
+const DefaultBaseURL = "https://timer.automate.globus.org/"
 
 // TimersScope is the required scope for accessing the Timers service
 const TimersScope = "https://auth.globus.org/scopes/a1a171d5-48fb-4c77-a7ba-b8c628c20fd5/timers.api"
@@ -32,48 +29,34 @@ type Client struct {
 
 // NewClient creates a new Timers client
 func NewClient(opts ...ClientOption) (*Client, error) {
-	// Apply default options
 	options := defaultOptions()
-
-	// Apply user options
 	for _, opt := range opts {
 		opt(options)
 	}
-
-	// If an access token was provided, create a static token authorizer
 	if options.accessToken != "" {
 		authorizer := authorizers.StaticTokenCoreAuthorizer(options.accessToken)
 		options.coreOptions = append(options.coreOptions, core.WithAuthorizer(authorizer))
 	}
-
-	// Create the base client
 	baseClient := core.NewClient(options.coreOptions...)
-
-	return &Client{
-		Client: baseClient,
-	}, nil
+	return &Client{Client: baseClient}, nil
 }
 
-// buildURLLowLevel builds a URL for the Timers API
-// This is an internal method used by the client.
+// buildURLLowLevel builds a URL for the Timers API.
 func (c *Client) buildURLLowLevel(path string, query url.Values) string {
 	baseURL := c.Client.BaseURL
 	if baseURL[len(baseURL)-1] != '/' {
 		baseURL += "/"
 	}
-
-	url := baseURL + path
+	u := baseURL + path
 	if len(query) > 0 {
-		url += "?" + query.Encode()
+		u += "?" + query.Encode()
 	}
-
-	return url
+	return u
 }
 
-// doRequestLowLevel performs an HTTP request and decodes the JSON response
-// This is an internal method used by higher-level API methods.
+// doRequestLowLevel performs an HTTP request and decodes the JSON response.
 func (c *Client) doRequestLowLevel(ctx context.Context, method, path string, query url.Values, body, response interface{}) error {
-	url := c.buildURLLowLevel(path, query)
+	u := c.buildURLLowLevel(path, query)
 
 	var bodyReader io.Reader
 	if body != nil {
@@ -84,11 +67,10 @@ func (c *Client) doRequestLowLevel(ctx context.Context, method, path string, que
 		bodyReader = bytes.NewReader(bodyJSON)
 	}
 
-	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
+	req, err := http.NewRequestWithContext(ctx, method, u, bodyReader)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
-
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
@@ -100,352 +82,127 @@ func (c *Client) doRequestLowLevel(ctx context.Context, method, path string, que
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	// For non-GET requests with no response body, just check status
 	if method != http.MethodGet && response == nil {
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 			return nil
 		}
-
 		respBody, _ := io.ReadAll(resp.Body)
 		return fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(respBody))
 	}
 
-	// Read and decode response body
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
-
 	if len(respBody) == 0 {
 		return nil
 	}
-
 	if err := json.Unmarshal(respBody, response); err != nil {
 		return fmt.Errorf("failed to unmarshal response: %w", err)
 	}
-
 	return nil
 }
 
-// CreateTimer creates a new timer
-func (c *Client) CreateTimer(ctx context.Context, request *CreateTimerRequest) (*Timer, error) {
-	if request == nil {
-		return nil, fmt.Errorf("request is required")
+// CreateTimer creates a new timer (POST /v2/timer). The document is wrapped in a
+// {"timer": ...} envelope. Pass a *TransferTimer or *FlowTimer (or any value that
+// marshals to a valid timer document).
+func (c *Client) CreateTimer(ctx context.Context, timer interface{}) (*Timer, error) {
+	if timer == nil {
+		return nil, fmt.Errorf("timer is required")
 	}
-
-	var timer Timer
-	err := c.doRequestLowLevel(ctx, http.MethodPost, "timers", nil, request, &timer)
-	if err != nil {
+	body := map[string]interface{}{"timer": timer}
+	var result Timer
+	if err := c.doRequestLowLevel(ctx, http.MethodPost, "v2/timer", nil, body, &result); err != nil {
 		return nil, err
 	}
-
-	return &timer, nil
+	return &result, nil
 }
 
-// GetTimer retrieves a timer by ID
+// CreateJob creates a timer using the legacy job document (POST /jobs/).
+func (c *Client) CreateJob(ctx context.Context, job *TimerJob) (*Timer, error) {
+	if job == nil {
+		return nil, fmt.Errorf("job is required")
+	}
+	var result Timer
+	if err := c.doRequestLowLevel(ctx, http.MethodPost, "jobs/", nil, job, &result); err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// GetTimer retrieves a timer ("job") by ID (GET /jobs/{id}).
 func (c *Client) GetTimer(ctx context.Context, timerID string) (*Timer, error) {
 	if timerID == "" {
 		return nil, fmt.Errorf("timer ID is required")
 	}
-
 	var timer Timer
-	err := c.doRequestLowLevel(ctx, http.MethodGet, fmt.Sprintf("timers/%s", timerID), nil, nil, &timer)
-	if err != nil {
+	if err := c.doRequestLowLevel(ctx, http.MethodGet, "jobs/"+timerID, nil, nil, &timer); err != nil {
 		return nil, err
 	}
-
 	return &timer, nil
 }
 
-// UpdateTimer updates an existing timer
-func (c *Client) UpdateTimer(ctx context.Context, timerID string, request *UpdateTimerRequest) (*Timer, error) {
+// UpdateTimer updates an existing timer (PATCH /jobs/{id}).
+func (c *Client) UpdateTimer(ctx context.Context, timerID string, update interface{}) (*Timer, error) {
 	if timerID == "" {
 		return nil, fmt.Errorf("timer ID is required")
 	}
-	if request == nil {
-		return nil, fmt.Errorf("request is required")
+	if update == nil {
+		return nil, fmt.Errorf("update document is required")
 	}
-
 	var timer Timer
-	err := c.doRequestLowLevel(ctx, http.MethodPatch, fmt.Sprintf("timers/%s", timerID), nil, request, &timer)
-	if err != nil {
+	if err := c.doRequestLowLevel(ctx, http.MethodPatch, "jobs/"+timerID, nil, update, &timer); err != nil {
 		return nil, err
 	}
-
 	return &timer, nil
 }
 
-// DeleteTimer deletes a timer
+// DeleteTimer deletes a timer (DELETE /jobs/{id}).
 func (c *Client) DeleteTimer(ctx context.Context, timerID string) error {
 	if timerID == "" {
 		return fmt.Errorf("timer ID is required")
 	}
-
-	err := c.doRequestLowLevel(ctx, http.MethodDelete, fmt.Sprintf("timers/%s", timerID), nil, nil, nil)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return c.doRequestLowLevel(ctx, http.MethodDelete, "jobs/"+timerID, nil, nil, nil)
 }
 
-// ListTimers retrieves a list of timers
+// ListTimers lists timers (GET /jobs/).
 func (c *Client) ListTimers(ctx context.Context, options *ListTimersOptions) (*TimerList, error) {
 	query := url.Values{}
 	if options != nil {
-		if options.Limit != nil {
-			query.Set("limit", strconv.Itoa(*options.Limit))
-		}
-		if options.Marker != nil {
-			query.Set("marker", *options.Marker)
-		}
-		if options.Status != nil {
-			query.Set("status", *options.Status)
-		}
-		if options.ScheduleType != nil {
-			query.Set("schedule_type", *options.ScheduleType)
-		}
-		if options.CallbackType != nil {
-			query.Set("callback_type", *options.CallbackType)
+		for k, v := range options.QueryParams {
+			query.Set(k, v)
 		}
 	}
-
 	var timerList TimerList
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "timers", query, nil, &timerList)
-	if err != nil {
+	if err := c.doRequestLowLevel(ctx, http.MethodGet, "jobs/", query, nil, &timerList); err != nil {
 		return nil, err
 	}
-
 	return &timerList, nil
 }
 
-// ListTimersV2 retrieves timers with unified response system
-func (c *Client) ListTimersV2(ctx context.Context, options *ListTimersOptions) (*response.TimersResponse[TimerList], error) {
-	query := url.Values{}
-	if options != nil {
-		if options.Limit != nil {
-			query.Set("limit", strconv.Itoa(*options.Limit))
-		}
-		if options.Marker != nil {
-			query.Set("marker", *options.Marker)
-		}
-		if options.Status != nil {
-			query.Set("status", *options.Status)
-		}
-		if options.ScheduleType != nil {
-			query.Set("schedule_type", *options.ScheduleType)
-		}
-		if options.CallbackType != nil {
-			query.Set("callback_type", *options.CallbackType)
-		}
-	}
-
-	var timerList TimerList
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "timers", query, nil, &timerList)
-	if err != nil {
-		// Convert to GlobusError if it's not already
-		if _, ok := err.(*errors.GlobusError); !ok {
-			return nil, errors.NewTimersError("TimerListError", err.Error()).WithUnderlying(err)
-		}
-		return nil, err
-	}
-
-	timersResp := response.NewTimersResponse(timerList)
-	timersResp.WithRequestID("timers-list-" + strconv.FormatInt(time.Now().UnixNano(), 10))
-
-	return timersResp, nil
-}
-
-// PauseTimer pauses a timer
-func (c *Client) PauseTimer(ctx context.Context, timerID string) (*Timer, error) {
+// PauseTimer pauses a timer (POST /jobs/{id}/pause).
+func (c *Client) PauseTimer(ctx context.Context, timerID string) error {
 	if timerID == "" {
-		return nil, fmt.Errorf("timer ID is required")
+		return fmt.Errorf("timer ID is required")
 	}
-
-	var timer Timer
-	err := c.doRequestLowLevel(ctx, http.MethodPost, fmt.Sprintf("timers/%s/pause", timerID), nil, nil, &timer)
-	if err != nil {
-		return nil, err
-	}
-
-	return &timer, nil
+	return c.doRequestLowLevel(ctx, http.MethodPost, "jobs/"+timerID+"/pause", nil, nil, nil)
 }
 
-// ResumeTimer resumes a paused timer
-func (c *Client) ResumeTimer(ctx context.Context, timerID string) (*Timer, error) {
+// ResumeTimer resumes a paused timer (POST /jobs/{id}/resume). When
+// updateCredentials is non-nil, its value controls whether the resuming caller's
+// credentials replace the timer's stored credentials.
+func (c *Client) ResumeTimer(ctx context.Context, timerID string, updateCredentials *bool) error {
 	if timerID == "" {
-		return nil, fmt.Errorf("timer ID is required")
+		return fmt.Errorf("timer ID is required")
 	}
-
-	var timer Timer
-	err := c.doRequestLowLevel(ctx, http.MethodPost, fmt.Sprintf("timers/%s/resume", timerID), nil, nil, &timer)
-	if err != nil {
-		return nil, err
+	var body interface{}
+	if updateCredentials != nil {
+		body = map[string]interface{}{"update_credentials": *updateCredentials}
 	}
-
-	return &timer, nil
-}
-
-// RunTimer manually triggers a timer run
-func (c *Client) RunTimer(ctx context.Context, timerID string) (*TimerRun, error) {
-	if timerID == "" {
-		return nil, fmt.Errorf("timer ID is required")
-	}
-
-	var run TimerRun
-	err := c.doRequestLowLevel(ctx, http.MethodPost, fmt.Sprintf("timers/%s/run", timerID), nil, nil, &run)
-	if err != nil {
-		return nil, err
-	}
-
-	return &run, nil
-}
-
-// ListRuns retrieves a list of runs for a timer
-func (c *Client) ListRuns(ctx context.Context, timerID string, options *ListRunsOptions) (*TimerRunList, error) {
-	if timerID == "" {
-		return nil, fmt.Errorf("timer ID is required")
-	}
-
-	query := url.Values{}
-	if options != nil {
-		if options.Limit != nil {
-			query.Set("limit", strconv.Itoa(*options.Limit))
-		}
-		if options.Marker != nil {
-			query.Set("marker", *options.Marker)
-		}
-		if options.Status != nil {
-			query.Set("status", *options.Status)
-		}
-		if options.StartAfter != nil {
-			query.Set("start_after", options.StartAfter.Format(http.TimeFormat))
-		}
-		if options.StartBefore != nil {
-			query.Set("start_before", options.StartBefore.Format(http.TimeFormat))
-		}
-	}
-
-	var runList TimerRunList
-	err := c.doRequestLowLevel(ctx, http.MethodGet, fmt.Sprintf("timers/%s/runs", timerID), query, nil, &runList)
-	if err != nil {
-		return nil, err
-	}
-
-	return &runList, nil
-}
-
-// GetRun retrieves a specific run
-func (c *Client) GetRun(ctx context.Context, timerID, runID string) (*TimerRun, error) {
-	if timerID == "" {
-		return nil, fmt.Errorf("timer ID is required")
-	}
-	if runID == "" {
-		return nil, fmt.Errorf("run ID is required")
-	}
-
-	var run TimerRun
-	err := c.doRequestLowLevel(ctx, http.MethodGet, fmt.Sprintf("timers/%s/runs/%s", timerID, runID), nil, nil, &run)
-	if err != nil {
-		return nil, err
-	}
-
-	return &run, nil
-}
-
-// GetCurrentUser retrieves information about the current user
-func (c *Client) GetCurrentUser(ctx context.Context) (*CurrentUserInfo, error) {
-	var user CurrentUserInfo
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "user", nil, nil, &user)
-	if err != nil {
-		return nil, err
-	}
-
-	return &user, nil
-}
-
-// Helper functions for creating common timer types
-
-// CreateOnceTimer creates a timer that runs once at a specific time
-func (c *Client) CreateOnceTimer(
-	ctx context.Context,
-	name string,
-	startTime time.Time,
-	callback Callback,
-	data map[string]interface{},
-) (*Timer, error) {
-	schedule := Schedule{
-		Type:      string(ScheduleTypeOnce),
-		StartTime: &startTime,
-	}
-
-	request := &CreateTimerRequest{
-		Name:     name,
-		Schedule: schedule,
-		Callback: callback,
-		Data:     data,
-	}
-
-	return c.CreateTimer(ctx, request)
-}
-
-// CreateRecurringTimer creates a timer that runs at a regular interval
-func (c *Client) CreateRecurringTimer(
-	ctx context.Context,
-	name string,
-	startTime time.Time,
-	interval string,
-	endTime *time.Time,
-	callback Callback,
-	data map[string]interface{},
-) (*Timer, error) {
-	schedule := Schedule{
-		Type:      string(ScheduleTypeRecurring),
-		StartTime: &startTime,
-		EndTime:   endTime,
-		Interval:  &interval,
-	}
-
-	request := &CreateTimerRequest{
-		Name:     name,
-		Schedule: schedule,
-		Callback: callback,
-		Data:     data,
-	}
-
-	return c.CreateTimer(ctx, request)
-}
-
-// CreateCronTimer creates a timer that runs on a cron schedule
-func (c *Client) CreateCronTimer(
-	ctx context.Context,
-	name string,
-	cronExpression string,
-	timezone string,
-	endTime *time.Time,
-	callback Callback,
-	data map[string]interface{},
-) (*Timer, error) {
-	schedule := Schedule{
-		Type:           string(ScheduleTypeCron),
-		CronExpression: &cronExpression,
-		Timezone:       &timezone,
-		EndTime:        endTime,
-	}
-
-	request := &CreateTimerRequest{
-		Name:     name,
-		Schedule: schedule,
-		Callback: callback,
-		Data:     data,
-	}
-
-	return c.CreateTimer(ctx, request)
+	return c.doRequestLowLevel(ctx, http.MethodPost, "jobs/"+timerID+"/resume", nil, body, nil)
 }
 
 // Close releases any resources held by the client, such as idle HTTP connections.
-// It is safe to call Close multiple times.
-// Added in Python SDK v4.2.0 (context manager support).
 func (c *Client) Close() {
 	if c.Client != nil && c.Client.HTTPClient != nil {
 		if transport, ok := c.Client.HTTPClient.Transport.(interface{ CloseIdleConnections() }); ok {
@@ -454,33 +211,8 @@ func (c *Client) Close() {
 	}
 }
 
-// FlowUserScope returns the scope string required for a TimersClient to execute
-// a specific flow. This scope must be included when requesting authorization.
-// Use this when creating timers that will trigger flow executions.
-//
-// In the Python SDK v4.2.0, this is handled via GlobusApp's add_app_flow_user_scope().
-// In the Go SDK, add the returned scope to your authorization request.
+// FlowUserScope returns the scope string required for a TimersClient to execute a
+// specific flow. Add the returned scope to your authorization request.
 func FlowUserScope(flowID string) string {
 	return "https://auth.globus.org/scopes/" + flowID + "/flow_" + flowID + "_user"
-}
-
-// CreateFlowCallback creates a callback configuration for triggering a flow
-func CreateFlowCallback(flowID, flowLabel string, flowInput map[string]interface{}) Callback {
-	return Callback{
-		Type:      string(CallbackTypeFlow),
-		FlowID:    &flowID,
-		FlowLabel: &flowLabel,
-		FlowInput: flowInput,
-	}
-}
-
-// CreateWebCallback creates a callback configuration for making a web request
-func CreateWebCallback(url, method string, headers map[string]string, body *string) Callback {
-	return Callback{
-		Type:    string(CallbackTypeWeb),
-		URL:     &url,
-		Method:  &method,
-		Headers: headers,
-		Body:    body,
-	}
 }

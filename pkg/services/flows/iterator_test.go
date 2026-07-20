@@ -248,8 +248,7 @@ func TestRunLogIterator(t *testing.T) {
 			code := "CODE_" + strconv.Itoa(i)
 			entries = append(entries, RunLogEntry{
 				Code:        code,
-				RunID:       runID,
-				CreatedAt:   logTime.Add(time.Duration(i) * time.Second),
+				Time:        logTime.Add(time.Duration(i) * time.Second),
 				Description: "Log entry " + strconv.Itoa(i),
 				Details: map[string]interface{}{
 					"index": i,
@@ -297,10 +296,6 @@ func TestRunLogIterator(t *testing.T) {
 			expectedCode := "CODE_" + strconv.Itoa(count)
 			if entry.Code != expectedCode {
 				t.Errorf("Expected log code %s, got %s", expectedCode, entry.Code)
-			}
-
-			if entry.RunID != runID {
-				t.Errorf("Expected run ID %s, got %s", runID, entry.RunID)
 			}
 
 			index, ok := entry.Details["index"].(float64)

@@ -109,19 +109,16 @@ type ListRunsOptions struct {
 	Label    string `url:"label,omitempty"`
 }
 
-// RunRequest represents a request to run a Flow
+// RunRequest represents a request to run a Flow. FlowID selects the target flow
+// (used in the URL, not sent in the body). The flow's first-state input goes
+// under Body per the upstream run_flow contract.
 type RunRequest struct {
-	FlowID        string                 `json:"flow_id"`
-	FlowTitle     string                 `json:"flow_title,omitempty"`
-	FlowScope     string                 `json:"flow_scope,omitempty"`
-	Label         string                 `json:"label,omitempty"`
-	Tags          []string               `json:"tags,omitempty"`
-	RunManagers   []string               `json:"run_managers,omitempty"`
-	RunMonitors   []string               `json:"run_monitors,omitempty"`
-	RunManagersRW bool                   `json:"run_managers_rw,omitempty"`
-	Input         map[string]interface{} `json:"input"`
-	ManageBy      string                 `json:"manage_by,omitempty"`
-	MonitorBy     string                 `json:"monitor_by,omitempty"`
+	FlowID      string                 `json:"-"`
+	Body        map[string]interface{} `json:"body"`
+	Label       string                 `json:"label,omitempty"`
+	Tags        []string               `json:"tags,omitempty"`
+	RunManagers []string               `json:"run_managers,omitempty"`
+	RunMonitors []string               `json:"run_monitors,omitempty"`
 }
 
 // RunResponse represents a Flow run
@@ -130,8 +127,8 @@ type RunResponse struct {
 	FlowID      string                 `json:"flow_id"`
 	Status      string                 `json:"status"`
 	CreatedAt   time.Time              `json:"created_at"`
-	StartedAt   time.Time              `json:"started_at,omitempty"`
-	CompletedAt time.Time              `json:"completed_at,omitempty"`
+	StartedAt   time.Time              `json:"start_time,omitempty"`
+	CompletedAt time.Time              `json:"completion_time,omitempty"`
 	Label       string                 `json:"label,omitempty"`
 	Tags        []string               `json:"tags,omitempty"`
 	UserID      string                 `json:"user_id"`
@@ -161,11 +158,10 @@ type RunUpdateRequest struct {
 	RunMonitors []string `json:"run_monitors,omitempty"`
 }
 
-// RunLogEntry represents an entry in a Flow run log
+// RunLogEntry represents an entry in a Flow run log. The timestamp key is "time".
 type RunLogEntry struct {
 	Code        string                 `json:"code"`
-	RunID       string                 `json:"run_id"`
-	CreatedAt   time.Time              `json:"created_at"`
+	Time        time.Time              `json:"time"`
 	Details     map[string]interface{} `json:"details,omitempty"`
 	Description string                 `json:"description"`
 }
@@ -177,60 +173,6 @@ type RunLogList struct {
 	HadMore bool          `json:"had_more"`
 	Offset  int           `json:"offset"`
 	Limit   int           `json:"limit"`
-}
-
-// ActionProvider represents a Flow action provider
-type ActionProvider struct {
-	ID          string    `json:"id"`
-	DisplayName string    `json:"display_name"`
-	Description string    `json:"description,omitempty"`
-	Owner       string    `json:"owner"`
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
-	Type        string    `json:"type"`
-	Globus      bool      `json:"globus"`
-	Visible     bool      `json:"visible"`
-}
-
-// ActionProviderList represents a list of Flow action providers
-type ActionProviderList struct {
-	ActionProviders []ActionProvider `json:"action_providers"`
-	Total           int              `json:"total"`
-	HadMore         bool             `json:"had_more"`
-	Offset          int              `json:"offset"`
-	Limit           int              `json:"limit"`
-}
-
-// ActionRole represents a role in a Flow action
-type ActionRole struct {
-	ID           string                 `json:"id"`
-	Name         string                 `json:"name"`
-	Description  string                 `json:"description,omitempty"`
-	ActionFields map[string]interface{} `json:"action_fields,omitempty"`
-	InputSchema  map[string]interface{} `json:"input_schema,omitempty"`
-	Visible      bool                   `json:"visible"`
-}
-
-// ActionRoleList represents a list of Flow action roles
-type ActionRoleList struct {
-	ActionRoles []ActionRole `json:"action_roles"`
-	Total       int          `json:"total"`
-	HadMore     bool         `json:"had_more"`
-	Offset      int          `json:"offset"`
-	Limit       int          `json:"limit"`
-}
-
-// ListActionProvidersOptions represents options for listing action providers
-type ListActionProvidersOptions struct {
-	Limit        int    `url:"limit,omitempty"`
-	Offset       int    `url:"offset,omitempty"`
-	Marker       string `url:"marker,omitempty"`
-	PerPage      int    `url:"per_page,omitempty"` // Alias for Limit
-	OrderBy      string `url:"orderby,omitempty"`
-	Q            string `url:"q,omitempty"`
-	FilterOwner  string `url:"filter_owner,omitempty"`
-	FilterType   string `url:"filter_type,omitempty"`
-	FilterGlobus bool   `url:"filter_globus,omitempty"`
 }
 
 // RunMutableFields contains the fields that can be modified on a Flow run

@@ -75,9 +75,10 @@ func (t *TokenResponse) GetDependentTokens() ([]*TokenResponse, error) {
 	return tokens, nil
 }
 
-// Identity represents a Globus Auth identity
+// Identity represents a Globus Auth identity. The identities resource uses the
+// JSON key "id" for the primary identifier.
 type Identity struct {
-	IdentityID       string `json:"identity_id"`
+	ID               string `json:"id"`
 	Username         string `json:"username"`
 	Name             string `json:"name"`
 	Email            string `json:"email"`

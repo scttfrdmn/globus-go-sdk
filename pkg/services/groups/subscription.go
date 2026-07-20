@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2025 Scott Friedman and Project Contributors
+// Copyright (c) 2025-2026 Scott Friedman and Project Contributors
 package groups
 
 import (
@@ -7,27 +7,18 @@ import (
 	"fmt"
 )
 
-// SubscriptionUpdate represents an update to a group's subscription
-type SubscriptionUpdate struct {
-	DATA_TYPE      string `json:"DATA_TYPE"`
-	SubscriptionID string `json:"subscription_id"`
-}
-
-// SetSubscriptionAdminVerified sets a subscription ID for a group (admin-only operation).
-// This method follows Python SDK v3.63.0 naming convention.
-// Renamed from SetSubscriptionAdminVerifiedID in v3.63.0.
+// SetSubscriptionAdminVerified sets (or clears) the subscription that
+// admin-verifies a group (PUT /groups/{id}/subscription_admin_verified). Pass an
+// empty subscriptionID to disassociate (sends a JSON null).
 func (c *Client) SetSubscriptionAdminVerified(ctx context.Context, groupID, subscriptionID string) error {
 	if groupID == "" {
 		return fmt.Errorf("group ID is required")
 	}
-	if subscriptionID == "" {
-		return fmt.Errorf("subscription ID is required")
+	var body map[string]interface{}
+	if subscriptionID != "" {
+		body = map[string]interface{}{"subscription_admin_verified_id": subscriptionID}
+	} else {
+		body = map[string]interface{}{"subscription_admin_verified_id": nil}
 	}
-
-	body := map[string]string{
-		"subscription_id": subscriptionID,
-		"DATA_TYPE":       "subscription_update",
-	}
-
-	return c.doRequestLowLevel(ctx, "PUT", "groups/"+groupID+"/subscription", nil, body, nil)
+	return c.doRequestLowLevel(ctx, "PUT", "groups/"+groupID+"/subscription_admin_verified", nil, body, nil)
 }

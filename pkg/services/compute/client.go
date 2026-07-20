@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2025 Scott Friedman and Project Contributors
+// Copyright (c) 2025-2026 Scott Friedman and Project Contributors
 package compute
 
 import (
@@ -10,75 +10,55 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
-	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/authorizers"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/errors"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/response"
 )
 
-// Constants for Globus Compute
+// Constants for Globus Compute. The base URL is the bare host; each endpoint
+// carries its own /v2 or /v3 prefix (upstream globus-sdk 3.65.0 defines no
+// request/response models and no pagination, so bodies and results are
+// passthrough documents).
 const (
-	DefaultBaseURL = "https://compute.api.globus.org/v2/"
+	DefaultBaseURL = "https://compute.api.globus.org/"
 	ComputeScope   = "https://auth.globus.org/scopes/facd7ccc-c5f4-42aa-916b-a0e270e2c2a9/all"
 )
 
-// Client provides methods for interacting with Globus Compute
-// This client uses the v2 API by default.
-//
-// NOTE: As of Python SDK v3.61.0, the ComputeClient alias is deprecated
-// in favor of explicit version usage (ComputeClientV2, ComputeClientV3).
-// This Go SDK uses v2 by default. In v4.0.0 of this SDK, we may introduce
-// explicit versioning or require version specification.
+// Client provides methods for interacting with Globus Compute. It folds the
+// upstream ComputeClientV2 and ComputeClientV3 into one client; V3 methods carry
+// a "V3" suffix.
 type Client struct {
 	Client *core.Client
 }
 
 // NewClient creates a new Compute client
 func NewClient(opts ...ClientOption) (*Client, error) {
-	// Apply default options
 	options := defaultOptions()
-
-	// Apply user options
 	for _, opt := range opts {
 		opt(options)
 	}
-
-	// If an access token was provided, create a static token authorizer
 	if options.accessToken != "" {
 		authorizer := authorizers.StaticTokenCoreAuthorizer(options.accessToken)
 		options.coreOptions = append(options.coreOptions, core.WithAuthorizer(authorizer))
 	}
-
-	// Create the base client
 	baseClient := core.NewClient(options.coreOptions...)
-
-	return &Client{
-		Client: baseClient,
-	}, nil
+	return &Client{Client: baseClient}, nil
 }
 
-// buildURL builds a URL for the compute API
 func (c *Client) buildURL(path string, query url.Values) string {
 	baseURL := c.Client.BaseURL
 	if baseURL[len(baseURL)-1] != '/' {
 		baseURL += "/"
 	}
-
-	url := baseURL + path
+	u := baseURL + path
 	if len(query) > 0 {
-		url += "?" + query.Encode()
+		u += "?" + query.Encode()
 	}
-
-	return url
+	return u
 }
 
-// doRequest performs an HTTP request and decodes the JSON response
 func (c *Client) doRequest(ctx context.Context, method, path string, query url.Values, body, response interface{}) error {
-	url := c.buildURL(path, query)
-
+	u := c.buildURL(path, query)
 	var bodyReader io.Reader
 	if body != nil {
 		bodyJSON, err := json.Marshal(body)
@@ -87,12 +67,10 @@ func (c *Client) doRequest(ctx context.Context, method, path string, query url.V
 		}
 		bodyReader = bytes.NewReader(bodyJSON)
 	}
-
-	req, err := http.NewRequestWithContext(ctx, method, url, bodyReader)
+	req, err := http.NewRequestWithContext(ctx, method, u, bodyReader)
 	if err != nil {
 		return fmt.Errorf("failed to create request: %w", err)
 	}
-
 	if body != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
@@ -104,347 +82,226 @@ func (c *Client) doRequest(ctx context.Context, method, path string, query url.V
 	}
 	defer func() { _ = resp.Body.Close() }()
 
-	// For non-GET requests with no response body, just check status
-	if method != http.MethodGet && response == nil {
-		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-			return nil
-		}
-
-		respBody, _ := io.ReadAll(resp.Body)
-		return fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(respBody))
-	}
-
-	// Read and decode response body
 	respBody, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
-
-	if len(respBody) == 0 {
-		return nil
+	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
+		return fmt.Errorf("request failed with status %d: %s", resp.StatusCode, string(respBody))
 	}
-
-	if err := json.Unmarshal(respBody, response); err != nil {
-		return fmt.Errorf("failed to unmarshal response: %w", err)
+	if response != nil && len(respBody) > 0 {
+		if err := json.Unmarshal(respBody, response); err != nil {
+			return fmt.Errorf("failed to unmarshal response: %w", err)
+		}
 	}
-
 	return nil
 }
 
-// ListEndpoints lists all compute endpoints the user has access to
-func (c *Client) ListEndpoints(ctx context.Context, options *ListEndpointsOptions) (*ComputeEndpointList, error) {
-	// Convert options to query parameters
-	query := url.Values{}
-	if options != nil {
-		if options.PerPage > 0 {
-			query.Set("per_page", strconv.Itoa(options.PerPage))
-		}
-		if options.Marker != "" {
-			query.Set("marker", options.Marker)
-		}
-		if options.OrderBy != "" {
-			query.Set("orderby", options.OrderBy)
-		}
-		if options.Search != "" {
-			query.Set("search", options.Search)
-		}
-		if options.FilterScope != "" {
-			query.Set("filter_scope", options.FilterScope)
-		}
-		if options.FilterStatus != "" {
-			query.Set("filter_status", options.FilterStatus)
-		}
-		if options.IncludeInfo {
-			query.Set("include_info", "true")
-		}
-	}
-
-	var endpointList ComputeEndpointList
-	err := c.doRequest(ctx, http.MethodGet, "endpoints", query, nil, &endpointList)
-	if err != nil {
+func (c *Client) get(ctx context.Context, path string, query url.Values) (map[string]interface{}, error) {
+	var result map[string]interface{}
+	if err := c.doRequest(ctx, http.MethodGet, path, query, nil, &result); err != nil {
 		return nil, err
 	}
-
-	return &endpointList, nil
+	return result, nil
 }
 
-// ListEndpointsV2 retrieves compute endpoints with unified response system
-func (c *Client) ListEndpointsV2(ctx context.Context, options *ListEndpointsOptions) (*response.ComputeResponse[ComputeEndpointList], error) {
-	// Convert options to query parameters
-	query := url.Values{}
-	if options != nil {
-		if options.PerPage > 0 {
-			query.Set("per_page", strconv.Itoa(options.PerPage))
-		}
-		if options.Marker != "" {
-			query.Set("marker", options.Marker)
-		}
-		if options.OrderBy != "" {
-			query.Set("orderby", options.OrderBy)
-		}
-		if options.Search != "" {
-			query.Set("search", options.Search)
-		}
-		if options.FilterScope != "" {
-			query.Set("filter_scope", options.FilterScope)
-		}
-		if options.FilterStatus != "" {
-			query.Set("filter_status", options.FilterStatus)
-		}
-		if options.IncludeInfo {
-			query.Set("include_info", "true")
-		}
-	}
-
-	var endpointList ComputeEndpointList
-	err := c.doRequest(ctx, http.MethodGet, "endpoints", query, nil, &endpointList)
-	if err != nil {
-		// Convert to GlobusError if it's not already
-		if _, ok := err.(*errors.GlobusError); !ok {
-			return nil, errors.NewComputeError("EndpointListError", err.Error()).WithUnderlying(err)
-		}
+func (c *Client) send(ctx context.Context, method, path string, body interface{}) (map[string]interface{}, error) {
+	var result map[string]interface{}
+	if err := c.doRequest(ctx, method, path, nil, body, &result); err != nil {
 		return nil, err
 	}
-
-	computeResp := response.NewComputeResponse(endpointList)
-	computeResp.WithRequestID("compute-endpoints-" + strconv.FormatInt(time.Now().UnixNano(), 10))
-
-	return computeResp, nil
+	return result, nil
 }
 
-// GetEndpoint retrieves a specific compute endpoint by ID
-func (c *Client) GetEndpoint(ctx context.Context, endpointID string) (*ComputeEndpoint, error) {
+// --- Service-level (V2) ---
+
+// GetVersion returns the compute service version (GET /v2/version). service is
+// an optional query param; pass "" to omit.
+func (c *Client) GetVersion(ctx context.Context, service string) (map[string]interface{}, error) {
+	query := url.Values{}
+	if service != "" {
+		query.Set("service", service)
+	}
+	return c.get(ctx, "v2/version", query)
+}
+
+// GetResultAMQPURL returns a connection URL for the result AMQP queue
+// (GET /v2/get_amqp_result_connection_url).
+func (c *Client) GetResultAMQPURL(ctx context.Context) (map[string]interface{}, error) {
+	return c.get(ctx, "v2/get_amqp_result_connection_url", nil)
+}
+
+// --- Endpoints (V2) ---
+
+// GetEndpointsOptions carries the optional "role" query param for GetEndpoints.
+type GetEndpointsOptions struct {
+	Role string
+}
+
+// RegisterEndpoint registers a compute endpoint (POST /v2/endpoints).
+func (c *Client) RegisterEndpoint(ctx context.Context, data map[string]interface{}) (map[string]interface{}, error) {
+	if data == nil {
+		return nil, fmt.Errorf("endpoint document is required")
+	}
+	return c.send(ctx, http.MethodPost, "v2/endpoints", data)
+}
+
+// GetEndpoint retrieves a compute endpoint (GET /v2/endpoints/{id}).
+func (c *Client) GetEndpoint(ctx context.Context, endpointID string) (map[string]interface{}, error) {
 	if endpointID == "" {
 		return nil, fmt.Errorf("endpoint ID is required")
 	}
-
-	var endpoint ComputeEndpoint
-	err := c.doRequest(ctx, http.MethodGet, "endpoints/"+endpointID, nil, nil, &endpoint)
-	if err != nil {
-		return nil, err
-	}
-
-	return &endpoint, nil
+	return c.get(ctx, "v2/endpoints/"+endpointID, nil)
 }
 
-// RegisterFunction registers a new function with Globus Compute
-func (c *Client) RegisterFunction(ctx context.Context, request *FunctionRegisterRequest) (*FunctionResponse, error) {
-	if request == nil {
-		return nil, fmt.Errorf("function register request is required")
-	}
-
-	if request.Function == "" {
-		return nil, fmt.Errorf("function code is required")
-	}
-
-	var function FunctionResponse
-	err := c.doRequest(ctx, http.MethodPost, "functions", nil, request, &function)
-	if err != nil {
-		return nil, err
-	}
-
-	return &function, nil
-}
-
-// GetFunction retrieves a specific function by ID
-func (c *Client) GetFunction(ctx context.Context, functionID string) (*FunctionResponse, error) {
-	if functionID == "" {
-		return nil, fmt.Errorf("function ID is required")
-	}
-
-	var function FunctionResponse
-	err := c.doRequest(ctx, http.MethodGet, "functions/"+functionID, nil, nil, &function)
-	if err != nil {
-		return nil, err
-	}
-
-	return &function, nil
-}
-
-// ListFunctions lists all functions the user has access to
-func (c *Client) ListFunctions(ctx context.Context, options *ListFunctionsOptions) (*FunctionList, error) {
-	// Convert options to query parameters
+// GetEndpoints lists compute endpoints (GET /v2/endpoints). Pass opts.Role to
+// filter; opts may be nil.
+func (c *Client) GetEndpoints(ctx context.Context, opts *GetEndpointsOptions) (map[string]interface{}, error) {
 	query := url.Values{}
-	if options != nil {
-		if options.PerPage > 0 {
-			query.Set("per_page", strconv.Itoa(options.PerPage))
-		}
-		if options.Marker != "" {
-			query.Set("marker", options.Marker)
-		}
-		if options.OrderBy != "" {
-			query.Set("orderby", options.OrderBy)
-		}
-		if options.Search != "" {
-			query.Set("search", options.Search)
-		}
-		if options.FilterScope != "" {
-			query.Set("filter_scope", options.FilterScope)
-		}
+	if opts != nil && opts.Role != "" {
+		query.Set("role", opts.Role)
 	}
-
-	var functionList FunctionList
-	err := c.doRequest(ctx, http.MethodGet, "functions", query, nil, &functionList)
-	if err != nil {
-		return nil, err
-	}
-
-	return &functionList, nil
+	return c.get(ctx, "v2/endpoints", query)
 }
 
-// UpdateFunction updates an existing function
-func (c *Client) UpdateFunction(ctx context.Context, functionID string, request *FunctionUpdateRequest) (*FunctionResponse, error) {
-	if functionID == "" {
-		return nil, fmt.Errorf("function ID is required")
-	}
-
-	if request == nil {
-		return nil, fmt.Errorf("function update request is required")
-	}
-
-	var function FunctionResponse
-	err := c.doRequest(ctx, http.MethodPut, "functions/"+functionID, nil, request, &function)
-	if err != nil {
-		return nil, err
-	}
-
-	return &function, nil
-}
-
-// DeleteFunction deletes a function
-func (c *Client) DeleteFunction(ctx context.Context, functionID string) error {
-	if functionID == "" {
-		return fmt.Errorf("function ID is required")
-	}
-
-	return c.doRequest(ctx, http.MethodDelete, "functions/"+functionID, nil, nil, nil)
-}
-
-// RunFunction runs a function on a specific endpoint
-func (c *Client) RunFunction(ctx context.Context, request *TaskRequest) (*TaskResponse, error) {
-	if request == nil {
-		return nil, fmt.Errorf("task request is required")
-	}
-
-	if request.FunctionID == "" {
-		return nil, fmt.Errorf("function ID is required")
-	}
-
-	if request.EndpointID == "" {
+// GetEndpointStatus retrieves an endpoint's status (GET /v2/endpoints/{id}/status).
+func (c *Client) GetEndpointStatus(ctx context.Context, endpointID string) (map[string]interface{}, error) {
+	if endpointID == "" {
 		return nil, fmt.Errorf("endpoint ID is required")
 	}
-
-	var response TaskResponse
-	err := c.doRequest(ctx, http.MethodPost, "run", nil, request, &response)
-	if err != nil {
-		return nil, err
-	}
-
-	return &response, nil
+	return c.get(ctx, "v2/endpoints/"+endpointID+"/status", nil)
 }
 
-// RunBatch runs multiple functions in a batch
-func (c *Client) RunBatch(ctx context.Context, request *BatchTaskRequest) (*BatchTaskResponse, error) {
-	if request == nil {
-		return nil, fmt.Errorf("batch task request is required")
+// DeleteEndpoint deletes a compute endpoint (DELETE /v2/endpoints/{id}).
+func (c *Client) DeleteEndpoint(ctx context.Context, endpointID string) (map[string]interface{}, error) {
+	if endpointID == "" {
+		return nil, fmt.Errorf("endpoint ID is required")
 	}
-
-	if len(request.Tasks) == 0 {
-		return nil, fmt.Errorf("at least one task is required")
-	}
-
-	// Validate each task
-	for i, task := range request.Tasks {
-		if task.FunctionID == "" {
-			return nil, fmt.Errorf("function ID is required for task %d", i)
-		}
-		if task.EndpointID == "" {
-			return nil, fmt.Errorf("endpoint ID is required for task %d", i)
-		}
-	}
-
-	var response BatchTaskResponse
-	err := c.doRequest(ctx, http.MethodPost, "batch", nil, request, &response)
-	if err != nil {
-		return nil, err
-	}
-
-	return &response, nil
+	return c.send(ctx, http.MethodDelete, "v2/endpoints/"+endpointID, nil)
 }
 
-// GetTaskStatus gets the status of a task
-func (c *Client) GetTaskStatus(ctx context.Context, taskID string) (*TaskStatus, error) {
+// LockEndpoint locks a compute endpoint (POST /v2/endpoints/{id}/lock).
+func (c *Client) LockEndpoint(ctx context.Context, endpointID string) (map[string]interface{}, error) {
+	if endpointID == "" {
+		return nil, fmt.Errorf("endpoint ID is required")
+	}
+	return c.send(ctx, http.MethodPost, "v2/endpoints/"+endpointID+"/lock", nil)
+}
+
+// --- Functions (V2) ---
+
+// RegisterFunction registers a function (POST /v2/functions).
+func (c *Client) RegisterFunction(ctx context.Context, data map[string]interface{}) (map[string]interface{}, error) {
+	if data == nil {
+		return nil, fmt.Errorf("function document is required")
+	}
+	return c.send(ctx, http.MethodPost, "v2/functions", data)
+}
+
+// GetFunction retrieves a registered function's metadata (GET /v2/functions/{id}).
+func (c *Client) GetFunction(ctx context.Context, functionID string) (map[string]interface{}, error) {
+	if functionID == "" {
+		return nil, fmt.Errorf("function ID is required")
+	}
+	return c.get(ctx, "v2/functions/"+functionID, nil)
+}
+
+// DeleteFunction deletes a registered function (DELETE /v2/functions/{id}).
+func (c *Client) DeleteFunction(ctx context.Context, functionID string) (map[string]interface{}, error) {
+	if functionID == "" {
+		return nil, fmt.Errorf("function ID is required")
+	}
+	return c.send(ctx, http.MethodDelete, "v2/functions/"+functionID, nil)
+}
+
+// --- Tasks (V2) ---
+
+// GetTask retrieves a task's status and result (GET /v2/tasks/{id}).
+func (c *Client) GetTask(ctx context.Context, taskID string) (map[string]interface{}, error) {
 	if taskID == "" {
 		return nil, fmt.Errorf("task ID is required")
 	}
-
-	var status TaskStatus
-	err := c.doRequest(ctx, http.MethodGet, "status/"+taskID, nil, nil, &status)
-	if err != nil {
-		return nil, err
-	}
-
-	return &status, nil
+	return c.get(ctx, "v2/tasks/"+taskID, nil)
 }
 
-// GetBatchStatus gets the status of multiple tasks
-func (c *Client) GetBatchStatus(ctx context.Context, taskIDs []string) (*BatchTaskStatus, error) {
+// GetBatchStatus retrieves the status of multiple tasks (POST /v2/batch_status).
+func (c *Client) GetBatchStatus(ctx context.Context, taskIDs []string) (map[string]interface{}, error) {
 	if len(taskIDs) == 0 {
 		return nil, fmt.Errorf("at least one task ID is required")
 	}
-
-	// Build the request body as a map with a single "task_ids" key
-	requestBody := map[string][]string{
-		"task_ids": taskIDs,
-	}
-
-	var status BatchTaskStatus
-	err := c.doRequest(ctx, http.MethodPost, "batch_status", nil, requestBody, &status)
-	if err != nil {
-		return nil, err
-	}
-
-	return &status, nil
+	return c.send(ctx, http.MethodPost, "v2/batch_status", map[string]interface{}{"task_ids": taskIDs})
 }
 
-// ListTasks lists all tasks the user has submitted
-func (c *Client) ListTasks(ctx context.Context, options *TaskListOptions) (*TaskList, error) {
-	// Convert options to query parameters
-	query := url.Values{}
-	if options != nil {
-		if options.PerPage > 0 {
-			query.Set("per_page", strconv.Itoa(options.PerPage))
-		}
-		if options.Marker != "" {
-			query.Set("marker", options.Marker)
-		}
-		if options.Status != "" {
-			query.Set("status", options.Status)
-		}
-		if options.EndpointID != "" {
-			query.Set("endpoint_id", options.EndpointID)
-		}
-		if options.FunctionID != "" {
-			query.Set("function_id", options.FunctionID)
-		}
+// GetTaskGroup lists the task IDs for a task group (GET /v2/taskgroup/{id}).
+func (c *Client) GetTaskGroup(ctx context.Context, taskGroupID string) (map[string]interface{}, error) {
+	if taskGroupID == "" {
+		return nil, fmt.Errorf("task group ID is required")
 	}
-
-	var taskList TaskList
-	err := c.doRequest(ctx, http.MethodGet, "tasks", query, nil, &taskList)
-	if err != nil {
-		return nil, err
-	}
-
-	return &taskList, nil
+	return c.get(ctx, "v2/taskgroup/"+taskGroupID, nil)
 }
 
-// CancelTask cancels a running task
-func (c *Client) CancelTask(ctx context.Context, taskID string) error {
-	if taskID == "" {
-		return fmt.Errorf("task ID is required")
+// Submit submits a task batch (POST /v2/submit).
+func (c *Client) Submit(ctx context.Context, data map[string]interface{}) (map[string]interface{}, error) {
+	if data == nil {
+		return nil, fmt.Errorf("submit document is required")
 	}
+	return c.send(ctx, http.MethodPost, "v2/submit", data)
+}
 
-	// The cancel endpoint might expect a specific format
-	// This is just a placeholder; adjust according to the actual API
-	return c.doRequest(ctx, http.MethodPost, "tasks/"+taskID+"/cancel", nil, nil, nil)
+// --- V3 ---
+
+// RegisterEndpointV3 registers an endpoint via the v3 API (POST /v3/endpoints).
+func (c *Client) RegisterEndpointV3(ctx context.Context, data map[string]interface{}) (map[string]interface{}, error) {
+	if data == nil {
+		return nil, fmt.Errorf("endpoint document is required")
+	}
+	return c.send(ctx, http.MethodPost, "v3/endpoints", data)
+}
+
+// UpdateEndpointV3 updates an endpoint via the v3 API (PUT /v3/endpoints/{id}).
+func (c *Client) UpdateEndpointV3(ctx context.Context, endpointID string, data map[string]interface{}) (map[string]interface{}, error) {
+	if endpointID == "" {
+		return nil, fmt.Errorf("endpoint ID is required")
+	}
+	if data == nil {
+		return nil, fmt.Errorf("endpoint document is required")
+	}
+	return c.send(ctx, http.MethodPut, "v3/endpoints/"+endpointID, data)
+}
+
+// LockEndpointV3 locks an endpoint via the v3 API (POST /v3/endpoints/{id}/lock).
+func (c *Client) LockEndpointV3(ctx context.Context, endpointID string) (map[string]interface{}, error) {
+	if endpointID == "" {
+		return nil, fmt.Errorf("endpoint ID is required")
+	}
+	return c.send(ctx, http.MethodPost, "v3/endpoints/"+endpointID+"/lock", nil)
+}
+
+// GetEndpointAllowlistV3 lists an endpoint's allowed function IDs
+// (GET /v3/endpoints/{id}/allowed_functions).
+func (c *Client) GetEndpointAllowlistV3(ctx context.Context, endpointID string) (map[string]interface{}, error) {
+	if endpointID == "" {
+		return nil, fmt.Errorf("endpoint ID is required")
+	}
+	return c.get(ctx, "v3/endpoints/"+endpointID+"/allowed_functions", nil)
+}
+
+// RegisterFunctionV3 registers a function via the v3 API (POST /v3/functions).
+func (c *Client) RegisterFunctionV3(ctx context.Context, data map[string]interface{}) (map[string]interface{}, error) {
+	if data == nil {
+		return nil, fmt.Errorf("function document is required")
+	}
+	return c.send(ctx, http.MethodPost, "v3/functions", data)
+}
+
+// SubmitV3 submits a task batch to an endpoint via the v3 API
+// (POST /v3/endpoints/{id}/submit).
+func (c *Client) SubmitV3(ctx context.Context, endpointID string, data map[string]interface{}) (map[string]interface{}, error) {
+	if endpointID == "" {
+		return nil, fmt.Errorf("endpoint ID is required")
+	}
+	if data == nil {
+		return nil, fmt.Errorf("submit document is required")
+	}
+	return c.send(ctx, http.MethodPost, "v3/endpoints/"+endpointID+"/submit", data)
 }
