@@ -7,12 +7,14 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"strconv"
 
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
 )
 
-// Client is the v4 Compute service client with context-first design
+// Client is the v4 Compute service client with context-first design. It folds
+// the upstream ComputeClientV2 and ComputeClientV3 into a single client; V3
+// methods carry a "V3" suffix. Upstream compute defines no request/response
+// models, so bodies and results are passthrough documents.
 type Client struct {
 	baseClient *core.Client
 	baseURL    string
@@ -21,7 +23,9 @@ type Client struct {
 // NewClient creates a new v4 Compute client
 func NewClient(ctx context.Context, config *core.Config) (*Client, error) {
 	if config.BaseURL == "" {
-		config.BaseURL = "https://compute.api.globus.org/v2"
+		// Host root, not /v2: each endpoint carries its own /v2 or /v3 prefix so
+		// both API surfaces are reachable.
+		config.BaseURL = "https://compute.api.globus.org"
 	}
 
 	baseClient, err := core.NewClient(config)
@@ -35,212 +39,230 @@ func NewClient(ctx context.Context, config *core.Config) (*Client, error) {
 	}, nil
 }
 
-// GetEndpoint retrieves a compute endpoint by ID
-func (c *Client) GetEndpoint(ctx context.Context, endpointID string) (*Endpoint, error) {
-	if endpointID == "" {
-		return nil, &core.ValidationError{Field: "endpointID", Message: "endpoint ID is required"}
-	}
+// --- Service-level (V2) ---
 
-	var endpoint Endpoint
-	err := c.baseClient.DoRequest(ctx, http.MethodGet, fmt.Sprintf("/endpoints/%s", endpointID), nil, nil, &endpoint)
-	if err != nil {
-		return nil, err
-	}
-	return &endpoint, nil
-}
-
-// ListEndpoints lists compute endpoints
-func (c *Client) ListEndpoints(ctx context.Context, options *ListEndpointsOptions) (*EndpointList, error) {
+// GetVersion returns the compute service version (GET /v2/version). Pass opts to
+// scope to a particular service component; opts may be nil.
+func (c *Client) GetVersion(ctx context.Context, opts *GetVersionOptions) (map[string]interface{}, error) {
 	query := url.Values{}
-	if options != nil {
-		if options.Limit > 0 {
-			query.Set("limit", strconv.Itoa(options.Limit))
-		}
-		if options.Offset > 0 {
-			query.Set("offset", strconv.Itoa(options.Offset))
-		}
+	if opts != nil && opts.Service != "" {
+		query.Set("service", opts.Service)
 	}
-
-	var endpointList EndpointList
-	err := c.baseClient.DoRequest(ctx, http.MethodGet, "/endpoints", query, nil, &endpointList)
-	if err != nil {
+	var result map[string]interface{}
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, "/v2/version", query, nil, &result); err != nil {
 		return nil, err
 	}
-	return &endpointList, nil
+	return result, nil
 }
 
-// SubmitFunction submits a function for execution
-func (c *Client) SubmitFunction(ctx context.Context, endpointID string, submission *FunctionSubmission) (*FunctionRun, error) {
+// GetResultAMQPURL returns a connection URL for the result AMQP queue
+// (GET /v2/get_amqp_result_connection_url).
+func (c *Client) GetResultAMQPURL(ctx context.Context) (map[string]interface{}, error) {
+	var result map[string]interface{}
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, "/v2/get_amqp_result_connection_url", nil, nil, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// --- Endpoints (V2) ---
+
+// RegisterEndpoint registers a compute endpoint (POST /v2/endpoints).
+func (c *Client) RegisterEndpoint(ctx context.Context, data map[string]interface{}) (map[string]interface{}, error) {
+	if data == nil {
+		return nil, &core.ValidationError{Field: "data", Message: "endpoint document is required"}
+	}
+	return c.post(ctx, "/v2/endpoints", data)
+}
+
+// GetEndpoint retrieves a compute endpoint (GET /v2/endpoints/{id}).
+func (c *Client) GetEndpoint(ctx context.Context, endpointID string) (map[string]interface{}, error) {
 	if endpointID == "" {
 		return nil, &core.ValidationError{Field: "endpointID", Message: "endpoint ID is required"}
 	}
-	if submission == nil {
-		return nil, &core.ValidationError{Field: "submission", Message: "submission is required"}
-	}
-
-	var run FunctionRun
-	path := fmt.Sprintf("/endpoints/%s/functions", endpointID)
-	err := c.baseClient.DoRequest(ctx, http.MethodPost, path, nil, submission, &run)
-	if err != nil {
-		return nil, err
-	}
-	return &run, nil
+	return c.get(ctx, fmt.Sprintf("/v2/endpoints/%s", endpointID), nil)
 }
 
-// GetFunction retrieves a function run by ID
-func (c *Client) GetFunction(ctx context.Context, functionID string) (*FunctionRun, error) {
+// GetEndpoints lists compute endpoints (GET /v2/endpoints). Pass opts.Role to
+// filter (e.g. "owner", "any"); opts may be nil.
+func (c *Client) GetEndpoints(ctx context.Context, opts *GetEndpointsOptions) (map[string]interface{}, error) {
+	query := url.Values{}
+	if opts != nil && opts.Role != "" {
+		query.Set("role", opts.Role)
+	}
+	return c.get(ctx, "/v2/endpoints", query)
+}
+
+// GetEndpointStatus retrieves an endpoint's status (GET /v2/endpoints/{id}/status).
+func (c *Client) GetEndpointStatus(ctx context.Context, endpointID string) (map[string]interface{}, error) {
+	if endpointID == "" {
+		return nil, &core.ValidationError{Field: "endpointID", Message: "endpoint ID is required"}
+	}
+	return c.get(ctx, fmt.Sprintf("/v2/endpoints/%s/status", endpointID), nil)
+}
+
+// DeleteEndpoint deletes a compute endpoint (DELETE /v2/endpoints/{id}).
+func (c *Client) DeleteEndpoint(ctx context.Context, endpointID string) (map[string]interface{}, error) {
+	if endpointID == "" {
+		return nil, &core.ValidationError{Field: "endpointID", Message: "endpoint ID is required"}
+	}
+	var result map[string]interface{}
+	if err := c.baseClient.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("/v2/endpoints/%s", endpointID), nil, nil, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+// LockEndpoint locks a compute endpoint (POST /v2/endpoints/{id}/lock).
+func (c *Client) LockEndpoint(ctx context.Context, endpointID string) (map[string]interface{}, error) {
+	if endpointID == "" {
+		return nil, &core.ValidationError{Field: "endpointID", Message: "endpoint ID is required"}
+	}
+	return c.post(ctx, fmt.Sprintf("/v2/endpoints/%s/lock", endpointID), nil)
+}
+
+// --- Functions (V2) ---
+
+// RegisterFunction registers a function (POST /v2/functions).
+func (c *Client) RegisterFunction(ctx context.Context, data map[string]interface{}) (map[string]interface{}, error) {
+	if data == nil {
+		return nil, &core.ValidationError{Field: "data", Message: "function document is required"}
+	}
+	return c.post(ctx, "/v2/functions", data)
+}
+
+// GetFunction retrieves a registered function's metadata (GET /v2/functions/{id}).
+func (c *Client) GetFunction(ctx context.Context, functionID string) (map[string]interface{}, error) {
 	if functionID == "" {
 		return nil, &core.ValidationError{Field: "functionID", Message: "function ID is required"}
 	}
+	return c.get(ctx, fmt.Sprintf("/v2/functions/%s", functionID), nil)
+}
 
-	var run FunctionRun
-	err := c.baseClient.DoRequest(ctx, http.MethodGet, fmt.Sprintf("/functions/%s", functionID), nil, nil, &run)
-	if err != nil {
+// DeleteFunction deletes a registered function (DELETE /v2/functions/{id}).
+func (c *Client) DeleteFunction(ctx context.Context, functionID string) (map[string]interface{}, error) {
+	if functionID == "" {
+		return nil, &core.ValidationError{Field: "functionID", Message: "function ID is required"}
+	}
+	var result map[string]interface{}
+	if err := c.baseClient.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("/v2/functions/%s", functionID), nil, nil, &result); err != nil {
 		return nil, err
 	}
-	return &run, nil
+	return result, nil
 }
 
-// CancelFunction cancels a running function
-func (c *Client) CancelFunction(ctx context.Context, functionID string) error {
-	if functionID == "" {
-		return &core.ValidationError{Field: "functionID", Message: "function ID is required"}
-	}
+// --- Tasks (V2) ---
 
-	return c.baseClient.DoRequest(ctx, http.MethodPost, fmt.Sprintf("/functions/%s/cancel", functionID), nil, nil, nil)
-}
-
-// ListFunctions lists function runs
-func (c *Client) ListFunctions(ctx context.Context, options *ListFunctionsOptions) (*FunctionList, error) {
-	query := url.Values{}
-	if options != nil {
-		if options.EndpointID != "" {
-			query.Set("endpoint_id", options.EndpointID)
-		}
-		if options.Limit > 0 {
-			query.Set("limit", strconv.Itoa(options.Limit))
-		}
-		if options.Offset > 0 {
-			query.Set("offset", strconv.Itoa(options.Offset))
-		}
-	}
-
-	var functionList FunctionList
-	err := c.baseClient.DoRequest(ctx, http.MethodGet, "/functions", query, nil, &functionList)
-	if err != nil {
-		return nil, err
-	}
-	return &functionList, nil
-}
-
-// RegisterFunction registers a serialized function with Globus Compute.
-func (c *Client) RegisterFunction(ctx context.Context, fn *FunctionDefinition) (*FunctionRegistration, error) {
-	if fn == nil {
-		return nil, &core.ValidationError{Field: "fn", Message: "function definition is required"}
-	}
-	if fn.Name == "" {
-		return nil, &core.ValidationError{Field: "Name", Message: "function name is required"}
-	}
-	if fn.Serialized == "" {
-		return nil, &core.ValidationError{Field: "Serialized", Message: "serialized function code is required"}
-	}
-
-	var result FunctionRegistration
-	if err := c.baseClient.DoRequest(ctx, http.MethodPost, "/functions", nil, fn, &result); err != nil {
-		return nil, err
-	}
-	return &result, nil
-}
-
-// UpdateFunction updates metadata on a registered function.
-func (c *Client) UpdateFunction(ctx context.Context, functionID string, update *FunctionUpdate) error {
-	if functionID == "" {
-		return &core.ValidationError{Field: "functionID", Message: "function ID is required"}
-	}
-	if update == nil {
-		return &core.ValidationError{Field: "update", Message: "update data is required"}
-	}
-	return c.baseClient.DoRequest(ctx, http.MethodPatch, fmt.Sprintf("/functions/%s", functionID), nil, update, nil)
-}
-
-// DeleteFunction removes a registered function.
-func (c *Client) DeleteFunction(ctx context.Context, functionID string) error {
-	if functionID == "" {
-		return &core.ValidationError{Field: "functionID", Message: "function ID is required"}
-	}
-	return c.baseClient.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("/functions/%s", functionID), nil, nil, nil)
-}
-
-// GetTaskStatus retrieves the status of a specific function execution task.
-func (c *Client) GetTaskStatus(ctx context.Context, taskID string) (*TaskStatus, error) {
+// GetTask retrieves a task's status and result (GET /v2/tasks/{id}).
+func (c *Client) GetTask(ctx context.Context, taskID string) (map[string]interface{}, error) {
 	if taskID == "" {
 		return nil, &core.ValidationError{Field: "taskID", Message: "task ID is required"}
 	}
-
-	var status TaskStatus
-	if err := c.baseClient.DoRequest(ctx, http.MethodGet, fmt.Sprintf("/tasks/%s", taskID), nil, nil, &status); err != nil {
-		return nil, err
-	}
-	return &status, nil
+	return c.get(ctx, fmt.Sprintf("/v2/tasks/%s", taskID), nil)
 }
 
-// ListTasks lists function execution tasks for an endpoint.
-func (c *Client) ListTasks(ctx context.Context, options *ListTasksOptions) (*TaskList, error) {
-	query := url.Values{}
-	if options != nil {
-		if options.EndpointID != "" {
-			query.Set("endpoint_id", options.EndpointID)
-		}
-		if options.Limit > 0 {
-			query.Set("limit", strconv.Itoa(options.Limit))
-		}
-		if options.Offset > 0 {
-			query.Set("offset", strconv.Itoa(options.Offset))
-		}
-	}
-
-	var taskList TaskList
-	if err := c.baseClient.DoRequest(ctx, http.MethodGet, "/tasks", query, nil, &taskList); err != nil {
-		return nil, err
-	}
-	return &taskList, nil
-}
-
-// CancelTask cancels a running compute task.
-func (c *Client) CancelTask(ctx context.Context, taskID string) error {
-	if taskID == "" {
-		return &core.ValidationError{Field: "taskID", Message: "task ID is required"}
-	}
-	path := fmt.Sprintf("/tasks/%s/cancel", taskID)
-	return c.baseClient.DoRequest(ctx, http.MethodPost, path, nil, nil, nil)
-}
-
-// RunBatch submits multiple function calls in a single request.
-func (c *Client) RunBatch(ctx context.Context, request *BatchTaskRequest) (*BatchTaskResponse, error) {
-	if request == nil {
-		return nil, &core.ValidationError{Field: "request", Message: "batch task request is required"}
-	}
-	if len(request.Tasks) == 0 {
-		return nil, &core.ValidationError{Field: "Tasks", Message: "at least one task is required"}
-	}
-	var response BatchTaskResponse
-	if err := c.baseClient.DoRequest(ctx, http.MethodPost, "/batch", nil, request, &response); err != nil {
-		return nil, err
-	}
-	return &response, nil
-}
-
-// GetBatchStatus retrieves the status of multiple tasks by ID.
-func (c *Client) GetBatchStatus(ctx context.Context, taskIDs []string) (*BatchTaskStatus, error) {
+// GetTaskBatch retrieves the status of multiple tasks (POST /v2/batch_status).
+func (c *Client) GetTaskBatch(ctx context.Context, taskIDs []string) (map[string]interface{}, error) {
 	if len(taskIDs) == 0 {
 		return nil, &core.ValidationError{Field: "taskIDs", Message: "at least one task ID is required"}
 	}
-	body := map[string][]string{"task_ids": taskIDs}
-	var status BatchTaskStatus
-	if err := c.baseClient.DoRequest(ctx, http.MethodPost, "/batch_status", nil, body, &status); err != nil {
+	return c.post(ctx, "/v2/batch_status", map[string]interface{}{"task_ids": taskIDs})
+}
+
+// GetTaskGroup lists the task IDs for a task group (GET /v2/taskgroup/{id}).
+func (c *Client) GetTaskGroup(ctx context.Context, taskGroupID string) (map[string]interface{}, error) {
+	if taskGroupID == "" {
+		return nil, &core.ValidationError{Field: "taskGroupID", Message: "task group ID is required"}
+	}
+	return c.get(ctx, fmt.Sprintf("/v2/taskgroup/%s", taskGroupID), nil)
+}
+
+// Submit submits a task batch (POST /v2/submit).
+func (c *Client) Submit(ctx context.Context, data map[string]interface{}) (map[string]interface{}, error) {
+	if data == nil {
+		return nil, &core.ValidationError{Field: "data", Message: "submit document is required"}
+	}
+	return c.post(ctx, "/v2/submit", data)
+}
+
+// --- V3 ---
+
+// RegisterEndpointV3 registers an endpoint via the v3 API (POST /v3/endpoints).
+func (c *Client) RegisterEndpointV3(ctx context.Context, data map[string]interface{}) (map[string]interface{}, error) {
+	if data == nil {
+		return nil, &core.ValidationError{Field: "data", Message: "endpoint document is required"}
+	}
+	return c.post(ctx, "/v3/endpoints", data)
+}
+
+// UpdateEndpointV3 updates an endpoint via the v3 API (PUT /v3/endpoints/{id}).
+func (c *Client) UpdateEndpointV3(ctx context.Context, endpointID string, data map[string]interface{}) (map[string]interface{}, error) {
+	if endpointID == "" {
+		return nil, &core.ValidationError{Field: "endpointID", Message: "endpoint ID is required"}
+	}
+	if data == nil {
+		return nil, &core.ValidationError{Field: "data", Message: "endpoint document is required"}
+	}
+	var result map[string]interface{}
+	if err := c.baseClient.DoRequest(ctx, http.MethodPut, fmt.Sprintf("/v3/endpoints/%s", endpointID), nil, data, &result); err != nil {
 		return nil, err
 	}
-	return &status, nil
+	return result, nil
+}
+
+// LockEndpointV3 locks an endpoint via the v3 API (POST /v3/endpoints/{id}/lock).
+func (c *Client) LockEndpointV3(ctx context.Context, endpointID string) (map[string]interface{}, error) {
+	if endpointID == "" {
+		return nil, &core.ValidationError{Field: "endpointID", Message: "endpoint ID is required"}
+	}
+	return c.post(ctx, fmt.Sprintf("/v3/endpoints/%s/lock", endpointID), nil)
+}
+
+// GetEndpointAllowlistV3 lists an endpoint's allowed function IDs
+// (GET /v3/endpoints/{id}/allowed_functions).
+func (c *Client) GetEndpointAllowlistV3(ctx context.Context, endpointID string) (map[string]interface{}, error) {
+	if endpointID == "" {
+		return nil, &core.ValidationError{Field: "endpointID", Message: "endpoint ID is required"}
+	}
+	return c.get(ctx, fmt.Sprintf("/v3/endpoints/%s/allowed_functions", endpointID), nil)
+}
+
+// RegisterFunctionV3 registers a function via the v3 API (POST /v3/functions).
+func (c *Client) RegisterFunctionV3(ctx context.Context, data map[string]interface{}) (map[string]interface{}, error) {
+	if data == nil {
+		return nil, &core.ValidationError{Field: "data", Message: "function document is required"}
+	}
+	return c.post(ctx, "/v3/functions", data)
+}
+
+// SubmitV3 submits a task batch to an endpoint via the v3 API
+// (POST /v3/endpoints/{id}/submit).
+func (c *Client) SubmitV3(ctx context.Context, endpointID string, data map[string]interface{}) (map[string]interface{}, error) {
+	if endpointID == "" {
+		return nil, &core.ValidationError{Field: "endpointID", Message: "endpoint ID is required"}
+	}
+	if data == nil {
+		return nil, &core.ValidationError{Field: "data", Message: "submit document is required"}
+	}
+	return c.post(ctx, fmt.Sprintf("/v3/endpoints/%s/submit", endpointID), data)
+}
+
+// --- helpers ---
+
+func (c *Client) get(ctx context.Context, path string, query url.Values) (map[string]interface{}, error) {
+	var result map[string]interface{}
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, path, query, nil, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
+func (c *Client) post(ctx context.Context, path string, body interface{}) (map[string]interface{}, error) {
+	var result map[string]interface{}
+	if err := c.baseClient.DoRequest(ctx, http.MethodPost, path, nil, body, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // Close closes the client and releases resources

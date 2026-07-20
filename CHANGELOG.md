@@ -41,6 +41,23 @@ Timers client realigned to the Python globus-sdk 4.8.1 wire (Phase 2 audit).
   `GetRun`, `CreateOnceTimer`, `CreateRecurringTimer`, and the `Callback`,
   `TimerRun`, `TimerRunList`, `ListRunsOptions` types.
 
+### Changed — Compute (v4 module, Phase 2 parity audit)
+
+**Breaking** within the v4 line — upstream compute has no models/pagination, so
+the client now uses passthrough `map[string]interface{}` bodies and results:
+
+- Base URL is the host root; endpoints carry `/v2` or `/v3`. V2 and V3 are folded
+  into one client with `V3`-suffixed methods.
+- Removed phantom methods (no upstream route): `SubmitFunction`,
+  `CancelFunction`, `ListFunctions`, `UpdateFunction`, `ListTasks`, `CancelTask`,
+  `RunBatch`, `NewEndpointsPager`, `NewTasksPager`, and all invented typed models.
+- `ListEndpoints`→`GetEndpoints` (only `role` param), `GetTaskStatus`→`GetTask`,
+  `GetBatchStatus`→`GetTaskBatch`.
+- Added: `GetVersion`, `GetResultAMQPURL`, `RegisterEndpoint`,
+  `GetEndpointStatus`, `DeleteEndpoint`, `LockEndpoint`, `GetTaskGroup`, `Submit`,
+  and the V3 methods (`RegisterEndpointV3`, `UpdateEndpointV3`, `LockEndpointV3`,
+  `GetEndpointAllowlistV3`, `RegisterFunctionV3`, `SubmitV3`).
+
 ### Changed — Flows (v4 module, Phase 2 parity audit)
 
 **Breaking** within the v4 line:

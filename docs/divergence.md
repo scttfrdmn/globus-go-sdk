@@ -36,6 +36,35 @@ present:
   fields. `DoRequest` now sends a `url.Values` body as flat
   `application/x-www-form-urlencoded`; all other bodies remain JSON.
 
+## Compute: passthrough documents, V2+V3 folded, phantom routes removed
+
+Upstream Globus Compute (at 4.8.1) is only `__init__.py`, `client.py`, and
+`errors.py` — it defines **no** request/response models and **no** pagination.
+The Phase 2 audit realigned the Go client to that reality:
+
+- **Passthrough everywhere.** All request bodies are `map[string]interface{}`
+  and all responses are `map[string]interface{}`. The previously invented typed
+  models (`Endpoint`, `EndpointList`, `FunctionRun`, `FunctionList`,
+  `TaskStatus`, `TaskList`, `FunctionDefinition`, `FunctionRegistration`,
+  `BatchTask*`, etc.) were removed — none were verifiable against the wire.
+- **Base URL → host root.** `https://compute.api.globus.org` (was `.../v2`), and
+  every endpoint carries its own `/v2` or `/v3` prefix, so both API surfaces are
+  reachable through the path-joining buildURL.
+- **V2 and V3 folded into one client.** Upstream ships `ComputeClientV2` and
+  `ComputeClientV3` as separate classes; Go keeps one `compute.Client` and
+  suffixes the v3 methods (`RegisterEndpointV3`, `UpdateEndpointV3`,
+  `LockEndpointV3`, `GetEndpointAllowlistV3`, `RegisterFunctionV3`, `SubmitV3`).
+- **Removed phantom methods** with no upstream route: `SubmitFunction`
+  (POST /endpoints/{id}/functions), `CancelFunction`, `ListFunctions`,
+  `UpdateFunction`, `ListTasks`, `CancelTask`, `RunBatch`, and both pagers.
+  Task submission is `Submit` (`POST /v2/submit`) or `SubmitV3`; task listing by
+  group is `GetTaskGroup`.
+- **`GetEndpoints`** (was `ListEndpoints`) sends only the `role` param upstream
+  supports — the fabricated `limit`/`offset` were removed. `GetTaskStatus` →
+  `GetTask`, `GetBatchStatus` → `GetTaskBatch`. Added `GetVersion`,
+  `GetResultAMQPURL`, `RegisterEndpoint`, `GetEndpointStatus`, `DeleteEndpoint`,
+  `LockEndpoint`, `GetTaskGroup`, `RegisterFunction` (passthrough).
+
 ## Flows: SpecificFlowClient folded in; removed action providers; wire fixes
 
 The Phase 2 audit corrected several Flows wire divergences and removed a phantom
