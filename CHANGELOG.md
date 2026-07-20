@@ -10,6 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — Auth (v3 module, Phase 2 parity audit vs 3.65.0)
+
+**Breaking** within the v3 line:
+
+- Removed phantom MFA REST methods `GetMFAChallenge` and
+  `RespondToMFAChallenge` (no `/oauth2/mfa/*` route at 3.65.0); MFA is completed
+  by resubmitting to the token endpoint. `Identity.IdentityID`→`Identity.ID`
+  (JSON `id`).
+
+Added: `GetIdentities`, `GetIdentityProviders`, projects CRUD, policies CRUD,
+clients CRUD (+`CreateChildClient`/`CreateNativeAppInstance`), client-credentials
+CRUD, scopes CRUD, `GetConsents`, `OAuth2GetDependentTokens`,
+`OAuth2ValidateToken`, and OIDC `GetOpenIDConfiguration`/`GetJWK`/`Userinfo`.
+
 ### Changed — Flows (v3 module, Phase 2 parity audit vs 3.65.0)
 
 **Breaking** within the v3 line:

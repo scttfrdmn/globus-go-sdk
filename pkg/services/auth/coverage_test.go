@@ -733,52 +733,6 @@ func TestRefreshTokenWithMFA_Success(t *testing.T) {
 		t.Errorf("Expected AccessToken=refreshed-via-mfa, got %s", tokenResp.AccessToken)
 	}
 }
-
-func TestGetMFAChallenge_Standalone(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path == "/oauth2/mfa/challenge/test-challenge-id" {
-			challenge := auth.MFAChallenge{
-				ChallengeID:  "test-challenge-id",
-				Type:         "totp",
-				Prompt:       "Enter TOTP code",
-				AllowedTypes: []string{"totp", "backup_code"},
-			}
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(challenge)
-			return
-		}
-		w.WriteHeader(http.StatusNotFound)
-	}))
-	defer server.Close()
-
-	client := setupTestClient(t, server)
-
-	challenge, err := client.GetMFAChallenge(context.Background(), "test-challenge-id")
-	if err != nil {
-		t.Fatalf("GetMFAChallenge() error = %v", err)
-	}
-	if challenge.ChallengeID != "test-challenge-id" {
-		t.Errorf("Expected ChallengeID=test-challenge-id, got %s", challenge.ChallengeID)
-	}
-	if challenge.Type != "totp" {
-		t.Errorf("Expected Type=totp, got %s", challenge.Type)
-	}
-}
-
-func TestGetMFAChallenge_Error(t *testing.T) {
-	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("not found"))
-	}))
-	defer server.Close()
-
-	client := setupTestClient(t, server)
-	_, err := client.GetMFAChallenge(context.Background(), "nonexistent")
-	if err == nil {
-		t.Error("Expected error for 404 response, got nil")
-	}
-}
-
 func TestGetMFAChallenge_Func_NilError(t *testing.T) {
 	// auth.GetMFAChallenge (standalone func) should return nil for nil error
 	challenge := auth.GetMFAChallenge(nil)

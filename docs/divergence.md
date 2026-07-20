@@ -16,6 +16,27 @@ into Go types and clients.
 Sections below prefixed **v3:** apply to the frozen v3 module (tracking Python
 globus-sdk 3.65.0); all other sections apply to the active v4 module.
 
+## v3 Auth: removed phantom MFA REST routes; added resource surface (Phase 2 audit vs 3.65.0)
+
+- **Removed phantom MFA routes.** `GetMFAChallenge` (`/oauth2/mfa/challenge/{id}`)
+  and `RespondToMFAChallenge` (`/oauth2/mfa/response`) do not exist at 3.65.0. MFA
+  is completed by resubmitting to `POST /v2/oauth2/token` with the MFA response
+  fields; `ExchangeAuthorizationCodeWithMFA`/`RefreshTokenWithMFA` now do that via
+  `resubmitWithMFA`, and `CheckForMFARequired` surfaces the challenge ID from the
+  token-endpoint error rather than fetching challenge details.
+- **`Identity.id`** — the primary key JSON tag is `id` (was the invalid
+  `identity_id`).
+- **Added the resource surface** (all responses use the upstream envelopes —
+  single objects under `project`/`policy`/`client`/`scope`, collections under
+  the plural key; mutually-exclusive query params comma-joined): `GetIdentities`,
+  `GetIdentityProviders`; projects CRUD (`GetProjects`/`GetProject`/
+  `CreateProject`/`UpdateProject`/`DeleteProject`); policies CRUD; clients CRUD
+  (+`CreateChildClient`, `CreateNativeAppInstance`); client-credentials
+  (`GetClientCredentials`/`CreateClientCredential`/`DeleteClientCredential`);
+  scopes CRUD; `GetConsents`; `OAuth2GetDependentTokens` (top-level array
+  response); `OAuth2ValidateToken`; and OIDC `GetOpenIDConfiguration`/`GetJWK`
+  (host-root, outside the `/v2` base) plus `Userinfo`.
+
 ## v3 Flows: base host, body envelope, removed action providers (Phase 2 audit vs 3.65.0)
 
 The v3 flows client diverged from Python globus-sdk 3.65.0 on base URL, the run

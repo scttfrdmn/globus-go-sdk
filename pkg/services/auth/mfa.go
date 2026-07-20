@@ -94,25 +94,16 @@ func (c *Client) CheckForMFARequired(resp *http.Response) (*MFARequiredError, er
 		(errorResp.Error == "invalid_grant" &&
 			strings.Contains(errorResp.ErrorDescription, "MFA")) {
 
-		// Extract the challenge ID from the error description
+		// Extract the challenge ID from the error description. Globus Auth at
+		// 3.65.0 has no /oauth2/mfa/challenge route to fetch further details;
+		// the challenge ID from the token-endpoint error is all that's exposed.
 		challengeID := extractChallengeID(errorResp.ErrorDescription)
 		if challengeID == "" {
-			return &MFARequiredError{
-				Response: &errorResp,
-			}, nil
+			return &MFARequiredError{Response: &errorResp}, nil
 		}
-
-		// Get the MFA challenge details
-		challenge, err := c.GetMFAChallenge(context.Background(), challengeID)
-		if err != nil {
-			return &MFARequiredError{
-				Response: &errorResp,
-			}, nil
-		}
-
 		return &MFARequiredError{
 			Response:  &errorResp,
-			Challenge: challenge,
+			Challenge: &MFAChallenge{ChallengeID: challengeID},
 		}, nil
 	}
 
@@ -138,96 +129,27 @@ func extractChallengeID(description string) string {
 	return ""
 }
 
-// GetMFAChallenge gets details about an MFA challenge
-func (c *Client) GetMFAChallenge(ctx context.Context, challengeID string) (*MFAChallenge, error) {
-	// Create the request URL
-	reqURL := fmt.Sprintf("%soauth2/mfa/challenge/%s", c.Client.BaseURL, challengeID)
-
-	// Create the request
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
-	if err != nil {
-		return nil, fmt.Errorf("failed to create MFA challenge request: %w", err)
-	}
-
-	// Set headers
-	req.Header.Set("Accept", "application/json")
-
-	// Make the request
-	resp, err := c.Client.Do(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("MFA challenge request failed: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	// Check for error response
-	if resp.StatusCode != http.StatusOK {
-		respBody, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("MFA challenge request failed with status %d: %s",
-			resp.StatusCode, string(respBody))
-	}
-
-	// Parse the response
-	var challenge MFAChallenge
-	if err := json.NewDecoder(resp.Body).Decode(&challenge); err != nil {
-		return nil, fmt.Errorf("failed to parse MFA challenge response: %w", err)
-	}
-
-	return &challenge, nil
-}
-
-// RespondToMFAChallenge sends a response to an MFA challenge
-func (c *Client) RespondToMFAChallenge(ctx context.Context, response *MFAResponse) (*TokenResponse, error) {
-	// Create the request URL
-	reqURL := fmt.Sprintf("%soauth2/mfa/response", c.Client.BaseURL)
-
-	// Create the request body
-	reqBody, err := json.Marshal(response)
-	if err != nil {
-		return nil, fmt.Errorf("failed to marshal MFA response: %w", err)
-	}
-
-	// Create the request
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, reqURL, strings.NewReader(string(reqBody)))
-	if err != nil {
-		return nil, fmt.Errorf("failed to create MFA response request: %w", err)
-	}
-
-	// Set headers
-	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Accept", "application/json")
-
-	// Make the request
-	resp, err := c.Client.Do(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("MFA response request failed: %w", err)
-	}
-	defer func() { _ = resp.Body.Close() }()
-
-	// Check for error response
-	if resp.StatusCode != http.StatusOK {
-		// Check if this is another MFA challenge
-		if resp.StatusCode == http.StatusBadRequest {
-			mfaErr, parseErr := c.CheckForMFARequired(resp)
-			if parseErr == nil && mfaErr != nil {
-				return nil, mfaErr
-			}
+// resubmitWithMFA answers an MFA challenge by resubmitting the original token
+// request to the token endpoint with the MFA response fields attached. Globus
+// Auth at 3.65.0 has no separate /oauth2/mfa/* routes; MFA is completed by
+// re-POSTing to /v2/oauth2/token.
+func (c *Client) resubmitWithMFA(ctx context.Context, form url.Values, resp *MFAResponse) (*TokenResponse, error) {
+	if resp != nil {
+		if resp.ChallengeID != "" {
+			form.Set("mfa_challenge_id", resp.ChallengeID)
 		}
-
-		respBody, _ := io.ReadAll(resp.Body)
-		return nil, fmt.Errorf("MFA response request failed with status %d: %s",
-			resp.StatusCode, string(respBody))
+		if resp.Type != "" {
+			form.Set("mfa_type", resp.Type)
+		}
+		if resp.Value != "" {
+			form.Set("mfa_value", resp.Value)
+		}
 	}
-
-	// Parse the response as a token response
-	var tokenResponse TokenResponse
-	if err := json.NewDecoder(resp.Body).Decode(&tokenResponse); err != nil {
-		return nil, fmt.Errorf("failed to parse token response: %w", err)
-	}
-
-	return &tokenResponse, nil
+	return c.tokenRequestMFA(ctx, form)
 }
 
-// ExchangeAuthorizationCodeWithMFA exchanges an authorization code with MFA support
+// ExchangeAuthorizationCodeWithMFA exchanges an authorization code, completing an
+// MFA challenge by resubmitting to the token endpoint when required.
 func (c *Client) ExchangeAuthorizationCodeWithMFA(
 	ctx context.Context,
 	code string,
@@ -237,31 +159,23 @@ func (c *Client) ExchangeAuthorizationCodeWithMFA(
 		return nil, fmt.Errorf("redirect URL is required for code exchange")
 	}
 
-	// Build the request body
 	form := url.Values{}
 	form.Set("grant_type", "authorization_code")
 	form.Set("code", code)
 	form.Set("redirect_uri", c.RedirectURL)
 	form.Set("client_id", c.ClientID)
-
-	// Add client secret if available
 	if c.ClientSecret != "" {
 		form.Set("client_secret", c.ClientSecret)
 	}
 
-	// Use MFA-enabled token request
 	tokenResp, err := c.tokenRequestMFA(ctx, form)
 	if err != nil {
-		// Check if this is an MFA error
 		if mfaErr, ok := err.(*MFARequiredError); ok && mfaHandler != nil {
-			// Call the handler to get the MFA response
 			mfaResponse, handlerErr := mfaHandler(mfaErr.Challenge)
 			if handlerErr != nil {
 				return nil, fmt.Errorf("MFA handler failed: %w", handlerErr)
 			}
-
-			// Send the MFA response
-			return c.RespondToMFAChallenge(ctx, mfaResponse)
+			return c.resubmitWithMFA(ctx, form, mfaResponse)
 		}
 		return nil, err
 	}
@@ -269,36 +183,29 @@ func (c *Client) ExchangeAuthorizationCodeWithMFA(
 	return tokenResp, nil
 }
 
-// RefreshTokenWithMFA refreshes a token with MFA support
+// RefreshTokenWithMFA refreshes a token, completing an MFA challenge by
+// resubmitting to the token endpoint when required.
 func (c *Client) RefreshTokenWithMFA(
 	ctx context.Context,
 	refreshToken string,
 	mfaHandler func(challenge *MFAChallenge) (*MFAResponse, error),
 ) (*TokenResponse, error) {
-	// Build the request body
 	form := url.Values{}
 	form.Set("grant_type", "refresh_token")
 	form.Set("refresh_token", refreshToken)
 	form.Set("client_id", c.ClientID)
-
-	// Add client secret if available
 	if c.ClientSecret != "" {
 		form.Set("client_secret", c.ClientSecret)
 	}
 
-	// Use MFA-enabled token request
 	tokenResp, err := c.tokenRequestMFA(ctx, form)
 	if err != nil {
-		// Check if this is an MFA error
 		if mfaErr, ok := err.(*MFARequiredError); ok && mfaHandler != nil {
-			// Call the handler to get the MFA response
 			mfaResponse, handlerErr := mfaHandler(mfaErr.Challenge)
 			if handlerErr != nil {
 				return nil, fmt.Errorf("MFA handler failed: %w", handlerErr)
 			}
-
-			// Send the MFA response
-			return c.RespondToMFAChallenge(ctx, mfaResponse)
+			return c.resubmitWithMFA(ctx, form, mfaResponse)
 		}
 		return nil, err
 	}
