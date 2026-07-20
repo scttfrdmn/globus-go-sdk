@@ -258,7 +258,7 @@ func TestComprehensiveTransfer(t *testing.T) {
 	err = ratelimit.RetryWithBackoff(
 		ctx,
 		func(ctx context.Context) error {
-			return client.Mkdir(ctx, sourceEndpointID, sourceTestDir)
+			return client.Mkdir(ctx, sourceEndpointID, sourceTestDir, nil)
 		},
 		ratelimit.DefaultBackoff(),
 		IsRetryableTransferError,
@@ -308,7 +308,7 @@ func TestComprehensiveTransfer(t *testing.T) {
 	err = ratelimit.RetryWithBackoff(
 		ctx,
 		func(ctx context.Context) error {
-			return client.Mkdir(ctx, destEndpointID, destTestDir)
+			return client.Mkdir(ctx, destEndpointID, destTestDir, nil)
 		},
 		ratelimit.DefaultBackoff(),
 		IsRetryableTransferError,
@@ -534,7 +534,7 @@ func TestComprehensiveTransfer(t *testing.T) {
 	nestedDirName := fmt.Sprintf("%s/nested_dir", sourceTestDir)
 	t.Logf("Creating nested directory on source endpoint: %s", nestedDirName)
 
-	err = client.Mkdir(ctx, sourceEndpointID, nestedDirName)
+	err = client.Mkdir(ctx, sourceEndpointID, nestedDirName, nil)
 	if err != nil {
 		t.Logf("Failed to create nested directory (may already exist): %v", err)
 	} else {
@@ -562,7 +562,7 @@ func TestComprehensiveTransfer(t *testing.T) {
 	renamedDirName := fmt.Sprintf("%s/renamed_dir", sourceTestDir)
 	t.Logf("Renaming directory from %s to %s", nestedDirName, renamedDirName)
 
-	err = client.Rename(ctx, sourceEndpointID, nestedDirName, renamedDirName)
+	err = client.Rename(ctx, sourceEndpointID, nestedDirName, renamedDirName, nil)
 	if err != nil {
 		t.Logf("Failed to rename directory: %v", err)
 	} else {

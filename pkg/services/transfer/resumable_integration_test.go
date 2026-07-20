@@ -120,7 +120,7 @@ func TestIntegration_ResumableTransfer(t *testing.T) {
 	err = ratelimit.RetryWithBackoff(
 		ctx,
 		func(ctx context.Context) error {
-			return client.Mkdir(ctx, sourceEndpointID, sourceDir)
+			return client.Mkdir(ctx, sourceEndpointID, sourceDir, nil)
 		},
 		ratelimit.DefaultBackoff(),
 		transfer.IsRetryableTransferError,
@@ -162,7 +162,7 @@ func TestIntegration_ResumableTransfer(t *testing.T) {
 	err = ratelimit.RetryWithBackoff(
 		ctx,
 		func(ctx context.Context) error {
-			return client.Mkdir(ctx, destEndpointID, destDir)
+			return client.Mkdir(ctx, destEndpointID, destDir, nil)
 		},
 		ratelimit.DefaultBackoff(),
 		transfer.IsRetryableTransferError,
@@ -428,7 +428,7 @@ func TestIntegration_ResumableTransferCancellation(t *testing.T) {
 	err = ratelimit.RetryWithBackoff(
 		ctx,
 		func(ctx context.Context) error {
-			return client.Mkdir(ctx, sourceEndpointID, sourceDir)
+			return client.Mkdir(ctx, sourceEndpointID, sourceDir, nil)
 		},
 		ratelimit.DefaultBackoff(),
 		transfer.IsRetryableTransferError,
@@ -469,7 +469,7 @@ func TestIntegration_ResumableTransferCancellation(t *testing.T) {
 	err = ratelimit.RetryWithBackoff(
 		ctx,
 		func(ctx context.Context) error {
-			return client.Mkdir(ctx, destEndpointID, destDir)
+			return client.Mkdir(ctx, destEndpointID, destDir, nil)
 		},
 		ratelimit.DefaultBackoff(),
 		transfer.IsRetryableTransferError,

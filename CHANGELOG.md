@@ -10,6 +10,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — Transfer (v3 module, Phase 2 parity audit vs 3.65.0)
+
+**Breaking** within the v3 line:
+
+- List envelopes (`EndpointList`, `TaskList`, `FileList`) now decode items under
+  the uppercase `DATA` key — they previously deserialized empty. `FileList` uses
+  `endpoint` (not `endpoint_id`); `TaskList`/`FileList` gained total/offset/limit.
+- `TransferItem.Checksum` replaced with `ExternalChecksum` + `ChecksumAlgorithm`;
+  `TransferTaskRequest.PreserveMtime` now marshals `preserve_timestamp`.
+- `Mkdir`/`Rename` gained a trailing `*MkdirOptions`/`*RenameOptions` argument
+  (pass `nil` for none) carrying the optional `local_user` field.
+- Subscription API split into `SetSubscriptionID(collectionID, subscriptionID)`
+  and `SetSubscriptionAdminVerified(collectionID string, verified bool)` on their
+  correct routes.
+- `ListEndpoints`/`ListTasks`/`ListFiles` realigned to 3.65.0 wire params
+  (endpoint_search filters incl. `filter_non_functional`/`filter_entity_type`;
+  task_list combined `filter`+`orderby`; operation_ls `offset`+`local_user`).
+  `page_size`/`page_token`/individual task `filter_*`/`excluded_types`/
+  `continue_from`/`marker` are retained as divergent aliases and no longer sent.
+- Removed phantom Streams/tunnel methods (`streams.go`) and the `streams-tunnels`
+  example — no such routes at 3.65.0.
+
+Added: `UpdateEndpoint`, `DeleteEndpoint`, `CreateSharedEndpoint`; bookmark CRUD;
+endpoint ACL/role/server families; `OperationStat`; task `TaskEventList`/
+`TaskPauseInfo`/`TaskSuccessfulTransfers`/`TaskSkippedErrors`/`UpdateTask`;
+`MyEffectivePauseRuleList`/`MySharedEndpointList`/`GetSharedEndpointList`; and the
+full `EndpointManager*` surface (monitored/hosted endpoints, task list/get/events,
+admin cancel/pause/resume, pause-rule CRUD). New top-level request fields on
+`DeleteTaskRequest` (recursive/ignore_missing/interpret_globs/local_user) and
+`TransferTaskRequest` (source/destination_local_user, filter_rules).
+
 ### Changed — Compute (v3 module, Phase 2 parity audit vs 3.65.0)
 
 **Breaking** within the v3 line:

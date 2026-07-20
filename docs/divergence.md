@@ -16,6 +16,59 @@ into Go types and clients.
 Sections below prefixed **v3:** apply to the frozen v3 module (tracking Python
 globus-sdk 3.65.0); all other sections apply to the active v4 module.
 
+## v3 Transfer: DATA envelopes, wire-param realignment, added families (Phase 2 audit vs 3.65.0)
+
+- **Uppercase `DATA` list envelopes.** `EndpointList`, `TaskList` and `FileList`
+  decoded items under `json:"data"`, but Transfer returns them under uppercase
+  `DATA` (upstream iterable.py `default_iter_key=DATA`) — every list previously
+  deserialized empty. Tags corrected to `DATA`. `FileList` also uses `endpoint`
+  (not `endpoint_id`) and gained `total`. `TaskList` gained `total`/`offset`/
+  `limit`; `FileListItem.DATA_TYPE` corrected.
+- **endpoint_search / task_list / operation_ls query params.** `ListEndpoints`
+  no longer sends `page_size`/`page_token` (not endpoint_search wire params) and
+  now supports `filter_non_functional` (encoded 1/0) and `filter_entity_type`.
+  `ListTasks` uses the 3.65.0 combined `filter` (key:v1,v2/key2:v3) + `orderby`
+  form; the individual `filter_*`/`page_size`/`page_token` option fields are
+  retained as **divergent Go aliases that are not sent**. `ListFiles`/
+  `ListDirectory` drop `excluded_types`/`continue_from`/`marker` (not operation_ls
+  params) and add `offset` + `local_user`; `show_hidden` encodes 1/0.
+- **preserve_timestamp.** `TransferTaskRequest.PreserveMtime` marshaled the
+  invalid key `preserve_mtime`; upstream TransferData writes `preserve_timestamp`.
+  JSON key corrected (Go field name kept for source compatibility).
+- **Checksum fields.** `TransferItem.Checksum` (`json:"checksum"`) was a phantom;
+  replaced with `ExternalChecksum` (`external_checksum`) + `ChecksumAlgorithm`
+  (`checksum_algorithm`) per upstream `add_item`.
+- **Delete / transfer top-level fields.** `DeleteTaskRequest` gained top-level
+  `recursive`/`ignore_missing`/`interpret_globs`/`local_user` (recursive is
+  top-level, not per delete_item). `TransferTaskRequest` gained
+  `source_local_user`/`destination_local_user`/`filter_rules`.
+- **Subscription methods split.** The old `SetSubscriptionAdminVerified(endpoint,
+  subscriptionID)` PUT `endpoint/{id}/subscription` with a bogus
+  `DATA_TYPE:subscription_id_update` body actually implemented upstream
+  `set_subscription_id`. Split into `SetSubscriptionID(collectionID,
+  subscriptionID)` (PUT `endpoint/{id}/subscription`, body `{subscription_id}`,
+  no DATA_TYPE) and `SetSubscriptionAdminVerified(collectionID, verified bool)`
+  (PUT `endpoint/{id}/subscription_admin_verified`, body
+  `{subscription_admin_verified}`).
+- **`Mkdir`/`Rename` signatures** gained a trailing `*MkdirOptions`/`*RenameOptions`
+  for the optional `local_user` body field (pass `nil` for none).
+- **Added families** (all `DATA`-enveloped unless noted): endpoint
+  update/delete, `CreateSharedEndpoint`; bookmarks CRUD; ACL rule CRUD; role
+  CRUD; server list/get; `OperationStat`; task `event_list`/`pause_info`/
+  `successful_transfers`/`skipped_errors` (marker paged) and `UpdateTask`;
+  `my_effective_pause_rule_list`/`my_shared_endpoint_list`/`shared_endpoint_list`
+  (next_token paged, items under `shared_endpoints`); and the full
+  `endpoint_manager` surface (monitored/hosted endpoints, task list/get/events/
+  pause_info/successful_transfers/skipped_errors, admin cancel/pause/resume,
+  pause-rule CRUD). Slice filters comma-joined; `filter_is_error` encodes 1/0.
+- **Removed phantom Streams/tunnels.** `streams.go` (`CreateTunnel`/`GetTunnel`/
+  `UpdateTunnel`/`DeleteTunnel`/`ListTunnels`/`GetStreamAccessPoint`/
+  `GetTunnelEvents`) hit `tunnel*` routes that do not exist at 3.65.0 (Streams is
+  a v4.3.0+ addition); removed along with the `streams-tunnels` example.
+- **Intentionally omitted:** deprecated GCSv4 activation/server-mutation/symlink
+  routes remain omitted (GCSv5 auto-activates); `GetSubmissionID` still reads both
+  `value` and `submission_id` (upstream uses `value`; harmless).
+
 ## v3 Compute: passthrough documents, host-root base, folded V2/V3 (Phase 2 audit vs 3.65.0)
 
 - **No request/response models, no pagination.** Upstream `ComputeClient` (at

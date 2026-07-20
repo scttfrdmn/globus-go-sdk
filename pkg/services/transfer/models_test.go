@@ -257,10 +257,11 @@ func TestTransferTaskRequest(t *testing.T) {
 		PreserveMtime:          true,
 		Items: []TransferItem{
 			{
-				SourcePath:      "/source/path",
-				DestinationPath: "/destination/path",
-				Recursive:       true,
-				Checksum:        "md5:1234567890abcdef",
+				SourcePath:        "/source/path",
+				DestinationPath:   "/destination/path",
+				Recursive:         true,
+				ExternalChecksum:  "1234567890abcdef",
+				ChecksumAlgorithm: "md5",
 			},
 		},
 	}
@@ -308,8 +309,11 @@ func TestTransferTaskRequest(t *testing.T) {
 	if !request.Items[0].Recursive {
 		t.Errorf("TransferTaskRequest.Items[0].Recursive = %v, want %v", request.Items[0].Recursive, true)
 	}
-	if request.Items[0].Checksum != "md5:1234567890abcdef" {
-		t.Errorf("TransferTaskRequest.Items[0].Checksum = %v, want %v", request.Items[0].Checksum, "md5:1234567890abcdef")
+	if request.Items[0].ExternalChecksum != "1234567890abcdef" {
+		t.Errorf("TransferTaskRequest.Items[0].ExternalChecksum = %v, want %v", request.Items[0].ExternalChecksum, "1234567890abcdef")
+	}
+	if request.Items[0].ChecksumAlgorithm != "md5" {
+		t.Errorf("TransferTaskRequest.Items[0].ChecksumAlgorithm = %v, want %v", request.Items[0].ChecksumAlgorithm, "md5")
 	}
 }
 

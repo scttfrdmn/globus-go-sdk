@@ -160,11 +160,19 @@ func TestListDirectory_EmptyEndpointID(t *testing.T) {
 	}
 }
 
-func TestListDirectory_WithMarker(t *testing.T) {
+func TestListDirectory_WireParams(t *testing.T) {
 	server, client := newTransferClient(t, func(w http.ResponseWriter, r *http.Request) {
 		q := r.URL.Query()
-		if q.Get("marker") != "token-abc" {
-			t.Errorf("expected marker=token-abc, got %s", q.Get("marker"))
+		// operation_ls sends orderby/filter/limit/offset; the divergent aliases
+		// marker/continue_from/excluded_types are NOT sent at 3.65.0.
+		if q.Get("filter") != "*.txt" {
+			t.Errorf("expected filter=*.txt, got %s", q.Get("filter"))
+		}
+		if q.Get("marker") != "" {
+			t.Errorf("marker must not be sent; got %s", q.Get("marker"))
+		}
+		if q.Get("continue_from") != "" || q.Get("excluded_types") != "" {
+			t.Error("continue_from/excluded_types are not operation_ls wire params")
 		}
 		resp := transfer.FileList{}
 		w.Header().Set("Content-Type", "application/json")
@@ -182,7 +190,7 @@ func TestListDirectory_WithMarker(t *testing.T) {
 	}
 	_, err := client.ListDirectory(context.Background(), opts)
 	if err != nil {
-		t.Fatalf("ListDirectory() with marker error = %v", err)
+		t.Fatalf("ListDirectory() error = %v", err)
 	}
 }
 
@@ -572,7 +580,7 @@ func TestMkdir(t *testing.T) {
 	})
 	defer server.Close()
 
-	if err := client.Mkdir(context.Background(), "ep-001", "/new/dir"); err != nil {
+	if err := client.Mkdir(context.Background(), "ep-001", "/new/dir", nil); err != nil {
 		t.Fatalf("Mkdir() error = %v", err)
 	}
 }
@@ -581,7 +589,7 @@ func TestMkdir_EmptyEndpointID(t *testing.T) {
 	server, client := newTransferClient(t, func(w http.ResponseWriter, r *http.Request) {})
 	defer server.Close()
 
-	if err := client.Mkdir(context.Background(), "", "/dir"); err == nil {
+	if err := client.Mkdir(context.Background(), "", "/dir", nil); err == nil {
 		t.Error("expected error for empty endpoint ID")
 	}
 }
@@ -590,7 +598,7 @@ func TestMkdir_EmptyPath(t *testing.T) {
 	server, client := newTransferClient(t, func(w http.ResponseWriter, r *http.Request) {})
 	defer server.Close()
 
-	if err := client.Mkdir(context.Background(), "ep-001", ""); err == nil {
+	if err := client.Mkdir(context.Background(), "ep-001", "", nil); err == nil {
 		t.Error("expected error for empty path")
 	}
 }
@@ -604,7 +612,7 @@ func TestMkdir_WrongCode(t *testing.T) {
 	})
 	defer server.Close()
 
-	if err := client.Mkdir(context.Background(), "ep-001", "/denied"); err == nil {
+	if err := client.Mkdir(context.Background(), "ep-001", "/denied", nil); err == nil {
 		t.Error("expected error when result code is not DirectoryCreated")
 	}
 }
@@ -632,7 +640,7 @@ func TestRename(t *testing.T) {
 	})
 	defer server.Close()
 
-	if err := client.Rename(context.Background(), "ep-001", "/data/a.txt", "/data/b.txt"); err != nil {
+	if err := client.Rename(context.Background(), "ep-001", "/data/a.txt", "/data/b.txt", nil); err != nil {
 		t.Fatalf("Rename() error = %v", err)
 	}
 }
@@ -641,7 +649,7 @@ func TestRename_EmptyEndpointID(t *testing.T) {
 	server, client := newTransferClient(t, func(w http.ResponseWriter, r *http.Request) {})
 	defer server.Close()
 
-	if err := client.Rename(context.Background(), "", "/old", "/new"); err == nil {
+	if err := client.Rename(context.Background(), "", "/old", "/new", nil); err == nil {
 		t.Error("expected error for empty endpoint ID")
 	}
 }
@@ -650,10 +658,10 @@ func TestRename_EmptyPaths(t *testing.T) {
 	server, client := newTransferClient(t, func(w http.ResponseWriter, r *http.Request) {})
 	defer server.Close()
 
-	if err := client.Rename(context.Background(), "ep-001", "", "/new"); err == nil {
+	if err := client.Rename(context.Background(), "ep-001", "", "/new", nil); err == nil {
 		t.Error("expected error for empty old path")
 	}
-	if err := client.Rename(context.Background(), "ep-001", "/old", ""); err == nil {
+	if err := client.Rename(context.Background(), "ep-001", "/old", "", nil); err == nil {
 		t.Error("expected error for empty new path")
 	}
 }
@@ -666,52 +674,71 @@ func TestRename_WrongCode(t *testing.T) {
 	})
 	defer server.Close()
 
-	if err := client.Rename(context.Background(), "ep-001", "/old", "/new"); err == nil {
+	if err := client.Rename(context.Background(), "ep-001", "/old", "/new", nil); err == nil {
 		t.Error("expected error when rename code is not FileRenamed")
 	}
 }
 
 // ──────────────────────────────────────────────────────────────────────────────
-// SetSubscriptionAdminVerified
+// SetSubscriptionID / SetSubscriptionAdminVerified
 // ──────────────────────────────────────────────────────────────────────────────
 
-func TestSetSubscriptionAdminVerified(t *testing.T) {
+func TestSetSubscriptionID(t *testing.T) {
 	server, client := newTransferClient(t, func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPut || r.URL.Path != "/endpoint/ep-001/subscription" {
 			t.Errorf("unexpected %s %s", r.Method, r.URL.Path)
 		}
-		var body map[string]string
+		var body map[string]interface{}
 		json.NewDecoder(r.Body).Decode(&body)
 		if body["subscription_id"] != "sub-xyz" {
-			t.Errorf("expected sub-xyz, got %s", body["subscription_id"])
+			t.Errorf("expected sub-xyz, got %v", body["subscription_id"])
+		}
+		if _, ok := body["DATA_TYPE"]; ok {
+			t.Error("subscription body must not carry DATA_TYPE at 3.65.0")
 		}
 		w.WriteHeader(http.StatusNoContent)
 	})
 	defer server.Close()
 
-	err := client.SetSubscriptionAdminVerified(context.Background(), "ep-001", "sub-xyz")
-	if err != nil {
+	if err := client.SetSubscriptionID(context.Background(), "ep-001", "sub-xyz"); err != nil {
+		t.Fatalf("SetSubscriptionID() error = %v", err)
+	}
+}
+
+func TestSetSubscriptionID_EmptyCollectionID(t *testing.T) {
+	server, client := newTransferClient(t, func(w http.ResponseWriter, r *http.Request) {})
+	defer server.Close()
+
+	if err := client.SetSubscriptionID(context.Background(), "", "sub-xyz"); err == nil {
+		t.Error("expected error for empty collection ID")
+	}
+}
+
+func TestSetSubscriptionAdminVerified(t *testing.T) {
+	server, client := newTransferClient(t, func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPut || r.URL.Path != "/endpoint/ep-001/subscription_admin_verified" {
+			t.Errorf("unexpected %s %s", r.Method, r.URL.Path)
+		}
+		var body map[string]interface{}
+		json.NewDecoder(r.Body).Decode(&body)
+		if body["subscription_admin_verified"] != true {
+			t.Errorf("expected subscription_admin_verified=true, got %v", body["subscription_admin_verified"])
+		}
+		w.WriteHeader(http.StatusNoContent)
+	})
+	defer server.Close()
+
+	if err := client.SetSubscriptionAdminVerified(context.Background(), "ep-001", true); err != nil {
 		t.Fatalf("SetSubscriptionAdminVerified() error = %v", err)
 	}
 }
 
-func TestSetSubscriptionAdminVerified_EmptyEndpointID(t *testing.T) {
+func TestSetSubscriptionAdminVerified_EmptyCollectionID(t *testing.T) {
 	server, client := newTransferClient(t, func(w http.ResponseWriter, r *http.Request) {})
 	defer server.Close()
 
-	err := client.SetSubscriptionAdminVerified(context.Background(), "", "sub-xyz")
-	if err == nil {
-		t.Error("expected error for empty endpoint ID")
-	}
-}
-
-func TestSetSubscriptionAdminVerified_EmptySubscriptionID(t *testing.T) {
-	server, client := newTransferClient(t, func(w http.ResponseWriter, r *http.Request) {})
-	defer server.Close()
-
-	err := client.SetSubscriptionAdminVerified(context.Background(), "ep-001", "")
-	if err == nil {
-		t.Error("expected error for empty subscription ID")
+	if err := client.SetSubscriptionAdminVerified(context.Background(), "", true); err == nil {
+		t.Error("expected error for empty collection ID")
 	}
 }
 
@@ -1038,7 +1065,7 @@ func TestDoRequest_204NoContent(t *testing.T) {
 	defer server.Close()
 
 	// SetSubscriptionAdminVerified should succeed on 204
-	err := client.SetSubscriptionAdminVerified(context.Background(), "ep-001", "sub-001")
+	err := client.SetSubscriptionAdminVerified(context.Background(), "ep-001", true)
 	if err != nil {
 		t.Fatalf("expected success on 204, got error = %v", err)
 	}

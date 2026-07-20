@@ -185,39 +185,44 @@ func (c *Client) doRequestLowLevel(ctx context.Context, method, path string, que
 	return nil
 }
 
+// endpointSearchQuery builds the endpoint_search wire query from options.
+// PageSize/PageToken are divergent Go aliases and are intentionally not sent.
+func endpointSearchQuery(options *ListEndpointsOptions) url.Values {
+	query := url.Values{}
+	if options == nil {
+		return query
+	}
+	if options.FilterFullText != "" {
+		query.Set("filter_fulltext", options.FilterFullText)
+	}
+	if options.FilterOwnerID != "" {
+		query.Set("filter_owner_id", options.FilterOwnerID)
+	}
+	if options.FilterHostEndpoint != "" {
+		query.Set("filter_host_endpoint", options.FilterHostEndpoint)
+	}
+	if options.FilterScope != "" {
+		query.Set("filter_scope", options.FilterScope)
+	}
+	if options.FilterNonFunctional {
+		query.Set("filter_non_functional", "1")
+	}
+	if options.FilterEntityType != "" {
+		query.Set("filter_entity_type", options.FilterEntityType)
+	}
+	if options.Limit > 0 {
+		query.Set("limit", strconv.Itoa(options.Limit))
+	}
+	if options.Offset > 0 {
+		query.Set("offset", strconv.Itoa(options.Offset))
+	}
+	return query
+}
+
 // ListEndpoints retrieves endpoints the user has access to
 func (c *Client) ListEndpoints(ctx context.Context, options *ListEndpointsOptions) (*EndpointList, error) {
-	// Convert options to query parameters
-	query := url.Values{}
-	if options != nil {
-		if options.FilterFullText != "" {
-			query.Set("filter_fulltext", options.FilterFullText)
-		}
-		if options.FilterOwnerID != "" {
-			query.Set("filter_owner_id", options.FilterOwnerID)
-		}
-		if options.FilterHostEndpoint != "" {
-			query.Set("filter_host_endpoint", options.FilterHostEndpoint)
-		}
-		if options.FilterScope != "" {
-			query.Set("filter_scope", options.FilterScope)
-		}
-		if options.Limit > 0 {
-			query.Set("limit", strconv.Itoa(options.Limit))
-		}
-		if options.Offset > 0 {
-			query.Set("offset", strconv.Itoa(options.Offset))
-		}
-		if options.PageSize > 0 {
-			query.Set("page_size", strconv.Itoa(options.PageSize))
-		}
-		if options.PageToken != "" {
-			query.Set("page_token", options.PageToken)
-		}
-	}
-
 	var endpointList EndpointList
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "endpoint_search", query, nil, &endpointList)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "endpoint_search", endpointSearchQuery(options), nil, &endpointList)
 	if err != nil {
 		return nil, err
 	}
@@ -227,37 +232,8 @@ func (c *Client) ListEndpoints(ctx context.Context, options *ListEndpointsOption
 
 // ListEndpointsV2 retrieves endpoints with unified response system
 func (c *Client) ListEndpointsV2(ctx context.Context, options *ListEndpointsOptions) (*response.TransferResponse[EndpointList], error) {
-	// Convert options to query parameters
-	query := url.Values{}
-	if options != nil {
-		if options.FilterFullText != "" {
-			query.Set("filter_fulltext", options.FilterFullText)
-		}
-		if options.FilterOwnerID != "" {
-			query.Set("filter_owner_id", options.FilterOwnerID)
-		}
-		if options.FilterHostEndpoint != "" {
-			query.Set("filter_host_endpoint", options.FilterHostEndpoint)
-		}
-		if options.FilterScope != "" {
-			query.Set("filter_scope", options.FilterScope)
-		}
-		if options.Limit > 0 {
-			query.Set("limit", strconv.Itoa(options.Limit))
-		}
-		if options.Offset > 0 {
-			query.Set("offset", strconv.Itoa(options.Offset))
-		}
-		if options.PageSize > 0 {
-			query.Set("page_size", strconv.Itoa(options.PageSize))
-		}
-		if options.PageToken != "" {
-			query.Set("page_token", options.PageToken)
-		}
-	}
-
 	var endpointList EndpointList
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "endpoint_search", query, nil, &endpointList)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "endpoint_search", endpointSearchQuery(options), nil, &endpointList)
 	if err != nil {
 		// Convert to GlobusError if it's not already
 		if _, ok := err.(*errors.GlobusError); !ok {
@@ -292,17 +268,22 @@ func (c *Client) GetEndpoint(ctx context.Context, endpointID string) (*Endpoint,
 // auto-activation with properly scoped tokens. Explicit activation is no longer
 // needed or supported by this SDK.
 
-// ListDirectoryOptions contains options for listing directories
+// ListDirectoryOptions contains options for listing directories.
+//
+// ContinueFrom/Marker/ExcludedTypes are divergent Go aliases retained for
+// source compatibility; they are not operation_ls wire params.
 type ListDirectoryOptions struct {
 	EndpointID    string
 	Path          string
 	OrderBy       string
 	Filter        string
 	ShowHidden    bool
-	ContinueFrom  string
-	Marker        string
 	Limit         int
-	ExcludedTypes string
+	Offset        int
+	LocalUser     string
+	ContinueFrom  string // divergent alias; not sent
+	Marker        string // divergent alias; not sent
+	ExcludedTypes string // divergent alias; not sent
 }
 
 // ListDirectory lists files and directories at a path - helper method with structured options
@@ -317,25 +298,25 @@ func (c *Client) ListDirectory(ctx context.Context, options *ListDirectoryOption
 
 	// Convert to ListFileOptions for the underlying implementation
 	fileOptions := &ListFileOptions{
-		OrderBy:       options.OrderBy,
-		Filter:        options.Filter,
-		ShowHidden:    options.ShowHidden,
-		ContinueFrom:  options.ContinueFrom,
-		Marker:        options.Marker,
-		Limit:         options.Limit,
-		ExcludedTypes: options.ExcludedTypes,
+		OrderBy:    options.OrderBy,
+		Filter:     options.Filter,
+		ShowHidden: options.ShowHidden,
+		Limit:      options.Limit,
+		Offset:     options.Offset,
+		LocalUser:  options.LocalUser,
 	}
 
 	return c.ListFiles(ctx, options.EndpointID, options.Path, fileOptions)
 }
 
-// ListFiles lists the files and directories in a path on an endpoint
+// ListFiles lists the files and directories in a path on an endpoint (operation_ls).
 func (c *Client) ListFiles(ctx context.Context, endpointID, path string, options *ListFileOptions) (*FileList, error) {
 	if endpointID == "" {
 		return nil, fmt.Errorf("endpoint ID is required")
 	}
 
-	// Convert options to query parameters
+	// Convert options to query parameters. show_hidden encodes as 1/0.
+	// ExcludedTypes/ContinueFrom/Marker are not operation_ls wire params.
 	query := url.Values{}
 	query.Set("path", path)
 
@@ -349,17 +330,14 @@ func (c *Client) ListFiles(ctx context.Context, endpointID, path string, options
 		if options.ShowHidden {
 			query.Set("show_hidden", "1")
 		}
-		if options.ContinueFrom != "" {
-			query.Set("continue_from", options.ContinueFrom)
-		}
-		if options.Marker != "" {
-			query.Set("marker", options.Marker)
-		}
 		if options.Limit > 0 {
 			query.Set("limit", strconv.Itoa(options.Limit))
 		}
-		if options.ExcludedTypes != "" {
-			query.Set("excluded_types", options.ExcludedTypes)
+		if options.Offset > 0 {
+			query.Set("offset", strconv.Itoa(options.Offset))
+		}
+		if options.LocalUser != "" {
+			query.Set("local_user", options.LocalUser)
 		}
 	}
 
@@ -528,43 +506,25 @@ func (c *Client) CreateDeleteTask(ctx context.Context, request *DeleteTaskReques
 	return &response, nil
 }
 
-// ListTasks retrieves tasks the user has submitted
+// ListTasks retrieves tasks the user has submitted (task_list).
+//
+// The 3.65.0 wire form is limit, offset, orderby (comma-joined) and a single
+// combined filter param (key:v1,v2/key2:v3). The individual Filter*/PageSize/
+// PageToken option fields are divergent Go aliases and are not sent.
 func (c *Client) ListTasks(ctx context.Context, options *ListTasksOptions) (*TaskList, error) {
-	// Convert options to query parameters
 	query := url.Values{}
 	if options != nil {
-		if options.FilterTaskID != "" {
-			query.Set("filter_task_id", options.FilterTaskID)
+		if options.Filter != "" {
+			query.Set("filter", options.Filter)
 		}
-		if options.FilterType != "" {
-			query.Set("filter_type", options.FilterType)
-		}
-		if options.FilterStatus != "" {
-			query.Set("filter_status", options.FilterStatus)
-		}
-		if !options.FilterCompletedSince.IsZero() {
-			query.Set("filter_completion_time.min", options.FilterCompletedSince.Format(time.RFC3339))
-		}
-		if !options.FilterCompletedUntil.IsZero() {
-			query.Set("filter_completion_time.max", options.FilterCompletedUntil.Format(time.RFC3339))
-		}
-		if !options.FilterRequestedSince.IsZero() {
-			query.Set("filter_request_time.min", options.FilterRequestedSince.Format(time.RFC3339))
-		}
-		if !options.FilterRequestedUntil.IsZero() {
-			query.Set("filter_request_time.max", options.FilterRequestedUntil.Format(time.RFC3339))
+		if options.OrderBy != "" {
+			query.Set("orderby", options.OrderBy)
 		}
 		if options.Limit > 0 {
 			query.Set("limit", strconv.Itoa(options.Limit))
 		}
 		if options.Offset > 0 {
 			query.Set("offset", strconv.Itoa(options.Offset))
-		}
-		if options.PageSize > 0 {
-			query.Set("page_size", strconv.Itoa(options.PageSize))
-		}
-		if options.PageToken != "" {
-			query.Set("page_token", options.PageToken)
 		}
 	}
 
@@ -630,11 +590,16 @@ func (c *Client) CreateDirectory(ctx context.Context, options *CreateDirectoryOp
 		return fmt.Errorf("path is required")
 	}
 
-	return c.Mkdir(ctx, options.EndpointID, options.Path)
+	return c.Mkdir(ctx, options.EndpointID, options.Path, nil)
 }
 
-// Mkdir creates a directory on an endpoint
-func (c *Client) Mkdir(ctx context.Context, endpointID, path string) error {
+// MkdirOptions carries optional fields for Mkdir.
+type MkdirOptions struct {
+	LocalUser string // maps to the optional local_user body field
+}
+
+// Mkdir creates a directory on an endpoint (operation_mkdir).
+func (c *Client) Mkdir(ctx context.Context, endpointID, path string, opts *MkdirOptions) error {
 	if endpointID == "" {
 		return fmt.Errorf("endpoint ID is required")
 	}
@@ -646,6 +611,9 @@ func (c *Client) Mkdir(ctx context.Context, endpointID, path string) error {
 	body := map[string]string{
 		"path":      path,
 		"DATA_TYPE": "mkdir",
+	}
+	if opts != nil && opts.LocalUser != "" {
+		body["local_user"] = opts.LocalUser
 	}
 
 	var result OperationResult
@@ -662,8 +630,13 @@ func (c *Client) Mkdir(ctx context.Context, endpointID, path string) error {
 	return nil
 }
 
-// Rename renames a file or directory on an endpoint
-func (c *Client) Rename(ctx context.Context, endpointID, oldPath, newPath string) error {
+// RenameOptions carries optional fields for Rename.
+type RenameOptions struct {
+	LocalUser string // maps to the optional local_user body field
+}
+
+// Rename renames a file or directory on an endpoint (operation_rename).
+func (c *Client) Rename(ctx context.Context, endpointID, oldPath, newPath string, opts *RenameOptions) error {
 	if endpointID == "" {
 		return fmt.Errorf("endpoint ID is required")
 	}
@@ -676,6 +649,9 @@ func (c *Client) Rename(ctx context.Context, endpointID, oldPath, newPath string
 		"old_path":  oldPath,
 		"new_path":  newPath,
 		"DATA_TYPE": "rename",
+	}
+	if opts != nil && opts.LocalUser != "" {
+		body["local_user"] = opts.LocalUser
 	}
 
 	var result OperationResult
@@ -816,22 +792,31 @@ func parseIntHeader(header http.Header, key string, defaultValue int) int {
 	return intValue
 }
 
-// SetSubscriptionAdminVerified sets the subscription ID for a collection/endpoint,
-// marking it as admin-verified. This is an admin-only operation.
-//
-// Added in Python SDK v3.59.0. The API route was corrected in Python SDK v4.0.1.
-func (c *Client) SetSubscriptionAdminVerified(ctx context.Context, endpointID, subscriptionID string) error {
-	if endpointID == "" {
-		return fmt.Errorf("endpoint ID is required")
-	}
-	if subscriptionID == "" {
-		return fmt.Errorf("subscription ID is required")
+// SetSubscriptionID sets the subscription ID for a collection/endpoint
+// (PUT endpoint/{id}/subscription). subscriptionID may be a subscription UUID,
+// "DEFAULT", or "null" to clear. The body carries no DATA_TYPE key.
+func (c *Client) SetSubscriptionID(ctx context.Context, collectionID, subscriptionID string) error {
+	if collectionID == "" {
+		return fmt.Errorf("collection ID is required")
 	}
 
-	body := map[string]string{
+	body := map[string]interface{}{
 		"subscription_id": subscriptionID,
-		"DATA_TYPE":       "subscription_id_update",
 	}
 
-	return c.doRequestLowLevel(ctx, http.MethodPut, "endpoint/"+endpointID+"/subscription", nil, body, nil)
+	return c.doRequestLowLevel(ctx, http.MethodPut, "endpoint/"+collectionID+"/subscription", nil, body, nil)
+}
+
+// SetSubscriptionAdminVerified marks a collection/endpoint's subscription as
+// admin-verified (PUT endpoint/{id}/subscription_admin_verified). Admin-only.
+func (c *Client) SetSubscriptionAdminVerified(ctx context.Context, collectionID string, verified bool) error {
+	if collectionID == "" {
+		return fmt.Errorf("collection ID is required")
+	}
+
+	body := map[string]interface{}{
+		"subscription_admin_verified": verified,
+	}
+
+	return c.doRequestLowLevel(ctx, http.MethodPut, "endpoint/"+collectionID+"/subscription_admin_verified", nil, body, nil)
 }
