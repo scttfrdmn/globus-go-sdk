@@ -41,6 +41,24 @@ Timers client realigned to the Python globus-sdk 4.8.1 wire (Phase 2 audit).
   `GetRun`, `CreateOnceTimer`, `CreateRecurringTimer`, and the `Callback`,
   `TimerRun`, `TimerRunList`, `ListRunsOptions` types.
 
+### Changed — Groups (v4 module, Phase 2 parity audit)
+
+**Breaking** within the v4 line — removed methods that hit nonexistent routes:
+
+- Removed the members sub-resource (`ListMembers`, `AddMember`, `RemoveMember`,
+  `UpdateMemberRole`) — use `BatchMembershipAction` (`POST /groups/{id}`) and
+  read memberships via `GetGroup` with `Include: ["memberships"]`.
+- Removed the roles resource entirely (`ListRoles`/`GetRole`/`CreateRole`/
+  `UpdateRole`/`DeleteRole` + `Role*` types); role is a string attribute.
+- Removed `ListGroups`/`ListGroupsOptions` and both pagers (Groups has no list
+  route and no pagination) — use `GetMyGroups`, which returns a `[]Group`.
+- `GetGroup` now takes `(ctx, groupID, *GetGroupOptions)` with a comma-joined
+  `include`. `GetIdentityPreferences`/`SetIdentityPreferences` drop the group/
+  identity args and hit `/preferences`. `GroupPolicies` reshaped to real keys.
+
+Added: `BatchMembershipAction`, `GetGroupBySubscriptionID`,
+`SetSubscriptionAdminVerified`, and the `BatchMembershipActions` document.
+
 ### Added — Auth (v4 module, Phase 2 parity audit)
 
 - Identities: `GetIdentities`, `GetIdentityProviders`.

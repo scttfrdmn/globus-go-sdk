@@ -36,6 +36,41 @@ present:
   fields. `DoRequest` now sends a `url.Values` body as flat
   `application/x-www-form-urlencoded`; all other bodies remain JSON.
 
+## Groups: removed fabricated members/roles surface and pagination
+
+The Phase 2 audit found much of the Groups client hit routes that do not exist
+in Globus Groups at 4.8.1. Corrected:
+
+- **No members sub-resource.** The Groups API has no `/groups/{id}/members`
+  routes. Removed `ListMembers`, `AddMember`, `RemoveMember`, `UpdateMemberRole`
+  and the `MemberList`/`ListMembersOptions` types. Membership data is now read
+  from the group document via `GetGroup(..., &GetGroupOptions{Include:
+  []string{"memberships"}})` (exposed as `Group.Memberships`), and all
+  membership mutations go through the new `BatchMembershipAction`
+  (`POST /groups/{id}`) with a `BatchMembershipActions` document.
+- **No roles resource.** Removed `ListRoles`/`GetRole`/`CreateRole`/
+  `UpdateRole`/`DeleteRole` and the `Role`/`RoleCreate`/`RoleUpdate`/`RoleList`
+  types. A membership's role is a string (`member`/`manager`/`admin`), not a
+  role ID resource.
+- **No group list / no pagination.** There is no `GET /groups` list route and
+  the service registers no paginator. Removed `ListGroups`,
+  `ListGroupsOptions`, and both `NewGroupsPager`/`NewMembersPager`. The only
+  listing route is `GET /groups/my_groups` (`GetMyGroups`), which returns a
+  top-level JSON array with `statuses` as a single comma-joined param; the
+  fabricated `GroupList.has_next_page`/`next_page_token` fields were removed.
+- **Account-level preferences / membership fields.** `GetIdentityPreferences`
+  and `SetIdentityPreferences` now hit `GET`/`PUT /preferences` (no group or
+  identity path params) with passthrough maps. `GetMembershipFields`/
+  `SetMembershipFields` use passthrough maps instead of the fabricated
+  `MembershipFields` wrapper.
+- **`GroupPolicies`** reshaped to the real keys (`is_high_assurance`,
+  `group_visibility`, `group_members_visibility`, `join_requests`,
+  `signup_fields`, `authentication_assurance_timeout`); the fabricated
+  `group_id`/`policies`/`is_high_risk_group`/`last_updated` keys were removed.
+- Added `GetGroupBySubscriptionID` (`GET /subscription_info/{id}`) and
+  `SetSubscriptionAdminVerified` (`PUT /groups/{id}/subscription_admin_verified`,
+  nil ID sends JSON null).
+
 ## Auth: single client folds upstream's split clients; wire fixes
 
 The Phase 2 audit filled a large missing surface and fixed wire bugs in the auth

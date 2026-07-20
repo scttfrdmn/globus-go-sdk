@@ -21,6 +21,9 @@ type Group struct {
 	SignAgreementMessage  string                 `json:"sign_agreement_message,omitempty"`
 	Policies              map[string]interface{} `json:"policies,omitempty"`
 	EnforceProvisionRules bool                   `json:"enforce_provision_rules,omitempty"`
+	// Memberships is populated only when a group is fetched with
+	// include=memberships; the Groups API has no separate members endpoint.
+	Memberships []Member `json:"memberships,omitempty"`
 }
 
 // GroupCreate represents the data needed to create a new group
@@ -47,99 +50,70 @@ type GroupUpdate struct {
 	Policies              map[string]interface{} `json:"policies,omitempty"`
 }
 
-// GroupList represents a paginated list of groups
-type GroupList struct {
-	Groups        []Group `json:"groups"`
-	HasNextPage   bool    `json:"has_next_page"`
-	NextPageToken string  `json:"next_page_token,omitempty"`
+// GetGroupOptions controls GetGroup. Include is comma-joined into a single
+// `include` query param (allowed: memberships, my_memberships, policies,
+// allowed_actions, child_ids).
+type GetGroupOptions struct {
+	Include []string
 }
 
-// ListGroupsOptions contains options for filtering group listings
-type ListGroupsOptions struct {
-	IncludeGroupMembership bool
-	IncludeIdentitySet     bool
-	ForUserID              string
-	MyGroups               bool
-	Statuses               []string // v4: Filter by group status (e.g., "active", "inactive")
-	PageSize               int
-	PageToken              string
-}
-
-// Member represents a group member
+// Member represents a group membership entry, as embedded in a group document
+// fetched with include=memberships. The Groups API has no standalone member
+// resource; role is a string (member/manager/admin), not a role ID.
 type Member struct {
-	IdentityID        string    `json:"identity_id"`
-	Username          string    `json:"username"`
-	Email             string    `json:"email"`
-	Status            string    `json:"status"`
-	RoleID            string    `json:"role_id"`
-	Name              string    `json:"name,omitempty"`
-	Organization      string    `json:"organization,omitempty"`
-	JoinedDate        time.Time `json:"joined_date,omitempty"`
-	LastUpdateDate    time.Time `json:"last_update_date,omitempty"`
-	ProvisionedByRule string    `json:"provisioned_by_rule,omitempty"`
+	IdentityID     string    `json:"identity_id"`
+	Username       string    `json:"username"`
+	Email          string    `json:"email"`
+	Status         string    `json:"status"`
+	Role           string    `json:"role"`
+	Name           string    `json:"name,omitempty"`
+	Organization   string    `json:"organization,omitempty"`
+	JoinedDate     time.Time `json:"joined_date,omitempty"`
+	LastUpdateDate time.Time `json:"last_update_date,omitempty"`
 }
 
-// MemberList represents a paginated list of group members
-type MemberList struct {
-	Members       []Member `json:"members"`
-	HasNextPage   bool     `json:"has_next_page"`
-	NextPageToken string   `json:"next_page_token,omitempty"`
+// Group role constants. Role is a string attribute on a membership.
+const (
+	RoleMember  = "member"
+	RoleManager = "manager"
+	RoleAdmin   = "admin"
+)
+
+// MemberID identifies a member by identity for batch actions that need no role.
+type MemberID struct {
+	IdentityID string `json:"identity_id"`
 }
 
-// ListMembersOptions contains options for filtering member listings
-type ListMembersOptions struct {
-	RoleID    string
-	Status    string
-	PageSize  int
-	PageToken string
+// MemberWithRole identifies a member and a role for add/invite/change_role
+// batch actions.
+type MemberWithRole struct {
+	IdentityID string `json:"identity_id"`
+	Role       string `json:"role"`
 }
 
-// Role represents a member's role in a group
-type Role struct {
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Description string `json:"description"`
+// BatchMembershipActions is the request body for BatchMembershipAction. Each
+// non-empty key names a membership action to apply in a single POST.
+type BatchMembershipActions struct {
+	Accept      []MemberID       `json:"accept,omitempty"`
+	Add         []MemberWithRole `json:"add,omitempty"`
+	Approve     []MemberID       `json:"approve,omitempty"`
+	ChangeRole  []MemberWithRole `json:"change_role,omitempty"`
+	Decline     []MemberID       `json:"decline,omitempty"`
+	Invite      []MemberWithRole `json:"invite,omitempty"`
+	Join        []MemberID       `json:"join,omitempty"`
+	Leave       []MemberID       `json:"leave,omitempty"`
+	Reject      []MemberID       `json:"reject,omitempty"`
+	Remove      []MemberID       `json:"remove,omitempty"`
+	RequestJoin []MemberID       `json:"request_join,omitempty"`
 }
 
-// RoleCreate represents the data needed to create a new group role
-type RoleCreate struct {
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-}
-
-// RoleUpdate represents the data to update in a group role
-type RoleUpdate struct {
-	Name        string `json:"name,omitempty"`
-	Description string `json:"description,omitempty"`
-}
-
-// RoleList represents a list of group roles
-type RoleList struct {
-	Roles []Role `json:"roles"`
-}
-
-// GroupPolicies represents policy configuration for a group
+// GroupPolicies represents the policy settings for a group (GET/PUT
+// /groups/{id}/policies). Fields match the Groups API exactly.
 type GroupPolicies struct {
-	GroupID                        string                 `json:"group_id"`
-	Policies                       map[string]interface{} `json:"policies"`
-	SignupFields                   []string               `json:"signup_fields,omitempty"`
-	JoinRequests                   bool                   `json:"join_requests,omitempty"`
-	IsHighRiskGroup                bool                   `json:"is_high_risk_group,omitempty"`
-	AuthenticationAssuranceTimeout int                    `json:"authentication_assurance_timeout,omitempty"`
-	LastUpdated                    time.Time              `json:"last_updated,omitempty"`
-}
-
-// IdentityPreferences represents user preferences for a group identity
-type IdentityPreferences struct {
-	GroupID     string                 `json:"group_id"`
-	IdentityID  string                 `json:"identity_id"`
-	Preferences map[string]interface{} `json:"preferences"`
-	LastUpdated time.Time              `json:"last_updated,omitempty"`
-}
-
-// MembershipFields represents custom membership fields for a group
-type MembershipFields struct {
-	GroupID     string                 `json:"group_id"`
-	Fields      map[string]interface{} `json:"fields"`
-	LastUpdated time.Time              `json:"last_updated,omitempty"`
+	IsHighAssurance                bool     `json:"is_high_assurance"`
+	GroupVisibility                string   `json:"group_visibility"`         // authenticated | private
+	GroupMembersVisibility         string   `json:"group_members_visibility"` // members | managers
+	JoinRequests                   bool     `json:"join_requests"`
+	SignupFields                   []string `json:"signup_fields"`
+	AuthenticationAssuranceTimeout *int     `json:"authentication_assurance_timeout,omitempty"`
 }
