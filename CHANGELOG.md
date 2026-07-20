@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — Timers (v3 module, Phase 2 parity audit vs 3.65.0)
+
+**Breaking** within the v3 line:
+
+- Base URL corrected to `https://timer.automate.globus.org/`; paths moved to
+  `/jobs/` and `POST /v2/timer` (wrapped `{"timer": ...}`); update is
+  `PATCH /jobs/{id}`.
+- Create document reshaped (`timer_type`/`name`/`schedule`/`body`, `flow_id` for
+  flow timers); `Schedule` uses once/recurring shapes (`interval_seconds`,
+  structured `end`). New `NewOnceSchedule`/`NewRecurringSchedule`/
+  `NewTransferTimer`/`NewFlowTimer` builders and `CreateJob`.
+- `CreateTimer`/`UpdateTimer` take an `interface{}` document; `ResumeTimer` takes
+  an optional `*bool`; `CreateFlowTimer`/`CreateTransferTimer` reworked.
+- Removed phantom methods/types: `RunTimer`, `ListRuns`, `GetRun`,
+  `GetCurrentUser`, cron timers, and `TimerRun`/`RunResult`/`Callback`/
+  `CreateTimerRequest`/`UpdateTimerRequest`/`CurrentUserInfo`.
+
 ### Changed — Groups (v3 module — `github.com/scttfrdmn/globus-go-sdk/v3`, Phase 2 parity audit vs 3.65.0)
 
 **Breaking** within the v3 line — removed methods that hit nonexistent routes:

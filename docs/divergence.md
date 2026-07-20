@@ -16,6 +16,30 @@ into Go types and clients.
 Sections below prefixed **v3:** apply to the frozen v3 module (tracking Python
 globus-sdk 3.65.0); all other sections apply to the active v4 module.
 
+## v3 Timers: realigned to the 3.65.0 wire (base URL, /jobs/, document shape)
+
+The v3 timers client diverged from Python globus-sdk 3.65.0 on base URL, paths,
+and document shape (same issues later seen in v4). Corrected:
+
+- **Base URL** `https://timer.automate.globus.org/` (was `.../api/v1/`). Classic
+  routes are under `/jobs/` and creation is `POST /v2/timer`.
+- **Paths/verbs:** list `GET /jobs/`, get `GET /jobs/{id}`, create
+  `POST /v2/timer` (body wrapped `{"timer": ...}`), legacy create `POST /jobs/`,
+  update `PATCH /jobs/{id}` (was `PATCH /timers/{id}`), delete `DELETE /jobs/{id}`,
+  pause/resume `POST /jobs/{id}/{pause,resume}` (resume takes optional
+  `{"update_credentials": bool}`).
+- **Removed phantom methods** with no upstream route: `RunTimer`, `ListRuns`,
+  `GetRun`, `GetCurrentUser`, `CreateCronTimer`/`CreateFlowTimerCron` (no cron
+  schedules at 3.65.0), and the `TimerRun`/`TimerRunList`/`RunResult`/`RunError`/
+  `CurrentUserInfo`/`Callback`/`CreateTimerRequest`/`UpdateTimerRequest` types.
+- **Create document** reshaped to `timer_type`/`name`/`schedule`/`body`
+  (+`flow_id`); `Schedule` serializes the once/recurring shapes
+  (`interval_seconds` int, structured `end`). Added `NewOnceSchedule`/
+  `NewRecurringSchedule`/`NewTransferTimer`/`NewFlowTimer` builders, `CreateJob`,
+  and reworked `CreateFlowTimer`/`CreateTransferTimer` helpers.
+- `list_jobs` is not paginated upstream; `ListTimers` does a single fetch and
+  `ListTimersOptions` is a query-param passthrough.
+
 ## v3 Groups: removed fabricated members/roles surface (Phase 2 audit vs 3.65.0)
 
 The v3 groups client had the same fabrications later inherited by v4. Corrected
