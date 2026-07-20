@@ -339,6 +339,7 @@ func (c *Client) Rename(ctx context.Context, endpointID, oldPath, newPath string
 
 	return &response, nil
 }
+
 // CreateTunnel creates a new Globus Streams tunnel.
 // Added in Python SDK v4.3.0.
 func (c *Client) CreateTunnel(ctx context.Context, data *TunnelCreate) (*Tunnel, error) {
@@ -485,4 +486,3 @@ func (c *Client) GetSubmissionID(ctx context.Context) (string, error) {
 func (c *Client) Close() error {
 	return c.baseClient.Close()
 }
-

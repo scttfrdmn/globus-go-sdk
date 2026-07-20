@@ -141,5 +141,5 @@ type IdentityPreferences struct {
 type MembershipFields struct {
 	GroupID     string                 `json:"group_id"`
 	Fields      map[string]interface{} `json:"fields"`
-	LastUpdated time.Time             `json:"last_updated,omitempty"`
+	LastUpdated time.Time              `json:"last_updated,omitempty"`
 }

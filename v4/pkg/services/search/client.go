@@ -319,8 +319,8 @@ func (c *Client) AddRole(ctx context.Context, indexID, principal, roleID string)
 	}
 
 	body := map[string]interface{}{
-		"principal":   principal,
-		"role_id":     roleID,
+		"principal": principal,
+		"role_id":   roleID,
 	}
 
 	path := fmt.Sprintf("/index/%s/role", indexID)
@@ -346,6 +346,7 @@ func (c *Client) RemoveRole(ctx context.Context, indexID, roleID string) error {
 	path := fmt.Sprintf("/index/%s/role/%s", indexID, roleID)
 	return c.baseClient.DoRequest(ctx, http.MethodDelete, path, nil, nil, nil)
 }
+
 // ReopenIndex reopens a previously deleted index.
 // Added in Python SDK v4.0.0b1.
 func (c *Client) ReopenIndex(ctx context.Context, indexID string) (*Index, error) {
@@ -409,4 +410,3 @@ func (c *Client) GetTaskStatus(ctx context.Context, indexID, taskID string) (*In
 func (c *Client) Close() error {
 	return c.baseClient.Close()
 }
-

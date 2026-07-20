@@ -13,7 +13,7 @@ const fileVersion = "2.0"
 
 // jsonFileFormat is the on-disk representation.
 type jsonFileFormat struct {
-	Version string                        `json:"version"`
+	Version string                           `json:"version"`
 	ByRS    map[string]map[string]*TokenData `json:"by_rs"`
 }
 

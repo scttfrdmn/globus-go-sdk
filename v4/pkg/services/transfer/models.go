@@ -42,22 +42,22 @@ type ListEndpointsOptions struct {
 
 // Transfer represents a transfer task submission
 type Transfer struct {
-	DATA_TYPE           string         `json:"DATA_TYPE"`
-	SourceEndpoint      string         `json:"source_endpoint"`
-	DestinationEndpoint string         `json:"destination_endpoint"`
-	Label               string         `json:"label,omitempty"`
-	SyncLevel           int            `json:"sync_level,omitempty"`
-	VerifyChecksum      bool           `json:"verify_checksum,omitempty"`
-	PreserveTimestamp   bool           `json:"preserve_timestamp,omitempty"`
-	EncryptData         bool           `json:"encrypt_data,omitempty"`
-	DeleteDestinationExtra bool        `json:"delete_destination_extra,omitempty"`
-	SkipSourceErrors    bool           `json:"skip_source_errors,omitempty"`
-	FailOnQuotaErrors   bool           `json:"fail_on_quota_errors,omitempty"`
-	Items               []TransferItem `json:"DATA"`
-	NotifyOnSucceeded   bool           `json:"notify_on_succeeded,omitempty"`
-	NotifyOnFailed      bool           `json:"notify_on_failed,omitempty"`
-	NotifyOnInactive    bool           `json:"notify_on_inactive,omitempty"`
-	Deadline            string         `json:"deadline,omitempty"`
+	DATA_TYPE              string         `json:"DATA_TYPE"`
+	SourceEndpoint         string         `json:"source_endpoint"`
+	DestinationEndpoint    string         `json:"destination_endpoint"`
+	Label                  string         `json:"label,omitempty"`
+	SyncLevel              int            `json:"sync_level,omitempty"`
+	VerifyChecksum         bool           `json:"verify_checksum,omitempty"`
+	PreserveTimestamp      bool           `json:"preserve_timestamp,omitempty"`
+	EncryptData            bool           `json:"encrypt_data,omitempty"`
+	DeleteDestinationExtra bool           `json:"delete_destination_extra,omitempty"`
+	SkipSourceErrors       bool           `json:"skip_source_errors,omitempty"`
+	FailOnQuotaErrors      bool           `json:"fail_on_quota_errors,omitempty"`
+	Items                  []TransferItem `json:"DATA"`
+	NotifyOnSucceeded      bool           `json:"notify_on_succeeded,omitempty"`
+	NotifyOnFailed         bool           `json:"notify_on_failed,omitempty"`
+	NotifyOnInactive       bool           `json:"notify_on_inactive,omitempty"`
+	Deadline               string         `json:"deadline,omitempty"`
 }
 
 // TransferItem represents a single file/directory to transfer
@@ -72,17 +72,17 @@ type TransferItem struct {
 
 // Delete represents a delete task submission
 type Delete struct {
-	DATA_TYPE          string       `json:"DATA_TYPE"`
-	Endpoint           string       `json:"endpoint"`
-	Label              string       `json:"label,omitempty"`
-	Recursive          bool         `json:"recursive,omitempty"`
-	IgnoreMissing      bool         `json:"ignore_missing,omitempty"`
-	InterpretGlob      bool         `json:"interpret_globs,omitempty"`
-	Items              []DeleteItem `json:"DATA"`
-	NotifyOnSucceeded  bool         `json:"notify_on_succeeded,omitempty"`
-	NotifyOnFailed     bool         `json:"notify_on_failed,omitempty"`
-	NotifyOnInactive   bool         `json:"notify_on_inactive,omitempty"`
-	Deadline           string       `json:"deadline,omitempty"`
+	DATA_TYPE         string       `json:"DATA_TYPE"`
+	Endpoint          string       `json:"endpoint"`
+	Label             string       `json:"label,omitempty"`
+	Recursive         bool         `json:"recursive,omitempty"`
+	IgnoreMissing     bool         `json:"ignore_missing,omitempty"`
+	InterpretGlob     bool         `json:"interpret_globs,omitempty"`
+	Items             []DeleteItem `json:"DATA"`
+	NotifyOnSucceeded bool         `json:"notify_on_succeeded,omitempty"`
+	NotifyOnFailed    bool         `json:"notify_on_failed,omitempty"`
+	NotifyOnInactive  bool         `json:"notify_on_inactive,omitempty"`
+	Deadline          string       `json:"deadline,omitempty"`
 }
 
 // DeleteItem represents a single file/directory to delete
@@ -93,29 +93,29 @@ type DeleteItem struct {
 
 // Task represents a transfer or delete task
 type Task struct {
-	DATA_TYPE           string    `json:"DATA_TYPE"`
-	TaskID              string    `json:"task_id"`
-	Type                string    `json:"type"`
-	Status              string    `json:"status"`
-	Label               string    `json:"label,omitempty"`
-	SourceEndpoint      string    `json:"source_endpoint,omitempty"`
-	DestinationEndpoint string    `json:"destination_endpoint,omitempty"`
-	Endpoint            string    `json:"endpoint,omitempty"`
-	RequestTime         time.Time `json:"request_time"`
-	CompletionTime      time.Time `json:"completion_time,omitempty"`
-	DeadlineTime        time.Time `json:"deadline,omitempty"`
-	BytesTransferred    int64     `json:"bytes_transferred"`
-	BytesChecksummed    int64     `json:"bytes_checksummed"`
-	FilesTransferred    int       `json:"files_transferred"`
-	FilesSkipped        int       `json:"files_skipped"`
-	Directories         int       `json:"directories"`
-	FatalError          *TaskError `json:"fatal_error,omitempty"`
-	IsOk                bool      `json:"is_ok"`
-	IsPaused            bool      `json:"is_paused"`
-	Owner               string    `json:"owner_string,omitempty"`
-	NiceStatus          string    `json:"nice_status,omitempty"`
-	NiceStatusShortDescription string `json:"nice_status_short_description,omitempty"`
-	NiceStatusDetails   string    `json:"nice_status_details,omitempty"`
+	DATA_TYPE                  string     `json:"DATA_TYPE"`
+	TaskID                     string     `json:"task_id"`
+	Type                       string     `json:"type"`
+	Status                     string     `json:"status"`
+	Label                      string     `json:"label,omitempty"`
+	SourceEndpoint             string     `json:"source_endpoint,omitempty"`
+	DestinationEndpoint        string     `json:"destination_endpoint,omitempty"`
+	Endpoint                   string     `json:"endpoint,omitempty"`
+	RequestTime                time.Time  `json:"request_time"`
+	CompletionTime             time.Time  `json:"completion_time,omitempty"`
+	DeadlineTime               time.Time  `json:"deadline,omitempty"`
+	BytesTransferred           int64      `json:"bytes_transferred"`
+	BytesChecksummed           int64      `json:"bytes_checksummed"`
+	FilesTransferred           int        `json:"files_transferred"`
+	FilesSkipped               int        `json:"files_skipped"`
+	Directories                int        `json:"directories"`
+	FatalError                 *TaskError `json:"fatal_error,omitempty"`
+	IsOk                       bool       `json:"is_ok"`
+	IsPaused                   bool       `json:"is_paused"`
+	Owner                      string     `json:"owner_string,omitempty"`
+	NiceStatus                 string     `json:"nice_status,omitempty"`
+	NiceStatusShortDescription string     `json:"nice_status_short_description,omitempty"`
+	NiceStatusDetails          string     `json:"nice_status_details,omitempty"`
 }
 
 // TaskError represents an error that occurred during a task
@@ -127,13 +127,13 @@ type TaskError struct {
 
 // TaskSubmitResponse represents the response from submitting a task
 type TaskSubmitResponse struct {
-	DATA_TYPE        string `json:"DATA_TYPE"`
-	Code             string `json:"code"`
-	Message          string `json:"message"`
-	RequestID        string `json:"request_id"`
-	Resource         string `json:"resource"`
-	TaskID           string `json:"task_id"`
-	SubmissionID     string `json:"submission_id"`
+	DATA_TYPE    string `json:"DATA_TYPE"`
+	Code         string `json:"code"`
+	Message      string `json:"message"`
+	RequestID    string `json:"request_id"`
+	Resource     string `json:"resource"`
+	TaskID       string `json:"task_id"`
+	SubmissionID string `json:"submission_id"`
 }
 
 // TaskCancelResponse represents the response from canceling a task
@@ -177,14 +177,14 @@ type DirectoryEntry struct {
 
 // DirectoryListing represents the contents of a directory
 type DirectoryListing struct {
-	DATA_TYPE     string           `json:"DATA_TYPE"`
-	Path          string           `json:"path"`
-	Endpoint      string           `json:"endpoint"`
-	Data          []DirectoryEntry `json:"DATA"`
-	AbsolutePath  string           `json:"absolute_path,omitempty"`
-	Offset        int              `json:"offset"`
-	Limit         int              `json:"limit"`
-	Total         int              `json:"total"`
+	DATA_TYPE    string           `json:"DATA_TYPE"`
+	Path         string           `json:"path"`
+	Endpoint     string           `json:"endpoint"`
+	Data         []DirectoryEntry `json:"DATA"`
+	AbsolutePath string           `json:"absolute_path,omitempty"`
+	Offset       int              `json:"offset"`
+	Limit        int              `json:"limit"`
+	Total        int              `json:"total"`
 }
 
 // ListDirectoryOptions contains options for listing directory contents

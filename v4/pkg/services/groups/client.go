@@ -246,6 +246,7 @@ func (c *Client) RemoveMember(ctx context.Context, groupID, identityID string) e
 	endpoint := fmt.Sprintf("/groups/%s/members/%s", groupID, identityID)
 	return c.baseClient.DoRequest(ctx, http.MethodDelete, endpoint, nil, nil, nil)
 }
+
 // UpdateMemberRole changes the role of an existing member.
 func (c *Client) UpdateMemberRole(ctx context.Context, groupID, identityID, roleID string) error {
 	if groupID == "" {
@@ -431,4 +432,3 @@ func (c *Client) SetMembershipFields(ctx context.Context, groupID string, fields
 func (c *Client) Close() error {
 	return c.baseClient.Close()
 }
-
