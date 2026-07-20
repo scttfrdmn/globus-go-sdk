@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed (v4 module — `github.com/scttfrdmn/globus-go-sdk/v4`)
+
+Core wire-fidelity fixes from the Phase 2 parity audit against Python
+globus-sdk v4.8.1 (both bugs affected every service):
+
+- `core.Client.buildURL` no longer overwrites the base URL's path; it joins the
+  endpoint onto the base path so version prefixes (auth `/v2`, transfer
+  `/v0.10`, etc.) are preserved instead of silently dropped. Auth's project
+  endpoints were made relative to match.
+- `core.Client.DoRequest` now sends a `url.Values` request body as
+  `application/x-www-form-urlencoded` (required by the OAuth2
+  token/introspect/revoke endpoints); previously it JSON-marshalled every body.
+
 ### Added (v4 module — `github.com/scttfrdmn/globus-go-sdk/v4`)
 
 Closes the wire-visible gap to upstream Python globus-sdk **v4.8.1**.

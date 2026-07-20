@@ -10,6 +10,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 )
 
@@ -51,17 +52,26 @@ func (c *Client) DoRequest(ctx context.Context, method, endpoint string, query u
 	// Build URL
 	reqURL := c.buildURL(endpoint, query)
 
-	// Marshal request body if provided
+	// Marshal request body if provided.
+	// A url.Values body is sent as application/x-www-form-urlencoded (required
+	// by the OAuth2 token/introspect/revoke endpoints); anything else is JSON.
 	var bodyReader io.Reader
+	contentType := ""
 	if body != nil {
-		bodyBytes, err := json.Marshal(body)
-		if err != nil {
-			return &ValidationError{
-				Message: fmt.Sprintf("failed to marshal request body: %v", err),
-				Value:   body,
+		if form, ok := body.(url.Values); ok {
+			bodyReader = strings.NewReader(form.Encode())
+			contentType = "application/x-www-form-urlencoded"
+		} else {
+			bodyBytes, err := json.Marshal(body)
+			if err != nil {
+				return &ValidationError{
+					Message: fmt.Sprintf("failed to marshal request body: %v", err),
+					Value:   body,
+				}
 			}
+			bodyReader = bytes.NewReader(bodyBytes)
+			contentType = "application/json"
 		}
-		bodyReader = bytes.NewReader(bodyBytes)
 	}
 
 	// Create HTTP request
@@ -89,8 +99,8 @@ func (c *Client) DoRequest(ctx context.Context, method, endpoint string, query u
 	} else {
 		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.config.AccessToken))
 	}
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
 	}
 	req.Header.Set("Accept", "application/json")
 
@@ -204,7 +214,11 @@ func (c *Client) buildURL(endpoint string, query url.Values) string {
 	}
 
 	u, _ := url.Parse(baseURL)
-	u.Path = endpoint
+	// Join the endpoint onto the base URL's path rather than overwriting it, so
+	// a base URL carrying a version prefix (e.g. .../v2, .../v0.10) is preserved.
+	// Endpoints are written as absolute-looking paths ("/oauth2/token"); trim the
+	// leading slash so JoinPath appends instead of treating it as already-joined.
+	u = u.JoinPath(strings.TrimPrefix(endpoint, "/"))
 	if query != nil {
 		u.RawQuery = query.Encode()
 	}

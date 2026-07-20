@@ -169,7 +169,7 @@ func (c *Client) RefreshToken(ctx context.Context, refreshToken, clientID, clien
 // v4: Context is always first parameter
 func (c *Client) GetProjects(ctx context.Context) ([]Project, error) {
 	var projects []Project
-	err := c.baseClient.DoRequest(ctx, http.MethodGet, "/v2/api/projects", nil, nil, &projects)
+	err := c.baseClient.DoRequest(ctx, http.MethodGet, "/api/projects", nil, nil, &projects)
 	if err != nil {
 		return nil, err
 	}
@@ -193,7 +193,7 @@ func (c *Client) CreateProject(ctx context.Context, project *ProjectCreate) (*Pr
 	}
 
 	var result Project
-	err := c.baseClient.DoRequest(ctx, http.MethodPost, "/v2/api/projects", nil, project, &result)
+	err := c.baseClient.DoRequest(ctx, http.MethodPost, "/api/projects", nil, project, &result)
 	if err != nil {
 		return nil, err
 	}
@@ -211,7 +211,7 @@ func (c *Client) GetProject(ctx context.Context, projectID string) (*Project, er
 	}
 
 	var project Project
-	endpoint := fmt.Sprintf("/v2/api/projects/%s", projectID)
+	endpoint := fmt.Sprintf("/api/projects/%s", projectID)
 	err := c.baseClient.DoRequest(ctx, http.MethodGet, endpoint, nil, nil, &project)
 	if err != nil {
 		return nil, err
@@ -229,7 +229,7 @@ func (c *Client) DeleteProject(ctx context.Context, projectID string) error {
 		}
 	}
 
-	endpoint := fmt.Sprintf("/v2/api/projects/%s", projectID)
+	endpoint := fmt.Sprintf("/api/projects/%s", projectID)
 	return c.baseClient.DoRequest(ctx, http.MethodDelete, endpoint, nil, nil, nil)
 }
 // GetAuthorizationURL constructs the Globus Auth authorization URL that the
