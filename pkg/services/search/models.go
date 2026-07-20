@@ -24,11 +24,7 @@ type Index struct {
 
 // IndexList is a list of indexes
 type IndexList struct {
-	Indexes   []Index `json:"indexes,omitempty"`
-	Total     int     `json:"total,omitempty"`
-	HadErrors bool    `json:"had_errors,omitempty"`
-	HasMore   bool    `json:"has_more,omitempty"`
-	Marker    string  `json:"marker,omitempty"`
+	Indexes []Index `json:"index_list,omitempty"`
 }
 
 // IndexCreateRequest is the request to create a new index
@@ -141,42 +137,42 @@ type SearchResult struct {
 	Score     float64                `json:"score"`
 }
 
-// SearchResponse is the response from a search operation
+// SearchResponse is the response from a search operation. Results are decoded
+// from the upstream "gmeta" key; Marker carries the scroll cursor.
 type SearchResponse struct {
-	Count     int            `json:"count"`
-	Total     int            `json:"total"`
-	Subjects  []string       `json:"subjects"`
-	Results   []SearchResult `json:"results"`
-	Facets    []Facet        `json:"facets,omitempty"`
-	HadErrors bool           `json:"had_errors"`
-	HasMore   bool           `json:"has_more"`
-	PageToken string         `json:"page_token,omitempty"`
+	Count       int            `json:"count"`
+	Total       int            `json:"total"`
+	Offset      int            `json:"offset"`
+	GMeta       []SearchResult `json:"gmeta"`
+	Facets      []Facet        `json:"facet_results,omitempty"`
+	HasNextPage bool           `json:"has_next_page"`
+	Marker      string         `json:"marker,omitempty"`
+
+	// Results is an alias for GMeta retained for the iterator helpers.
+	Results   []SearchResult `json:"-"`
+	HasMore   bool           `json:"-"`
+	PageToken string         `json:"-"`
 }
 
-// DeleteDocumentsRequest represents a request to delete documents
+// DeleteDocumentsRequest represents a request to delete documents by subject.
 type DeleteDocumentsRequest struct {
-	IndexID  string   `json:"index_id"`
+	IndexID  string   `json:"-"`
 	Subjects []string `json:"subjects"`
 }
 
-// DeleteDocumentsResponse is the response from a delete operation
+// DeleteDocumentsResponse is the response from a delete operation. task_id is at
+// the top level.
 type DeleteDocumentsResponse struct {
-	Task      IngestTask `json:"task"`
-	Succeeded int        `json:"succeeded"`
-	Failed    int        `json:"failed"`
-	Total     int        `json:"total"`
+	TaskID string `json:"task_id"`
 }
 
-// TaskStatusResponse represents the status of a task
+// TaskStatusResponse represents the status of a task.
 type TaskStatusResponse struct {
-	TaskID           string   `json:"task_id"`
-	State            string   `json:"state"`
-	CreatedAt        string   `json:"created_at"`
-	CompletedAt      string   `json:"completed_at,omitempty"`
-	DetailLocation   string   `json:"detail_location,omitempty"`
-	TotalDocuments   int      `json:"total_documents"`
-	FailedDocuments  int      `json:"failed_documents"`
-	SuccessDocuments int      `json:"success_documents"`
-	FailedSubjects   []string `json:"failed_subjects,omitempty"`
-	ErrorCount       int      `json:"error_count"`
+	TaskID         string `json:"task_id"`
+	IndexID        string `json:"index_id"`
+	State          string `json:"state"`
+	CreatedAt      string `json:"created_at,omitempty"`
+	CompletedAt    string `json:"completed_at,omitempty"`
+	DetailLocation string `json:"detail_location,omitempty"`
+	Message        string `json:"message,omitempty"`
 }

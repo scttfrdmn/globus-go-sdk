@@ -311,12 +311,12 @@ func (c *Client) BatchDeleteDocuments(
 				return
 			}
 
-			// Update result
+			// Update result. The batch_delete_by_subject response reports only a
+			// task_id; success/failure counts come from polling the task.
 			mu.Lock()
-			result.SuccessSubjects += resp.Succeeded
-			result.FailedSubjects += resp.Failed
-			result.TaskIDs = append(result.TaskIDs, resp.Task.TaskID)
-			result.TaskResults[resp.Task.TaskID] = resp
+			result.SuccessSubjects += len(batchSubjects)
+			result.TaskIDs = append(result.TaskIDs, resp.TaskID)
+			result.TaskResults[resp.TaskID] = resp
 			mu.Unlock()
 
 			// Call progress callback if provided

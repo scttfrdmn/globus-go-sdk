@@ -16,6 +16,25 @@ into Go types and clients.
 Sections below prefixed **v3:** apply to the frozen v3 module (tracking Python
 globus-sdk 3.65.0); all other sections apply to the active v4 module.
 
+## v3 Search: index-scoped routes, gmeta/index_list keys (Phase 2 audit vs 3.65.0)
+
+The v3 search client posted to non-index-scoped routes and decoded the wrong
+response keys. Corrected to match Python globus-sdk 3.65.0:
+
+- **Index-scoped routes:** `IngestDocuments` → `POST /index/{id}/ingest`,
+  `Search`/`StructuredSearch` → `POST /index/{id}/search`, `DeleteDocuments` →
+  `POST /index/{id}/batch_delete_by_subject` (were `/ingest`, `/search`,
+  `/delete`). `IndexID` moved out of the delete body into the path.
+- **Response keys:** `IndexList` decodes `index_list` (was `indexes`);
+  `SearchResponse` decodes results from `gmeta` and paginates via `has_next_page`
+  + offset (was `results`/`page_token`); `DeleteDocumentsResponse` reads the
+  top-level `task_id`; `TaskStatusResponse` gained `index_id`. The search
+  iterator advances by offset.
+- **Added methods:** `GetSearch` (GET), `Scroll`, `DeleteByQuery`, `GetSubject`/
+  `DeleteSubject` and `GetEntry`/`DeleteEntry` (subject/entry_id as query params),
+  `GetTaskList` (`GET /task_list/{index_id}`), and role ops (`CreateRole`,
+  `GetRoleList`, `DeleteRole`).
+
 ## v3 Timers: realigned to the 3.65.0 wire (base URL, /jobs/, document shape)
 
 The v3 timers client diverged from Python globus-sdk 3.65.0 on base URL, paths,

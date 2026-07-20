@@ -10,6 +10,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — Search (v3 module, Phase 2 parity audit vs 3.65.0)
+
+**Breaking** within the v3 line:
+
+- Ingest/search/delete now use index-scoped routes (`/index/{id}/ingest`,
+  `/index/{id}/search`, `/index/{id}/batch_delete_by_subject`).
+- `IndexList` decodes `index_list`; `SearchResponse` reads `gmeta` +
+  `has_next_page` (offset-paginated iterator); `DeleteDocumentsResponse` reads
+  top-level `task_id`; `TaskStatusResponse` gained `index_id` and dropped
+  unverified counters.
+- Added `GetSearch`, `Scroll`, `DeleteByQuery`, `GetSubject`/`DeleteSubject`,
+  `GetEntry`/`DeleteEntry`, `GetTaskList`, and role ops (`CreateRole`,
+  `GetRoleList`, `DeleteRole`).
+
 ### Changed — Timers (v3 module, Phase 2 parity audit vs 3.65.0)
 
 **Breaking** within the v3 line:
