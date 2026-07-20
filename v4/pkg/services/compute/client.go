@@ -43,12 +43,16 @@ func NewClient(ctx context.Context, config *core.Config) (*Client, error) {
 
 // GetVersion returns the compute service version (GET /v2/version). Pass opts to
 // scope to a particular service component; opts may be nil.
-func (c *Client) GetVersion(ctx context.Context, opts *GetVersionOptions) (map[string]interface{}, error) {
+//
+// The response is polymorphic: with no service it is a bare JSON string (the API
+// version), and with a service it is a JSON object. The result is returned as an
+// untyped value (string or map[string]interface{}); type-assert as needed.
+func (c *Client) GetVersion(ctx context.Context, opts *GetVersionOptions) (interface{}, error) {
 	query := url.Values{}
 	if opts != nil && opts.Service != "" {
 		query.Set("service", opts.Service)
 	}
-	var result map[string]interface{}
+	var result interface{}
 	if err := c.baseClient.DoRequest(ctx, http.MethodGet, "/v2/version", query, nil, &result); err != nil {
 		return nil, err
 	}
@@ -85,12 +89,19 @@ func (c *Client) GetEndpoint(ctx context.Context, endpointID string) (map[string
 
 // GetEndpoints lists compute endpoints (GET /v2/endpoints). Pass opts.Role to
 // filter (e.g. "owner", "any"); opts may be nil.
-func (c *Client) GetEndpoints(ctx context.Context, opts *GetEndpointsOptions) (map[string]interface{}, error) {
+//
+// The response is a top-level JSON array of endpoint documents, so the result is
+// returned as a slice of passthrough maps.
+func (c *Client) GetEndpoints(ctx context.Context, opts *GetEndpointsOptions) ([]map[string]interface{}, error) {
 	query := url.Values{}
 	if opts != nil && opts.Role != "" {
 		query.Set("role", opts.Role)
 	}
-	return c.get(ctx, "/v2/endpoints", query)
+	var result []map[string]interface{}
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, "/v2/endpoints", query, nil, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // GetEndpointStatus retrieves an endpoint's status (GET /v2/endpoints/{id}/status).

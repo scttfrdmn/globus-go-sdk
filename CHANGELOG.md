@@ -23,6 +23,17 @@ globus-sdk v4.8.1 (both bugs affected every service):
   `application/x-www-form-urlencoded` (required by the OAuth2
   token/introspect/revoke endpoints); previously it JSON-marshalled every body.
 
+### Fixed — Compute non-object responses (both v3 and v4 modules)
+
+**Breaking** for two compute methods, in both modules:
+
+- `GetEndpoints` (`GET /v2/endpoints`) returns a top-level JSON array, so it now
+  returns `([]map[string]interface{}, error)` instead of
+  `(map[string]interface{}, error)` — the map form could never decode the array.
+- `GetVersion` (`GET /v2/version`) returns a bare JSON string with no `service`
+  (and an object with one), so it now returns `(interface{}, error)`; type-assert
+  to `string` or `map[string]interface{}` as needed.
+
 ### Changed (v4 module — `github.com/scttfrdmn/globus-go-sdk/v4`)
 
 Timers client realigned to the Python globus-sdk 4.8.1 wire (Phase 2 audit).

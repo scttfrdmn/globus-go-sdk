@@ -76,11 +76,15 @@ Upstream Globus Compute (at 4.8.1) is only `__init__.py`, `client.py`, and
 `errors.py` — it defines **no** request/response models and **no** pagination.
 The Phase 2 audit realigned the Go client to that reality:
 
-- **Passthrough everywhere.** All request bodies are `map[string]interface{}`
-  and all responses are `map[string]interface{}`. The previously invented typed
+- **Passthrough everywhere.** Request bodies are `map[string]interface{}` and
+  object responses are `map[string]interface{}`. The previously invented typed
   models (`Endpoint`, `EndpointList`, `FunctionRun`, `FunctionList`,
   `TaskStatus`, `TaskList`, `FunctionDefinition`, `FunctionRegistration`,
   `BatchTask*`, etc.) were removed — none were verifiable against the wire.
+  Two endpoints do not return JSON objects, so their methods return their real
+  shape: `GetEndpoints` (`GET /v2/endpoints`) returns a top-level array
+  (`[]map[string]interface{}`), and `GetVersion` (`GET /v2/version`) returns an
+  untyped value (a bare string with no `service`, or an object with one).
 - **Base URL → host root.** `https://compute.api.globus.org` (was `.../v2`), and
   every endpoint carries its own `/v2` or `/v3` prefix, so both API surfaces are
   reachable through the path-joining buildURL.
@@ -350,11 +354,14 @@ against non-existent routes) out of ~62 upstream. Corrected:
 - **No request/response models, no pagination.** Upstream `ComputeClient` (at
   3.65.0) sends and returns open-ended JSON documents and defines no model
   classes or paginators for the compute web service. The Go client mirrors this
-  with `map[string]interface{}` bodies and results everywhere; `models.go` is a
+  with `map[string]interface{}` bodies and object results; `models.go` is a
   comment-only file. The previously-defined `ComputeEndpoint`,
   `ComputeEndpointList`, container/environment/dependency/batch model types and
   their `ListEndpoints`/`ListEndpointsOptions` surface were fabricated and have
-  been removed.
+  been removed. Two endpoints do not return JSON objects, so their methods return
+  their real shape: `GetEndpoints` (`GET /v2/endpoints`) returns a top-level
+  array (`[]map[string]interface{}`), and `GetVersion` (`GET /v2/version`)
+  returns an untyped value (a bare string with no `service`, or an object).
 - **Base URL → host root** (`https://compute.api.globus.org/`); the `/v2` and
   `/v3` prefixes live in each endpoint path rather than the base.
 - **V2 and V3 folded into one client.** V3 endpoint/function/submit routes are

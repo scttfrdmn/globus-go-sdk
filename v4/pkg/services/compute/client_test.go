@@ -69,14 +69,20 @@ func TestGetEndpoints(t *testing.T) {
 			assert.Equal(t, "/v2/endpoints", r.URL.Path)
 			assert.Equal(t, "owner", r.URL.Query().Get("role"))
 			assert.Empty(t, r.URL.Query().Get("limit"))
-			testhelpers.RespondJSON(w, http.StatusOK, map[string]interface{}{"endpoints": []interface{}{}})
+			// /v2/endpoints returns a top-level JSON array.
+			testhelpers.RespondJSON(w, http.StatusOK, []map[string]interface{}{
+				{"uuid": "ep-1"},
+				{"uuid": "ep-2"},
+			})
 		})
 		client, err := compute.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
 		require.NoError(t, err)
 		defer client.Close()
 
-		_, err = client.GetEndpoints(context.Background(), &compute.GetEndpointsOptions{Role: "owner"})
+		eps, err := client.GetEndpoints(context.Background(), &compute.GetEndpointsOptions{Role: "owner"})
 		require.NoError(t, err)
+		require.Len(t, eps, 2)
+		assert.Equal(t, "ep-1", eps[0]["uuid"])
 	})
 }
 
@@ -156,7 +162,26 @@ func TestGetVersionServiceParam(t *testing.T) {
 
 	res, err := client.GetVersion(context.Background(), &compute.GetVersionOptions{Service: "web"})
 	require.NoError(t, err)
-	assert.Equal(t, "1.0", res["version"])
+	// With a service, /v2/version returns a JSON object.
+	obj, ok := res.(map[string]interface{})
+	require.True(t, ok, "GetVersion should return an object when a service is given")
+	assert.Equal(t, "1.0", obj["version"])
+}
+
+func TestGetVersionScalarResponse(t *testing.T) {
+	// With no service, /v2/version returns a bare JSON string.
+	server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, "/v2/version", r.URL.Path)
+		assert.Empty(t, r.URL.Query().Get("service"))
+		testhelpers.RespondJSON(w, http.StatusOK, "2.34.0")
+	})
+	client, err := compute.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
+	require.NoError(t, err)
+	defer client.Close()
+
+	res, err := client.GetVersion(context.Background(), nil)
+	require.NoError(t, err)
+	assert.Equal(t, "2.34.0", res)
 }
 
 func TestClose(t *testing.T) {

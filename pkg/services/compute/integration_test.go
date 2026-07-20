@@ -71,19 +71,31 @@ func newIntegrationClient(t *testing.T) *Client {
 }
 
 func TestIntegration_GetVersion(t *testing.T) {
-	// KNOWN LIMITATION: GET /v2/version returns a bare JSON string (no `service`)
-	// and 422s on an arbitrary `service` value, so the map[string]interface{}
-	// return type of GetVersion cannot represent a successful response. Tracked
-	// as the compute passthrough array/scalar limitation in docs/divergence.md.
-	t.Skip("GetVersion returns a scalar the map-typed method cannot decode (known limitation)")
+	client := newIntegrationClient(t)
+
+	// GET /v2/version with no service returns a bare JSON string; GetVersion
+	// returns it as an untyped value.
+	version, err := client.GetVersion(context.Background(), "")
+	if err != nil {
+		t.Fatalf("GetVersion failed: %v", err)
+	}
+	t.Logf("Compute service version: %v", version)
 }
 
 func TestIntegration_GetEndpoints(t *testing.T) {
-	// KNOWN LIMITATION: GET /v2/endpoints returns a top-level JSON array, but
-	// GetEndpoints returns map[string]interface{} and cannot decode it. Tracked
-	// as a compute passthrough limitation (array/scalar responses); see
-	// docs/divergence.md. Skip until the client returns an untyped document.
-	t.Skip("GetEndpoints returns a JSON array the map-typed method cannot decode (known limitation)")
+	client := newIntegrationClient(t)
+
+	// GET /v2/endpoints returns a top-level JSON array; GetEndpoints returns a
+	// slice of passthrough maps.
+	endpoints, err := client.GetEndpoints(context.Background(), &GetEndpointsOptions{Role: "owner"})
+	if err != nil {
+		if core.IsNotFound(err) || core.IsForbidden(err) || core.IsUnauthorized(err) {
+			t.Logf("Request reached the service but returned an expected permissions error: %v", err)
+			return
+		}
+		t.Fatalf("GetEndpoints failed with unexpected error: %v", err)
+	}
+	t.Logf("Found %d endpoints", len(endpoints))
 }
 
 func TestIntegration_RegisterFunction(t *testing.T) {

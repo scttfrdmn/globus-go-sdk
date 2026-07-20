@@ -38,8 +38,35 @@ func TestGetVersion(t *testing.T) {
 	if err != nil {
 		t.Fatalf("GetVersion() error = %v", err)
 	}
-	if res["version"] != "1.0" {
-		t.Errorf("version = %v", res["version"])
+	// With a service, /v2/version returns a JSON object.
+	obj, ok := res.(map[string]interface{})
+	if !ok {
+		t.Fatalf("GetVersion() = %T, want map[string]interface{}", res)
+	}
+	if obj["version"] != "1.0" {
+		t.Errorf("version = %v", obj["version"])
+	}
+}
+
+func TestGetVersion_ScalarResponse(t *testing.T) {
+	// With no service, /v2/version returns a bare JSON string.
+	server, client, err := setupMockServer(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Query().Get("service") != "" {
+			t.Errorf("service should be omitted, got %q", r.URL.Query().Get("service"))
+		}
+		_ = json.NewEncoder(w).Encode("2.34.0")
+	})
+	if err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	defer server.Close()
+
+	res, err := client.GetVersion(context.Background(), "")
+	if err != nil {
+		t.Fatalf("GetVersion() error = %v", err)
+	}
+	if res != "2.34.0" {
+		t.Errorf("GetVersion() = %v, want %q", res, "2.34.0")
 	}
 }
 
@@ -54,15 +81,26 @@ func TestGetEndpoints(t *testing.T) {
 		if r.URL.Query().Get("limit") != "" {
 			t.Error("limit is not an upstream param")
 		}
-		_ = json.NewEncoder(w).Encode(map[string]interface{}{"endpoints": []interface{}{}})
+		// /v2/endpoints returns a top-level JSON array.
+		_ = json.NewEncoder(w).Encode([]map[string]interface{}{
+			{"uuid": "ep-1", "name": "one"},
+			{"uuid": "ep-2", "name": "two"},
+		})
 	})
 	if err != nil {
 		t.Fatalf("setup: %v", err)
 	}
 	defer server.Close()
 
-	if _, err := client.GetEndpoints(context.Background(), &GetEndpointsOptions{Role: "owner"}); err != nil {
+	eps, err := client.GetEndpoints(context.Background(), &GetEndpointsOptions{Role: "owner"})
+	if err != nil {
 		t.Fatalf("GetEndpoints() error = %v", err)
+	}
+	if len(eps) != 2 {
+		t.Fatalf("GetEndpoints() len = %d, want 2", len(eps))
+	}
+	if eps[0]["uuid"] != "ep-1" {
+		t.Errorf("eps[0].uuid = %v, want ep-1", eps[0]["uuid"])
 	}
 }
 

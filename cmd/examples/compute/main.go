@@ -29,9 +29,10 @@ func main() {
 	}
 	ctx := context.Background()
 
-	// Service version.
+	// Service version. With no service argument the API returns a bare string;
+	// GetVersion returns it as an untyped value.
 	if version, err := computeClient.GetVersion(ctx, ""); err == nil {
-		fmt.Printf("Compute service version: %v\n", version["version"])
+		fmt.Printf("Compute service version: %v\n", version)
 	}
 
 	// List endpoints the caller owns.
