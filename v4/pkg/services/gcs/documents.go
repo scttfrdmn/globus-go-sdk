@@ -14,27 +14,27 @@ type CollectionDocument struct {
 	DataType       string `json:"DATA_TYPE,omitempty"`
 	CollectionType string `json:"collection_type,omitempty"` // "mapped" | "guest"
 
-	CollectionBasePath              string          `json:"collection_base_path,omitempty"`
-	ContactEmail                    *string         `json:"contact_email,omitempty"`
-	ContactInfo                     *string         `json:"contact_info,omitempty"`
-	DefaultDirectory                string          `json:"default_directory,omitempty"`
-	Department                      *string         `json:"department,omitempty"`
-	Description                     *string         `json:"description,omitempty"`
-	DisplayName                     string          `json:"display_name,omitempty"`
-	IdentityID                      string          `json:"identity_id,omitempty"`
-	InfoLink                        *string         `json:"info_link,omitempty"`
-	Organization                    string          `json:"organization,omitempty"`
-	RestrictTransfersToHighAssurance string         `json:"restrict_transfers_to_high_assurance,omitempty"`
-	UserMessage                     *string         `json:"user_message,omitempty"`
-	UserMessageLink                 *string         `json:"user_message_link,omitempty"`
-	Keywords                        []string        `json:"keywords,omitempty"`
-	DisableVerify                   *bool           `json:"disable_verify,omitempty"`
-	EnableHTTPS                     *bool           `json:"enable_https,omitempty"`
-	ForceEncryption                 *bool           `json:"force_encryption,omitempty"`
-	ForceVerify                     *bool           `json:"force_verify,omitempty"`
-	Public                          *bool           `json:"public,omitempty"`
-	ACLExpirationMins               *int            `json:"acl_expiration_mins,omitempty"`
-	AssociatedFlowPolicy            json.RawMessage `json:"associated_flow_policy,omitempty"`
+	CollectionBasePath               string          `json:"collection_base_path,omitempty"`
+	ContactEmail                     *string         `json:"contact_email,omitempty"`
+	ContactInfo                      *string         `json:"contact_info,omitempty"`
+	DefaultDirectory                 string          `json:"default_directory,omitempty"`
+	Department                       *string         `json:"department,omitempty"`
+	Description                      *string         `json:"description,omitempty"`
+	DisplayName                      string          `json:"display_name,omitempty"`
+	IdentityID                       string          `json:"identity_id,omitempty"`
+	InfoLink                         *string         `json:"info_link,omitempty"`
+	Organization                     string          `json:"organization,omitempty"`
+	RestrictTransfersToHighAssurance string          `json:"restrict_transfers_to_high_assurance,omitempty"`
+	UserMessage                      *string         `json:"user_message,omitempty"`
+	UserMessageLink                  *string         `json:"user_message_link,omitempty"`
+	Keywords                         []string        `json:"keywords,omitempty"`
+	DisableVerify                    *bool           `json:"disable_verify,omitempty"`
+	EnableHTTPS                      *bool           `json:"enable_https,omitempty"`
+	ForceEncryption                  *bool           `json:"force_encryption,omitempty"`
+	ForceVerify                      *bool           `json:"force_verify,omitempty"`
+	Public                           *bool           `json:"public,omitempty"`
+	ACLExpirationMins                *int            `json:"acl_expiration_mins,omitempty"`
+	AssociatedFlowPolicy             json.RawMessage `json:"associated_flow_policy,omitempty"`
 
 	// Mapped-only.
 	DomainName             string          `json:"domain_name,omitempty"`

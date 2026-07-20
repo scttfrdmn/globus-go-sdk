@@ -78,15 +78,15 @@ func (t *TokenResponse) IsExpired() bool {
 
 // Project represents a Globus Auth project
 type Project struct {
-	ID            string           `json:"id"`
-	DisplayName   string           `json:"display_name"`
-	ContactEmail  string           `json:"contact_email"`
-	AdminIDs      []string         `json:"admin_ids"`
-	AdminGroupIDs []string         `json:"admin_group_ids,omitempty"`
-	Admins        *ProjectAdmins   `json:"admins,omitempty"`
-	ProjectName   string           `json:"project_name,omitempty"`
-	CreatedAt     time.Time        `json:"created_at"`
-	LastUpdated   time.Time        `json:"last_updated"`
+	ID            string         `json:"id"`
+	DisplayName   string         `json:"display_name"`
+	ContactEmail  string         `json:"contact_email"`
+	AdminIDs      []string       `json:"admin_ids"`
+	AdminGroupIDs []string       `json:"admin_group_ids,omitempty"`
+	Admins        *ProjectAdmins `json:"admins,omitempty"`
+	ProjectName   string         `json:"project_name,omitempty"`
+	CreatedAt     time.Time      `json:"created_at"`
+	LastUpdated   time.Time      `json:"last_updated"`
 }
 
 // ProjectAdmins is the expanded admins object on a project.

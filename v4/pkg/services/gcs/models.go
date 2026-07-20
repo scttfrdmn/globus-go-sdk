@@ -113,24 +113,24 @@ type GetCollectionOptions struct {
 
 // GCSInfo is the GET /info document (unauthenticated).
 type GCSInfo struct {
-	DataType string `json:"DATA_TYPE"`
-	ClientID string `json:"client_id"`
+	DataType   string `json:"DATA_TYPE"`
+	ClientID   string `json:"client_id"`
 	EndpointID string `json:"endpoint_id,omitempty"`
 }
 
 // Endpoint is the GET/PATCH /endpoint document.
 type Endpoint struct {
-	DataType      string   `json:"DATA_TYPE"`
-	ID            string   `json:"id"`
-	DisplayName   string   `json:"display_name,omitempty"`
-	GCSManagerURL string   `json:"gcs_manager_url,omitempty"`
-	Organization  string   `json:"organization,omitempty"`
-	Description   string   `json:"description,omitempty"`
-	ContactEmail  string   `json:"contact_email,omitempty"`
-	NetworkUse    string   `json:"network_use,omitempty"`
-	Public        bool     `json:"public,omitempty"`
-	Keywords      []string `json:"keywords,omitempty"`
-	SubscriptionID string  `json:"subscription_id,omitempty"`
+	DataType       string   `json:"DATA_TYPE"`
+	ID             string   `json:"id"`
+	DisplayName    string   `json:"display_name,omitempty"`
+	GCSManagerURL  string   `json:"gcs_manager_url,omitempty"`
+	Organization   string   `json:"organization,omitempty"`
+	Description    string   `json:"description,omitempty"`
+	ContactEmail   string   `json:"contact_email,omitempty"`
+	NetworkUse     string   `json:"network_use,omitempty"`
+	Public         bool     `json:"public,omitempty"`
+	Keywords       []string `json:"keywords,omitempty"`
+	SubscriptionID string   `json:"subscription_id,omitempty"`
 }
 
 // UpdateEndpointOptions carries the comma-joined include param for UpdateEndpoint.
@@ -178,11 +178,11 @@ type GetStorageGatewayOptions struct {
 
 // GCSRole is a role document.
 type GCSRole struct {
-	DataType  string  `json:"DATA_TYPE"`
-	ID        string  `json:"id"`
+	DataType   string  `json:"DATA_TYPE"`
+	ID         string  `json:"id"`
 	Collection *string `json:"collection"`
-	Principal string  `json:"principal"`
-	Role      string  `json:"role"`
+	Principal  string  `json:"principal"`
+	Role       string  `json:"role"`
 }
 
 // RoleListResponse is the marker-paginated list of roles.
