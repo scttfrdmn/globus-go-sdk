@@ -18,7 +18,7 @@
 
 A Go SDK for interacting with Globus services, providing a simple and idiomatic Go interface to Globus APIs.
 
-> **STATUS**: **v3.65.0-1** is production-ready! ✅ Synchronized with Python SDK v3.65.0. **v4.5.0-1** is available with full v4.5.0 feature parity for early adopters. See [Version Guide](#-version-guide) below.
+> **STATUS**: **v3** is production-ready ✅ and tracks the final Python SDK v3 line (v3.65.0). **v4** currently implements Python SDK **v4.5.0** parity; upstream has since released v4.6.0–v4.8.1 and catch-up work is in progress (see [.github/upstream-versions.json](.github/upstream-versions.json) for the exact ported-vs-upstream status). See [Version Guide](#-version-guide) below.
 
 > **DISCLAIMER**: The Globus Go SDK is an independent, community-developed project and is not officially affiliated with, endorsed by, or supported by Globus, the University of Chicago, or their affiliated organizations. This SDK is maintained by independent contributors and is not a product of Globus or the University of Chicago.
 
@@ -28,8 +28,8 @@ A Go SDK for interacting with Globus services, providing a simple and idiomatic 
 
 | Version | Status | When to Use | Installation |
 |---------|--------|-------------|--------------|
-| **v3.65.0-1** | ✅ **Production Ready** | All production applications | `go get github.com/scttfrdmn/globus-go-sdk/v3` |
-| **v4.5.0-1** | 🔶 Early Adopters | Testing v4 features, non-critical apps | `go get github.com/scttfrdmn/globus-go-sdk/v4` |
+| **v3** (Python v3.65.0 parity) | ✅ **Production Ready** | All production applications | `go get github.com/scttfrdmn/globus-go-sdk/v3` |
+| **v4** (Python v4.5.0 parity) | 🔶 Early Adopters | Testing v4 features, non-critical apps | `go get github.com/scttfrdmn/globus-go-sdk/v4` |
 
 **v3 Features:** Connection pooling, rate limiting, token storage, comprehensive tests
 **v4 Features:** Context-first API, explicit scopes, Close() methods, GCS downloads, device auth, action providers, full test coverage
@@ -679,8 +679,8 @@ For more information, see [Git Hooks](doc/development/git-hooks.md).
 ## Development Status
 
 **Current versions:**
-- **v3.65.0-1**: Production-ready, Python SDK v3.65.0 parity ✅
-- **v4.5.0-1**: Full v4.5.0 feature parity, early adopters 🔶
+- **v3**: Production-ready, Python SDK v3.65.0 parity (final v3 line) ✅
+- **v4**: Python SDK v4.5.0 parity, early adopters; v4.6.0–v4.8.1 catch-up in progress 🔶
 
 | Component | v3 Status | v4 Status |
 |-----------|-----------|-----------|
@@ -771,8 +771,8 @@ A: No, this is a community project. See the disclaimer at the top of this README
 
 This SDK follows the patterns established by the official Globus SDKs for [Python](https://github.com/globus/globus-sdk-python) and [JavaScript](https://github.com/globus/globus-sdk-javascript).
 
-- **v3.65.0-1** aligns with Python SDK v3.65.0
-- **v4.5.0-1** aligns with Python SDK v4.5.0 (full parity)
+- **v3** aligns with Python SDK v3.65.0 (final v3 line)
+- **v4** aligns with Python SDK v4.5.0; catch-up to v4.8.1 tracked in [.github/upstream-versions.json](.github/upstream-versions.json)
 
 See [ALIGNMENT.md](ALIGNMENT.md) for details and [CHANGELOG.md](CHANGELOG.md) for release history.
 
