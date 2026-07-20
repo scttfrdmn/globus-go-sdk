@@ -41,6 +41,29 @@ Timers client realigned to the Python globus-sdk 4.8.1 wire (Phase 2 audit).
   `GetRun`, `CreateOnceTimer`, `CreateRecurringTimer`, and the `Callback`,
   `TimerRun`, `TimerRunList`, `ListRunsOptions` types.
 
+### Changed — Transfer (v4 module, Phase 2 parity audit)
+
+**Breaking** within the v4 line:
+
+- Base URL is the bare host; classic routes carry `/v0.10`, tunnel/stream routes
+  carry `/v2`. `SubmitTransfer`/`SubmitDelete` auto-fetch `submission_id`.
+- `MakeDirectory`/`Rename` gained a `localUser` argument. `ListTasks`
+  `filter_status`/`orderby` are comma-joined single params; `ListDirectoryOptions`
+  gained `OrderBy`/`Filter`/`LocalUser`.
+- Removed `ListEndpoints` (no `/endpoint_list` route) — use `EndpointSearch` +
+  `NewEndpointSearchPager`. Tunnels/stream access points now use the real
+  JSON:API `/v2/tunnels` and `/v2/stream_access_points`; `TunnelCreate`/
+  `TunnelUpdate` fields changed to the JSON:API attributes/relationships; removed
+  `NewTunnelsPager` (not paginated upstream).
+
+Added (classic surface): `UpdateEndpoint`, `DeleteEndpoint`, `SetSubscriptionID`,
+`SetSubscriptionAdminVerified`, `EndpointSearch`, `OperationStat`, `UpdateTask`,
+`TaskEventList`, `TaskPauseInfo`, `TaskSuccessfulTransfers`, `TaskSkippedErrors`,
+shared-endpoint methods, endpoint role/ACL/server methods,
+`MyEffectivePauseRuleList`, and the full `EndpointManager*` family (monitored
+endpoints, task inspection, admin cancel/pause/resume, pause-rule CRUD). Transfer/
+Delete documents gained `submission_id`, local-user, and `filter_rules` fields.
+
 ### Changed — GCS (v4 module, Phase 2 parity audit)
 
 **Breaking** within the v4 line — the GCS client was rebuilt to parse the real

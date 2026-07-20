@@ -258,15 +258,52 @@ wire detail. Corrected to match Python globus-sdk 4.8.1's `TimersClient`:
 - **`list_jobs`** is not paginated upstream; `ListTimers` does a single fetch and
   `ListTimersOptions` is a generic query-param passthrough.
 
+## Transfer: bare-host base URL + full classic surface (Phase 2 audit)
+
+The Phase 2 audit found the transfer client implemented ~15 methods (several
+against non-existent routes) out of ~62 upstream. Corrected:
+
+- **Base URL → bare host** `https://transfer.api.globus.org` (was `.../v0.10`).
+  Classic routes now carry their own `/v0.10` prefix and the Beta tunnel/stream
+  routes carry `/v2`, so both surfaces are reachable through the path-joining
+  buildURL. (Before this, the `/v2/...` tunnel and bookmark literals were
+  mis-routed to `.../v0.10/v2/...`.)
+- **Removed phantom routes:** `ListEndpoints` hit `/endpoint_list` (no such
+  route) — replaced by `EndpointSearch` (`GET /v0.10/endpoint_search`, offset
+  paginated, capped at 1000 via `NewEndpointSearchPager`). The flat
+  `/tunnel_list`/`/stream_access_point_list` list paths and `NewTunnelsPager`
+  were replaced by the real JSON:API `/v2/tunnels` and `/v2/stream_access_points`
+  (neither is marker-paginated upstream).
+- **Submit auto-fetches `submission_id`:** `SubmitTransfer`/`SubmitDelete` now
+  fetch a submission ID when the caller supplies none, matching upstream; added
+  `submission_id`, `source_local_user`/`destination_local_user`, `local_user`,
+  and `filter_rules` to the transfer/delete documents.
+- **Added the missing classic surface:** endpoint update/delete/subscription,
+  `operation_stat`, `local_user` on ls/mkdir/rename, `orderby` on ls/task_list,
+  task `event_list`/`pause_info`/`successful_transfers`/`skipped_errors`,
+  `update_task`, shared-endpoint family, endpoint role/ACL/server families, and
+  the entire `endpoint_manager` family (monitored endpoints, task inspection,
+  admin cancel/pause/resume, pause-rule CRUD). Open-ended admin documents use
+  passthrough `map[string]interface{}` (`GenericResponse`).
+- **`filter_status`/`orderby`/`filter_task_id` are comma-joined** into single
+  params (were repeated); integer-boolean params (`show_hidden`,
+  `filter_non_functional`, `filter_is_error`) serialize as `1`/`0`.
+
 ## Transfer: Streams/Tunnels folded into `transfer.Client`
 
 - **Upstream:** the Streams/Tunnels API (Python SDK v4.3.0–v4.4.0) lives on the
-  experimental `TransferClientV2`.
+  experimental `TransferClientV2`, speaking JSON:API under `/v2/`.
 - **Here:** the methods (`CreateTunnel`, `GetTunnel`, `UpdateTunnel`,
   `DeleteTunnel`, `ListTunnels`, `GetStreamAccessPoint`, `ListStreamAccessPoints`,
-  `GetTunnelEvents`) are added directly to the existing `transfer.Client`.
-- **Why:** the Go v4 module has no `TransferClientV2`. A second client type would
-  duplicate construction, config, and auth wiring for no user benefit.
+  `GetTunnelEvents`) are on the existing `transfer.Client`. The Phase 2 audit
+  corrected their wire shape: requests build the JSON:API document
+  (`data.{type,relationships,attributes}` — e.g. tunnel create references the
+  listener/initiator `StreamAccessPoint` ids under relationships), and responses
+  are flattened from the JSON:API envelope into the flat `Tunnel`/
+  `StreamAccessPoint` types. `UpdateTunnel` uses `PATCH`. Phase 1's flat
+  request/response models were invented and have been replaced.
+- **Why folded:** the Go v4 module has no `TransferClientV2`. A second client
+  type would duplicate construction, config, and auth wiring for no user benefit.
 
 ## Transfer: bookmark CRUD folded into `transfer.Client`
 

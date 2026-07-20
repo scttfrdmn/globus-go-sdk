@@ -43,6 +43,7 @@ type ListEndpointsOptions struct {
 // Transfer represents a transfer task submission
 type Transfer struct {
 	DATA_TYPE              string         `json:"DATA_TYPE"`
+	SubmissionID           string         `json:"submission_id,omitempty"`
 	SourceEndpoint         string         `json:"source_endpoint"`
 	DestinationEndpoint    string         `json:"destination_endpoint"`
 	Label                  string         `json:"label,omitempty"`
@@ -53,11 +54,23 @@ type Transfer struct {
 	DeleteDestinationExtra bool           `json:"delete_destination_extra,omitempty"`
 	SkipSourceErrors       bool           `json:"skip_source_errors,omitempty"`
 	FailOnQuotaErrors      bool           `json:"fail_on_quota_errors,omitempty"`
+	SourceLocalUser        string         `json:"source_local_user,omitempty"`
+	DestinationLocalUser   string         `json:"destination_local_user,omitempty"`
 	Items                  []TransferItem `json:"DATA"`
+	FilterRules            []FilterRule   `json:"filter_rules,omitempty"`
 	NotifyOnSucceeded      bool           `json:"notify_on_succeeded,omitempty"`
 	NotifyOnFailed         bool           `json:"notify_on_failed,omitempty"`
 	NotifyOnInactive       bool           `json:"notify_on_inactive,omitempty"`
 	Deadline               string         `json:"deadline,omitempty"`
+}
+
+// FilterRule is a transfer filter rule (add via Transfer.FilterRules). method is
+// "include" or "exclude"; type is typically "file".
+type FilterRule struct {
+	DATA_TYPE string `json:"DATA_TYPE"`
+	Method    string `json:"method"`
+	Name      string `json:"name"`
+	Type      string `json:"type,omitempty"`
 }
 
 // TransferItem represents a single file/directory to transfer
@@ -73,11 +86,13 @@ type TransferItem struct {
 // Delete represents a delete task submission
 type Delete struct {
 	DATA_TYPE         string       `json:"DATA_TYPE"`
+	SubmissionID      string       `json:"submission_id,omitempty"`
 	Endpoint          string       `json:"endpoint"`
 	Label             string       `json:"label,omitempty"`
 	Recursive         bool         `json:"recursive,omitempty"`
 	IgnoreMissing     bool         `json:"ignore_missing,omitempty"`
 	InterpretGlob     bool         `json:"interpret_globs,omitempty"`
+	LocalUser         string       `json:"local_user,omitempty"`
 	Items             []DeleteItem `json:"DATA"`
 	NotifyOnSucceeded bool         `json:"notify_on_succeeded,omitempty"`
 	NotifyOnFailed    bool         `json:"notify_on_failed,omitempty"`
@@ -154,10 +169,12 @@ type TaskList struct {
 	Total     int    `json:"total"`
 }
 
-// ListTasksOptions contains options for listing tasks
+// ListTasksOptions contains options for listing tasks. FilterStatus and OrderBy
+// are comma-joined into single query params.
 type ListTasksOptions struct {
 	Filter       string
 	FilterStatus []string
+	OrderBy      []string
 	Limit        int
 	Offset       int
 }
@@ -187,11 +204,14 @@ type DirectoryListing struct {
 	Total        int              `json:"total"`
 }
 
-// ListDirectoryOptions contains options for listing directory contents
+// ListDirectoryOptions contains options for listing directory contents.
 type ListDirectoryOptions struct {
 	ShowHidden bool
 	Limit      int
 	Offset     int
+	OrderBy    []string // comma-joined into a single orderby param
+	Filter     string   // e.g. "name:~*.txt"
+	LocalUser  string
 }
 
 // OperationResponse represents the response from an operation (mkdir, rename, etc.)
@@ -226,19 +246,46 @@ type TunnelList struct {
 	Marker  string   `json:"next_marker,omitempty"`
 }
 
-// TunnelCreate is the payload for creating a new tunnel
+// TunnelCreate holds the fields for creating a tunnel. It is a flat Go-facing
+// type; CreateTunnel serializes it to the JSON:API document upstream expects
+// (data.type=Tunnel, relationships.listener/initiator -> StreamAccessPoint ids,
+// attributes.{label,submission_id,restartable,lifetime_mins,...}).
 type TunnelCreate struct {
-	DisplayName      string                 `json:"display_name"`
-	SourceEndpointID string                 `json:"source_endpoint_id"`
-	SourcePath       string                 `json:"source_path"`
-	ExpiresIn        *int                   `json:"expires_in,omitempty"`
-	Metadata         map[string]interface{} `json:"metadata,omitempty"`
+	ListenerStreamAccessPoint  string `json:"-"`
+	InitiatorStreamAccessPoint string `json:"-"`
+	Label                      string `json:"-"`
+	ListenerPort               *int   `json:"-"`
+	ListenerIPAddress          string `json:"-"`
+	SubmissionID               string `json:"-"`
+	LifetimeMins               *int   `json:"-"`
+	Restartable                *bool  `json:"-"`
 }
 
-// TunnelUpdate is the payload for updating an existing tunnel
+// tunnelJSONAPI is the JSON:API request document for tunnel create/update.
+type tunnelJSONAPI struct {
+	Data tunnelJSONAPIData `json:"data"`
+}
+
+type tunnelJSONAPIData struct {
+	Type          string                 `json:"type"`
+	Relationships map[string]jsonAPIRel  `json:"relationships,omitempty"`
+	Attributes    map[string]interface{} `json:"attributes"`
+}
+
+type jsonAPIRel struct {
+	Data jsonAPIRelData `json:"data"`
+}
+
+type jsonAPIRelData struct {
+	Type string `json:"type"`
+	ID   string `json:"id"`
+}
+
+// TunnelUpdate holds the mutable tunnel fields (JSON:API attributes).
 type TunnelUpdate struct {
-	DisplayName string                 `json:"display_name,omitempty"`
-	Metadata    map[string]interface{} `json:"metadata,omitempty"`
+	Label             string `json:"-"`
+	ListenerPort      *int   `json:"-"`
+	ListenerIPAddress string `json:"-"`
 }
 
 // ListTunnelsOptions contains options for listing tunnels
