@@ -6,9 +6,6 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"net/url"
-	"strconv"
-	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
 )
@@ -22,7 +19,7 @@ type Client struct {
 // NewClient creates a new v4 Timers client
 func NewClient(ctx context.Context, config *core.Config) (*Client, error) {
 	if config.BaseURL == "" {
-		config.BaseURL = "https://timer.automate.globus.org/api/v1"
+		config.BaseURL = "https://timer.automate.globus.org"
 	}
 
 	baseClient, err := core.NewClient(config)
@@ -36,147 +33,131 @@ func NewClient(ctx context.Context, config *core.Config) (*Client, error) {
 	}, nil
 }
 
-// GetTimer retrieves a timer by ID
+// GetTimer retrieves a timer ("job") by ID (GET /jobs/{id}).
 func (c *Client) GetTimer(ctx context.Context, timerID string) (*Timer, error) {
 	if timerID == "" {
 		return nil, &core.ValidationError{Field: "timerID", Message: "timer ID is required"}
 	}
 
 	var timer Timer
-	err := c.baseClient.DoRequest(ctx, http.MethodGet, fmt.Sprintf("/timers/%s", timerID), nil, nil, &timer)
+	err := c.baseClient.DoRequest(ctx, http.MethodGet, fmt.Sprintf("/jobs/%s", timerID), nil, nil, &timer)
 	if err != nil {
 		return nil, err
 	}
 	return &timer, nil
 }
 
-// CreateTimer creates a new timer
-func (c *Client) CreateTimer(ctx context.Context, timer *Timer) (*Timer, error) {
+// CreateTimer creates a new timer (POST /v2/timer). The timer document is wrapped
+// in a {"timer": ...} envelope by the service contract. Pass a *TransferTimer or
+// *FlowTimer (or any value that marshals to a valid timer document).
+func (c *Client) CreateTimer(ctx context.Context, timer interface{}) (*Timer, error) {
 	if timer == nil {
 		return nil, &core.ValidationError{Field: "timer", Message: "timer is required"}
 	}
 
+	body := map[string]interface{}{"timer": timer}
 	var result Timer
-	err := c.baseClient.DoRequest(ctx, http.MethodPost, "/timers", nil, timer, &result)
+	err := c.baseClient.DoRequest(ctx, http.MethodPost, "/v2/timer", nil, body, &result)
 	if err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
-// UpdateTimer updates an existing timer
-func (c *Client) UpdateTimer(ctx context.Context, timerID string, timer *Timer) (*Timer, error) {
+// CreateJob creates a timer using the legacy job document (POST /jobs/). Upstream
+// marks this deprecated for transfer use-cases in favor of CreateTimer, but it is
+// still supported for non-transfer callbacks.
+func (c *Client) CreateJob(ctx context.Context, job *TimerJob) (*Timer, error) {
+	if job == nil {
+		return nil, &core.ValidationError{Field: "job", Message: "job is required"}
+	}
+
+	var result Timer
+	err := c.baseClient.DoRequest(ctx, http.MethodPost, "/jobs/", nil, job, &result)
+	if err != nil {
+		return nil, err
+	}
+	return &result, nil
+}
+
+// UpdateTimer updates an existing timer (PATCH /jobs/{id}).
+func (c *Client) UpdateTimer(ctx context.Context, timerID string, update interface{}) (*Timer, error) {
 	if timerID == "" {
 		return nil, &core.ValidationError{Field: "timerID", Message: "timer ID is required"}
 	}
-	if timer == nil {
-		return nil, &core.ValidationError{Field: "timer", Message: "timer is required"}
+	if update == nil {
+		return nil, &core.ValidationError{Field: "update", Message: "update document is required"}
 	}
 
 	var result Timer
-	err := c.baseClient.DoRequest(ctx, http.MethodPut, fmt.Sprintf("/timers/%s", timerID), nil, timer, &result)
+	err := c.baseClient.DoRequest(ctx, http.MethodPatch, fmt.Sprintf("/jobs/%s", timerID), nil, update, &result)
 	if err != nil {
 		return nil, err
 	}
 	return &result, nil
 }
 
-// DeleteTimer deletes a timer
+// DeleteTimer deletes a timer (DELETE /jobs/{id}).
 func (c *Client) DeleteTimer(ctx context.Context, timerID string) error {
 	if timerID == "" {
 		return &core.ValidationError{Field: "timerID", Message: "timer ID is required"}
 	}
 
-	return c.baseClient.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("/timers/%s", timerID), nil, nil, nil)
+	return c.baseClient.DoRequest(ctx, http.MethodDelete, fmt.Sprintf("/jobs/%s", timerID), nil, nil, nil)
 }
 
-// ListTimers lists timers
+// ListTimers lists timers (GET /jobs/).
 func (c *Client) ListTimers(ctx context.Context, options *ListTimersOptions) (*TimerList, error) {
-	query := url.Values{}
-	if options != nil {
-		if options.Limit > 0 {
-			query.Set("limit", strconv.Itoa(options.Limit))
-		}
-		if options.Offset > 0 {
-			query.Set("offset", strconv.Itoa(options.Offset))
-		}
-	}
+	query := options.toQuery()
 
 	var timerList TimerList
-	err := c.baseClient.DoRequest(ctx, http.MethodGet, "/timers", query, nil, &timerList)
+	err := c.baseClient.DoRequest(ctx, http.MethodGet, "/jobs/", query, nil, &timerList)
 	if err != nil {
 		return nil, err
 	}
 	return &timerList, nil
 }
 
-// PauseTimer pauses a timer
+// PauseTimer pauses a timer (POST /jobs/{id}/pause).
 func (c *Client) PauseTimer(ctx context.Context, timerID string) error {
 	if timerID == "" {
 		return &core.ValidationError{Field: "timerID", Message: "timer ID is required"}
 	}
 
-	return c.baseClient.DoRequest(ctx, http.MethodPost, fmt.Sprintf("/timers/%s/pause", timerID), nil, nil, nil)
+	return c.baseClient.DoRequest(ctx, http.MethodPost, fmt.Sprintf("/jobs/%s/pause", timerID), nil, nil, nil)
 }
 
-// ResumeTimer resumes a paused timer
-func (c *Client) ResumeTimer(ctx context.Context, timerID string) error {
+// ResumeTimer resumes a paused timer (POST /jobs/{id}/resume). When
+// updateCredentials is non-nil, its value is sent in the request body to control
+// whether the resuming caller's credentials replace the timer's stored credentials.
+func (c *Client) ResumeTimer(ctx context.Context, timerID string, updateCredentials *bool) error {
 	if timerID == "" {
 		return &core.ValidationError{Field: "timerID", Message: "timer ID is required"}
 	}
 
-	return c.baseClient.DoRequest(ctx, http.MethodPost, fmt.Sprintf("/timers/%s/resume", timerID), nil, nil, nil)
-}
-
-// CreateFlowTimer creates a timer that runs a Globus Flow (v4 helper matching v3.65.0)
-func (c *Client) CreateFlowTimer(ctx context.Context, name string, schedule *Schedule, flowID, flowScope string, flowInput map[string]interface{}) (*Timer, error) {
-	timer := &Timer{
-		Name:     name,
-		Schedule: schedule,
-		Callback: &Callback{
-			Type: "flow",
-			URL:  fmt.Sprintf("https://flows.globus.org/flows/%s", flowID),
-			Body: map[string]interface{}{
-				"input": flowInput,
-			},
-			Scope: flowScope,
-		},
+	var body interface{}
+	if updateCredentials != nil {
+		body = map[string]interface{}{"update_credentials": *updateCredentials}
 	}
-
-	return c.CreateTimer(ctx, timer)
+	return c.baseClient.DoRequest(ctx, http.MethodPost, fmt.Sprintf("/jobs/%s/resume", timerID), nil, body, nil)
 }
 
-// CreateOnceTimer creates a one-time timer (helper)
-func (c *Client) CreateOnceTimer(ctx context.Context, name string, startTime time.Time, callback *Callback) (*Timer, error) {
-	timer := &Timer{
-		Name: name,
-		Schedule: &Schedule{
-			Type:      "once",
-			StartTime: startTime,
-		},
-		Callback: callback,
+// CreateFlowTimer is a convenience helper that builds a flow timer create document
+// and submits it via CreateTimer (POST /v2/timer).
+func (c *Client) CreateFlowTimer(ctx context.Context, name, flowID string, schedule *Schedule, flowInput map[string]interface{}) (*Timer, error) {
+	if name == "" {
+		return nil, &core.ValidationError{Field: "name", Message: "timer name is required"}
 	}
-
-	return c.CreateTimer(ctx, timer)
-}
-
-// CreateRecurringTimer creates a recurring timer (helper)
-func (c *Client) CreateRecurringTimer(ctx context.Context, name string, startTime time.Time, interval string, callback *Callback) (*Timer, error) {
-	timer := &Timer{
-		Name: name,
-		Schedule: &Schedule{
-			Type:      "recurring",
-			StartTime: startTime,
-			Interval:  interval,
-		},
-		Callback: callback,
+	if schedule == nil {
+		return nil, &core.ValidationError{Field: "schedule", Message: "schedule is required"}
 	}
-
-	return c.CreateTimer(ctx, timer)
+	return c.CreateTimer(ctx, NewFlowTimer(name, flowID, schedule, flowInput))
 }
 
-// CreateTransferTimer creates a timer that submits a Globus Transfer task.
-func (c *Client) CreateTransferTimer(ctx context.Context, name string, schedule *Schedule, transferScope string, transferBody map[string]interface{}) (*Timer, error) {
+// CreateTransferTimer is a convenience helper that builds a transfer timer create
+// document and submits it via CreateTimer (POST /v2/timer). transferBody is a
+// TransferData document.
+func (c *Client) CreateTransferTimer(ctx context.Context, name string, schedule *Schedule, transferBody map[string]interface{}) (*Timer, error) {
 	if name == "" {
 		return nil, &core.ValidationError{Field: "name", Message: "timer name is required"}
 	}
@@ -186,67 +167,7 @@ func (c *Client) CreateTransferTimer(ctx context.Context, name string, schedule 
 	if transferBody == nil {
 		return nil, &core.ValidationError{Field: "transferBody", Message: "transfer body is required"}
 	}
-
-	timer := &Timer{
-		Name:     name,
-		Schedule: schedule,
-		Callback: &Callback{
-			Type:  "action",
-			URL:   "https://transfer.api.globus.org/v0.10/transfer",
-			Body:  transferBody,
-			Scope: transferScope,
-		},
-	}
-	return c.CreateTimer(ctx, timer)
-}
-
-// RunTimer manually triggers a timer, executing its callback immediately.
-func (c *Client) RunTimer(ctx context.Context, timerID string) error {
-	if timerID == "" {
-		return &core.ValidationError{Field: "timerID", Message: "timer ID is required"}
-	}
-	return c.baseClient.DoRequest(ctx, http.MethodPost, fmt.Sprintf("/timers/%s/run", timerID), nil, nil, nil)
-}
-
-// ListRuns returns the execution history for a timer.
-func (c *Client) ListRuns(ctx context.Context, timerID string, options *ListRunsOptions) (*TimerRunList, error) {
-	if timerID == "" {
-		return nil, &core.ValidationError{Field: "timerID", Message: "timer ID is required"}
-	}
-
-	query := url.Values{}
-	if options != nil {
-		if options.Limit > 0 {
-			query.Set("limit", strconv.Itoa(options.Limit))
-		}
-		if options.Offset > 0 {
-			query.Set("offset", strconv.Itoa(options.Offset))
-		}
-	}
-
-	var runList TimerRunList
-	err := c.baseClient.DoRequest(ctx, http.MethodGet, fmt.Sprintf("/timers/%s/runs", timerID), query, nil, &runList)
-	if err != nil {
-		return nil, err
-	}
-	return &runList, nil
-}
-
-// GetRun retrieves a specific timer run by ID.
-func (c *Client) GetRun(ctx context.Context, timerID, runID string) (*TimerRun, error) {
-	if timerID == "" {
-		return nil, &core.ValidationError{Field: "timerID", Message: "timer ID is required"}
-	}
-	if runID == "" {
-		return nil, &core.ValidationError{Field: "runID", Message: "run ID is required"}
-	}
-
-	var run TimerRun
-	err := c.baseClient.DoRequest(ctx, http.MethodGet, fmt.Sprintf("/timers/%s/runs/%s", timerID, runID), nil, nil, &run)
-	if err != nil {
-		return nil, err
-	}
-	return &run, nil
+	return c.CreateTimer(ctx, NewTransferTimer(name, schedule, transferBody))
 }
 
 // Close closes the client and releases resources

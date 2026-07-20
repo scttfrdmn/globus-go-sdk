@@ -23,6 +23,24 @@ globus-sdk v4.8.1 (both bugs affected every service):
   `application/x-www-form-urlencoded` (required by the OAuth2
   token/introspect/revoke endpoints); previously it JSON-marshalled every body.
 
+### Changed (v4 module — `github.com/scttfrdmn/globus-go-sdk/v4`)
+
+Timers client realigned to the Python globus-sdk 4.8.1 wire (Phase 2 audit).
+**Breaking** within the v4 line:
+
+- Base URL corrected to `https://timer.automate.globus.org`; paths moved to
+  `/jobs/` and `POST /v2/timer` (wrapped `{"timer": ...}`); update is now
+  `PATCH /jobs/{id}`.
+- Create document reshaped (`timer_type`/`name`/`schedule`/`body`, `flow_id` for
+  flow timers); `Schedule` now serializes upstream once/recurring shapes
+  (`interval_seconds`, structured `end`). New `NewOnceSchedule`,
+  `NewRecurringSchedule`, `NewTransferTimer`, `NewFlowTimer` builders.
+- `CreateTimer`/`UpdateTimer` accept an `interface{}` document; `ResumeTimer`
+  takes an optional `*bool` update-credentials flag; new `CreateJob` (POST /jobs/).
+- Removed phantom methods with no upstream route: `RunTimer`, `ListRuns`,
+  `GetRun`, `CreateOnceTimer`, `CreateRecurringTimer`, and the `Callback`,
+  `TimerRun`, `TimerRunList`, `ListRunsOptions` types.
+
 ### Added (v4 module — `github.com/scttfrdmn/globus-go-sdk/v4`)
 
 Closes the wire-visible gap to upstream Python globus-sdk **v4.8.1**.

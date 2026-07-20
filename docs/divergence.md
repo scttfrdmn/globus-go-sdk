@@ -36,6 +36,29 @@ present:
   fields. `DoRequest` now sends a `url.Values` body as flat
   `application/x-www-form-urlencoded`; all other bodies remain JSON.
 
+## Timers: realigned to the 4.8.1 wire (paths, base URL, document shape)
+
+The Phase 2 audit found the timers client diverged from upstream on nearly every
+wire detail. Corrected to match Python globus-sdk 4.8.1's `TimersClient`:
+
+- **Base URL** is `https://timer.automate.globus.org` (was `.../api/v1`). Upstream
+  paths are absolute from the host root (`/jobs/`, `/v2/timer`).
+- **Paths/verbs:** list `GET /jobs/`, get `GET /jobs/{id}`, create `POST /v2/timer`
+  (body wrapped as `{"timer": ...}`), legacy create `POST /jobs/`, update
+  `PATCH /jobs/{id}` (was `PUT /timers/{id}`), delete `DELETE /jobs/{id}`, pause
+  `POST /jobs/{id}/pause`, resume `POST /jobs/{id}/resume` (optional
+  `{"update_credentials": bool}` body).
+- **Create document** reshaped to `timer_type` + `name` + `schedule` + `body`
+  (+`flow_id` for flow timers), with `Schedule` serializing to the upstream
+  once/recurring shapes (`interval_seconds` int, structured `end`). The old
+  `Callback`/`Timer.Schedule.Interval`-as-string shape was fabricated.
+- **Removed phantom methods** with no upstream classic-client route: `RunTimer`,
+  `ListRuns`, `GetRun` (the classic `TimersClient` has no run-inspection surface),
+  and the `CreateOnceTimer`/`CreateRecurringTimer` helpers (superseded by the
+  `NewOnceSchedule`/`NewRecurringSchedule` builders).
+- **`list_jobs`** is not paginated upstream; `ListTimers` does a single fetch and
+  `ListTimersOptions` is a generic query-param passthrough.
+
 ## Transfer: Streams/Tunnels folded into `transfer.Client`
 
 - **Upstream:** the Streams/Tunnels API (Python SDK v4.3.0–v4.4.0) lives on the
