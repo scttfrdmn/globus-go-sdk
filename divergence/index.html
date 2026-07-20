@@ -1462,6 +1462,105 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
+  <a href="#corrected-in-the-v4-parity-audit-2026-07-core-url-and-oauth2-encoding-bugs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Corrected in the v4 parity audit (2026-07): core URL and OAuth2 encoding bugs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#gcs-result-envelope-unpacking-marker-pagination-full-manager-surface" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        GCS: result envelope unpacking, marker pagination, full manager surface
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#compute-passthrough-documents-v2v3-folded-phantom-routes-removed" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Compute: passthrough documents, V2+V3 folded, phantom routes removed
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#flows-specificflowclient-folded-in-removed-action-providers-wire-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flows: SpecificFlowClient folded in; removed action providers; wire fixes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#groups-removed-fabricated-membersroles-surface-and-pagination" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Groups: removed fabricated members/roles surface and pagination
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#auth-single-client-folds-upstreams-split-clients-wire-fixes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Auth: single client folds upstream's split clients; wire fixes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#search-subjectentry-query-params-ingest-envelope-corrected-verbs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Search: subject/entry query params, ingest envelope, corrected verbs
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#timers-realigned-to-the-481-wire-paths-base-url-document-shape" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Timers: realigned to the 4.8.1 wire (paths, base URL, document shape)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#transfer-bare-host-base-url-full-classic-surface-phase-2-audit" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Transfer: bare-host base URL + full classic surface (Phase 2 audit)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#v3-transfer-data-envelopes-wire-param-realignment-added-families-phase-2-audit-vs-3650" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -1594,6 +1693,273 @@ matches upstream. Divergences are limited to how that surface is <em>organized</
 into Go types and clients.</p>
 <p>Sections below prefixed <strong>v3:</strong> apply to the frozen v3 module (tracking Python
 globus-sdk 3.65.0); all other sections apply to the active v4 module.</p>
+<h2 id="corrected-in-the-v4-parity-audit-2026-07-core-url-and-oauth2-encoding-bugs">Corrected in the v4 parity audit (2026-07): core URL and OAuth2 encoding bugs<a class="headerlink" href="#corrected-in-the-v4-parity-audit-2026-07-core-url-and-oauth2-encoding-bugs" title="Permanent link">&para;</a></h2>
+<p>The Phase 2 parity audit (against Python globus-sdk tag 4.8.1) found two
+cross-cutting <code>pkg/core</code> bugs that broke wire fidelity for <em>every</em> service. They
+are recorded here because "4.5.0 parity" was previously claimed while these were
+present:</p>
+<ul>
+<li><strong>Base path was discarded.</strong> <code>core.Client.buildURL</code> did <code>u.Path = endpoint</code>,
+  overwriting the base URL's path. Every service base URL carries a version
+  prefix (auth <code>/v2</code>, transfer <code>/v0.10</code>, timers <code>/api/v1</code>, search <code>/v1</code>, …), so
+  the prefix was silently dropped in production. Tests masked this by using a
+  path-less <code>httptest</code> base URL. Fixed to join the endpoint onto the base path
+  (<code>u.JoinPath</code>). Service call sites that had hardcoded the full prefix to work
+  around this (auth's <code>/v2/api/projects</code>) were made relative to avoid
+  double-prefixing.</li>
+<li><strong>OAuth2 bodies were JSON, not form-encoded.</strong> <code>core.Client.DoRequest</code> always
+  <code>json.Marshal</code>ed the body and sent <code>application/json</code>. The OAuth2
+  token/introspect/revoke endpoints require <code>application/x-www-form-urlencoded</code>.
+  A <code>url.Values</code> body (as auth passes) serialized to
+  <code>{"grant_type":["authorization_code"]}</code> — wrong media type and array-valued
+  fields. <code>DoRequest</code> now sends a <code>url.Values</code> body as flat
+  <code>application/x-www-form-urlencoded</code>; all other bodies remain JSON.</li>
+</ul>
+<h2 id="gcs-result-envelope-unpacking-marker-pagination-full-manager-surface">GCS: result envelope unpacking, marker pagination, full manager surface<a class="headerlink" href="#gcs-result-envelope-unpacking-marker-pagination-full-manager-surface" title="Permanent link">&para;</a></h2>
+<p>The Phase 2 audit found the GCS client could not parse real responses (it decoded
+flat objects and JSON:API pages; GCS wraps everything in a <code>result#1.0.0</code>
+envelope with a <code>data</code> array). The client was rebuilt:</p>
+<ul>
+<li><strong>Envelope unpacking.</strong> A generic <code>GCSResponse</code> type parses the envelope;
+  single-object GETs unpack <code>data[0]</code> by matching the DATA_TYPE name (before
+  <code>#</code>), and lists read the whole <code>data</code> array. Nearly every method uses this.</li>
+<li><strong>Marker pagination.</strong> GCS returns top-level <code>has_next_page</code> + <code>marker</code> (not
+  JSON:API <code>links.next</code>). The <code>CollectionPager</code> was rebuilt on
+  <code>paging.MarkerPaginator</code>; the <code>JSONAPILinks</code>/<code>JSONAPIMeta</code>/<code>CollectionPage</code>
+  types and <code>listCollectionsAbsolute</code> were removed. Added storage-gateway, role,
+  and user-credential pagers.</li>
+<li><strong><code>ListCollections</code> params fixed.</strong> The fabricated <code>filter_owned</code>/<code>limit</code>/
+  <code>offset</code> were removed; upstream uses <code>mapped_collection_id</code>, <code>filter</code>
+  (comma-joined), <code>include</code> (comma-joined), <code>page_size</code>, <code>marker</code>.</li>
+<li><strong>Unauthenticated <code>/info</code>.</strong> <code>GetGCSInfo</code> calls <code>GET /info</code> with no
+  Authorization header, via the new <code>core.Client.DoRequestNoAuth</code>.</li>
+<li><strong>Full manager surface added:</strong> endpoint (<code>GetEndpoint</code>/<code>UpdateEndpoint</code>),
+  collection create, storage gateways CRUD, roles CRUD, and user credentials
+  CRUD, each with its typed request <code>*Document</code> builder and response type.
+  <code>UpdateStorageGateway</code> and the <code>Delete*</code> methods return the raw envelope (no
+  data unpacking), matching upstream.</li>
+<li><strong>Known deferrals (recorded, not blockers):</strong> connector-specific policy
+  builder classes (POSIX/S3/…) are represented as <code>json.RawMessage</code> <code>policies</code>
+  fields rather than typed helpers; the DATA_TYPE version auto-deduction that the
+  Python SDK performs is left to the caller (DataType is omitempty, defaulting to
+  the base version server-side). The Go-only <code>Downloader</code> has no upstream
+  equivalent and is retained as an experimental convenience.</li>
+</ul>
+<h2 id="compute-passthrough-documents-v2v3-folded-phantom-routes-removed">Compute: passthrough documents, V2+V3 folded, phantom routes removed<a class="headerlink" href="#compute-passthrough-documents-v2v3-folded-phantom-routes-removed" title="Permanent link">&para;</a></h2>
+<p>Upstream Globus Compute (at 4.8.1) is only <code>__init__.py</code>, <code>client.py</code>, and
+<code>errors.py</code> — it defines <strong>no</strong> request/response models and <strong>no</strong> pagination.
+The Phase 2 audit realigned the Go client to that reality:</p>
+<ul>
+<li><strong>Passthrough everywhere.</strong> All request bodies are <code>map[string]interface{}</code>
+  and all responses are <code>map[string]interface{}</code>. The previously invented typed
+  models (<code>Endpoint</code>, <code>EndpointList</code>, <code>FunctionRun</code>, <code>FunctionList</code>,
+  <code>TaskStatus</code>, <code>TaskList</code>, <code>FunctionDefinition</code>, <code>FunctionRegistration</code>,
+  <code>BatchTask*</code>, etc.) were removed — none were verifiable against the wire.</li>
+<li><strong>Base URL → host root.</strong> <code>https://compute.api.globus.org</code> (was <code>.../v2</code>), and
+  every endpoint carries its own <code>/v2</code> or <code>/v3</code> prefix, so both API surfaces are
+  reachable through the path-joining buildURL.</li>
+<li><strong>V2 and V3 folded into one client.</strong> Upstream ships <code>ComputeClientV2</code> and
+  <code>ComputeClientV3</code> as separate classes; Go keeps one <code>compute.Client</code> and
+  suffixes the v3 methods (<code>RegisterEndpointV3</code>, <code>UpdateEndpointV3</code>,
+  <code>LockEndpointV3</code>, <code>GetEndpointAllowlistV3</code>, <code>RegisterFunctionV3</code>, <code>SubmitV3</code>).</li>
+<li><strong>Removed phantom methods</strong> with no upstream route: <code>SubmitFunction</code>
+  (POST /endpoints/{id}/functions), <code>CancelFunction</code>, <code>ListFunctions</code>,
+  <code>UpdateFunction</code>, <code>ListTasks</code>, <code>CancelTask</code>, <code>RunBatch</code>, and both pagers.
+  Task submission is <code>Submit</code> (<code>POST /v2/submit</code>) or <code>SubmitV3</code>; task listing by
+  group is <code>GetTaskGroup</code>.</li>
+<li><strong><code>GetEndpoints</code></strong> (was <code>ListEndpoints</code>) sends only the <code>role</code> param upstream
+  supports — the fabricated <code>limit</code>/<code>offset</code> were removed. <code>GetTaskStatus</code> →
+  <code>GetTask</code>, <code>GetBatchStatus</code> → <code>GetTaskBatch</code>. Added <code>GetVersion</code>,
+  <code>GetResultAMQPURL</code>, <code>RegisterEndpoint</code>, <code>GetEndpointStatus</code>, <code>DeleteEndpoint</code>,
+  <code>LockEndpoint</code>, <code>GetTaskGroup</code>, <code>RegisterFunction</code> (passthrough).</li>
+</ul>
+<h2 id="flows-specificflowclient-folded-in-removed-action-providers-wire-fixes">Flows: SpecificFlowClient folded in; removed action providers; wire fixes<a class="headerlink" href="#flows-specificflowclient-folded-in-removed-action-providers-wire-fixes" title="Permanent link">&para;</a></h2>
+<p>The Phase 2 audit corrected several Flows wire divergences and removed a phantom
+surface:</p>
+<ul>
+<li><strong>One client.</strong> Upstream splits <code>FlowsClient</code> and <code>SpecificFlowClient</code> (built
+  with a flow_id). Go keeps one <code>flows.Client</code>: <code>RunFlow</code>/<code>ValidateRun</code> take a
+  <code>flowID</code> arg; <code>ResumeRun</code> takes a <code>runID</code> (upstream <code>resume_run</code> posts to
+  <code>/runs/{run_id}/resume</code>).</li>
+<li><strong>Removed action-provider methods</strong> (<code>ListActionProviders</code>,
+  <code>GetActionProvider</code>, <code>ListActionRoles</code>, <code>GetActionRole</code>) and their types — the
+  globus-sdk flows service has no <code>/action_providers</code> routes at 4.8.1 (those live
+  in the separate globus-automate-client).</li>
+<li><strong><code>RunFlow</code>/<code>ValidateRun</code> body.</strong> The flow input is sent under <code>body</code> (was
+  <code>input</code>); added <code>label</code>/<code>tags</code>/<code>run_monitors</code>/<code>run_managers</code>/
+  <code>activity_notification_policy</code> to <code>FlowInput</code>.</li>
+<li><strong>Verbs.</strong> <code>UpdateFlow</code> and <code>UpdateRun</code> use <code>PUT</code> (were <code>PATCH</code>). <code>DeleteRun</code>
+  is <code>POST /runs/{id}/release</code> (not an HTTP DELETE).</li>
+<li><strong>Removed <code>FlowAuthenticationPolicy</code>.</strong> Upstream create/update flow accept only
+  <code>authentication_policy_id</code> (a string), never an authentication-policy object.
+  <code>FlowCreate</code>/<code>FlowUpdate</code> gained the full upstream field set (subtitle,
+  flow_viewers/starters/administrators, run_managers/monitors, keywords,
+  subscription_id, authentication_policy_id). <code>CreateFlow</code> now requires
+  input_schema.</li>
+<li><strong>Pagination.</strong> <code>list_flows</code>, <code>list_runs</code>, and <code>get_run_logs</code> are
+  marker-paginated (keys <code>marker</code>/<code>has_next_page</code>), not limit/offset. Options
+  reworked: flows use <code>filter_roles</code> (comma-joined), <code>filter_fulltext</code>,
+  <code>orderby</code> (repeated params), <code>marker</code>; runs use <code>filter_flow_id</code>/<code>filter_roles</code>
+  (comma-joined) + <code>marker</code>; run logs use <code>limit</code>, <code>reverse_order</code>, <code>marker</code>.
+  <code>NewFlowsPager</code>/<code>NewRunsPager</code> switched to marker pagination and
+  <code>NewRunLogsPager</code> added. <code>ListRegisteredAPIsOptions.OrderBy</code> is now <code>[]string</code>
+  (repeated params).</li>
+<li><strong>New methods:</strong> <code>ValidateFlow</code> (<code>POST /flows/validate</code>), <code>GetRunDefinition</code>,
+  <code>DeleteRun</code>, <code>ResumeRun</code>, <code>ValidateRun</code>; <code>GetRun</code> gained a
+  <code>*GetRunOptions{IncludeFlowDescription}</code> arg.</li>
+</ul>
+<h2 id="groups-removed-fabricated-membersroles-surface-and-pagination">Groups: removed fabricated members/roles surface and pagination<a class="headerlink" href="#groups-removed-fabricated-membersroles-surface-and-pagination" title="Permanent link">&para;</a></h2>
+<p>The Phase 2 audit found much of the Groups client hit routes that do not exist
+in Globus Groups at 4.8.1. Corrected:</p>
+<ul>
+<li><strong>No members sub-resource.</strong> The Groups API has no <code>/groups/{id}/members</code>
+  routes. Removed <code>ListMembers</code>, <code>AddMember</code>, <code>RemoveMember</code>, <code>UpdateMemberRole</code>
+  and the <code>MemberList</code>/<code>ListMembersOptions</code> types. Membership data is now read
+  from the group document via <code>GetGroup(..., &amp;GetGroupOptions{Include:
+  []string{"memberships"}})</code> (exposed as <code>Group.Memberships</code>), and all
+  membership mutations go through the new <code>BatchMembershipAction</code>
+  (<code>POST /groups/{id}</code>) with a <code>BatchMembershipActions</code> document.</li>
+<li><strong>No roles resource.</strong> Removed <code>ListRoles</code>/<code>GetRole</code>/<code>CreateRole</code>/
+  <code>UpdateRole</code>/<code>DeleteRole</code> and the <code>Role</code>/<code>RoleCreate</code>/<code>RoleUpdate</code>/<code>RoleList</code>
+  types. A membership's role is a string (<code>member</code>/<code>manager</code>/<code>admin</code>), not a
+  role ID resource.</li>
+<li><strong>No group list / no pagination.</strong> There is no <code>GET /groups</code> list route and
+  the service registers no paginator. Removed <code>ListGroups</code>,
+  <code>ListGroupsOptions</code>, and both <code>NewGroupsPager</code>/<code>NewMembersPager</code>. The only
+  listing route is <code>GET /groups/my_groups</code> (<code>GetMyGroups</code>), which returns a
+  top-level JSON array with <code>statuses</code> as a single comma-joined param; the
+  fabricated <code>GroupList.has_next_page</code>/<code>next_page_token</code> fields were removed.</li>
+<li><strong>Account-level preferences / membership fields.</strong> <code>GetIdentityPreferences</code>
+  and <code>SetIdentityPreferences</code> now hit <code>GET</code>/<code>PUT /preferences</code> (no group or
+  identity path params) with passthrough maps. <code>GetMembershipFields</code>/
+  <code>SetMembershipFields</code> use passthrough maps instead of the fabricated
+  <code>MembershipFields</code> wrapper.</li>
+<li><strong><code>GroupPolicies</code></strong> reshaped to the real keys (<code>is_high_assurance</code>,
+  <code>group_visibility</code>, <code>group_members_visibility</code>, <code>join_requests</code>,
+  <code>signup_fields</code>, <code>authentication_assurance_timeout</code>); the fabricated
+  <code>group_id</code>/<code>policies</code>/<code>is_high_risk_group</code>/<code>last_updated</code> keys were removed.</li>
+<li>Added <code>GetGroupBySubscriptionID</code> (<code>GET /subscription_info/{id}</code>) and
+  <code>SetSubscriptionAdminVerified</code> (<code>PUT /groups/{id}/subscription_admin_verified</code>,
+  nil ID sends JSON null).</li>
+</ul>
+<h2 id="auth-single-client-folds-upstreams-split-clients-wire-fixes">Auth: single client folds upstream's split clients; wire fixes<a class="headerlink" href="#auth-single-client-folds-upstreams-split-clients-wire-fixes" title="Permanent link">&para;</a></h2>
+<p>The Phase 2 audit filled a large missing surface and fixed wire bugs in the auth
+client. Notable structure choices vs Python globus-sdk 4.8.1:</p>
+<ul>
+<li><strong>One client, many upstream clients.</strong> Python splits auth across <code>AuthClient</code>
+  (identities, projects, policies, clients, scopes, credentials, consents) and
+  the login clients (<code>AuthLoginClient</code> / <code>ConfidentialAppAuthClient</code> /
+  <code>NativeAppAuthClient</code>) for oauth2 grants, introspect/revoke, dependent tokens,
+  and child/native-app client creation. The Go SDK folds all of these onto one
+  <code>auth.Client</code>, so management and grant methods coexist.</li>
+<li><strong>Go-only extensions kept.</strong> <code>StartDeviceAuthorization</code> /
+  <code>PollDeviceAuthorization</code> / <code>WaitForDeviceAuthorization</code> (RFC 8628 device flow,
+  <code>POST /oauth2/device/code</code>) and <code>GetAuthorizationURL</code> have no method on the
+  4.8.1 Python auth client, but hit real Globus Auth wire endpoints; they are
+  retained as a Go superset and are not phantom routes.</li>
+<li><strong>Form encoding.</strong> <code>IntrospectToken</code> and <code>RevokeToken</code> now send
+  <code>application/x-www-form-urlencoded</code> (they previously sent JSON, the wrong media
+  type). <code>IntrospectToken</code> gained an <code>include</code> option; grant helpers
+  (<code>ClientCredentialsTokens</code>, <code>GetDependentTokens</code>) are form-encoded.</li>
+<li><strong>Response envelopes.</strong> Single objects are unwrapped from their key
+  (<code>project</code>, <code>policy</code>, <code>client</code>, <code>scope</code>, <code>credential</code>) and collections from
+  the plural key (<code>projects</code>, <code>identities</code>, <code>identity_providers</code>, <code>policies</code>,
+  <code>clients</code>, <code>credentials</code>, <code>scopes</code>, <code>consents</code>). <code>GetProjects</code>/<code>GetProject</code>
+  previously ignored the envelope and returned empty data.</li>
+<li><strong><code>ProjectCreate</code> trimmed</strong> to the four fields upstream accepts
+  (<code>display_name</code>, <code>contact_email</code>, <code>admin_ids</code>, <code>admin_group_ids</code>); the create
+  body is wrapped under <code>project</code>. The fabricated <code>public_contact_info</code> /
+  <code>metadata</code> create fields were removed.</li>
+<li><strong>Host-root endpoints.</strong> <code>GetOpenIDConfiguration</code> and <code>GetJWK</code> target the Auth
+  host root (<code>/.well-known/openid-configuration</code>, then the advertised
+  <code>jwks_uri</code>), outside the <code>/v2</code> base. They use the new
+  <code>core.Client.DoRequestURL</code> to bypass the base-path join. The Python <code>as_pem</code>
+  JWK decoding is client-internal crypto and out of wire scope.</li>
+<li><strong><code>AuthClientInfo</code></strong> names the <code>/api/clients</code> resource type to avoid colliding
+  with the <code>auth.Client</code> service type. <code>Consent.ID</code> and <code>dependency_path</code> are
+  integers, not UUID strings.</li>
+</ul>
+<h2 id="search-subjectentry-query-params-ingest-envelope-corrected-verbs">Search: subject/entry query params, ingest envelope, corrected verbs<a class="headerlink" href="#search-subjectentry-query-params-ingest-envelope-corrected-verbs" title="Permanent link">&para;</a></h2>
+<p>The Phase 2 audit found several Search routes and bodies diverged from 4.8.1:</p>
+<ul>
+<li><strong>Subject/entry are query params.</strong> <code>GetEntry</code>/<code>DeleteEntry</code> now hit
+  <code>/index/{id}/entry?subject=&amp;entry_id=</code> (entry_id optional), and new
+  <code>GetSubject</code>/<code>DeleteSubject</code> hit <code>/index/{id}/subject?subject=</code>. The old
+  <code>/index/{id}/subject/{subject}</code> path segments were not upstream routes.</li>
+<li><strong><code>UpdateIndex</code></strong> uses <code>PATCH</code> (was <code>PUT</code>). <code>CreateIndex</code>/<code>IndexUpdate</code> bodies
+  trimmed to <code>display_name</code>/<code>description</code> (upstream sends only those).</li>
+<li><strong>Ingest.</strong> Upstream has one <code>ingest</code> method taking a
+  <code>{ingest_type, ingest_data}</code> document. The Go <code>IngestEntry</code>/<code>IngestBatch</code>
+  methods sent bodies without that envelope (broken wire) — replaced by a single
+  <code>Ingest(indexID, data)</code> plus <code>NewGMetaEntryIngest</code>/<code>NewGMetaListIngest</code>
+  builders. Added <code>DeleteByQuery</code> and <code>BatchDeleteBySubject</code>.</li>
+<li><strong>Tasks.</strong> <code>GetTaskStatus</code> (mis-routed to <code>/index/{id}/task/{id}</code>) replaced by
+  <code>GetTask</code> (<code>GET /task/{task_id}</code>, index-independent) and <code>GetTaskList</code>
+  (<code>GET /task_list/{index_id}</code>). The task status field is <code>state</code>, not <code>status</code>.</li>
+<li><strong><code>AddRole</code></strong> sends <code>{role_name, principal}</code> (was the fabricated
+  <code>{principal, role_id}</code>); <code>GetRole</code> removed (no single-role GET route).</li>
+<li><strong><code>SearchQuery</code></strong> now emits the required <code>@version: "query#1.0.0"</code>, <code>facets</code>
+  is a list of objects (was <code>[]string</code>), and <code>post_facet_filters</code>/<code>boosts</code> were
+  added; the non-upstream <code>bypass_visible_to</code> field was dropped. Added the GET
+  <code>SearchGet</code> variant and <code>Scroll</code> (marker-paginated).</li>
+<li><strong>Pagination.</strong> <code>index_list</code> is not paginated upstream — <code>NewIndexesPager</code> and
+  the <code>limit</code>/<code>offset</code> params were removed; <code>filter_roles</code> is a single
+  comma-joined value (was repeated params). Added <code>NewSearchPager</code>
+  (offset-advancing, capped at 10000) and <code>NewScrollPager</code> (marker) matching the
+  upstream paginators over the <code>gmeta</code> key.</li>
+</ul>
+<h2 id="timers-realigned-to-the-481-wire-paths-base-url-document-shape">Timers: realigned to the 4.8.1 wire (paths, base URL, document shape)<a class="headerlink" href="#timers-realigned-to-the-481-wire-paths-base-url-document-shape" title="Permanent link">&para;</a></h2>
+<p>The Phase 2 audit found the timers client diverged from upstream on nearly every
+wire detail. Corrected to match Python globus-sdk 4.8.1's <code>TimersClient</code>:</p>
+<ul>
+<li><strong>Base URL</strong> is <code>https://timer.automate.globus.org</code> (was <code>.../api/v1</code>). Upstream
+  paths are absolute from the host root (<code>/jobs/</code>, <code>/v2/timer</code>).</li>
+<li><strong>Paths/verbs:</strong> list <code>GET /jobs/</code>, get <code>GET /jobs/{id}</code>, create <code>POST /v2/timer</code>
+  (body wrapped as <code>{"timer": ...}</code>), legacy create <code>POST /jobs/</code>, update
+  <code>PATCH /jobs/{id}</code> (was <code>PUT /timers/{id}</code>), delete <code>DELETE /jobs/{id}</code>, pause
+  <code>POST /jobs/{id}/pause</code>, resume <code>POST /jobs/{id}/resume</code> (optional
+  <code>{"update_credentials": bool}</code> body).</li>
+<li><strong>Create document</strong> reshaped to <code>timer_type</code> + <code>name</code> + <code>schedule</code> + <code>body</code>
+  (+<code>flow_id</code> for flow timers), with <code>Schedule</code> serializing to the upstream
+  once/recurring shapes (<code>interval_seconds</code> int, structured <code>end</code>). The old
+  <code>Callback</code>/<code>Timer.Schedule.Interval</code>-as-string shape was fabricated.</li>
+<li><strong>Removed phantom methods</strong> with no upstream classic-client route: <code>RunTimer</code>,
+  <code>ListRuns</code>, <code>GetRun</code> (the classic <code>TimersClient</code> has no run-inspection surface),
+  and the <code>CreateOnceTimer</code>/<code>CreateRecurringTimer</code> helpers (superseded by the
+  <code>NewOnceSchedule</code>/<code>NewRecurringSchedule</code> builders).</li>
+<li><strong><code>list_jobs</code></strong> is not paginated upstream; <code>ListTimers</code> does a single fetch and
+  <code>ListTimersOptions</code> is a generic query-param passthrough.</li>
+</ul>
+<h2 id="transfer-bare-host-base-url-full-classic-surface-phase-2-audit">Transfer: bare-host base URL + full classic surface (Phase 2 audit)<a class="headerlink" href="#transfer-bare-host-base-url-full-classic-surface-phase-2-audit" title="Permanent link">&para;</a></h2>
+<p>The Phase 2 audit found the transfer client implemented ~15 methods (several
+against non-existent routes) out of ~62 upstream. Corrected:</p>
+<ul>
+<li><strong>Base URL → bare host</strong> <code>https://transfer.api.globus.org</code> (was <code>.../v0.10</code>).
+  Classic routes now carry their own <code>/v0.10</code> prefix and the Beta tunnel/stream
+  routes carry <code>/v2</code>, so both surfaces are reachable through the path-joining
+  buildURL. (Before this, the <code>/v2/...</code> tunnel and bookmark literals were
+  mis-routed to <code>.../v0.10/v2/...</code>.)</li>
+<li><strong>Removed phantom routes:</strong> <code>ListEndpoints</code> hit <code>/endpoint_list</code> (no such
+  route) — replaced by <code>EndpointSearch</code> (<code>GET /v0.10/endpoint_search</code>, offset
+  paginated, capped at 1000 via <code>NewEndpointSearchPager</code>). The flat
+  <code>/tunnel_list</code>/<code>/stream_access_point_list</code> list paths and <code>NewTunnelsPager</code>
+  were replaced by the real JSON:API <code>/v2/tunnels</code> and <code>/v2/stream_access_points</code>
+  (neither is marker-paginated upstream).</li>
+<li><strong>Submit auto-fetches <code>submission_id</code>:</strong> <code>SubmitTransfer</code>/<code>SubmitDelete</code> now
+  fetch a submission ID when the caller supplies none, matching upstream; added
+  <code>submission_id</code>, <code>source_local_user</code>/<code>destination_local_user</code>, <code>local_user</code>,
+  and <code>filter_rules</code> to the transfer/delete documents.</li>
+<li><strong>Added the missing classic surface:</strong> endpoint update/delete/subscription,
+  <code>operation_stat</code>, <code>local_user</code> on ls/mkdir/rename, <code>orderby</code> on ls/task_list,
+  task <code>event_list</code>/<code>pause_info</code>/<code>successful_transfers</code>/<code>skipped_errors</code>,
+  <code>update_task</code>, shared-endpoint family, endpoint role/ACL/server families, and
+  the entire <code>endpoint_manager</code> family (monitored endpoints, task inspection,
+  admin cancel/pause/resume, pause-rule CRUD). Open-ended admin documents use
+  passthrough <code>map[string]interface{}</code> (<code>GenericResponse</code>).</li>
+<li><strong><code>filter_status</code>/<code>orderby</code>/<code>filter_task_id</code> are comma-joined</strong> into single
+  params (were repeated); integer-boolean params (<code>show_hidden</code>,
+  <code>filter_non_functional</code>, <code>filter_is_error</code>) serialize as <code>1</code>/<code>0</code>.</li>
+</ul>
 <h2 id="v3-transfer-data-envelopes-wire-param-realignment-added-families-phase-2-audit-vs-3650">v3 Transfer: DATA envelopes, wire-param realignment, added families (Phase 2 audit vs 3.65.0)<a class="headerlink" href="#v3-transfer-data-envelopes-wire-param-realignment-added-families-phase-2-audit-vs-3650" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Uppercase <code>DATA</code> list envelopes.</strong> <code>EndpointList</code>, <code>TaskList</code> and <code>FileList</code>
@@ -1780,12 +2146,18 @@ to match Python globus-sdk 3.65.0:</p>
 <h2 id="transfer-streamstunnels-folded-into-transferclient">Transfer: Streams/Tunnels folded into <code>transfer.Client</code><a class="headerlink" href="#transfer-streamstunnels-folded-into-transferclient" title="Permanent link">&para;</a></h2>
 <ul>
 <li><strong>Upstream:</strong> the Streams/Tunnels API (Python SDK v4.3.0–v4.4.0) lives on the
-  experimental <code>TransferClientV2</code>.</li>
+  experimental <code>TransferClientV2</code>, speaking JSON:API under <code>/v2/</code>.</li>
 <li><strong>Here:</strong> the methods (<code>CreateTunnel</code>, <code>GetTunnel</code>, <code>UpdateTunnel</code>,
   <code>DeleteTunnel</code>, <code>ListTunnels</code>, <code>GetStreamAccessPoint</code>, <code>ListStreamAccessPoints</code>,
-  <code>GetTunnelEvents</code>) are added directly to the existing <code>transfer.Client</code>.</li>
-<li><strong>Why:</strong> the Go v4 module has no <code>TransferClientV2</code>. A second client type would
-  duplicate construction, config, and auth wiring for no user benefit.</li>
+  <code>GetTunnelEvents</code>) are on the existing <code>transfer.Client</code>. The Phase 2 audit
+  corrected their wire shape: requests build the JSON:API document
+  (<code>data.{type,relationships,attributes}</code> — e.g. tunnel create references the
+  listener/initiator <code>StreamAccessPoint</code> ids under relationships), and responses
+  are flattened from the JSON:API envelope into the flat <code>Tunnel</code>/
+  <code>StreamAccessPoint</code> types. <code>UpdateTunnel</code> uses <code>PATCH</code>. Phase 1's flat
+  request/response models were invented and have been replaced.</li>
+<li><strong>Why folded:</strong> the Go v4 module has no <code>TransferClientV2</code>. A second client
+  type would duplicate construction, config, and auth wiring for no user benefit.</li>
 </ul>
 <h2 id="transfer-bookmark-crud-folded-into-transferclient">Transfer: bookmark CRUD folded into <code>transfer.Client</code><a class="headerlink" href="#transfer-bookmark-crud-folded-into-transferclient" title="Permanent link">&para;</a></h2>
 <ul>
