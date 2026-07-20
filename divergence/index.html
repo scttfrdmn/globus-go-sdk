@@ -1750,11 +1750,15 @@ envelope with a <code>data</code> array). The client was rebuilt:</p>
 <code>errors.py</code> — it defines <strong>no</strong> request/response models and <strong>no</strong> pagination.
 The Phase 2 audit realigned the Go client to that reality:</p>
 <ul>
-<li><strong>Passthrough everywhere.</strong> All request bodies are <code>map[string]interface{}</code>
-  and all responses are <code>map[string]interface{}</code>. The previously invented typed
+<li><strong>Passthrough everywhere.</strong> Request bodies are <code>map[string]interface{}</code> and
+  object responses are <code>map[string]interface{}</code>. The previously invented typed
   models (<code>Endpoint</code>, <code>EndpointList</code>, <code>FunctionRun</code>, <code>FunctionList</code>,
   <code>TaskStatus</code>, <code>TaskList</code>, <code>FunctionDefinition</code>, <code>FunctionRegistration</code>,
-  <code>BatchTask*</code>, etc.) were removed — none were verifiable against the wire.</li>
+  <code>BatchTask*</code>, etc.) were removed — none were verifiable against the wire.
+  Two endpoints do not return JSON objects, so their methods return their real
+  shape: <code>GetEndpoints</code> (<code>GET /v2/endpoints</code>) returns a top-level array
+  (<code>[]map[string]interface{}</code>), and <code>GetVersion</code> (<code>GET /v2/version</code>) returns an
+  untyped value (a bare string with no <code>service</code>, or an object with one).</li>
 <li><strong>Base URL → host root.</strong> <code>https://compute.api.globus.org</code> (was <code>.../v2</code>), and
   every endpoint carries its own <code>/v2</code> or <code>/v3</code> prefix, so both API surfaces are
   reachable through the path-joining buildURL.</li>
@@ -2018,11 +2022,14 @@ against non-existent routes) out of ~62 upstream. Corrected:</p>
 <li><strong>No request/response models, no pagination.</strong> Upstream <code>ComputeClient</code> (at
   3.65.0) sends and returns open-ended JSON documents and defines no model
   classes or paginators for the compute web service. The Go client mirrors this
-  with <code>map[string]interface{}</code> bodies and results everywhere; <code>models.go</code> is a
+  with <code>map[string]interface{}</code> bodies and object results; <code>models.go</code> is a
   comment-only file. The previously-defined <code>ComputeEndpoint</code>,
   <code>ComputeEndpointList</code>, container/environment/dependency/batch model types and
   their <code>ListEndpoints</code>/<code>ListEndpointsOptions</code> surface were fabricated and have
-  been removed.</li>
+  been removed. Two endpoints do not return JSON objects, so their methods return
+  their real shape: <code>GetEndpoints</code> (<code>GET /v2/endpoints</code>) returns a top-level
+  array (<code>[]map[string]interface{}</code>), and <code>GetVersion</code> (<code>GET /v2/version</code>)
+  returns an untyped value (a bare string with no <code>service</code>, or an object).</li>
 <li><strong>Base URL → host root</strong> (<code>https://compute.api.globus.org/</code>); the <code>/v2</code> and
   <code>/v3</code> prefixes live in each endpoint path rather than the base.</li>
 <li><strong>V2 and V3 folded into one client.</strong> V3 endpoint/function/submit routes are
@@ -2197,7 +2204,7 @@ to match Python globus-sdk 3.65.0:</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 20, 2026 17:38:13 UTC">July 20, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 20, 2026 21:10:28 UTC">July 20, 2026</span>
   </span>
 
     
