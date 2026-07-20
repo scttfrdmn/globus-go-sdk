@@ -11,8 +11,12 @@ import (
 	"sync"
 )
 
-// Version is the current version of the Globus Go SDK
-const Version = "4.4.0"
+// Version is the current version of the Globus Go SDK (v3 module).
+//
+// This tracks feature parity with the upstream Python globus-sdk v3 line, which
+// is frozen at v3.65.0 (the final v3 release; upstream development has moved to
+// the v4 line). See .github/upstream-versions.json for parity tracking.
+const Version = "3.65.0"
 
 // APIVersion represents a Globus API version
 type APIVersion struct {

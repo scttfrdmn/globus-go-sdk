@@ -2,7 +2,7 @@ module github.com/scttfrdmn/globus-go-sdk/v4
 
 go 1.22
 
-// Version: 4.5.0-2 - Adds application framework layer (authorizers, token storage, paging, login flows, GlobusApp)
+// Version: 4.5.0-3 - Feature parity with Python globus-sdk v4.5.0 (see .github/upstream-versions.json)
 
 require (
 	github.com/davecgh/go-spew v1.1.1 // indirect

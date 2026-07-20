@@ -10,23 +10,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Added
-- Nothing added yet
-
 ### Changed
-- Nothing changed yet
-
-### Deprecated
-- Nothing deprecated yet
-
-### Removed
-- Nothing removed yet
+- **Upstream parity tracking overhauled.** `.github/upstream-versions.json` now
+  separates `ported` (the upstream Python SDK version this module actually
+  implements) from `seen` (the latest release CI has observed). The
+  `check-upstream-releases` workflow now runs daily, enumerates *every* release
+  in the gap (not just the newest), files one issue per release, and only bumps
+  `seen` — `ported` is bumped by humans when features land. This surfaces parity
+  gaps honestly instead of hiding them.
 
 ### Fixed
-- Nothing fixed yet
+- **Version constants now report the true parity point.** The `core.Version`
+  constant (and `pkg.Version` in the v3 module) previously read `4.4.0` in both
+  modules. Corrected to `3.65.0` (v3 module, final v3 line) and `4.5.0` (v4
+  module, its verified current parity). `UserAgent()` now reports the correct
+  version.
 
-### Security
-- Nothing security-related yet
+### Notes
+- Upstream Python globus-sdk has released v4.6.0–v4.8.1. The wire-visible gap
+  (Flows registered-APIs, Transfer bookmark management) is tracked for a
+  follow-up release; the v4.8.0/v4.8.1 changes are Python-internal (orjson,
+  transport representation providers) with no Go equivalent.
 
 ## [4.5.0-2] - 2026-04-03
 
