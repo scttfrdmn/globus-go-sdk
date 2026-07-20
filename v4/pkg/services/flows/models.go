@@ -41,24 +41,24 @@ type FlowAuthenticationPolicy struct {
 
 // FlowCreate represents the payload for creating a flow
 type FlowCreate struct {
-	Title                string                     `json:"title"`
-	Definition           map[string]interface{}     `json:"definition"`
-	InputSchema          map[string]interface{}     `json:"input_schema,omitempty"`
-	Description          string                     `json:"description,omitempty"`
+	Title       string                 `json:"title"`
+	Definition  map[string]interface{} `json:"definition"`
+	InputSchema map[string]interface{} `json:"input_schema,omitempty"`
+	Description string                 `json:"description,omitempty"`
 	// AuthenticationPolicy specifies auth requirements for running this flow.
 	// Added in Python SDK v4.1.0; service support may be pending.
-	AuthenticationPolicy *FlowAuthenticationPolicy  `json:"authentication_policy,omitempty"`
+	AuthenticationPolicy *FlowAuthenticationPolicy `json:"authentication_policy,omitempty"`
 }
 
 // FlowUpdate represents the payload for updating a flow
 type FlowUpdate struct {
-	Title                string                     `json:"title,omitempty"`
-	Definition           map[string]interface{}     `json:"definition,omitempty"`
-	InputSchema          map[string]interface{}     `json:"input_schema,omitempty"`
-	Description          string                     `json:"description,omitempty"`
+	Title       string                 `json:"title,omitempty"`
+	Definition  map[string]interface{} `json:"definition,omitempty"`
+	InputSchema map[string]interface{} `json:"input_schema,omitempty"`
+	Description string                 `json:"description,omitempty"`
 	// AuthenticationPolicy specifies auth requirements for running this flow.
 	// Added in Python SDK v4.1.0; service support may be pending.
-	AuthenticationPolicy *FlowAuthenticationPolicy  `json:"authentication_policy,omitempty"`
+	AuthenticationPolicy *FlowAuthenticationPolicy `json:"authentication_policy,omitempty"`
 }
 
 // FlowInput represents input for running a flow
@@ -171,4 +171,51 @@ type ListActionProvidersOptions struct {
 	Q           string
 	FilterOwner string
 	FilterType  string
+}
+
+// RegisteredAPIRoles describes the principals holding each role on a
+// registered API. Added in Python SDK v4.6.0.
+type RegisteredAPIRoles struct {
+	Owners         []string `json:"owners,omitempty"`
+	Administrators []string `json:"administrators,omitempty"`
+	Viewers        []string `json:"viewers,omitempty"`
+}
+
+// RegisteredAPI represents a Flows registered API.
+// Added in Python SDK v4.6.0 (GET /registered_apis/{id}).
+//
+// The target and data_templates payloads are open-ended service documents, so
+// they are modeled as map[string]interface{} rather than fixed structs.
+type RegisteredAPI struct {
+	ID                         string                 `json:"id"`
+	Name                       string                 `json:"name"`
+	Description                string                 `json:"description,omitempty"`
+	Roles                      *RegisteredAPIRoles    `json:"roles,omitempty"`
+	Target                     map[string]interface{} `json:"target,omitempty"`
+	DataTemplates              map[string]interface{} `json:"data_templates,omitempty"`
+	StateInputSchema           map[string]interface{} `json:"state_input_schema,omitempty"`
+	Status                     string                 `json:"status,omitempty"`
+	SubscriptionID             string                 `json:"subscription_id,omitempty"`
+	CreatedTimestamp           time.Time              `json:"created_timestamp,omitempty"`
+	EditedTimestamp            time.Time              `json:"edited_timestamp,omitempty"`
+	UpdatedTimestamp           time.Time              `json:"updated_timestamp,omitempty"`
+	ScheduledDeletionTimestamp *time.Time             `json:"scheduled_deletion_timestamp,omitempty"`
+}
+
+// RegisteredAPIList is a page of registered APIs.
+// Uses marker pagination (keys registered_apis, marker, has_next_page).
+type RegisteredAPIList struct {
+	RegisteredAPIs []RegisteredAPI `json:"registered_apis"`
+	Limit          int             `json:"limit,omitempty"`
+	HasNextPage    bool            `json:"has_next_page"`
+	Marker         string          `json:"marker,omitempty"`
+}
+
+// ListRegisteredAPIsOptions controls which registered APIs are returned.
+// FilterRoles is comma-joined into the filter_roles query parameter upstream.
+type ListRegisteredAPIsOptions struct {
+	FilterRoles []string
+	OrderBy     string
+	PerPage     int
+	Marker      string
 }

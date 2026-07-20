@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
@@ -133,6 +134,7 @@ func (c *Client) ListRuns(ctx context.Context, options *ListRunsOptions) (*RunLi
 	}
 	return &runList, nil
 }
+
 // CreateFlow deploys a new flow definition.
 func (c *Client) CreateFlow(ctx context.Context, flow *FlowCreate) (*Flow, error) {
 	if flow == nil {
@@ -328,8 +330,49 @@ func (c *Client) GetActionRole(ctx context.Context, providerID, roleID string) (
 	return &role, nil
 }
 
+// GetRegisteredAPI retrieves a registered API by ID.
+// Added in Python SDK v4.6.0 (GET /registered_apis/{id}).
+func (c *Client) GetRegisteredAPI(ctx context.Context, registeredAPIID string) (*RegisteredAPI, error) {
+	if registeredAPIID == "" {
+		return nil, &core.ValidationError{Field: "registeredAPIID", Message: "registered API ID is required"}
+	}
+
+	var api RegisteredAPI
+	path := fmt.Sprintf("/registered_apis/%s", registeredAPIID)
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, path, nil, nil, &api); err != nil {
+		return nil, err
+	}
+	return &api, nil
+}
+
+// ListRegisteredAPIs lists registered APIs with optional filtering.
+// Added in Python SDK v4.6.0; per_page added in v4.7.0
+// (GET /registered_apis, marker pagination).
+func (c *Client) ListRegisteredAPIs(ctx context.Context, options *ListRegisteredAPIsOptions) (*RegisteredAPIList, error) {
+	query := url.Values{}
+	if options != nil {
+		if len(options.FilterRoles) > 0 {
+			query.Set("filter_roles", strings.Join(options.FilterRoles, ","))
+		}
+		if options.OrderBy != "" {
+			query.Set("orderby", options.OrderBy)
+		}
+		if options.PerPage > 0 {
+			query.Set("per_page", strconv.Itoa(options.PerPage))
+		}
+		if options.Marker != "" {
+			query.Set("marker", options.Marker)
+		}
+	}
+
+	var list RegisteredAPIList
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, "/registered_apis", query, nil, &list); err != nil {
+		return nil, err
+	}
+	return &list, nil
+}
+
 // Close closes the client and releases resources
 func (c *Client) Close() error {
 	return c.baseClient.Close()
 }
-
