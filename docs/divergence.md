@@ -36,6 +36,44 @@ present:
   fields. `DoRequest` now sends a `url.Values` body as flat
   `application/x-www-form-urlencoded`; all other bodies remain JSON.
 
+## Auth: single client folds upstream's split clients; wire fixes
+
+The Phase 2 audit filled a large missing surface and fixed wire bugs in the auth
+client. Notable structure choices vs Python globus-sdk 4.8.1:
+
+- **One client, many upstream clients.** Python splits auth across `AuthClient`
+  (identities, projects, policies, clients, scopes, credentials, consents) and
+  the login clients (`AuthLoginClient` / `ConfidentialAppAuthClient` /
+  `NativeAppAuthClient`) for oauth2 grants, introspect/revoke, dependent tokens,
+  and child/native-app client creation. The Go SDK folds all of these onto one
+  `auth.Client`, so management and grant methods coexist.
+- **Go-only extensions kept.** `StartDeviceAuthorization` /
+  `PollDeviceAuthorization` / `WaitForDeviceAuthorization` (RFC 8628 device flow,
+  `POST /oauth2/device/code`) and `GetAuthorizationURL` have no method on the
+  4.8.1 Python auth client, but hit real Globus Auth wire endpoints; they are
+  retained as a Go superset and are not phantom routes.
+- **Form encoding.** `IntrospectToken` and `RevokeToken` now send
+  `application/x-www-form-urlencoded` (they previously sent JSON, the wrong media
+  type). `IntrospectToken` gained an `include` option; grant helpers
+  (`ClientCredentialsTokens`, `GetDependentTokens`) are form-encoded.
+- **Response envelopes.** Single objects are unwrapped from their key
+  (`project`, `policy`, `client`, `scope`, `credential`) and collections from
+  the plural key (`projects`, `identities`, `identity_providers`, `policies`,
+  `clients`, `credentials`, `scopes`, `consents`). `GetProjects`/`GetProject`
+  previously ignored the envelope and returned empty data.
+- **`ProjectCreate` trimmed** to the four fields upstream accepts
+  (`display_name`, `contact_email`, `admin_ids`, `admin_group_ids`); the create
+  body is wrapped under `project`. The fabricated `public_contact_info` /
+  `metadata` create fields were removed.
+- **Host-root endpoints.** `GetOpenIDConfiguration` and `GetJWK` target the Auth
+  host root (`/.well-known/openid-configuration`, then the advertised
+  `jwks_uri`), outside the `/v2` base. They use the new
+  `core.Client.DoRequestURL` to bypass the base-path join. The Python `as_pem`
+  JWK decoding is client-internal crypto and out of wire scope.
+- **`AuthClientInfo`** names the `/api/clients` resource type to avoid colliding
+  with the `auth.Client` service type. `Consent.ID` and `dependency_path` are
+  integers, not UUID strings.
+
 ## Timers: realigned to the 4.8.1 wire (paths, base URL, document shape)
 
 The Phase 2 audit found the timers client diverged from upstream on nearly every

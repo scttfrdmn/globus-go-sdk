@@ -47,11 +47,17 @@ func NewClient(config *Config) (*Client, error) {
 }
 
 // DoRequest performs an HTTP request with context, retry logic, and error handling
-// This is the core method used by all service clients
+// This is the core method used by all service clients. The endpoint is joined onto
+// the configured base URL.
 func (c *Client) DoRequest(ctx context.Context, method, endpoint string, query url.Values, body interface{}, result interface{}) error {
-	// Build URL
-	reqURL := c.buildURL(endpoint, query)
+	return c.DoRequestURL(ctx, method, c.buildURL(endpoint, query), body, result)
+}
 
+// DoRequestURL performs an HTTP request against a fully-formed URL, bypassing the
+// base-URL join. It is used for the handful of endpoints that live outside a
+// client's base path (e.g. Auth's host-root OIDC discovery / JWKS URIs). The
+// retry, auth, and decoding behavior matches DoRequest.
+func (c *Client) DoRequestURL(ctx context.Context, method, reqURL string, body interface{}, result interface{}) error {
 	// Marshal request body if provided.
 	// A url.Values body is sent as application/x-www-form-urlencoded (required
 	// by the OAuth2 token/introspect/revoke endpoints); anything else is JSON.

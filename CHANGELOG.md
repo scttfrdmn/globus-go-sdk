@@ -41,6 +41,34 @@ Timers client realigned to the Python globus-sdk 4.8.1 wire (Phase 2 audit).
   `GetRun`, `CreateOnceTimer`, `CreateRecurringTimer`, and the `Callback`,
   `TimerRun`, `TimerRunList`, `ListRunsOptions` types.
 
+### Added — Auth (v4 module, Phase 2 parity audit)
+
+- Identities: `GetIdentities`, `GetIdentityProviders`.
+- Policies CRUD: `GetPolicy`, `GetPolicies`, `CreatePolicy`, `UpdatePolicy`, `DeletePolicy`.
+- Clients CRUD: `GetClient` (by ID or FQDN), `GetClients`, `CreateClient`,
+  `UpdateClient`, `DeleteClient`, plus `CreateChildClient` and
+  `CreateNativeAppInstance`.
+- Client credentials: `GetClientCredentials`, `CreateClientCredential`, `DeleteClientCredential`.
+- Scopes CRUD: `GetScope`, `GetScopes`, `CreateScope`, `UpdateScope`, `DeleteScope`.
+- `GetConsents`, `UpdateProject`, `GetDependentTokens`, `ClientCredentialsTokens`.
+- OIDC: `GetOpenIDConfiguration`, `GetJWK` (host-root endpoints).
+- `TokenResponse` gained `other_tokens`/`id_token`/`state` and a
+  `ByResourceServer()` accessor; `TokenIntrospection` gained
+  `name`/`email`/`identity_set`; `Project` gained `admins`.
+- `GetAuthorizationURL` gained `session_required_*` and `session_message` params.
+- New core `DoRequestURL` for endpoints outside a client's base path.
+
+### Changed — Auth (v4 module, Phase 2 parity audit)
+
+**Breaking** within the v4 line:
+
+- `IntrospectToken` now takes `(ctx, token, *IntrospectOptions)` and is
+  form-encoded; `RevokeToken` is form-encoded.
+- `GetProjects`/`GetProject`/`CreateProject` now handle the upstream response and
+  request envelopes (they previously mishandled them and returned empty data).
+- `ProjectCreate` trimmed to upstream's four fields (`public_contact_info`,
+  `metadata`, `project_name` removed from the create body).
+
 ### Added (v4 module — `github.com/scttfrdmn/globus-go-sdk/v4`)
 
 Closes the wire-visible gap to upstream Python globus-sdk **v4.8.1**.
