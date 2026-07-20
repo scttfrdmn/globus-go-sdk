@@ -8,14 +8,14 @@ package transfer
 
 // EndpointSearchOptions controls EndpointSearch (GET /endpoint_search).
 type EndpointSearchOptions struct {
-	FilterFulltext     string
-	FilterScope        string
-	FilterOwnerID      string
-	FilterHostEndpoint string
+	FilterFulltext      string
+	FilterScope         string
+	FilterOwnerID       string
+	FilterHostEndpoint  string
 	FilterNonFunctional *bool // wire is 1/0
-	FilterEntityType   string
-	Limit              int
-	Offset             int
+	FilterEntityType    string
+	Limit               int
+	Offset              int
 }
 
 // EndpointSearchResult is a page of endpoint_search results.
@@ -43,8 +43,8 @@ type TaskEventList struct {
 
 // ListTaskEventsOptions controls TaskEventList / EndpointManagerTaskEventList.
 type ListTaskEventsOptions struct {
-	Limit       int
-	Offset      int
+	Limit         int
+	Offset        int
 	FilterIsError *bool // wire is 1/0
 }
 
@@ -66,18 +66,18 @@ type EndpointManagerTaskList struct {
 
 // EndpointManagerTaskListOptions controls EndpointManagerTaskList.
 type EndpointManagerTaskListOptions struct {
-	FilterStatus     []string // comma-joined
-	FilterTaskID     []string // comma-joined
-	FilterOwnerID    string
-	FilterEndpoint   string
+	FilterStatus      []string // comma-joined
+	FilterTaskID      []string // comma-joined
+	FilterOwnerID     string
+	FilterEndpoint    string
 	FilterEndpointUse string
-	LastKey          string
-	Limit            int
+	LastKey           string
+	Limit             int
 }
 
 // SharedEndpointList is a page of shared endpoints (next_token paginated).
 type SharedEndpointList struct {
-	DataType         string                   `json:"DATA_TYPE"`
-	SharedEndpoints  []map[string]interface{} `json:"shared_endpoints"`
-	NextToken        *string                  `json:"next_token"`
+	DataType        string                   `json:"DATA_TYPE"`
+	SharedEndpoints []map[string]interface{} `json:"shared_endpoints"`
+	NextToken       *string                  `json:"next_token"`
 }
