@@ -41,6 +41,25 @@ Timers client realigned to the Python globus-sdk 4.8.1 wire (Phase 2 audit).
   `GetRun`, `CreateOnceTimer`, `CreateRecurringTimer`, and the `Callback`,
   `TimerRun`, `TimerRunList`, `ListRunsOptions` types.
 
+### Changed — Flows (v4 module, Phase 2 parity audit)
+
+**Breaking** within the v4 line:
+
+- `RunFlow`/`ValidateRun` send input under `body` (was `input`); `FlowInput`
+  gained label/tags/run_monitors/run_managers/activity_notification_policy.
+- `GetRun` takes `(ctx, runID, *GetRunOptions)`. `UpdateFlow`/`UpdateRun` use
+  PUT. Removed `FlowAuthenticationPolicy` (create/update take
+  `authentication_policy_id` string); `FlowCreate`/`FlowUpdate` gained the full
+  upstream field set; `CreateFlow` requires input_schema.
+- list_flows/list_runs/get_run_logs are marker-paginated; options reworked
+  (filter_roles/filter_fulltext/orderby/marker, filter_flow_id, limit/
+  reverse_order/marker). `NewFlowsPager`/`NewRunsPager` are marker-based;
+  `NewRunLogsPager` added. `ListRegisteredAPIsOptions.OrderBy` is now `[]string`.
+- Removed action-provider methods/types (no upstream route in globus-sdk flows).
+
+Added: `ValidateFlow`, `GetRunDefinition`, `DeleteRun`, `ResumeRun`,
+`ValidateRun`.
+
 ### Changed — Search (v4 module, Phase 2 parity audit)
 
 **Breaking** within the v4 line:

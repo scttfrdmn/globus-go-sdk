@@ -36,6 +36,42 @@ present:
   fields. `DoRequest` now sends a `url.Values` body as flat
   `application/x-www-form-urlencoded`; all other bodies remain JSON.
 
+## Flows: SpecificFlowClient folded in; removed action providers; wire fixes
+
+The Phase 2 audit corrected several Flows wire divergences and removed a phantom
+surface:
+
+- **One client.** Upstream splits `FlowsClient` and `SpecificFlowClient` (built
+  with a flow_id). Go keeps one `flows.Client`: `RunFlow`/`ValidateRun` take a
+  `flowID` arg; `ResumeRun` takes a `runID` (upstream `resume_run` posts to
+  `/runs/{run_id}/resume`).
+- **Removed action-provider methods** (`ListActionProviders`,
+  `GetActionProvider`, `ListActionRoles`, `GetActionRole`) and their types — the
+  globus-sdk flows service has no `/action_providers` routes at 4.8.1 (those live
+  in the separate globus-automate-client).
+- **`RunFlow`/`ValidateRun` body.** The flow input is sent under `body` (was
+  `input`); added `label`/`tags`/`run_monitors`/`run_managers`/
+  `activity_notification_policy` to `FlowInput`.
+- **Verbs.** `UpdateFlow` and `UpdateRun` use `PUT` (were `PATCH`). `DeleteRun`
+  is `POST /runs/{id}/release` (not an HTTP DELETE).
+- **Removed `FlowAuthenticationPolicy`.** Upstream create/update flow accept only
+  `authentication_policy_id` (a string), never an authentication-policy object.
+  `FlowCreate`/`FlowUpdate` gained the full upstream field set (subtitle,
+  flow_viewers/starters/administrators, run_managers/monitors, keywords,
+  subscription_id, authentication_policy_id). `CreateFlow` now requires
+  input_schema.
+- **Pagination.** `list_flows`, `list_runs`, and `get_run_logs` are
+  marker-paginated (keys `marker`/`has_next_page`), not limit/offset. Options
+  reworked: flows use `filter_roles` (comma-joined), `filter_fulltext`,
+  `orderby` (repeated params), `marker`; runs use `filter_flow_id`/`filter_roles`
+  (comma-joined) + `marker`; run logs use `limit`, `reverse_order`, `marker`.
+  `NewFlowsPager`/`NewRunsPager` switched to marker pagination and
+  `NewRunLogsPager` added. `ListRegisteredAPIsOptions.OrderBy` is now `[]string`
+  (repeated params).
+- **New methods:** `ValidateFlow` (`POST /flows/validate`), `GetRunDefinition`,
+  `DeleteRun`, `ResumeRun`, `ValidateRun`; `GetRun` gained a
+  `*GetRunOptions{IncludeFlowDescription}` arg.
+
 ## Groups: removed fabricated members/roles surface and pagination
 
 The Phase 2 audit found much of the Groups client hit routes that do not exist

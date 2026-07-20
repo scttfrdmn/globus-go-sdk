@@ -8,23 +8,24 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/paging"
 )
 
-// NewFlowsPager returns a Paginator that iterates through all flows
+// NewFlowsPager returns a marker Paginator that iterates through all flows
 // matching opts. Pass nil for default options.
 func (c *Client) NewFlowsPager(opts *ListFlowsOptions) paging.Paginator[Flow] {
-	pageSize := 0
-	if opts != nil && opts.Limit > 0 {
-		pageSize = opts.Limit
-	}
-	return paging.NewLimitOffsetPaginator(
-		func(ctx context.Context, limit, offset int) ([]Flow, int, error) {
-			o := &ListFlowsOptions{Limit: limit, Offset: offset}
+	return paging.NewMarkerPaginator(
+		func(ctx context.Context, _ int, marker string) ([]Flow, bool, string, error) {
+			o := &ListFlowsOptions{Marker: marker}
+			if opts != nil {
+				o.FilterRoles = opts.FilterRoles
+				o.FilterFulltext = opts.FilterFulltext
+				o.OrderBy = opts.OrderBy
+			}
 			result, err := c.ListFlows(ctx, o)
 			if err != nil {
-				return nil, 0, err
+				return nil, false, "", err
 			}
-			return result.Flows, result.Total, nil
+			return result.Flows, result.HasNextPage, result.Marker, nil
 		},
-		pageSize,
+		0,
 	)
 }
 
@@ -53,24 +54,43 @@ func (c *Client) NewRegisteredAPIsPager(opts *ListRegisteredAPIsOptions) paging.
 	)
 }
 
-// NewRunsPager returns a Paginator that iterates through all flow runs
+// NewRunsPager returns a marker Paginator that iterates through all flow runs
 // matching opts. Pass nil for default options.
 func (c *Client) NewRunsPager(opts *ListRunsOptions) paging.Paginator[FlowRun] {
+	return paging.NewMarkerPaginator(
+		func(ctx context.Context, _ int, marker string) ([]FlowRun, bool, string, error) {
+			o := &ListRunsOptions{Marker: marker}
+			if opts != nil {
+				o.FilterFlowID = opts.FilterFlowID
+				o.FilterRoles = opts.FilterRoles
+			}
+			result, err := c.ListRuns(ctx, o)
+			if err != nil {
+				return nil, false, "", err
+			}
+			return result.Runs, result.HasNextPage, result.Marker, nil
+		},
+		0,
+	)
+}
+
+// NewRunLogsPager returns a marker Paginator over a run's log entries.
+func (c *Client) NewRunLogsPager(runID string, opts *ListRunLogsOptions) paging.Paginator[RunLog] {
 	pageSize := 0
 	if opts != nil && opts.Limit > 0 {
 		pageSize = opts.Limit
 	}
-	return paging.NewLimitOffsetPaginator(
-		func(ctx context.Context, limit, offset int) ([]FlowRun, int, error) {
-			o := &ListRunsOptions{Limit: limit, Offset: offset}
+	return paging.NewMarkerPaginator(
+		func(ctx context.Context, limit int, marker string) ([]RunLog, bool, string, error) {
+			o := &ListRunLogsOptions{Marker: marker, Limit: limit}
 			if opts != nil {
-				o.FlowID = opts.FlowID
+				o.ReverseOrder = opts.ReverseOrder
 			}
-			result, err := c.ListRuns(ctx, o)
+			result, err := c.GetRunLogs(ctx, runID, o)
 			if err != nil {
-				return nil, 0, err
+				return nil, false, "", err
 			}
-			return result.Runs, result.Total, nil
+			return result.Entries, result.HasNextPage, result.Marker, nil
 		},
 		pageSize,
 	)
