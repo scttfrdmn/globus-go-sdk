@@ -106,12 +106,8 @@ func TestIntegration_ListGroups(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	// List groups
-	options := &ListGroupsOptions{
-		PageSize: 5,
-	}
-
-	groups, err := client.ListGroups(ctx, options)
+	// List the caller's groups
+	groups, err := client.GetMyGroups(ctx, []string{"active"})
 	if err != nil {
 		// Handle different error types with helpful messages
 		if strings.Contains(err.Error(), "status code 405") {
@@ -199,7 +195,7 @@ func TestIntegration_GroupLifecycle(t *testing.T) {
 	}
 
 	// 3. Get the group
-	fetchedGroup, err := client.GetGroup(ctx, createdGroup.ID)
+	fetchedGroup, err := client.GetGroup(ctx, createdGroup.ID, nil)
 	if err != nil {
 		t.Fatalf("Failed to get group: %v", err)
 	}
@@ -239,41 +235,13 @@ func TestIntegration_GroupLifecycle(t *testing.T) {
 		t.Errorf("Updated group description = %s, want %s", updatedGroup.Description, updatedDescription)
 	}
 
-	// 5. List roles for the group
-	roles, err := client.ListRoles(ctx, createdGroup.ID)
+	// 5. Fetch the group with its memberships expanded (Groups has no roles
+	// resource; role is a membership attribute).
+	withMembers, err := client.GetGroup(ctx, createdGroup.ID, &GetGroupOptions{Include: []string{"memberships"}})
 	if err != nil {
-		t.Fatalf("Failed to list roles: %v", err)
+		t.Fatalf("Failed to get group with memberships: %v", err)
 	}
-
-	t.Logf("Group has %d roles", len(roles.Roles))
-
-	// Default groups should have admin and member roles
-	if len(roles.Roles) < 2 {
-		t.Errorf("Expected at least 2 roles, got %d", len(roles.Roles))
-	}
-
-	// Find the admin role
-	var adminRoleID string
-	for _, role := range roles.Roles {
-		if role.Name == "admin" || role.Name == "administrator" {
-			adminRoleID = role.ID
-			break
-		}
-	}
-
-	if adminRoleID == "" {
-		t.Log("Could not find admin role, skipping role tests")
-	} else {
-		// 6. Get a specific role
-		role, err := client.GetRole(ctx, createdGroup.ID, adminRoleID)
-		if err != nil {
-			t.Fatalf("Failed to get role: %v", err)
-		}
-
-		if role.ID != adminRoleID {
-			t.Errorf("Got role ID = %s, want %s", role.ID, adminRoleID)
-		}
-	}
+	t.Logf("Group has %d memberships", len(withMembers.Memberships))
 }
 
 func TestIntegration_ExistingGroup(t *testing.T) {
@@ -302,8 +270,8 @@ func TestIntegration_ExistingGroup(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	// Verify we can get the group
-	group, err := client.GetGroup(ctx, groupID)
+	// Verify we can get the group, with memberships expanded
+	group, err := client.GetGroup(ctx, groupID, &GetGroupOptions{Include: []string{"memberships"}})
 	if err != nil {
 		if strings.Contains(err.Error(), "status code 401") ||
 			strings.Contains(err.Error(), "status code 403") {
@@ -324,55 +292,15 @@ func TestIntegration_ExistingGroup(t *testing.T) {
 	t.Logf("Group is public: %v", group.PublicGroup)
 	t.Logf("Group member count: %d", group.MemberCount)
 
-	// List members
-	members, err := client.ListMembers(ctx, groupID, nil)
-	if err != nil {
-		if strings.Contains(err.Error(), "status code 401") ||
-			strings.Contains(err.Error(), "status code 403") {
-			t.Logf("PERMISSION ERROR: Cannot list members: %v", err)
-			t.Logf("To resolve, provide GLOBUS_TEST_GROUPS_TOKEN with proper permissions")
-			return
-		} else {
-			t.Fatalf("Failed to list members: %v", err)
-		}
-	}
-
-	t.Logf("Group has %d members", len(members.Members))
-
-	// Check if we have members
-	if len(members.Members) > 0 {
-		// Check that the first member has expected fields
-		firstMember := members.Members[0]
+	// Memberships are embedded in the group document when requested via
+	// include=memberships (there is no separate members endpoint).
+	t.Logf("Group has %d memberships", len(group.Memberships))
+	if len(group.Memberships) > 0 {
+		firstMember := group.Memberships[0]
 		if firstMember.IdentityID == "" {
 			t.Error("First member is missing IdentityID")
 		}
-		if firstMember.Username == "" && firstMember.Email == "" {
-			t.Error("First member is missing both username and email")
-		}
-
-		// Log info about first member
-		t.Logf("First member: %s (ID: %s)",
-			firstMember.Username, firstMember.IdentityID)
-		t.Logf("First member role: %s", firstMember.Role.Name)
-	}
-
-	// List roles
-	roles, err := client.ListRoles(ctx, groupID)
-	if err != nil {
-		if strings.Contains(err.Error(), "status code 401") ||
-			strings.Contains(err.Error(), "status code 403") {
-			t.Logf("PERMISSION ERROR: Cannot list roles: %v", err)
-			t.Logf("To resolve, provide GLOBUS_TEST_GROUPS_TOKEN with proper permissions")
-			return
-		} else {
-			t.Fatalf("Failed to list roles: %v", err)
-		}
-	}
-
-	t.Logf("Group has %d roles", len(roles.Roles))
-
-	// Log info about available roles
-	for i, role := range roles.Roles {
-		t.Logf("Role %d: %s (ID: %s)", i+1, role.Name, role.ID)
+		t.Logf("First member: %s (ID: %s) role=%s",
+			firstMember.Username, firstMember.IdentityID, firstMember.Role)
 	}
 }

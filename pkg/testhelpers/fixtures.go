@@ -384,18 +384,6 @@ func AssertGroupEquals(t *testing.T, actual *groups.Group, expected *TestScenari
 	}
 }
 
-// AssertSubscriptionEquals validates subscription objects
-func AssertSubscriptionEquals(t *testing.T, actual *groups.GroupSubscription, expected *TestScenario) {
-	if expected.GroupID != "" && actual.GroupID != expected.GroupID {
-		t.Errorf("Subscription Group ID mismatch: expected %s, got %s", expected.GroupID, actual.GroupID)
-	}
-
-	if subID, ok := expected.Subscription["subscription_id"].(string); ok {
-		if actual.SubscriptionID != subID {
-			t.Errorf("Subscription ID mismatch: expected %s, got %s", subID, actual.SubscriptionID)
-		}
-	}
-}
 
 // MockSleepDisabled prevents actual sleep during tests (Python SDK pattern)
 func MockSleepDisabled() {

@@ -10,13 +10,11 @@ import (
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
-	"time"
+	"strings"
 
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/auth"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/errors"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/response"
 )
 
 // Constants for Globus Groups
@@ -198,126 +196,43 @@ func (c *Client) doRequestLowLevel(ctx context.Context, method, path string, que
 	return nil
 }
 
-// ListGroups retrieves groups the current user is a member of
-func (c *Client) ListGroups(ctx context.Context, options *ListGroupsOptions) (*GroupList, error) {
-	// Convert options to query parameters
-	query := url.Values{}
-	if options != nil {
-		if options.IncludeGroupMembership {
-			query.Set("include_group_membership", "true")
-		}
-		if options.IncludeIdentitySet {
-			query.Set("include_identity_set", "true")
-		}
-		if options.ForUserID != "" {
-			query.Set("for_user_id", options.ForUserID)
-		}
-		if options.MyGroups {
-			query.Set("my_groups", "true")
-		}
-		// v3.65.0: Support statuses parameter
-		if len(options.Statuses) > 0 {
-			for _, status := range options.Statuses {
-				query.Add("statuses", status)
-			}
-		}
-		if options.PageSize > 0 {
-			query.Set("per_page", strconv.Itoa(options.PageSize))
-		}
-		if options.PageToken != "" {
-			query.Set("marker", options.PageToken)
-		}
-	}
-
-	var groupList GroupList
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups", query, nil, &groupList)
-	if err != nil {
-		return nil, err
-	}
-
-	// Ensure all returned group objects have the DATA_TYPE set
-	for i := range groupList.Groups {
-		if groupList.Groups[i].DATA_TYPE == "" {
-			groupList.Groups[i].DATA_TYPE = "group"
-		}
-	}
-
-	return &groupList, nil
-}
-
-// ListGroupsV2 retrieves groups with unified response system
-func (c *Client) ListGroupsV2(ctx context.Context, options *ListGroupsOptions) (*response.GroupsResponse[GroupList], error) {
-	// Convert options to query parameters
-	query := url.Values{}
-	if options != nil {
-		if options.IncludeGroupMembership {
-			query.Set("include_group_membership", "true")
-		}
-		if options.IncludeIdentitySet {
-			query.Set("include_identity_set", "true")
-		}
-		if options.ForUserID != "" {
-			query.Set("for_user_id", options.ForUserID)
-		}
-		if options.MyGroups {
-			query.Set("my_groups", "true")
-		}
-		// v3.65.0: Support statuses parameter
-		if len(options.Statuses) > 0 {
-			for _, status := range options.Statuses {
-				query.Add("statuses", status)
-			}
-		}
-		if options.PageSize > 0 {
-			query.Set("per_page", strconv.Itoa(options.PageSize))
-		}
-		if options.PageToken != "" {
-			query.Set("marker", options.PageToken)
-		}
-	}
-
-	var groupList GroupList
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups", query, nil, &groupList)
-	if err != nil {
-		// Convert to GlobusError if it's not already
-		if _, ok := err.(*errors.GlobusError); !ok {
-			return nil, errors.NewGroupsError("GroupListError", err.Error()).WithUnderlying(err)
-		}
-		return nil, err
-	}
-
-	// Ensure all returned group objects have the DATA_TYPE set
-	for i := range groupList.Groups {
-		if groupList.Groups[i].DATA_TYPE == "" {
-			groupList.Groups[i].DATA_TYPE = "group"
-		}
-	}
-
-	groupsResp := response.NewGroupsResponse(groupList)
-	groupsResp.WithRequestID("groups-list-" + strconv.FormatInt(time.Now().UnixNano(), 10))
-
-	return groupsResp, nil
-}
-
-// GetMyGroups retrieves groups the current user is a member of
-// This is a convenience method that sets MyGroups=true in ListGroupsOptions
-// v3.65.0: Added statuses parameter support for filtering by group status
+// GetMyGroups retrieves the groups the current user belongs to
+// (GET /groups/my_groups). statuses is comma-joined into a single query param
+// (valid: active, invited, pending, rejected, removed, left, declined). The
+// response is a top-level JSON array.
+// v3.65.0.
 func (c *Client) GetMyGroups(ctx context.Context, statuses []string) (*GroupList, error) {
-	options := &ListGroupsOptions{
-		MyGroups: true,
-		Statuses: statuses,
+	query := url.Values{}
+	if len(statuses) > 0 {
+		query.Set("statuses", strings.Join(statuses, ","))
 	}
-	return c.ListGroups(ctx, options)
+
+	var groups []Group
+	if err := c.doRequestLowLevel(ctx, http.MethodGet, "groups/my_groups", query, nil, &groups); err != nil {
+		return nil, err
+	}
+	for i := range groups {
+		if groups[i].DATA_TYPE == "" {
+			groups[i].DATA_TYPE = "group"
+		}
+	}
+	return &GroupList{Groups: groups}, nil
 }
 
-// GetGroup retrieves a specific group by ID
-func (c *Client) GetGroup(ctx context.Context, groupID string) (*Group, error) {
+// GetGroup retrieves a specific group by ID (GET /groups/{id}). Pass opts.Include
+// (e.g. "memberships", "policies") to expand the document; opts may be nil.
+func (c *Client) GetGroup(ctx context.Context, groupID string, opts *GetGroupOptions) (*Group, error) {
 	if groupID == "" {
 		return nil, fmt.Errorf("group ID is required")
 	}
 
+	query := url.Values{}
+	if opts != nil && len(opts.Include) > 0 {
+		query.Set("include", strings.Join(opts.Include, ","))
+	}
+
 	var group Group
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups/"+groupID, nil, nil, &group)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups/"+groupID, query, nil, &group)
 	if err != nil {
 		return nil, err
 	}
@@ -375,7 +290,7 @@ func (c *Client) UpdateGroup(ctx context.Context, groupID string, update *GroupU
 	}
 
 	var updatedGroup Group
-	err := c.doRequestLowLevel(ctx, http.MethodPatch, "groups/"+groupID, nil, update, &updatedGroup)
+	err := c.doRequestLowLevel(ctx, http.MethodPut, "groups/"+groupID, nil, update, &updatedGroup)
 	if err != nil {
 		return nil, err
 	}
@@ -397,285 +312,45 @@ func (c *Client) DeleteGroup(ctx context.Context, groupID string) error {
 	return c.doRequestLowLevel(ctx, http.MethodDelete, "groups/"+groupID, nil, nil, nil)
 }
 
-// ListMembers retrieves members of a group
-func (c *Client) ListMembers(ctx context.Context, groupID string, options *ListMembersOptions) (*MemberList, error) {
+// BatchMembershipAction applies one or more membership actions in a single call
+// (POST /groups/{id}). This is the sole membership-mutation endpoint: add,
+// invite, accept, approve, change_role, decline, join, leave, reject, remove, and
+// request_join are all expressed here.
+func (c *Client) BatchMembershipAction(ctx context.Context, groupID string, actions *BatchMembershipActions) (*Group, error) {
 	if groupID == "" {
 		return nil, fmt.Errorf("group ID is required")
 	}
-
-	// Convert options to query parameters
-	query := url.Values{}
-	if options != nil {
-		if options.RoleID != "" {
-			query.Set("role_id", options.RoleID)
-		}
-		if options.Status != "" {
-			query.Set("status", options.Status)
-		}
-		if options.PageSize > 0 {
-			query.Set("per_page", strconv.Itoa(options.PageSize))
-		}
-		if options.PageToken != "" {
-			query.Set("marker", options.PageToken)
-		}
+	if actions == nil {
+		return nil, fmt.Errorf("actions are required")
 	}
 
-	var memberList MemberList
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups/"+groupID+"/members", query, nil, &memberList)
-	if err != nil {
+	var group Group
+	if err := c.doRequestLowLevel(ctx, http.MethodPost, "groups/"+groupID, nil, actions, &group); err != nil {
 		return nil, err
 	}
-
-	// Ensure all returned member objects have the DATA_TYPE set
-	for i := range memberList.Members {
-		if memberList.Members[i].DATA_TYPE == "" {
-			memberList.Members[i].DATA_TYPE = "member"
-		}
-		if memberList.Members[i].Role.DATA_TYPE == "" {
-			memberList.Members[i].Role.DATA_TYPE = "role"
-		}
-	}
-
-	return &memberList, nil
+	return &group, nil
 }
 
-// AddMember adds a user to a group
-func (c *Client) AddMember(ctx context.Context, groupID, userID, roleID string) error {
-	if groupID == "" {
-		return fmt.Errorf("group ID is required")
-	}
-
-	if userID == "" {
-		return fmt.Errorf("user ID is required")
-	}
-
-	if roleID == "" {
-		return fmt.Errorf("role ID is required")
-	}
-
-	// Build the request body
-	body := map[string]string{
-		"identity_id": userID,
-		"role_id":     roleID,
-	}
-
-	return c.doRequestLowLevel(ctx, http.MethodPost, "groups/"+groupID+"/members", nil, body, nil)
-}
-
-// RemoveMember removes a user from a group
-func (c *Client) RemoveMember(ctx context.Context, groupID, userID string) error {
-	if groupID == "" {
-		return fmt.Errorf("group ID is required")
-	}
-
-	if userID == "" {
-		return fmt.Errorf("user ID is required")
-	}
-
-	return c.doRequestLowLevel(ctx, http.MethodDelete, "groups/"+groupID+"/members/"+userID, nil, nil, nil)
-}
-
-// UpdateMemberRole updates a member's role in a group
-func (c *Client) UpdateMemberRole(ctx context.Context, groupID, userID, roleID string) error {
-	if groupID == "" {
-		return fmt.Errorf("group ID is required")
-	}
-
-	if userID == "" {
-		return fmt.Errorf("user ID is required")
-	}
-
-	if roleID == "" {
-		return fmt.Errorf("role ID is required")
-	}
-
-	// Build the request body
-	body := map[string]string{
-		"role_id": roleID,
-	}
-
-	return c.doRequestLowLevel(ctx, http.MethodPatch, "groups/"+groupID+"/members/"+userID, nil, body, nil)
-}
-
-// ListRoles retrieves roles defined for a group
-func (c *Client) ListRoles(ctx context.Context, groupID string) (*RoleList, error) {
-	if groupID == "" {
-		return nil, fmt.Errorf("group ID is required")
-	}
-
-	var roleList RoleList
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups/"+groupID+"/roles", nil, nil, &roleList)
-	if err != nil {
-		return nil, err
-	}
-
-	// Ensure all returned role objects have the DATA_TYPE set
-	for i := range roleList.Roles {
-		if roleList.Roles[i].DATA_TYPE == "" {
-			roleList.Roles[i].DATA_TYPE = "role"
-		}
-	}
-
-	return &roleList, nil
-}
-
-// GetRole retrieves a specific role by ID
-func (c *Client) GetRole(ctx context.Context, groupID, roleID string) (*Role, error) {
-	if groupID == "" {
-		return nil, fmt.Errorf("group ID is required")
-	}
-
-	if roleID == "" {
-		return nil, fmt.Errorf("role ID is required")
-	}
-
-	var role Role
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups/"+groupID+"/roles/"+roleID, nil, nil, &role)
-	if err != nil {
-		return nil, err
-	}
-
-	// Ensure the returned object has the DATA_TYPE set
-	if role.DATA_TYPE == "" {
-		role.DATA_TYPE = "role"
-	}
-
-	return &role, nil
-}
-
-// CreateRole creates a new role in a group
-func (c *Client) CreateRole(ctx context.Context, groupID string, role *RoleCreate) (*Role, error) {
-	if groupID == "" {
-		return nil, fmt.Errorf("group ID is required")
-	}
-
-	if role == nil {
-		return nil, fmt.Errorf("role data is required")
-	}
-
-	if role.Name == "" {
-		return nil, fmt.Errorf("role name is required")
-	}
-
-	// Set the DATA_TYPE field if not already set
-	if role.DATA_TYPE == "" {
-		role.DATA_TYPE = "role_create"
-	}
-
-	var createdRole Role
-	err := c.doRequestLowLevel(ctx, http.MethodPost, "groups/"+groupID+"/roles", nil, role, &createdRole)
-	if err != nil {
-		return nil, err
-	}
-
-	// Ensure the returned object has the DATA_TYPE set
-	if createdRole.DATA_TYPE == "" {
-		createdRole.DATA_TYPE = "role"
-	}
-
-	return &createdRole, nil
-}
-
-// UpdateRole updates an existing role
-func (c *Client) UpdateRole(ctx context.Context, groupID, roleID string, update *RoleUpdate) (*Role, error) {
-	if groupID == "" {
-		return nil, fmt.Errorf("group ID is required")
-	}
-
-	if roleID == "" {
-		return nil, fmt.Errorf("role ID is required")
-	}
-
-	if update == nil {
-		return nil, fmt.Errorf("update data is required")
-	}
-
-	// Set the DATA_TYPE field if not already set
-	if update.DATA_TYPE == "" {
-		update.DATA_TYPE = "role_update"
-	}
-
-	var updatedRole Role
-	err := c.doRequestLowLevel(ctx, http.MethodPatch, "groups/"+groupID+"/roles/"+roleID, nil, update, &updatedRole)
-	if err != nil {
-		return nil, err
-	}
-
-	// Ensure the returned object has the DATA_TYPE set
-	if updatedRole.DATA_TYPE == "" {
-		updatedRole.DATA_TYPE = "role"
-	}
-
-	return &updatedRole, nil
-}
-
-// DeleteRole deletes a role
-func (c *Client) DeleteRole(ctx context.Context, groupID, roleID string) error {
-	if groupID == "" {
-		return fmt.Errorf("group ID is required")
-	}
-
-	if roleID == "" {
-		return fmt.Errorf("role ID is required")
-	}
-
-	return c.doRequestLowLevel(ctx, http.MethodDelete, "groups/"+groupID+"/roles/"+roleID, nil, nil, nil)
-}
-
-// SetSubscriptionAdminVerifiedID sets a subscription ID for a group (admin-only operation)
-// Deprecated: Use SetSubscriptionAdminVerified instead. This method will be removed in a future version.
-func (c *Client) SetSubscriptionAdminVerifiedID(ctx context.Context, groupID, subscriptionID string) error {
-	// Delegate to new method
-	return c.SetSubscriptionAdminVerified(ctx, groupID, subscriptionID)
-}
-
-// GetGroupSubscription retrieves the subscription information for a group
-func (c *Client) GetGroupSubscription(ctx context.Context, groupID string) (*GroupSubscription, error) {
-	if groupID == "" {
-		return nil, fmt.Errorf("group ID is required")
-	}
-
-	var subscription GroupSubscription
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups/"+groupID+"/subscription", nil, nil, &subscription)
-	if err != nil {
-		return nil, err
-	}
-
-	// Ensure the returned object has the DATA_TYPE set
-	if subscription.DATA_TYPE == "" {
-		subscription.DATA_TYPE = "group_subscription"
-	}
-
-	return &subscription, nil
-}
-
-// GetGroupBySubscriptionID retrieves a group by its subscription ID (Python SDK parity)
+// GetGroupBySubscriptionID retrieves the group associated with a subscription
+// (GET /subscription_info/{subscription_id}).
 func (c *Client) GetGroupBySubscriptionID(ctx context.Context, subscriptionID string) (*Group, error) {
 	if subscriptionID == "" {
 		return nil, fmt.Errorf("subscription ID is required")
 	}
 
-	// Query parameter for subscription-based lookup
-	query := url.Values{}
-	query.Set("subscription_id", subscriptionID)
-
 	var group Group
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups", query, nil, &group)
+	err := c.doRequestLowLevel(ctx, http.MethodGet, "subscription_info/"+subscriptionID, nil, nil, &group)
 	if err != nil {
 		return nil, err
 	}
-
-	// Ensure the returned object has the DATA_TYPE set
 	if group.DATA_TYPE == "" {
 		group.DATA_TYPE = "group"
 	}
-
 	return &group, nil
 }
 
-// Python SDK Parity Methods - Additional functionality to match upstream
-
-// GetGroupPolicies retrieves policy configuration for a group (Python SDK parity)
+// GetGroupPolicies retrieves the policy settings for a group
+// (GET /groups/{id}/policies).
 func (c *Client) GetGroupPolicies(ctx context.Context, groupID string) (*GroupPolicies, error) {
 	if groupID == "" {
 		return nil, fmt.Errorf("group ID is required")
@@ -686,110 +361,63 @@ func (c *Client) GetGroupPolicies(ctx context.Context, groupID string) (*GroupPo
 	if err != nil {
 		return nil, err
 	}
-
-	// Ensure the returned object has the DATA_TYPE set
-	if policies.DATA_TYPE == "" {
-		policies.DATA_TYPE = "group_policies"
-	}
-
 	return &policies, nil
 }
 
-// SetGroupPolicies sets policy configuration for a group (Python SDK parity)
+// SetGroupPolicies replaces the policy settings for a group
+// (PUT /groups/{id}/policies).
 func (c *Client) SetGroupPolicies(ctx context.Context, groupID string, policies *GroupPolicies) error {
 	if groupID == "" {
 		return fmt.Errorf("group ID is required")
 	}
-
 	if policies == nil {
 		return fmt.Errorf("policies are required")
 	}
-
-	// Set the DATA_TYPE field if not already set
-	if policies.DATA_TYPE == "" {
-		policies.DATA_TYPE = "group_policies_update"
-	}
-
 	return c.doRequestLowLevel(ctx, http.MethodPut, "groups/"+groupID+"/policies", nil, policies, nil)
 }
 
-// GetIdentityPreferences retrieves identity preferences for a group (Python SDK parity)
-func (c *Client) GetIdentityPreferences(ctx context.Context, groupID, identityID string) (*IdentityPreferences, error) {
-	if groupID == "" {
-		return nil, fmt.Errorf("group ID is required")
-	}
-	if identityID == "" {
-		return nil, fmt.Errorf("identity ID is required")
-	}
-
-	var preferences IdentityPreferences
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups/"+groupID+"/identity_preferences/"+identityID, nil, nil, &preferences)
-	if err != nil {
+// GetIdentityPreferences retrieves the caller's Groups preferences
+// (GET /preferences). Preferences are account-level, not group-scoped.
+func (c *Client) GetIdentityPreferences(ctx context.Context) (map[string]interface{}, error) {
+	var prefs map[string]interface{}
+	if err := c.doRequestLowLevel(ctx, http.MethodGet, "preferences", nil, nil, &prefs); err != nil {
 		return nil, err
 	}
-
-	// Ensure the returned object has the DATA_TYPE set
-	if preferences.DATA_TYPE == "" {
-		preferences.DATA_TYPE = "identity_preferences"
-	}
-
-	return &preferences, nil
+	return prefs, nil
 }
 
-// SetIdentityPreferences sets identity preferences for a group (Python SDK parity)
-func (c *Client) SetIdentityPreferences(ctx context.Context, groupID, identityID string, preferences *IdentityPreferences) error {
-	if groupID == "" {
-		return fmt.Errorf("group ID is required")
-	}
-	if identityID == "" {
-		return fmt.Errorf("identity ID is required")
-	}
-	if preferences == nil {
+// SetIdentityPreferences updates the caller's Groups preferences
+// (PUT /preferences), e.g. {"allow_add": false}.
+func (c *Client) SetIdentityPreferences(ctx context.Context, prefs map[string]interface{}) error {
+	if prefs == nil {
 		return fmt.Errorf("preferences are required")
 	}
-
-	// Set the DATA_TYPE field if not already set
-	if preferences.DATA_TYPE == "" {
-		preferences.DATA_TYPE = "identity_preferences_update"
-	}
-
-	return c.doRequestLowLevel(ctx, http.MethodPut, "groups/"+groupID+"/identity_preferences/"+identityID, nil, preferences, nil)
+	return c.doRequestLowLevel(ctx, http.MethodPut, "preferences", nil, prefs, nil)
 }
 
-// GetMembershipFields retrieves custom membership fields for a group (Python SDK parity)
-func (c *Client) GetMembershipFields(ctx context.Context, groupID string) (*MembershipFields, error) {
+// GetMembershipFields retrieves the caller's membership field values for a group
+// (GET /groups/{id}/membership_fields).
+func (c *Client) GetMembershipFields(ctx context.Context, groupID string) (map[string]interface{}, error) {
 	if groupID == "" {
 		return nil, fmt.Errorf("group ID is required")
 	}
 
-	var fields MembershipFields
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "groups/"+groupID+"/membership_fields", nil, nil, &fields)
-	if err != nil {
+	var fields map[string]interface{}
+	if err := c.doRequestLowLevel(ctx, http.MethodGet, "groups/"+groupID+"/membership_fields", nil, nil, &fields); err != nil {
 		return nil, err
 	}
-
-	// Ensure the returned object has the DATA_TYPE set
-	if fields.DATA_TYPE == "" {
-		fields.DATA_TYPE = "membership_fields"
-	}
-
-	return &fields, nil
+	return fields, nil
 }
 
-// SetMembershipFields sets custom membership fields for a group (Python SDK parity)
-func (c *Client) SetMembershipFields(ctx context.Context, groupID string, fields *MembershipFields) error {
+// SetMembershipFields sets the caller's membership field values for a group
+// (PUT /groups/{id}/membership_fields).
+func (c *Client) SetMembershipFields(ctx context.Context, groupID string, fields map[string]interface{}) error {
 	if groupID == "" {
 		return fmt.Errorf("group ID is required")
 	}
 	if fields == nil {
 		return fmt.Errorf("membership fields are required")
 	}
-
-	// Set the DATA_TYPE field if not already set
-	if fields.DATA_TYPE == "" {
-		fields.DATA_TYPE = "membership_fields_update"
-	}
-
 	return c.doRequestLowLevel(ctx, http.MethodPut, "groups/"+groupID+"/membership_fields", nil, fields, nil)
 }
 

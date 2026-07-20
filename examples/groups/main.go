@@ -33,10 +33,7 @@ func main() {
 	}
 
 	// List groups
-	groupList, err := client.ListGroups(context.Background(), &groups.ListGroupsOptions{
-		PageSize: 10,
-		MyGroups: true,
-	})
+	groupList, err := client.GetMyGroups(context.Background(), []string{"active"})
 	if err != nil {
 		fmt.Printf("Error listing groups: %v\n", err)
 		os.Exit(1)
@@ -48,8 +45,5 @@ func main() {
 		fmt.Printf("%d. %s (ID: %s, DATA_TYPE: %s)\n", i+1, group.Name, group.ID, group.DATA_TYPE)
 	}
 
-	// Print pagination info
-	if groupList.HasNextPage {
-		fmt.Printf("More groups available. Next page token: %s\n", groupList.NextPageToken)
-	}
+	fmt.Printf("Total groups: %d\n", len(groupList.Groups))
 }

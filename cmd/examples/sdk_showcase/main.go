@@ -12,7 +12,6 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/compute"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/flows"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/groups"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
 )
@@ -69,10 +68,7 @@ func main() {
 
 	// Demonstrate Groups API - List groups
 	fmt.Println("\n=== Groups API ===")
-	groupsList, err := groupsClient.ListGroups(ctx, &groups.ListGroupsOptions{
-		MyGroups: true,
-		PageSize: 5,
-	})
+	groupsList, err := groupsClient.GetMyGroups(ctx, []string{"active"})
 	if err != nil {
 		log.Printf("Failed to list groups: %v", err)
 	} else {

@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — Groups (v3 module — `github.com/scttfrdmn/globus-go-sdk/v3`, Phase 2 parity audit vs 3.65.0)
+
+**Breaking** within the v3 line — removed methods that hit nonexistent routes:
+
+- Removed the members sub-resource and roles resource (`ListMembers`/`AddMember`/
+  `RemoveMember`/`UpdateMemberRole` + LowLevel variants; `ListRoles`/`GetRole`/
+  `CreateRole`/`UpdateRole`/`DeleteRole`; the `ChangeRole(s)`/batch builder;
+  `GetGroupSubscription`; and the `Role*`/`GroupSubscription` types). Use
+  `BatchMembershipAction` (`POST /groups/{id}`) and read memberships via
+  `GetGroup` with `include=memberships`.
+- Removed `ListGroups`/`ListGroupsV2` (no list route/pagination upstream) — use
+  `GetMyGroups` (`GET /groups/my_groups`, `[]Group`, comma-joined statuses).
+- `GetGroup` takes `(ctx, id, *GetGroupOptions)`; `UpdateGroup` uses PUT;
+  preferences hit `/preferences`; `GetGroupBySubscriptionID` hits
+  `/subscription_info/{id}`; `GroupPolicies` reshaped to real keys.
+
 ### Added (v4 module — `github.com/scttfrdmn/globus-go-sdk/v4`)
 
 Closes the wire-visible gap to upstream Python globus-sdk **v4.8.1**.

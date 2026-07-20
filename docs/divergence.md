@@ -13,6 +13,37 @@ Wire-visible behavior (HTTP methods, URL paths, request/response JSON) always
 matches upstream. Divergences are limited to how that surface is *organized*
 into Go types and clients.
 
+Sections below prefixed **v3:** apply to the frozen v3 module (tracking Python
+globus-sdk 3.65.0); all other sections apply to the active v4 module.
+
+## v3 Groups: removed fabricated members/roles surface (Phase 2 audit vs 3.65.0)
+
+The v3 groups client had the same fabrications later inherited by v4. Corrected
+to match Python globus-sdk 3.65.0:
+
+- **No members sub-resource / no roles resource.** Removed `ListMembers`/
+  `AddMember`/`RemoveMember`/`UpdateMemberRole` (+ LowLevel variants), the roles
+  CRUD (`ListRoles`/`GetRole`/`CreateRole`/`UpdateRole`/`DeleteRole`), the
+  `ChangeRole`/`ChangeRoles`/`BatchMembershipActions` builder in batch.go, and
+  the `Role`/`RoleCreate`/`RoleUpdate`/`RoleList`/`GroupSubscription` types.
+  Membership data is read from the group via `GetGroup(..., include=memberships)`
+  (`Group.Memberships`); mutations go through the new `BatchMembershipAction`
+  (`POST /groups/{id}`). Role is a string (`member`/`manager`/`admin`).
+- **No group-list route / no pagination.** Removed `ListGroups`/`ListGroupsV2`
+  and the limit/offset/marker options. `GetMyGroups` now hits
+  `GET /groups/my_groups`, returns a top-level `[]Group`, and sends `statuses`
+  as one comma-joined param.
+- **Corrected routes:** `GetGroupBySubscriptionID` → `GET /subscription_info/{id}`
+  (was a `GET /groups?subscription_id=` query); preferences →
+  `GET`/`PUT /preferences` (no group/identity path, passthrough map);
+  `SetSubscriptionAdminVerified` → `PUT /groups/{id}/subscription_admin_verified`
+  with `{"subscription_admin_verified_id": ...}` (nil → null); `UpdateGroup` uses
+  `PUT`; `GetGroup` gained an `include` option.
+- **`GroupPolicies`** reshaped to the real keys (`is_high_assurance`,
+  `group_visibility`, `group_members_visibility`, `join_requests`,
+  `signup_fields`, `authentication_assurance_timeout`); membership-fields use
+  passthrough maps.
+
 ## Transfer: Streams/Tunnels folded into `transfer.Client`
 
 - **Upstream:** the Streams/Tunnels API (Python SDK v4.3.0–v4.4.0) lives on the
