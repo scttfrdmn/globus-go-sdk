@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2025 Scott Friedman and Project Contributors
+// Copyright (c) 2025-2026 Scott Friedman and Project Contributors
 package compute
 
 import (
@@ -8,95 +8,171 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 )
 
-// Test mock server
 func setupMockServer(handler http.HandlerFunc) (*httptest.Server, *Client, error) {
 	server := httptest.NewServer(handler)
-
-	// Create a client that uses the test server
 	client, err := NewClient(
 		WithAccessToken("test-token"),
 		WithBaseURL(server.URL+"/"),
 	)
-
 	return server, client, err
 }
 
-func TestListEndpoints(t *testing.T) {
-	// Setup test server
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		// Check request method
-		if r.Method != http.MethodGet {
-			t.Errorf("Expected GET request, got %s", r.Method)
+func TestGetVersion(t *testing.T) {
+	server, client, err := setupMockServer(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v2/version" {
+			t.Errorf("path = %s, want /v2/version", r.URL.Path)
 		}
-
-		// Check path
-		if r.URL.Path != "/endpoints" {
-			t.Errorf("Expected path /endpoints, got %s", r.URL.Path)
+		if r.URL.Query().Get("service") != "web" {
+			t.Errorf("service = %q, want web", r.URL.Query().Get("service"))
 		}
-
-		// Check query parameters
-		queryParams := r.URL.Query()
-		if perPage := queryParams.Get("per_page"); perPage != "10" {
-			t.Errorf("Expected per_page=10, got %s", perPage)
-		}
-
-		// Return mock response
-		endpointTime, _ := time.Parse(time.RFC3339, "2023-01-01T00:00:00Z")
-		// Create a ComputeEndpointList object
-		response := ComputeEndpointList{
-			Endpoints: []ComputeEndpoint{
-				{
-					ID:           "test-endpoint-id",
-					UUID:         "test-uuid",
-					Status:       "online",
-					Name:         "Test Endpoint",
-					Description:  "A test endpoint",
-					Owner:        "test-user",
-					CreatedAt:    endpointTime,
-					LastModified: endpointTime,
-					Connected:    true,
-					Type:         "container",
-					Public:       false,
-				},
-			},
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
-	}
-
-	server, client, err := setupMockServer(handler)
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"version": "1.0"})
+	})
 	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
+		t.Fatalf("setup: %v", err)
 	}
 	defer server.Close()
 
-	// Test list endpoints
-	options := &ListEndpointsOptions{
-		PerPage: 10,
-	}
-
-	endpointList, err := client.ListEndpoints(context.Background(), options)
+	res, err := client.GetVersion(context.Background(), "web")
 	if err != nil {
-		t.Fatalf("ListEndpoints() error = %v", err)
+		t.Fatalf("GetVersion() error = %v", err)
 	}
-
-	// Check response
-	if len(endpointList.Endpoints) != 1 {
-		t.Errorf("Expected 1 endpoint, got %d", len(endpointList.Endpoints))
-	}
-
-	endpoint := endpointList.Endpoints[0]
-	if endpoint.ID != "test-endpoint-id" {
-		t.Errorf("Expected endpoint ID = test-endpoint-id, got %s", endpoint.ID)
-	}
-	if endpoint.Name != "Test Endpoint" {
-		t.Errorf("Expected endpoint name = Test Endpoint, got %s", endpoint.Name)
+	if res["version"] != "1.0" {
+		t.Errorf("version = %v", res["version"])
 	}
 }
 
-// Rest of the file remains unchanged...
+func TestGetEndpoints(t *testing.T) {
+	server, client, err := setupMockServer(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v2/endpoints" {
+			t.Errorf("path = %s, want /v2/endpoints", r.URL.Path)
+		}
+		if r.URL.Query().Get("role") != "owner" {
+			t.Errorf("role = %q, want owner", r.URL.Query().Get("role"))
+		}
+		if r.URL.Query().Get("limit") != "" {
+			t.Error("limit is not an upstream param")
+		}
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"endpoints": []interface{}{}})
+	})
+	if err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	defer server.Close()
+
+	if _, err := client.GetEndpoints(context.Background(), &GetEndpointsOptions{Role: "owner"}); err != nil {
+		t.Fatalf("GetEndpoints() error = %v", err)
+	}
+}
+
+func TestGetEndpoint(t *testing.T) {
+	server, client, err := setupMockServer(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/v2/endpoints/ep-1" {
+			t.Errorf("path = %s, want /v2/endpoints/ep-1", r.URL.Path)
+		}
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"uuid": "ep-1", "status": "online"})
+	})
+	if err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	defer server.Close()
+
+	res, err := client.GetEndpoint(context.Background(), "ep-1")
+	if err != nil {
+		t.Fatalf("GetEndpoint() error = %v", err)
+	}
+	if res["status"] != "online" {
+		t.Errorf("status = %v", res["status"])
+	}
+
+	if _, err := client.GetEndpoint(context.Background(), ""); err == nil {
+		t.Error("expected error for empty endpoint ID")
+	}
+}
+
+func TestSubmitV2(t *testing.T) {
+	server, client, err := setupMockServer(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v2/submit" {
+			t.Errorf("%s %s, want POST /v2/submit", r.Method, r.URL.Path)
+		}
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"request_id": "r1"})
+	})
+	if err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	defer server.Close()
+
+	res, err := client.Submit(context.Background(), map[string]interface{}{"tasks": map[string]interface{}{}})
+	if err != nil {
+		t.Fatalf("Submit() error = %v", err)
+	}
+	if res["request_id"] != "r1" {
+		t.Errorf("request_id = %v", res["request_id"])
+	}
+}
+
+func TestSubmitV3(t *testing.T) {
+	server, client, err := setupMockServer(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v3/endpoints/ep-1/submit" {
+			t.Errorf("%s %s, want POST /v3/endpoints/ep-1/submit", r.Method, r.URL.Path)
+		}
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"request_id": "r2"})
+	})
+	if err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	defer server.Close()
+
+	res, err := client.SubmitV3(context.Background(), "ep-1", map[string]interface{}{"tasks": []interface{}{}})
+	if err != nil {
+		t.Fatalf("SubmitV3() error = %v", err)
+	}
+	if res["request_id"] != "r2" {
+		t.Errorf("request_id = %v", res["request_id"])
+	}
+}
+
+func TestGetBatchStatus(t *testing.T) {
+	server, client, err := setupMockServer(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v2/batch_status" {
+			t.Errorf("%s %s, want POST /v2/batch_status", r.Method, r.URL.Path)
+		}
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		ids, _ := body["task_ids"].([]interface{})
+		if len(ids) != 2 {
+			t.Errorf("task_ids len = %d, want 2", len(ids))
+		}
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"results": map[string]interface{}{}})
+	})
+	if err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	defer server.Close()
+
+	if _, err := client.GetBatchStatus(context.Background(), []string{"t1", "t2"}); err != nil {
+		t.Fatalf("GetBatchStatus() error = %v", err)
+	}
+}
+
+func TestRegisterFunction(t *testing.T) {
+	server, client, err := setupMockServer(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/v2/functions" {
+			t.Errorf("%s %s, want POST /v2/functions", r.Method, r.URL.Path)
+		}
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"function_id": "fn-1"})
+	})
+	if err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	defer server.Close()
+
+	res, err := client.RegisterFunction(context.Background(), map[string]interface{}{"function_name": "hello"})
+	if err != nil {
+		t.Fatalf("RegisterFunction() error = %v", err)
+	}
+	if res["function_id"] != "fn-1" {
+		t.Errorf("function_id = %v", res["function_id"])
+	}
+}

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/compute"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/flows"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
@@ -159,19 +158,13 @@ func main() {
 		}
 	}
 
-	// Demonstrate Compute API - List endpoints
+	// Demonstrate Compute API - list endpoints (passthrough document).
 	fmt.Println("\n=== Compute API ===")
-	compEndpoints, err := computeClient.ListEndpoints(ctx, &compute.ListEndpointsOptions{
-		PerPage: 5,
-	})
+	compEndpoints, err := computeClient.GetEndpoints(ctx, nil)
 	if err != nil {
 		log.Printf("Failed to list compute endpoints: %v", err)
 	} else {
-		fmt.Printf("Found %d compute endpoints:\n", len(compEndpoints.Endpoints))
-		for i, endpoint := range compEndpoints.Endpoints {
-			fmt.Printf("%d. %s (%s) - Status: %s\n",
-				i+1, endpoint.Name, endpoint.ID, endpoint.Status)
-		}
+		fmt.Printf("Compute endpoints response: %v\n", compEndpoints)
 	}
 
 	fmt.Println("\nSDK showcase complete!")

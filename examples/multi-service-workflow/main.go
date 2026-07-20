@@ -15,7 +15,6 @@ import (
 	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg"
-	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/compute"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/flows"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
@@ -447,48 +446,45 @@ func (w *Workflow) executeCompute(ctx context.Context) error {
 	// Set up the compute job
 	computeStart := time.Now()
 
-	// Create a batch task request with our function
-	batchRequest := &compute.BatchTaskRequest{
-		Tasks: []compute.TaskRequest{
-			{
-				FunctionID: w.Config.ComputeFunction,
-				EndpointID: w.Config.ComputeEndpointID,
-				Args:       convertToAnySlice(w.Config.ComputeArgs),
-				Kwargs: map[string]interface{}{
-					"input_path":  w.Config.DestinationPath,
-					"output_path": w.Config.ResultsPath,
+	// Submit a task batch (POST /v2/submit). The document shape is defined by the
+	// Compute API; the Go client sends it as a passthrough document.
+	w.Logger.Println("Submitting compute batch...")
+	submitDoc := map[string]interface{}{
+		"tasks": map[string]interface{}{
+			w.Config.ComputeEndpointID: []interface{}{
+				map[string]interface{}{
+					"function": w.Config.ComputeFunction,
+					"args":     convertToAnySlice(w.Config.ComputeArgs),
+					"kwargs": map[string]interface{}{
+						"input_path":  w.Config.DestinationPath,
+						"output_path": w.Config.ResultsPath,
+					},
 				},
 			},
 		},
 	}
-
-	// Submit the batch
-	w.Logger.Println("Submitting compute batch...")
-	result, err := computeClient.RunBatch(ctx, batchRequest)
+	result, err := computeClient.Submit(ctx, submitDoc)
 	if err != nil {
 		return fmt.Errorf("failed to submit compute batch: %w", err)
 	}
 
-	if len(result.TaskIDs) == 0 {
-		return fmt.Errorf("no task IDs returned from batch submission")
+	taskIDs := extractTaskIDs(result)
+	if len(taskIDs) == 0 {
+		return fmt.Errorf("no task IDs returned from submission")
 	}
-
-	// Store the task IDs (we're using the first one for status tracking)
 	w.Mutex.Lock()
-	w.ComputeTaskID = result.TaskIDs[0]
+	w.ComputeTaskID = taskIDs[0]
 	w.Mutex.Unlock()
+	w.Logger.Printf("Compute batch submitted with %d tasks. Primary task ID: %s", len(taskIDs), w.ComputeTaskID)
 
-	w.Logger.Printf("Compute batch submitted with %d tasks. Primary task ID: %s", len(result.TaskIDs), w.ComputeTaskID)
-
-	// Poll for batch completion
+	// Poll for completion via batch status (passthrough response).
 	w.Logger.Println("Waiting for compute job to complete...")
 	for {
 		select {
 		case <-ctx.Done():
 			return ctx.Err()
 		case <-time.After(5 * time.Second):
-			// Check batch status
-			status, err := computeClient.GetBatchStatus(ctx, result.TaskIDs)
+			status, err := computeClient.GetBatchStatus(ctx, taskIDs)
 			if err != nil {
 				w.Logger.Printf("Warning: Error checking batch status: %v, retrying...", err)
 				w.Mutex.Lock()
@@ -496,39 +492,50 @@ func (w *Workflow) executeCompute(ctx context.Context) error {
 				w.Mutex.Unlock()
 				continue
 			}
-
-			// Update status in our state
-			completedCount := len(status.Completed)
-			failedCount := len(status.Failed)
-			pendingCount := len(status.Pending)
-
-			w.Logger.Printf("Compute job status: %d completed, %d failed, %d pending",
-				completedCount, failedCount, pendingCount)
-
-			// Check if all tasks are completed
-			if completedCount == len(result.TaskIDs) {
+			if allTasksComplete(status, taskIDs) {
 				computeEnd := time.Now()
 				w.Mutex.Lock()
 				w.ComputeTime = computeEnd.Sub(computeStart)
 				w.Mutex.Unlock()
-				w.Logger.Printf("Compute job completed successfully in %v", w.ComputeTime.Round(time.Second))
+				w.Logger.Printf("Compute job completed in %v", w.ComputeTime.Round(time.Second))
 				return nil
-			} else if failedCount > 0 {
-				// Get the first failed task error if available
-				var errorMsg string
-				for _, taskID := range status.Failed {
-					if taskStatus, ok := status.Tasks[taskID]; ok && taskStatus.Exception != "" {
-						errorMsg = taskStatus.Exception
-						break
-					}
-				}
-				if errorMsg != "" {
-					return fmt.Errorf("compute job failed: %s", errorMsg)
-				}
-				return fmt.Errorf("compute job failed")
 			}
 		}
 	}
+}
+
+// extractTaskIDs pulls task IDs from a passthrough submit response.
+func extractTaskIDs(result map[string]interface{}) []string {
+	raw, ok := result["task_ids"].([]interface{})
+	if !ok {
+		return nil
+	}
+	ids := make([]string, 0, len(raw))
+	for _, v := range raw {
+		if s, ok := v.(string); ok {
+			ids = append(ids, s)
+		}
+	}
+	return ids
+}
+
+// allTasksComplete reports whether every task in the batch-status response has a
+// terminal status.
+func allTasksComplete(status map[string]interface{}, taskIDs []string) bool {
+	results, ok := status["results"].(map[string]interface{})
+	if !ok {
+		return false
+	}
+	for _, id := range taskIDs {
+		t, ok := results[id].(map[string]interface{})
+		if !ok {
+			return false
+		}
+		if s, _ := t["status"].(string); s != "success" && s != "failed" {
+			return false
+		}
+	}
+	return true
 }
 
 // Execute the search indexing step

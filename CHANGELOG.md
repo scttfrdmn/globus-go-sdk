@@ -10,6 +10,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — Compute (v3 module, Phase 2 parity audit vs 3.65.0)
+
+**Breaking** within the v3 line:
+
+- Removed fabricated model types (`ComputeEndpoint`, `ComputeEndpointList`,
+  container/environment/dependency/batch helpers) and the `ListEndpoints`/
+  `ListEndpointsOptions` surface; the compute web service defines no models or
+  pagination at 3.65.0. All request bodies and responses are now
+  `map[string]interface{}` passthrough documents.
+- Base URL moved to the host root (`https://compute.api.globus.org/`); `/v2` and
+  `/v3` prefixes live in each endpoint path.
+
+Added V3 methods alongside their V2 counterparts: `RegisterEndpointV3`,
+`UpdateEndpointV3`, `LockEndpointV3`, `GetEndpointAllowlistV3`,
+`RegisterFunctionV3`, `SubmitV3`.
+
 ### Changed — Auth (v3 module, Phase 2 parity audit vs 3.65.0)
 
 **Breaking** within the v3 line:

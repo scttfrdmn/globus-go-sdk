@@ -16,6 +16,27 @@ into Go types and clients.
 Sections below prefixed **v3:** apply to the frozen v3 module (tracking Python
 globus-sdk 3.65.0); all other sections apply to the active v4 module.
 
+## v3 Compute: passthrough documents, host-root base, folded V2/V3 (Phase 2 audit vs 3.65.0)
+
+- **No request/response models, no pagination.** Upstream `ComputeClient` (at
+  3.65.0) sends and returns open-ended JSON documents and defines no model
+  classes or paginators for the compute web service. The Go client mirrors this
+  with `map[string]interface{}` bodies and results everywhere; `models.go` is a
+  comment-only file. The previously-defined `ComputeEndpoint`,
+  `ComputeEndpointList`, container/environment/dependency/batch model types and
+  their `ListEndpoints`/`ListEndpointsOptions` surface were fabricated and have
+  been removed.
+- **Base URL → host root** (`https://compute.api.globus.org/`); the `/v2` and
+  `/v3` prefixes live in each endpoint path rather than the base.
+- **V2 and V3 folded into one client.** V3 endpoint/function/submit routes are
+  exposed as methods with a `V3` suffix (`RegisterEndpointV3`, `UpdateEndpointV3`,
+  `LockEndpointV3`, `GetEndpointAllowlistV3`, `RegisterFunctionV3`, `SubmitV3`)
+  alongside their V2 counterparts.
+- **Removed phantom subsystems.** Container, environment, dependency and
+  batch-builder helpers (and their examples) modeled a client-side task-packing
+  surface that upstream does not expose over HTTP; task batches are submitted as
+  passthrough documents to `POST /v2/submit` (or `POST /v3/endpoints/{id}/submit`).
+
 ## v3 Auth: removed phantom MFA REST routes; added resource surface (Phase 2 audit vs 3.65.0)
 
 - **Removed phantom MFA routes.** `GetMFAChallenge` (`/oauth2/mfa/challenge/{id}`)
