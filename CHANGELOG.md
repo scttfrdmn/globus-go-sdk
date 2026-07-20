@@ -41,6 +41,27 @@ Timers client realigned to the Python globus-sdk 4.8.1 wire (Phase 2 audit).
   `GetRun`, `CreateOnceTimer`, `CreateRecurringTimer`, and the `Callback`,
   `TimerRun`, `TimerRunList`, `ListRunsOptions` types.
 
+### Changed — Search (v4 module, Phase 2 parity audit)
+
+**Breaking** within the v4 line:
+
+- `GetEntry`/`DeleteEntry` now take `(ctx, indexID, subject, entryID)` and hit
+  `/index/{id}/entry` with subject/entry_id as query params; added `GetSubject`/
+  `DeleteSubject` for `/index/{id}/subject`.
+- `UpdateIndex` uses PATCH. `AddRole` takes a `*RoleCreate` ({role_name,
+  principal}) and returns `*Role`. Removed `GetRole` (no upstream route).
+- Ingest consolidated into `Ingest(indexID, data)` with `NewGMetaEntryIngest`/
+  `NewGMetaListIngest` (the old `IngestEntry`/`IngestBatch` methods and
+  `IngestBatch`/`IngestBatchResponse` types are removed). Added `DeleteByQuery`,
+  `BatchDeleteBySubject`.
+- `GetTaskStatus` replaced by `GetTask` (`/task/{id}`) and `GetTaskList`
+  (`/task_list/{id}`); added `Task`/`TaskList` (status field is `state`).
+- `SearchQuery` now sends `@version`, `facets` is `[]map`, gained
+  `post_facet_filters`/`boosts`, dropped `bypass_visible_to`. Added GET
+  `SearchGet`, `Scroll`, `NewSearchPager`, `NewScrollPager`; removed the
+  non-upstream `NewIndexesPager` and IndexList `limit`/`offset`. `filter_roles`
+  is now a single comma-joined param.
+
 ### Changed — Groups (v4 module, Phase 2 parity audit)
 
 **Breaking** within the v4 line — removed methods that hit nonexistent routes:

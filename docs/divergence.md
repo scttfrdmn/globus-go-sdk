@@ -109,6 +109,36 @@ client. Notable structure choices vs Python globus-sdk 4.8.1:
   with the `auth.Client` service type. `Consent.ID` and `dependency_path` are
   integers, not UUID strings.
 
+## Search: subject/entry query params, ingest envelope, corrected verbs
+
+The Phase 2 audit found several Search routes and bodies diverged from 4.8.1:
+
+- **Subject/entry are query params.** `GetEntry`/`DeleteEntry` now hit
+  `/index/{id}/entry?subject=&entry_id=` (entry_id optional), and new
+  `GetSubject`/`DeleteSubject` hit `/index/{id}/subject?subject=`. The old
+  `/index/{id}/subject/{subject}` path segments were not upstream routes.
+- **`UpdateIndex`** uses `PATCH` (was `PUT`). `CreateIndex`/`IndexUpdate` bodies
+  trimmed to `display_name`/`description` (upstream sends only those).
+- **Ingest.** Upstream has one `ingest` method taking a
+  `{ingest_type, ingest_data}` document. The Go `IngestEntry`/`IngestBatch`
+  methods sent bodies without that envelope (broken wire) — replaced by a single
+  `Ingest(indexID, data)` plus `NewGMetaEntryIngest`/`NewGMetaListIngest`
+  builders. Added `DeleteByQuery` and `BatchDeleteBySubject`.
+- **Tasks.** `GetTaskStatus` (mis-routed to `/index/{id}/task/{id}`) replaced by
+  `GetTask` (`GET /task/{task_id}`, index-independent) and `GetTaskList`
+  (`GET /task_list/{index_id}`). The task status field is `state`, not `status`.
+- **`AddRole`** sends `{role_name, principal}` (was the fabricated
+  `{principal, role_id}`); `GetRole` removed (no single-role GET route).
+- **`SearchQuery`** now emits the required `@version: "query#1.0.0"`, `facets`
+  is a list of objects (was `[]string`), and `post_facet_filters`/`boosts` were
+  added; the non-upstream `bypass_visible_to` field was dropped. Added the GET
+  `SearchGet` variant and `Scroll` (marker-paginated).
+- **Pagination.** `index_list` is not paginated upstream — `NewIndexesPager` and
+  the `limit`/`offset` params were removed; `filter_roles` is a single
+  comma-joined value (was repeated params). Added `NewSearchPager`
+  (offset-advancing, capped at 10000) and `NewScrollPager` (marker) matching the
+  upstream paginators over the `gmeta` key.
+
 ## Timers: realigned to the 4.8.1 wire (paths, base URL, document shape)
 
 The Phase 2 audit found the timers client diverged from upstream on nearly every
