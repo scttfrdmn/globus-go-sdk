@@ -70,9 +70,30 @@ test-coverage: $(GOCOV) $(GOCOVXML)
 	$(GOCOVXML) < coverage.json > coverage.xml
 	$(GO) tool cover -html=coverage.txt -o coverage.html
 
+# Credentialed integration tests against the live Globus API.
+# Requires GLOBUS_TEST_CLIENT_ID / GLOBUS_TEST_CLIENT_SECRET, supplied either in a
+# .env.test file (auto-loaded by the tests) or exported in the environment.
+# Optional per-service vars (endpoints, indexes, tokens) enable more coverage;
+# see .env.test.example. Tests without the vars they need are skipped, not failed.
 .PHONY: test-integration
-test-integration:
-	$(GO) test -v -tags=integration ./...
+test-integration: check-test-creds
+	@echo "Running v3 integration tests against the live Globus API..."
+	$(GO) test -v -tags=integration -count=1 ./...
+	@echo "Running v4 integration tests..."
+	@cd v4 && $(GO) test -v -tags=integration -count=1 ./...
+
+# Preflight: fail fast with a helpful message if credentials are absent, instead
+# of letting every integration test silently t.Skip. Honors either an exported
+# env var or a .env.test file (the same file the tests load via godotenv).
+.PHONY: check-test-creds
+check-test-creds:
+	@if [ -z "$$GLOBUS_TEST_CLIENT_ID" ] && ! grep -qs '^GLOBUS_TEST_CLIENT_ID=..' .env.test; then \
+		echo "ERROR: no Globus test credentials found."; \
+		echo "  Set GLOBUS_TEST_CLIENT_ID and GLOBUS_TEST_CLIENT_SECRET in the environment,"; \
+		echo "  or create .env.test (see .env.test.example)."; \
+		exit 1; \
+	fi
+	@echo "Globus test credentials detected."
 
 .PHONY: clean
 clean:
@@ -131,7 +152,8 @@ help:
 	@echo "  test               - Run Go tests"
 	@echo "  test-shell         - Run shell script tests"
 	@echo "  test-coverage      - Run tests with coverage report"
-	@echo "  test-integration   - Run integration tests"
+	@echo "  test-integration   - Run credentialed integration tests (needs .env.test or GLOBUS_TEST_CLIENT_ID/SECRET)"
+	@echo "  check-test-creds   - Preflight that Globus test credentials are present"
 	@echo "  security-scan      - Run security scanning tools"
 	@echo "  install-bats       - Install BATS testing framework"
 	@echo "  verify-credentials        - Build the verify-credentials SDK tool"

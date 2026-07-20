@@ -7,8 +7,10 @@ package flows
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
+	"strings"
 	"testing"
 	"time"
 
@@ -16,6 +18,20 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
 )
+
+// isDeployedFlowLimit reports whether err is the "you may only have one flow
+// deployed" restriction the flows service returns to limited accounts. The
+// detail lives in the API error body (core.Error.RawBody), not the short
+// Error() string.
+func isDeployedFlowLimit(err error) bool {
+	var apiErr *core.Error
+	if !errors.As(err, &apiErr) {
+		return false
+	}
+	body := strings.ToLower(string(apiErr.RawBody))
+	return strings.Contains(body, "only permitted to have one flow") ||
+		strings.Contains(body, "already deployed")
+}
 
 func init() {
 	// Load environment variables from .env.test file
@@ -96,10 +112,9 @@ func TestIntegration_ListFlows(t *testing.T) {
 	}
 	ctx := context.Background()
 
-	// List flows
-	flows, err := client.ListFlows(ctx, &ListFlowsOptions{
-		Limit: 5,
-	})
+	// List flows. list_flows paginates by marker and does not accept
+	// limit/per_page/offset (they 422), so call without those options.
+	flows, err := client.ListFlows(ctx, nil)
 
 	// Handle different error types with helpful messages
 	if err != nil {
@@ -156,57 +171,63 @@ func TestIntegration_FlowLifecycle(t *testing.T) {
 	flowTitle := fmt.Sprintf("Test Flow %s", timestamp)
 	flowDescription := "A test flow created by integration tests"
 
-	// Simple flow definition for testing
+	// create_flow requires the state-machine `definition` and `input_schema` as
+	// separate fields (not a nested flow document), else the API returns 422.
 	flowDefinition := map[string]interface{}{
-		"title":       flowTitle,
-		"description": flowDescription,
-		"input_schema": map[string]interface{}{
-			"additionalProperties": false,
-			"properties": map[string]interface{}{
-				"message": map[string]interface{}{
-					"type": "string",
-				},
-			},
-			"required": []string{"message"},
-			"type":     "object",
-		},
-		"definition": map[string]interface{}{
-			"Comment": "Simple test flow",
-			"StartAt": "LogMessage",
-			"States": map[string]interface{}{
-				"LogMessage": map[string]interface{}{
-					"Type":       "Pass",
-					"Result":     "Hello, integration test!",
-					"ResultPath": "$.output",
-					"End":        true,
-				},
+		"Comment": "Simple test flow",
+		"StartAt": "LogMessage",
+		"States": map[string]interface{}{
+			"LogMessage": map[string]interface{}{
+				"Type": "Pass",
+				// A Pass state's Result must be an object, not a bare string.
+				"Result":     map[string]interface{}{"message": "Hello, integration test!"},
+				"ResultPath": "$.output",
+				"End":        true,
 			},
 		},
+	}
+
+	inputSchema := map[string]interface{}{
+		"additionalProperties": false,
+		"properties": map[string]interface{}{
+			"message": map[string]interface{}{
+				"type": "string",
+			},
+		},
+		"required": []string{"message"},
+		"type":     "object",
 	}
 
 	createRequest := &FlowCreateRequest{
 		Title:       flowTitle,
 		Description: flowDescription,
 		Definition:  flowDefinition,
+		InputSchema: inputSchema,
 	}
 
 	createdFlow, err := client.CreateFlow(ctx, createRequest)
 	if err != nil {
-		if core.IsNotFound(err) {
+		switch {
+		case core.IsNotFound(err):
 			t.Logf("404 NOT FOUND: Client correctly made the request, but returned 404: %v", err)
 			t.Logf("This is acceptable for integration testing with limited-permission credentials")
 			t.Logf("To resolve, provide GLOBUS_TEST_FLOWS_TOKEN with proper permissions")
 			return // Skip the rest of the test
-		} else if core.IsForbidden(err) {
+		case core.IsForbidden(err):
 			t.Logf("403 FORBIDDEN: Permission denied to create flow: %v", err)
 			t.Logf("This is acceptable for integration testing with limited-permission credentials")
 			t.Logf("To resolve, set GLOBUS_TEST_FLOWS_TOKEN with a token that has flows permissions")
 			return // Skip the rest of the test
-		} else if core.IsUnauthorized(err) {
+		case core.IsUnauthorized(err):
 			t.Logf("401 UNAUTHORIZED: Token not valid for creating flows: %v", err)
 			t.Logf("To resolve, provide a valid GLOBUS_TEST_FLOWS_TOKEN with proper permissions")
 			return // Skip the rest of the test
-		} else {
+		case isDeployedFlowLimit(err):
+			// Free/limited accounts may only have one deployed flow; the create
+			// call reached the service and was correctly rejected.
+			t.Logf("Account is at its deployed-flow limit; create correctly rejected: %v", err)
+			return // Skip the rest of the test
+		default:
 			t.Fatalf("Failed to create flow with unexpected error: %v", err)
 		}
 	}

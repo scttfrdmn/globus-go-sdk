@@ -2,6 +2,23 @@
 
 This document tracks the status of test files in the Globus Go SDK.
 
+## Running integration tests
+
+Integration tests (`//go:build integration`) run against the live Globus API and
+are gated behind credentials. Provide `GLOBUS_TEST_CLIENT_ID` and
+`GLOBUS_TEST_CLIENT_SECRET` either in a `.env.test` file at the repo root (see
+`.env.test.example`) or as exported environment variables, then run:
+
+```bash
+make test-integration
+```
+
+The target preflights that credentials are present (`make check-test-creds`) and
+runs the tagged suite in both modules. Tests that need optional resources
+(specific endpoints, indexes, tokens) skip cleanly when those vars are absent,
+and tests skip rather than fail when a remote collection is unreachable (HTTP
+502/503/504).
+
 ## Test Files Fixed for v0.8.0
 
 The following test files have been fixed for v0.8.0:
