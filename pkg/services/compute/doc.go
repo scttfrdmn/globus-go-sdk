@@ -7,141 +7,110 @@ Package compute provides a client for interacting with the Globus Compute servic
 # STABILITY: STABLE
 
 This package is part of the Globus Go SDK v3.x which is synchronized with the
-Globus Python SDK and follows stable API guarantees. Components listed below are
-considered part of the public API and will not change incompatibly within a major version:
+Globus Python SDK and follows stable API guarantees.
 
-  - Client interface and implementation
-  - Function management operations (register, list, get, update, delete)
-  - Basic task execution methods
-  - Core model types (Function, Task, Endpoint)
-  - Batch processing capabilities
-  - Client configuration options
-  - Workflow orchestration features
-  - Container integration
-  - Dependency management
-  - Advanced polling and status tracking
-  - Task group functionality
+The Globus Compute web service (as of Python globus-sdk 3.65.0) defines no
+request/response models and no pagination. This client mirrors that: request
+bodies and object responses are passthrough map[string]interface{} documents.
+Two endpoints do not return JSON objects, so their methods return their real
+shape — GetEndpoints returns []map[string]interface{} (a top-level array) and
+GetVersion returns interface{} (a bare string, or an object when a service is
+given).
+
+The client folds the upstream ComputeClientV2 and ComputeClientV3 into one type;
+the v3 methods carry a "V3" suffix (RegisterEndpointV3, UpdateEndpointV3,
+LockEndpointV3, GetEndpointAllowlistV3, RegisterFunctionV3, SubmitV3).
 
 # Compatibility Guarantees
 
-For stable packages:
   - Public API signatures will not change incompatibly in minor or patch releases
   - New functionality will be added in backward-compatible ways
-  - Deprecated functionality will be marked with appropriate notices
-  - Deprecated functionality will be maintained for at least one major release cycle
-  - Any breaking changes will only occur in major version bumps (e.g., v3.x to v4.x)
+  - Deprecated functionality will be marked with appropriate notices and
+    maintained for at least one major release cycle
+  - Breaking changes only occur in major version bumps (e.g., v3.x to v4.x)
 
 # Synchronized Versioning
 
-Starting with v3.60.0-1, this package follows synchronized versioning with the Globus Python SDK.
-This ensures API compatibility and feature parity across language implementations.
+This package follows synchronized versioning with the Globus Python SDK to keep
+API compatibility and feature parity across language implementations.
 
 # Basic Usage
 
 Create a new compute client:
 
-	computeClient := compute.NewClient(
+	computeClient, err := compute.NewClient(
 		compute.WithAuthorizer(authorizer),
 	)
+	if err != nil {
+		// Handle error
+	}
 
-Function Management:
+Service information:
 
-	// Register a function
-	functionID, err := computeClient.RegisterFunction(ctx, &compute.FunctionRegistration{
-		Name:    "example-function",
-		Code:    "def example(x, y): return x + y",
-		Entry:   "example",
-		Runtime: "python3.8",
+	// GetVersion returns a bare string with no service argument, or an object
+	// when a service is named.
+	version, err := computeClient.GetVersion(ctx, "")
+	if err != nil {
+		// Handle error
+	}
+	fmt.Printf("Compute API version: %v\n", version)
+
+Endpoints:
+
+	// GetEndpoints returns a top-level array of endpoint documents.
+	endpoints, err := computeClient.GetEndpoints(ctx, &compute.GetEndpointsOptions{Role: "owner"})
+	if err != nil {
+		// Handle error
+	}
+	for _, ep := range endpoints {
+		fmt.Printf("Endpoint: %v (%v)\n", ep["name"], ep["uuid"])
+	}
+
+	// Register / inspect / delete an endpoint (passthrough documents).
+	ep, err := computeClient.RegisterEndpoint(ctx, map[string]interface{}{
+		"display_name": "my-endpoint",
+	})
+	status, err := computeClient.GetEndpointStatus(ctx, "endpoint-id")
+	_, err = computeClient.DeleteEndpoint(ctx, "endpoint-id")
+
+Functions:
+
+	// Register a function. The document shape is defined by the Compute API; a
+	// usable function requires the service's serialization envelope.
+	fn, err := computeClient.RegisterFunction(ctx, map[string]interface{}{
+		"function_name": "example",
+		"function_code": "def example(x, y):\n    return x + y\n",
+	})
+	if err != nil {
+		// Handle error
+	}
+	functionID, _ := fn["function_uuid"].(string)
+
+	got, err := computeClient.GetFunction(ctx, functionID)
+	_, err = computeClient.DeleteFunction(ctx, functionID)
+
+Task submission and status:
+
+	// Submit a task batch (POST /v2/submit). The document shape is defined by
+	// the Compute API; keys map an endpoint ID to its list of tasks.
+	result, err := computeClient.Submit(ctx, map[string]interface{}{
+		"tasks": map[string]interface{}{},
 	})
 	if err != nil {
 		// Handle error
 	}
 
-	// List functions
-	functions, err := computeClient.ListFunctions(ctx, nil)
-	if err != nil {
-		// Handle error
-	}
+	// Poll individual tasks or a batch.
+	task, err := computeClient.GetTask(ctx, "task-id")
+	batch, err := computeClient.GetBatchStatus(ctx, []string{"t1", "t2"})
 
-	for _, fn := range functions.Functions {
-		fmt.Printf("ID: %s, Name: %s\n", fn.ID, fn.Name)
-	}
+# V3 API
 
-	// Get a function
-	function, err := computeClient.GetFunction(ctx, functionID)
-	if err != nil {
-		// Handle error
-	}
+The v3 endpoint, function, and submit routes are available through the
+V3-suffixed methods, e.g.:
 
-	fmt.Printf("Function: %s (%s)\n", function.Name, function.Entry)
-
-	// Delete a function
-	err = computeClient.DeleteFunction(ctx, functionID)
-	if err != nil {
-		// Handle error
-	}
-
-Task Execution:
-
-	// Execute a function
-	taskID, err := computeClient.RunFunction(ctx, functionID, []interface{}{2, 3})
-	if err != nil {
-		// Handle error
-	}
-
-	// Get task result
-	result, err := computeClient.GetTaskResult(ctx, taskID)
-	if err != nil {
-		// Handle error
-	}
-
-	fmt.Printf("Result: %v\n", result.Result)
-
-	// Wait for task completion
-	task, err := computeClient.WaitForTask(ctx, taskID)
-	if err != nil {
-		// Handle error
-	}
-
-	if task.IsSuccessful() {
-		fmt.Println("Task completed successfully!")
-	} else {
-		fmt.Printf("Task failed: %s\n", task.Status)
-	}
-
-Batch Processing:
-
-	// Create a batch of tasks
-	batch := compute.NewBatch()
-	batch.AddTask(functionID, []interface{}{1, 2})
-	batch.AddTask(functionID, []interface{}{3, 4})
-
-	// Submit the batch
-	batchID, err := computeClient.SubmitBatch(ctx, batch)
-	if err != nil {
-		// Handle error
-	}
-
-	// Get batch status
-	batchStatus, err := computeClient.GetBatchStatus(ctx, batchID)
-	if err != nil {
-		// Handle error
-	}
-
-	fmt.Printf("Completed tasks: %d/%d\n", batchStatus.Completed, batchStatus.Total)
-
-Container Support:
-
-	// Register a containerized function
-	functionID, err := computeClient.RegisterFunction(ctx, &compute.FunctionRegistration{
-		Name:        "container-function",
-		Code:        "def example(x, y): return x + y",
-		Entry:       "example",
-		Container:   "my-container-image:latest",
-		ContainerID: "docker://ghcr.io/example/my-container:latest",
+	_, err := computeClient.SubmitV3(ctx, "endpoint-id", map[string]interface{}{
+		"tasks": []interface{}{},
 	})
-	if err != nil {
-		// Handle error
-	}
 */
 package compute
