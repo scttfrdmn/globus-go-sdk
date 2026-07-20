@@ -114,56 +114,9 @@ func TestMFAChallenge(t *testing.T) {
 		t.Fatalf("Failed to create auth client: %v", err)
 	}
 
-	// Test getting an MFA challenge
-	t.Run("GetMFAChallenge", func(t *testing.T) {
-		challenge, err := client.GetMFAChallenge(context.Background(), "mfa_challenge_123")
-		if err != nil {
-			t.Fatalf("Failed to get MFA challenge: %v", err)
-		}
-
-		if challenge.ChallengeID != "mfa_challenge_123" {
-			t.Errorf("Unexpected challenge ID: %s", challenge.ChallengeID)
-		}
-
-		if challenge.Type != "totp" {
-			t.Errorf("Unexpected challenge type: %s", challenge.Type)
-		}
-
-		if len(challenge.AllowedTypes) != 2 {
-			t.Errorf("Unexpected number of allowed types: %d", len(challenge.AllowedTypes))
-		}
-	})
-
-	// Test responding to an MFA challenge
-	t.Run("RespondToMFAChallenge", func(t *testing.T) {
-		// Test with a correct MFA code
-		response := &MFAResponse{
-			ChallengeID: "mfa_challenge_123",
-			Type:        "totp",
-			Value:       "123456", // Correct code
-		}
-
-		tokenResponse, err := client.RespondToMFAChallenge(context.Background(), response)
-		if err != nil {
-			t.Fatalf("Failed to respond to MFA challenge: %v", err)
-		}
-
-		if tokenResponse.AccessToken != "test_access_token" {
-			t.Errorf("Unexpected access token: %s", tokenResponse.AccessToken)
-		}
-
-		// Test with an incorrect MFA code
-		response.Value = "wrong_code"
-		_, err = client.RespondToMFAChallenge(context.Background(), response)
-		if err == nil {
-			t.Errorf("Expected error for incorrect MFA code, got nil")
-		}
-
-		if !IsMFAError(err) {
-			t.Logf("Got error: %v", err)
-			t.Skipf("Skipping MFA error check in test environment")
-		}
-	})
+	// MFA is completed by resubmitting to the token endpoint (there is no
+	// separate /oauth2/mfa/* route at 3.65.0), exercised via RefreshTokenWithMFA
+	// below.
 
 	// Test refresh token with MFA
 	t.Run("RefreshTokenWithMFA", func(t *testing.T) {

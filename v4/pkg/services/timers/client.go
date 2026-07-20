@@ -174,6 +174,7 @@ func (c *Client) CreateRecurringTimer(ctx context.Context, name string, startTim
 
 	return c.CreateTimer(ctx, timer)
 }
+
 // CreateTransferTimer creates a timer that submits a Globus Transfer task.
 func (c *Client) CreateTransferTimer(ctx context.Context, name string, schedule *Schedule, transferScope string, transferBody map[string]interface{}) (*Timer, error) {
 	if name == "" {
@@ -252,4 +253,3 @@ func (c *Client) GetRun(ctx context.Context, timerID, runID string) (*TimerRun, 
 func (c *Client) Close() error {
 	return c.baseClient.Close()
 }
-

@@ -172,7 +172,7 @@ func TestEnhancedScenarioExecution(t *testing.T) {
 
 	// Execute the test
 	ctx := context.Background()
-	group, err := client.GetGroup(ctx, scenario.GroupID)
+	group, err := client.GetGroup(ctx, scenario.GroupID, nil)
 
 	if err != nil {
 		t.Fatalf("Expected success, got error: %v", err)

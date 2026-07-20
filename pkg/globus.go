@@ -21,8 +21,10 @@ import (
 	"time"
 )
 
-// Version is the SDK version
-const Version = "4.4.0"
+// Version is the SDK version.
+//
+// The v3 module tracks the upstream Python globus-sdk v3 line, frozen at v3.65.0.
+const Version = "3.65.0"
 
 // OAuth2 scopes for Globus services
 const (

@@ -146,7 +146,7 @@ func main() {
 		FlowID: flowID,
 		Label:  "SDK Example Run " + time.Now().Format("20060102_150405"),
 		Tags:   []string{"example", "sdk", "go"},
-		Input: map[string]interface{}{
+		Body: map[string]interface{}{
 			"message": "Hello from Globus Go SDK!",
 		},
 	}
@@ -194,50 +194,13 @@ func main() {
 		for i, entry := range logs.Entries {
 			fmt.Printf("%d. [%s] %s - %s\n",
 				i+1,
-				entry.CreatedAt.Format("15:04:05"),
+				entry.Time.Format("15:04:05"),
 				entry.Code,
 				entry.Description)
 
 			if len(entry.Details) > 0 {
 				detailsJSON, _ := json.MarshalIndent(entry.Details, "", "  ")
 				fmt.Printf("   Details: %s\n", detailsJSON)
-			}
-		}
-	}
-
-	// List action providers
-	fmt.Println("\n=== Action Providers ===")
-	providers, err := flowsClient.ListActionProviders(ctx, &flows.ListActionProvidersOptions{
-		Limit:        5,
-		FilterGlobus: true,
-	})
-	if err != nil {
-		log.Printf("Failed to list action providers: %v", err)
-	} else {
-		fmt.Printf("Found %d Globus action providers:\n", len(providers.ActionProviders))
-		for i, provider := range providers.ActionProviders {
-			fmt.Printf("%d. %s (%s) - %s\n",
-				i+1,
-				provider.DisplayName,
-				provider.ID,
-				provider.Type)
-		}
-
-		// Show roles for the first provider
-		if len(providers.ActionProviders) > 0 {
-			provider := providers.ActionProviders[0]
-			fmt.Printf("\nRoles for %s:\n", provider.DisplayName)
-
-			roles, err := flowsClient.ListActionRoles(ctx, provider.ID, 5, 0)
-			if err != nil {
-				log.Printf("Failed to list action roles: %v", err)
-			} else {
-				for i, role := range roles.ActionRoles {
-					fmt.Printf("%d. %s (%s)\n", i+1, role.Name, role.ID)
-					if role.Description != "" {
-						fmt.Printf("   Description: %s\n", role.Description)
-					}
-				}
 			}
 		}
 	}

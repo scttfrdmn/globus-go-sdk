@@ -383,25 +383,23 @@ func TestRunFlow(t *testing.T) {
 			t.Errorf("Expected POST request, got %s", r.Method)
 		}
 
-		// Check path
-		if r.URL.Path != "/runs" {
-			t.Errorf("Expected path /runs, got %s", r.URL.Path)
+		// Check path (run is index-scoped to the flow)
+		if r.URL.Path != "/flows/test-flow-id/run" {
+			t.Errorf("Expected path /flows/test-flow-id/run, got %s", r.URL.Path)
 		}
 
-		// Decode request body
+		// Decode request body; input goes under "body"
 		var request RunRequest
 		json.NewDecoder(r.Body).Decode(&request)
-
-		// Check request body
-		if request.FlowID != "test-flow-id" {
-			t.Errorf("Expected flow ID = test-flow-id, got %s", request.FlowID)
+		if request.Body == nil {
+			t.Error("Expected request body under \"body\" key")
 		}
 
 		// Return mock response
 		runTime, _ := time.Parse(time.RFC3339, "2023-01-01T00:00:00Z")
 		response := RunResponse{
 			RunID:     "test-run-id",
-			FlowID:    request.FlowID,
+			FlowID:    "test-flow-id",
 			Status:    "ACTIVE",
 			CreatedAt: runTime,
 			StartedAt: runTime,
@@ -409,7 +407,7 @@ func TestRunFlow(t *testing.T) {
 			Tags:      request.Tags,
 			UserID:    "test-user",
 			RunOwner:  "test-user",
-			Input:     request.Input,
+			Input:     request.Body,
 			FlowTitle: "Test Flow",
 		}
 
@@ -429,7 +427,7 @@ func TestRunFlow(t *testing.T) {
 		FlowID: "test-flow-id",
 		Label:  "Test Run",
 		Tags:   []string{"test"},
-		Input: map[string]interface{}{
+		Body: map[string]interface{}{
 			"param1": "value1",
 		},
 	}
@@ -455,7 +453,7 @@ func TestRunFlow(t *testing.T) {
 
 	// Test empty flow ID
 	_, err = client.RunFlow(context.Background(), &RunRequest{
-		Input: map[string]interface{}{},
+		Body: map[string]interface{}{},
 	})
 	if err == nil {
 		t.Error("RunFlow() with empty flow ID should return error")
@@ -654,8 +652,8 @@ func TestUpdateRun(t *testing.T) {
 	// Setup test server
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		// Check request method
-		if r.Method != http.MethodPatch {
-			t.Errorf("Expected PATCH request, got %s", r.Method)
+		if r.Method != http.MethodPut {
+			t.Errorf("Expected PUT request, got %s", r.Method)
 		}
 
 		// Check path
@@ -758,14 +756,12 @@ func TestGetRunLogs(t *testing.T) {
 			Entries: []RunLogEntry{
 				{
 					Code:        "STARTED",
-					RunID:       "test-run-id",
-					CreatedAt:   logTime,
+					Time:        logTime,
 					Description: "Flow run started",
 				},
 				{
 					Code:        "STEP_STARTED",
-					RunID:       "test-run-id",
-					CreatedAt:   logTime.Add(time.Second),
+					Time:        logTime.Add(time.Second),
 					Description: "Flow step started",
 					Details: map[string]interface{}{
 						"step_id": "step1",
@@ -804,267 +800,13 @@ func TestGetRunLogs(t *testing.T) {
 	if entry.Code != "STARTED" {
 		t.Errorf("Expected log code = STARTED, got %s", entry.Code)
 	}
-	if entry.RunID != "test-run-id" {
-		t.Errorf("Expected run ID = test-run-id, got %s", entry.RunID)
+	if entry.Description != "Flow run started" {
+		t.Errorf("Expected description = Flow run started, got %s", entry.Description)
 	}
 
 	// Test empty run ID
 	_, err = client.GetRunLogs(context.Background(), "", 10, 0)
 	if err == nil {
 		t.Error("GetRunLogs() with empty ID should return error")
-	}
-}
-
-func TestListActionProviders(t *testing.T) {
-	// Setup test server
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		// Check request method
-		if r.Method != http.MethodGet {
-			t.Errorf("Expected GET request, got %s", r.Method)
-		}
-
-		// Check path
-		if r.URL.Path != "/action_providers" {
-			t.Errorf("Expected path /action_providers, got %s", r.URL.Path)
-		}
-
-		// Return mock response
-		providerTime, _ := time.Parse(time.RFC3339, "2023-01-01T00:00:00Z")
-		response := ActionProviderList{
-			ActionProviders: []ActionProvider{
-				{
-					ID:          "test-provider-id",
-					DisplayName: "Test Provider",
-					Description: "A test action provider",
-					Owner:       "globus",
-					CreatedAt:   providerTime,
-					UpdatedAt:   providerTime,
-					Type:        "action",
-					Globus:      true,
-					Visible:     true,
-				},
-			},
-			Total:   1,
-			HadMore: false,
-			Offset:  0,
-			Limit:   10,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
-	}
-
-	server, client, err := setupMockServer(handler)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-	defer server.Close()
-
-	// Test list action providers
-	options := &ListActionProvidersOptions{
-		Limit: 10,
-	}
-
-	providerList, err := client.ListActionProviders(context.Background(), options)
-	if err != nil {
-		t.Fatalf("ListActionProviders() error = %v", err)
-	}
-
-	// Check response
-	if len(providerList.ActionProviders) != 1 {
-		t.Errorf("Expected 1 action provider, got %d", len(providerList.ActionProviders))
-	}
-
-	provider := providerList.ActionProviders[0]
-	if provider.ID != "test-provider-id" {
-		t.Errorf("Expected provider ID = test-provider-id, got %s", provider.ID)
-	}
-	if provider.DisplayName != "Test Provider" {
-		t.Errorf("Expected provider display name = Test Provider, got %s", provider.DisplayName)
-	}
-}
-
-func TestGetActionProvider(t *testing.T) {
-	// Setup test server
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		// Check request method
-		if r.Method != http.MethodGet {
-			t.Errorf("Expected GET request, got %s", r.Method)
-		}
-
-		// Check path
-		if r.URL.Path != "/action_providers/test-provider-id" {
-			t.Errorf("Expected path /action_providers/test-provider-id, got %s", r.URL.Path)
-		}
-
-		// Return mock response
-		providerTime, _ := time.Parse(time.RFC3339, "2023-01-01T00:00:00Z")
-		response := ActionProvider{
-			ID:          "test-provider-id",
-			DisplayName: "Test Provider",
-			Description: "A test action provider",
-			Owner:       "globus",
-			CreatedAt:   providerTime,
-			UpdatedAt:   providerTime,
-			Type:        "action",
-			Globus:      true,
-			Visible:     true,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
-	}
-
-	server, client, err := setupMockServer(handler)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-	defer server.Close()
-
-	// Test get action provider
-	provider, err := client.GetActionProvider(context.Background(), "test-provider-id")
-	if err != nil {
-		t.Fatalf("GetActionProvider() error = %v", err)
-	}
-
-	// Check response
-	if provider.ID != "test-provider-id" {
-		t.Errorf("Expected provider ID = test-provider-id, got %s", provider.ID)
-	}
-	if provider.DisplayName != "Test Provider" {
-		t.Errorf("Expected provider display name = Test Provider, got %s", provider.DisplayName)
-	}
-
-	// Test empty provider ID
-	_, err = client.GetActionProvider(context.Background(), "")
-	if err == nil {
-		t.Error("GetActionProvider() with empty ID should return error")
-	}
-}
-
-func TestListActionRoles(t *testing.T) {
-	// Setup test server
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		// Check request method
-		if r.Method != http.MethodGet {
-			t.Errorf("Expected GET request, got %s", r.Method)
-		}
-
-		// Check path
-		if r.URL.Path != "/action_providers/test-provider-id/roles" {
-			t.Errorf("Expected path /action_providers/test-provider-id/roles, got %s", r.URL.Path)
-		}
-
-		// Return mock response
-		response := ActionRoleList{
-			ActionRoles: []ActionRole{
-				{
-					ID:          "test-role-id",
-					Name:        "Test Role",
-					Description: "A test action role",
-					Visible:     true,
-				},
-			},
-			Total:   1,
-			HadMore: false,
-			Offset:  0,
-			Limit:   10,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
-	}
-
-	server, client, err := setupMockServer(handler)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-	defer server.Close()
-
-	// Test list action roles
-	roleList, err := client.ListActionRoles(context.Background(), "test-provider-id", 10, 0)
-	if err != nil {
-		t.Fatalf("ListActionRoles() error = %v", err)
-	}
-
-	// Check response
-	if len(roleList.ActionRoles) != 1 {
-		t.Errorf("Expected 1 action role, got %d", len(roleList.ActionRoles))
-	}
-
-	role := roleList.ActionRoles[0]
-	if role.ID != "test-role-id" {
-		t.Errorf("Expected role ID = test-role-id, got %s", role.ID)
-	}
-	if role.Name != "Test Role" {
-		t.Errorf("Expected role name = Test Role, got %s", role.Name)
-	}
-
-	// Test empty provider ID
-	_, err = client.ListActionRoles(context.Background(), "", 10, 0)
-	if err == nil {
-		t.Error("ListActionRoles() with empty provider ID should return error")
-	}
-}
-
-func TestGetActionRole(t *testing.T) {
-	// Setup test server
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		// Check request method
-		if r.Method != http.MethodGet {
-			t.Errorf("Expected GET request, got %s", r.Method)
-		}
-
-		// Check path
-		if r.URL.Path != "/action_providers/test-provider-id/roles/test-role-id" {
-			t.Errorf("Expected path /action_providers/test-provider-id/roles/test-role-id, got %s", r.URL.Path)
-		}
-
-		// Return mock response
-		response := ActionRole{
-			ID:          "test-role-id",
-			Name:        "Test Role",
-			Description: "A test action role",
-			Visible:     true,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
-	}
-
-	server, client, err := setupMockServer(handler)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-	defer server.Close()
-
-	// Test get action role
-	role, err := client.GetActionRole(context.Background(), "test-provider-id", "test-role-id")
-	if err != nil {
-		t.Fatalf("GetActionRole() error = %v", err)
-	}
-
-	// Check response
-	if role.ID != "test-role-id" {
-		t.Errorf("Expected role ID = test-role-id, got %s", role.ID)
-	}
-	if role.Name != "Test Role" {
-		t.Errorf("Expected role name = Test Role, got %s", role.Name)
-	}
-
-	// Test empty provider ID
-	_, err = client.GetActionRole(context.Background(), "", "test-role-id")
-	if err == nil {
-		t.Error("GetActionRole() with empty provider ID should return error")
-	}
-
-	// Test empty role ID
-	_, err = client.GetActionRole(context.Background(), "test-provider-id", "")
-	if err == nil {
-		t.Error("GetActionRole() with empty role ID should return error")
 	}
 }

@@ -21,7 +21,7 @@ import (
 
 // Constants for Globus Flows
 const (
-	DefaultBaseURL = "https://flows.globus.org/v1/"
+	DefaultBaseURL = "https://flows.automate.globus.org/"
 	FlowsScope     = "https://auth.globus.org/scopes/eec9b274-0c81-4334-bdc2-54e90e689b9a/manage_flows"
 )
 
@@ -316,6 +316,23 @@ func (c *Client) CreateFlow(ctx context.Context, request *FlowCreateRequest) (*F
 	return &flow, nil
 }
 
+// ValidateFlow validates a flow definition without deploying it
+// (POST /flows/validate).
+func (c *Client) ValidateFlow(ctx context.Context, definition, inputSchema map[string]interface{}) (map[string]interface{}, error) {
+	if definition == nil {
+		return nil, fmt.Errorf("flow definition is required")
+	}
+	body := map[string]interface{}{"definition": definition}
+	if inputSchema != nil {
+		body["input_schema"] = inputSchema
+	}
+	var result map[string]interface{}
+	if err := c.doRequestLowLevel(ctx, http.MethodPost, "flows/validate", nil, body, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
+}
+
 // UpdateFlow updates an existing flow
 func (c *Client) UpdateFlow(ctx context.Context, flowID string, request *FlowUpdateRequest) (*Flow, error) {
 	if flowID == "" {
@@ -354,17 +371,31 @@ func (c *Client) RunFlow(ctx context.Context, request *RunRequest) (*RunResponse
 		return nil, fmt.Errorf("flow ID is required")
 	}
 
-	if request.Input == nil {
-		return nil, fmt.Errorf("input is required")
+	if request.Body == nil {
+		return nil, fmt.Errorf("body is required")
 	}
 
 	var run RunResponse
-	err := c.doRequestLowLevel(ctx, http.MethodPost, "runs", nil, request, &run)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "flows/"+request.FlowID+"/run", nil, request, &run)
 	if err != nil {
 		return nil, err
 	}
 
 	return &run, nil
+}
+
+// ValidateRun validates a run request without starting it
+// (POST /flows/{id}/validate_run). The body envelope matches RunFlow.
+func (c *Client) ValidateRun(ctx context.Context, request *RunRequest) (map[string]interface{}, error) {
+	if request == nil || request.FlowID == "" {
+		return nil, fmt.Errorf("flow ID is required")
+	}
+	var result map[string]interface{}
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "flows/"+request.FlowID+"/validate_run", nil, request, &result)
+	if err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // ListRuns lists all flow runs the user has access to
@@ -427,6 +458,43 @@ func (c *Client) GetRun(ctx context.Context, runID string) (*RunResponse, error)
 	return &run, nil
 }
 
+// GetRunDefinition retrieves the flow definition a run was started with
+// (GET /runs/{id}/definition).
+func (c *Client) GetRunDefinition(ctx context.Context, runID string) (map[string]interface{}, error) {
+	if runID == "" {
+		return nil, fmt.Errorf("run ID is required")
+	}
+	var def map[string]interface{}
+	if err := c.doRequestLowLevel(ctx, http.MethodGet, "runs/"+runID+"/definition", nil, nil, &def); err != nil {
+		return nil, err
+	}
+	return def, nil
+}
+
+// DeleteRun deletes (releases) a run (POST /runs/{id}/release).
+func (c *Client) DeleteRun(ctx context.Context, runID string) (*RunResponse, error) {
+	if runID == "" {
+		return nil, fmt.Errorf("run ID is required")
+	}
+	var run RunResponse
+	if err := c.doRequestLowLevel(ctx, http.MethodPost, "runs/"+runID+"/release", nil, nil, &run); err != nil {
+		return nil, err
+	}
+	return &run, nil
+}
+
+// ResumeRun resumes a run awaiting resume (POST /runs/{id}/resume).
+func (c *Client) ResumeRun(ctx context.Context, runID string) (*RunResponse, error) {
+	if runID == "" {
+		return nil, fmt.Errorf("run ID is required")
+	}
+	var run RunResponse
+	if err := c.doRequestLowLevel(ctx, http.MethodPost, "runs/"+runID+"/resume", nil, nil, &run); err != nil {
+		return nil, err
+	}
+	return &run, nil
+}
+
 // CancelRun cancels a flow run
 func (c *Client) CancelRun(ctx context.Context, runID string) error {
 	if runID == "" {
@@ -447,7 +515,7 @@ func (c *Client) UpdateRun(ctx context.Context, runID string, request *RunUpdate
 	}
 
 	var run RunResponse
-	err := c.doRequestLowLevel(ctx, http.MethodPatch, "runs/"+runID, nil, request, &run)
+	err := c.doRequestLowLevel(ctx, http.MethodPut, "runs/"+runID, nil, request, &run)
 	if err != nil {
 		return nil, err
 	}
@@ -478,105 +546,6 @@ func (c *Client) GetRunLogs(ctx context.Context, runID string, limit, offset int
 	return &logs, nil
 }
 
-// ListActionProviders lists all action providers
-func (c *Client) ListActionProviders(ctx context.Context, options *ListActionProvidersOptions) (*ActionProviderList, error) {
-	// Convert options to query parameters
-	query := url.Values{}
-	if options != nil {
-		if options.Limit > 0 {
-			query.Set("limit", strconv.Itoa(options.Limit))
-		} else if options.PerPage > 0 {
-			query.Set("per_page", strconv.Itoa(options.PerPage))
-		}
-		if options.Offset > 0 {
-			query.Set("offset", strconv.Itoa(options.Offset))
-		}
-		if options.Marker != "" {
-			query.Set("marker", options.Marker)
-		}
-		if options.OrderBy != "" {
-			query.Set("orderby", options.OrderBy)
-		}
-		if options.Q != "" {
-			query.Set("q", options.Q)
-		}
-		if options.FilterOwner != "" {
-			query.Set("filter_owner", options.FilterOwner)
-		}
-		if options.FilterType != "" {
-			query.Set("filter_type", options.FilterType)
-		}
-		if options.FilterGlobus {
-			query.Set("filter_globus", "true")
-		}
-	}
-
-	var providerList ActionProviderList
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "action_providers", query, nil, &providerList)
-	if err != nil {
-		return nil, err
-	}
-
-	return &providerList, nil
-}
-
-// GetActionProvider retrieves a specific action provider by ID
-func (c *Client) GetActionProvider(ctx context.Context, providerID string) (*ActionProvider, error) {
-	if providerID == "" {
-		return nil, fmt.Errorf("action provider ID is required")
-	}
-
-	var provider ActionProvider
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "action_providers/"+providerID, nil, nil, &provider)
-	if err != nil {
-		return nil, err
-	}
-
-	return &provider, nil
-}
-
-// ListActionRoles lists all action roles for a provider
-func (c *Client) ListActionRoles(ctx context.Context, providerID string, limit, offset int) (*ActionRoleList, error) {
-	if providerID == "" {
-		return nil, fmt.Errorf("action provider ID is required")
-	}
-
-	query := url.Values{}
-	if limit > 0 {
-		query.Set("limit", strconv.Itoa(limit))
-	}
-	if offset > 0 {
-		query.Set("offset", strconv.Itoa(offset))
-	}
-
-	var roleList ActionRoleList
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "action_providers/"+providerID+"/roles", query, nil, &roleList)
-	if err != nil {
-		return nil, err
-	}
-
-	return &roleList, nil
-}
-
-// GetActionRole retrieves a specific action role by ID
-func (c *Client) GetActionRole(ctx context.Context, providerID, roleID string) (*ActionRole, error) {
-	if providerID == "" {
-		return nil, fmt.Errorf("action provider ID is required")
-	}
-
-	if roleID == "" {
-		return nil, fmt.Errorf("action role ID is required")
-	}
-
-	var role ActionRole
-	err := c.doRequestLowLevel(ctx, http.MethodGet, "action_providers/"+providerID+"/roles/"+roleID, nil, nil, &role)
-	if err != nil {
-		return nil, err
-	}
-
-	return &role, nil
-}
-
 // Iterators for pagination
 
 // GetFlowsIterator returns an iterator for listing flows with pagination.
@@ -587,16 +556,6 @@ func (c *Client) GetFlowsIterator(options *ListFlowsOptions) *FlowIterator {
 // GetRunsIterator returns an iterator for listing flow runs with pagination.
 func (c *Client) GetRunsIterator(options *ListRunsOptions) *RunIterator {
 	return NewRunIterator(c, options)
-}
-
-// GetActionProvidersIterator returns an iterator for listing action providers with pagination.
-func (c *Client) GetActionProvidersIterator(options *ListActionProvidersOptions) *ActionProviderIterator {
-	return NewActionProviderIterator(c, options)
-}
-
-// GetActionRolesIterator returns an iterator for listing action roles with pagination.
-func (c *Client) GetActionRolesIterator(providerID string, limit int) *ActionRoleIterator {
-	return NewActionRoleIterator(c, providerID, limit)
 }
 
 // GetRunLogsIterator returns an iterator for listing run logs with pagination.
@@ -671,40 +630,6 @@ func (c *Client) ListAllRuns(ctx context.Context, options *ListRunsOptions) ([]R
 	}
 
 	return runs, nil
-}
-
-// ListAllActionProviders lists all action providers using pagination, collecting all results.
-// This is a convenience method that uses the ActionProviderIterator internally.
-func (c *Client) ListAllActionProviders(ctx context.Context, options *ListActionProvidersOptions) ([]ActionProvider, error) {
-	iterator := c.GetActionProvidersIterator(options)
-	var providers []ActionProvider
-
-	for iterator.Next(ctx) {
-		providers = append(providers, *iterator.ActionProvider())
-	}
-
-	if err := iterator.Err(); err != nil {
-		return nil, err
-	}
-
-	return providers, nil
-}
-
-// ListAllActionRoles lists all action roles for a provider using pagination, collecting all results.
-// This is a convenience method that uses the ActionRoleIterator internally.
-func (c *Client) ListAllActionRoles(ctx context.Context, providerID string) ([]ActionRole, error) {
-	iterator := c.GetActionRolesIterator(providerID, 100)
-	var roles []ActionRole
-
-	for iterator.Next(ctx) {
-		roles = append(roles, *iterator.ActionRole())
-	}
-
-	if err := iterator.Err(); err != nil {
-		return nil, err
-	}
-
-	return roles, nil
 }
 
 // ListAllRunLogs lists all logs for a run using pagination, collecting all results.

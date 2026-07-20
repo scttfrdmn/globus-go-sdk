@@ -2,8 +2,8 @@ name: Check Upstream Releases
 
 on:
   schedule:
-    # Run every Monday at 9am UTC
-    - cron: '0 9 * * 1'
+    # Run every day at 9am UTC so we track upstream closely
+    - cron: '0 9 * * *'
   workflow_dispatch:
     inputs:
       force_check:
@@ -31,7 +31,15 @@ jobs:
         run: |
           set -e
 
-          # Function to check a specific version line
+          # Tracking file schema (see its _comment):
+          #   .ported[repo:line] = upstream version this Go module actually implements (humans only)
+          #   .seen[repo:line]   = latest upstream release CI has observed (this workflow bumps it)
+          # This workflow NEVER edits .ported — parity is only claimed when features land.
+          TRACK_FILE=.github/upstream-versions.json
+
+          # Enumerate every upstream release on a version line that is newer than
+          # the stored "seen" version, oldest-first, and file one issue per gap
+          # release so intermediate releases are never silently skipped.
           check_version_line() {
             local version_line="$1"
             local upstream_repo="globus/globus-sdk-python"
@@ -40,117 +48,130 @@ jobs:
 
             echo "Checking $repo_label..."
 
-            # Get all releases and filter by version pattern
             if [ "$version_line" = "v3" ]; then
-              version_pattern="^v3\."
+              version_pattern="^v3\.[0-9]"
             else
-              version_pattern="^v4\."
+              version_pattern="^v4\.[0-9]"
             fi
 
-            # Get latest release matching the version pattern
-            latest_tag=$(gh release list --repo "$upstream_repo" --limit 100 --json tagName 2>/dev/null | \
-              jq -r ".[].tagName" | grep -E "$version_pattern" | head -n1)
+            # All stable releases on this line, oldest-first (drop pre-releases a/b/rc).
+            local all_tags
+            all_tags=$(gh release list --repo "$upstream_repo" --limit 200 --json tagName 2>/dev/null \
+              | jq -r '.[].tagName' \
+              | grep -E "$version_pattern" \
+              | grep -viE 'a[0-9]+$|b[0-9]+$|rc[0-9]+$' \
+              | sort -V)
 
-            if [ -z "$latest_tag" ]; then
-              echo "  [WARNING]  Could not find $version_line release for $upstream_repo"
+            if [ -z "$all_tags" ]; then
+              echo "  [WARNING] Could not find $version_line releases for $upstream_repo"
               return 0
             fi
 
-            # Get full release details
-            latest_release=$(gh release view --repo "$upstream_repo" "$latest_tag" --json tagName,name,body,url,publishedAt 2>/dev/null || echo "")
+            local latest_tag
+            latest_tag=$(echo "$all_tags" | tail -n1)
 
-            if [ -z "$latest_release" ]; then
-              echo "  [WARNING]  Could not fetch release details for $latest_tag"
+            local seen_version ported_version
+            seen_version=$(jq -r --arg key "$version_key" '.seen[$key] // "none"' "$TRACK_FILE")
+            ported_version=$(jq -r --arg key "$version_key" '.ported[$key] // "none"' "$TRACK_FILE")
+
+            echo "  Ported (implemented): $ported_version"
+            echo "  Seen (last observed): $seen_version"
+            echo "  Latest upstream:      $latest_tag"
+
+            if [ "$ported_version" != "$latest_tag" ]; then
+              echo "  [PARITY GAP] $version_line is behind upstream: ported=$ported_version, upstream=$latest_tag"
+              echo "$version_line ported=$ported_version upstream=$latest_tag" >> /tmp/parity_gap
+            fi
+
+            if [ "$seen_version" = "$latest_tag" ] && [ "${{ github.event.inputs.force_check }}" != "true" ]; then
+              echo "  [OK] No new releases since last seen"
               return 0
             fi
 
-            release_name=$(echo "$latest_release" | jq -r '.name')
-            release_body=$(echo "$latest_release" | jq -r '.body')
-            release_url=$(echo "$latest_release" | jq -r '.url')
-            published_at=$(echo "$latest_release" | jq -r '.publishedAt')
-
-            # Get stored version
-            stored_version=$(jq -r --arg key "$version_key" '.[$key]' .github/upstream-versions.json)
-
-            echo "  Current tracked: $stored_version"
-            echo "  Latest upstream: $latest_tag"
-
-            # Check if version changed or force check
-            if [ "$stored_version" = "$latest_tag" ] && [ "${{ github.event.inputs.force_check }}" != "true" ]; then
-              echo "  [OK] Already up to date"
-              return 0
+            # Releases strictly newer than seen_version (all of them if seen == none).
+            local new_tags
+            if [ "$seen_version" = "none" ]; then
+              new_tags="$latest_tag"
+            else
+              new_tags=$(echo "$all_tags" | awk -v seen="$seen_version" '
+                found { print }
+                $0 == seen { found=1 }
+              ')
+              # If seen wasn't found in the list (e.g. renamed), fall back to latest only.
+              [ -z "$new_tags" ] && new_tags="$latest_tag"
             fi
 
-            # Check if issue already exists for this version
-            existing_issue=$(gh issue list --repo ${{ github.repository }} \
-              --search "\"New $repo_label release: $latest_tag\" in:title" \
-              --json number --jq '.[0].number' 2>/dev/null || echo "")
+            local tag
+            while IFS= read -r tag; do
+              [ -z "$tag" ] && continue
 
-            if [ -n "$existing_issue" ]; then
-              echo "  [INFO]  Issue already exists: #$existing_issue"
-              return 0
-            fi
+              local existing_issue
+              existing_issue=$(gh issue list --repo ${{ github.repository }} \
+                --search "\"New $repo_label release: $tag\" in:title" \
+                --json number --jq '.[0].number' 2>/dev/null || echo "")
+              if [ -n "$existing_issue" ]; then
+                echo "  [INFO] Issue already exists for $tag: #$existing_issue"
+                continue
+              fi
 
-            echo "  [NEW] New release found: $latest_tag"
+              local release_json release_body release_url published_at
+              release_json=$(gh release view --repo "$upstream_repo" "$tag" --json body,url,publishedAt 2>/dev/null || echo "")
+              release_body=$(echo "$release_json" | jq -r '.body // ""')
+              release_url=$(echo "$release_json" | jq -r '.url // ""')
+              published_at=$(echo "$release_json" | jq -r '.publishedAt // ""')
 
-            # Build comparison URL
-            comparison_url="https://github.com/$upstream_repo/compare/$stored_version...$latest_tag"
+              local comparison_url="https://github.com/$upstream_repo/compare/$seen_version...$tag"
 
-            # Create issue body (use printf to avoid un-indented lines breaking YAML block scalar)
-            issue_body=$(printf \
-              '## New %s Release Available\n\n**New Version:** `%s`\n**Previous Version:** `%s`\n**Published:** %s\n**Version Line:** %s\n\n### Links\n- [Release Page](%s)\n- [Compare Changes](%s)\n- [Repository](https://github.com/%s)\n\n### Release Notes\n\n%s\n\n---\n\n### Action Items\n- [ ] Review release notes and changes\n- [ ] Check for breaking changes or deprecations\n- [ ] Port new features and improvements\n- [ ] Update tests for new functionality\n- [ ] Update documentation if needed\n- [ ] Update `.github/upstream-versions.json` after porting changes\n\n**Upstream Repository:** `%s` (%s)\n' \
-              "$repo_label" "$latest_tag" "$stored_version" "$published_at" "$version_line" \
-              "$release_url" "$comparison_url" "$upstream_repo" \
-              "$release_body" "$upstream_repo" "$version_line")
+              local issue_body
+              issue_body=$(printf \
+                '## New %s Release: `%s`\n\n**Published:** %s\n**Version Line:** %s\n**Currently ported (Go):** `%s`\n\n### Links\n- [Release Page](%s)\n- [Compare Changes](%s)\n\n### Release Notes\n\n%s\n\n---\n\n### Action Items\n- [ ] Review release notes for wire-visible (HTTP/API) changes\n- [ ] Skip Python-internal changes with no Go equivalent (note which)\n- [ ] Port new features and improvements\n- [ ] Add/update tests\n- [ ] Update docs and CHANGELOG\n- [ ] **After porting: bump `.ported[%s]` in `%s` to `%s`**\n\n_CI has bumped `.seen` to record this release was observed. `.ported` stays until the work lands._\n' \
+                "$repo_label" "$tag" "$published_at" "$version_line" "$ported_version" \
+                "$release_url" "$comparison_url" "$release_body" "$version_key" "$TRACK_FILE" "$tag")
 
-            # Create the issue
-            issue_number=$(gh issue create \
-              --title "New $repo_label release: $latest_tag" \
-              --body "$issue_body" \
-              --label "upstream-update,needs-review,dependencies,$version_line" \
-              --json number --jq '.number')
+              local issue_number
+              issue_number=$(gh issue create \
+                --title "New $repo_label release: $tag" \
+                --body "$issue_body" \
+                --label "upstream-update,needs-review,dependencies,$version_line" \
+                --json number --jq '.number')
+              echo "  [NEW] Filed issue #$issue_number for $tag"
+            done <<< "$new_tags"
 
-            echo "  [OK] Created issue #$issue_number"
-
-            # Update the version tracking file
+            # Record that we've now observed up to latest_tag. Never touches .ported.
             jq --arg key "$version_key" --arg version "$latest_tag" \
-              '.[$key] = $version' .github/upstream-versions.json > .github/upstream-versions.json.tmp
-            mv .github/upstream-versions.json.tmp .github/upstream-versions.json
+              '.seen[$key] = $version' "$TRACK_FILE" > "$TRACK_FILE.tmp"
+            mv "$TRACK_FILE.tmp" "$TRACK_FILE"
 
-            # Mark for commit
             echo "true" > /tmp/has_update
-            echo "$version_line=$latest_tag" >> /tmp/updated_versions
+            echo "$version_line seen -> $latest_tag" >> /tmp/updated_versions
           }
 
-          # Check both v3 and v4 version lines
           check_version_line "v3"
           check_version_line "v4"
 
           echo "Upstream check complete!"
 
-      - name: Commit version updates
+      - name: Commit seen-version updates
         run: |
           if [ -f /tmp/has_update ]; then
             git config user.name "github-actions[bot]"
             git config user.email "github-actions[bot]@users.noreply.github.com"
 
-            # Check if there are changes to commit
             if git diff --quiet .github/upstream-versions.json; then
               echo "No version updates to commit"
               exit 0
             fi
 
-            # Build commit message
-            commit_msg="chore: update upstream version tracking"$'\n\n'
+            commit_msg="chore: record observed upstream releases (seen only)"$'\n\n'
             while IFS= read -r line; do
-              commit_msg+="- Updated Python SDK $line"$'\n'
+              commit_msg+="- $line"$'\n'
             done < /tmp/updated_versions
 
             git add .github/upstream-versions.json
             git commit -m "$commit_msg"
             git push
 
-            echo "[OK] Committed version update"
+            echo "[OK] Committed seen update"
           else
             echo "No updates found"
           fi
@@ -160,16 +181,23 @@ jobs:
         run: |
           echo "## Upstream Release Check Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Tracking:** Python Globus SDK (globus/globus-sdk-python)" >> $GITHUB_STEP_SUMMARY
-          echo "- v3.x releases" >> $GITHUB_STEP_SUMMARY
-          echo "- v4.x releases" >> $GITHUB_STEP_SUMMARY
+          echo "**Tracking:** Python Globus SDK (globus/globus-sdk-python), v3 and v4 lines" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
 
-          if [ -f /tmp/has_update ]; then
-            echo "### [NEW] New Releases Found" >> $GITHUB_STEP_SUMMARY
+          if [ -f /tmp/parity_gap ]; then
+            echo "### ⚠️ Parity gaps (ported behind upstream)" >> $GITHUB_STEP_SUMMARY
+            while IFS= read -r line; do
+              echo "- $line" >> $GITHUB_STEP_SUMMARY
+            done < /tmp/parity_gap
+            echo "" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "### ✅ Ported surface matches latest upstream" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          if [ -f /tmp/updated_versions ]; then
+            echo "### 🆕 Newly observed releases" >> $GITHUB_STEP_SUMMARY
             while IFS= read -r line; do
               echo "- $line" >> $GITHUB_STEP_SUMMARY
             done < /tmp/updated_versions
-          else
-            echo "[OK] Already up to date with upstream" >> $GITHUB_STEP_SUMMARY
           fi

@@ -17,7 +17,7 @@ type TestCreateDirectoryOptions struct {
 
 // TestCreateDirectory creates a directory on an endpoint (for tests)
 func (c *Client) TestCreateDirectory(ctx context.Context, options *TestCreateDirectoryOptions) error {
-	return c.Mkdir(ctx, options.EndpointID, options.Path)
+	return c.Mkdir(ctx, options.EndpointID, options.Path, nil)
 }
 
 // DeleteItemOptions contains options for deleting a file or directory
@@ -78,7 +78,7 @@ type RenameItemOptions struct {
 
 // RenameItem renames a file or directory on an endpoint
 func (c *Client) RenameItem(ctx context.Context, options *RenameItemOptions) error {
-	return c.Rename(ctx, options.EndpointID, options.OldPath, options.NewPath)
+	return c.Rename(ctx, options.EndpointID, options.OldPath, options.NewPath, nil)
 }
 
 // GetTaskEventsOptions contains options for getting task events

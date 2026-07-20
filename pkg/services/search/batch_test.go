@@ -39,9 +39,9 @@ func TestBatchIngestDocuments(t *testing.T) {
 			t.Errorf("Expected POST request, got %s", r.Method)
 		}
 
-		// Check path
-		if r.URL.Path != "/ingest" {
-			t.Errorf("Expected path /ingest, got %s", r.URL.Path)
+		// Check path (index-scoped)
+		if r.URL.Path != "/index/test-index-id/ingest" {
+			t.Errorf("Expected path /index/test-index-id/ingest, got %s", r.URL.Path)
 		}
 
 		// Decode request body
@@ -139,31 +139,18 @@ func TestBatchDeleteDocuments(t *testing.T) {
 			t.Errorf("Expected POST request, got %s", r.Method)
 		}
 
-		// Check path
-		if r.URL.Path != "/delete" {
-			t.Errorf("Expected path /delete, got %s", r.URL.Path)
+		// Check path (index-scoped batch delete)
+		if r.URL.Path != "/index/test-index-id/batch_delete_by_subject" {
+			t.Errorf("Expected path /index/test-index-id/batch_delete_by_subject, got %s", r.URL.Path)
 		}
 
 		// Decode request body
 		var request DeleteDocumentsRequest
 		json.NewDecoder(r.Body).Decode(&request)
 
-		// Check request body
-		if request.IndexID != "test-index-id" {
-			t.Errorf("Expected index ID = test-index-id, got %s", request.IndexID)
-		}
-
 		// Return mock response
 		response := DeleteDocumentsResponse{
-			Task: IngestTask{
-				TaskID:          fmt.Sprintf("test-task-id-%d", atomic.LoadInt32(&requestCount)),
-				ProcessingState: "SUCCESS",
-				CreatedAt:       time.Now().Format(time.RFC3339),
-				CompletedAt:     time.Now().Format(time.RFC3339),
-			},
-			Succeeded: len(request.Subjects),
-			Failed:    0,
-			Total:     len(request.Subjects),
+			TaskID: fmt.Sprintf("test-task-id-%d", atomic.LoadInt32(&requestCount)),
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -255,16 +242,13 @@ func TestWaitForTasks(t *testing.T) {
 
 		// Return mock response
 		response := TaskStatusResponse{
-			TaskID:         taskID,
-			State:          taskStates[taskID],
-			CreatedAt:      time.Now().Format(time.RFC3339),
-			CompletedAt:    "",
-			TotalDocuments: 100,
+			TaskID:    taskID,
+			State:     taskStates[taskID],
+			CreatedAt: time.Now().Format(time.RFC3339),
 		}
 
 		if taskStates[taskID] == "SUCCESS" {
 			response.CompletedAt = time.Now().Format(time.RFC3339)
-			response.SuccessDocuments = 100
 		}
 
 		w.Header().Set("Content-Type", "application/json")

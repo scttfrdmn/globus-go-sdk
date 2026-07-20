@@ -1,4 +1,11 @@
 {
-  "globus/globus-sdk-python:v3": "v3.65.0",
-  "globus/globus-sdk-python:v4": "v4.4.0"
+  "_comment": "Tracks this SDK's relationship to upstream github.com/globus/globus-sdk-python. 'ported' = the upstream version whose API surface this Go module actually implements (bumped ONLY by a human/PR that lands the features; this is the honest parity claim). 'seen' = the latest upstream release the check-upstream-releases workflow has observed and filed an issue for (bumped automatically by CI). When ported != seen there is unported upstream work. Do NOT let automation edit 'ported'.",
+  "ported": {
+    "globus/globus-sdk-python:v3": "v3.65.0",
+    "globus/globus-sdk-python:v4": "v4.8.1"
+  },
+  "seen": {
+    "globus/globus-sdk-python:v3": "v3.65.0",
+    "globus/globus-sdk-python:v4": "v4.8.1"
+  }
 }

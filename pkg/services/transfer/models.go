@@ -72,23 +72,34 @@ type Collection struct {
 	UserMessageOnly  bool   `json:"user_message_only,omitempty"`
 }
 
-// EndpointList represents a paginated list of endpoints
+// EndpointList represents a paginated list of endpoints.
+//
+// endpoint_search returns items under the uppercase "DATA" key (per upstream
+// iterable.py default_iter_key=DATA).
 type EndpointList struct {
-	Data          []Endpoint `json:"data"`
-	NextPageToken string     `json:"next_page_token,omitempty"`
+	Data          []Endpoint `json:"DATA"`
+	NextPageToken string     `json:"next_page_token,omitempty"` // divergent Go convenience field; not an endpoint_search wire key
 	HasNextPage   bool       `json:"has_next_page"`
 }
 
-// ListEndpointsOptions contains options for filtering endpoint listings
+// ListEndpointsOptions contains options for filtering endpoint listings.
+//
+// The wire params for endpoint_search at 3.65.0 are filter_fulltext,
+// filter_scope, filter_owner_id, filter_host_endpoint, filter_non_functional
+// (encoded 1/0), filter_entity_type, limit and offset. PageSize/PageToken are
+// retained as divergent Go aliases but are NOT endpoint_search wire params and
+// are not sent.
 type ListEndpointsOptions struct {
-	FilterFullText     string `url:"filter_fulltext,omitempty"`
-	FilterOwnerID      string `url:"filter_owner_id,omitempty"`
-	FilterHostEndpoint string `url:"filter_host_endpoint,omitempty"`
-	FilterScope        string `url:"filter_scope,omitempty"` // all, recently-used, in-use, my-endpoints, shared-with-me
-	Limit              int    `url:"limit,omitempty"`
-	Offset             int    `url:"offset,omitempty"`
-	PageSize           int    `url:"page_size,omitempty"`
-	PageToken          string `url:"page_token,omitempty"`
+	FilterFullText      string `url:"filter_fulltext,omitempty"`
+	FilterOwnerID       string `url:"filter_owner_id,omitempty"`
+	FilterHostEndpoint  string `url:"filter_host_endpoint,omitempty"`
+	FilterScope         string `url:"filter_scope,omitempty"` // all, recently-used, in-use, my-endpoints, shared-with-me
+	FilterNonFunctional bool   `url:"filter_non_functional,omitempty"`
+	FilterEntityType    string `url:"filter_entity_type,omitempty"` // GCP_mapped_collection|GCP_guest_collection|GCSv5_endpoint|GCSv5_mapped_collection|GCSv5_guest_collection
+	Limit               int    `url:"limit,omitempty"`
+	Offset              int    `url:"offset,omitempty"`
+	PageSize            int    `url:"page_size,omitempty"`  // divergent alias; not sent
+	PageToken           string `url:"page_token,omitempty"` // divergent alias; not sent
 }
 
 // Task represents a transfer or delete task
@@ -133,42 +144,68 @@ type Task struct {
 	FilesWithErrorPerms    int                    `json:"files_with_error_perms,omitempty"`
 	UserMessage            string                 `json:"user_message,omitempty"`
 	SymlinkDepth           int                    `json:"symlink_depth,omitempty"`
-	PreserveMtime          bool                   `json:"preserve_mtime"`
+	PreserveMtime          bool                   `json:"preserve_timestamp"`
 	FatalErrorDetails      map[string]interface{} `json:"fatal_error,omitempty"`
 }
 
-// TaskList represents a paginated list of tasks
+// TaskList represents a list of tasks.
+//
+// task_list returns items under the uppercase "DATA" key with total/offset/limit
+// (LimitOffsetTotalPaginator). NextPageToken/NextMarker/HasNextPage are divergent
+// Go convenience fields, not task_list wire keys.
 type TaskList struct {
-	Data          []Task `json:"data"`
-	NextPageToken string `json:"next_page_token,omitempty"`
-	NextMarker    string `json:"next_marker,omitempty"` // Alternative name for NextPageToken
-	HasNextPage   bool   `json:"has_next_page"`
+	Data          []Task `json:"DATA"`
+	Total         int    `json:"total"`
+	Offset        int    `json:"offset"`
+	Limit         int    `json:"limit"`
+	NextPageToken string `json:"next_page_token,omitempty"` // divergent convenience field
+	NextMarker    string `json:"next_marker,omitempty"`     // divergent convenience field
+	HasNextPage   bool   `json:"has_next_page"`             // divergent convenience field
 }
 
-// ListTasksOptions contains options for filtering task listings
+// ListTasksOptions contains options for filtering task listings.
+//
+// The 3.65.0 task_list wire form is limit, offset, orderby (comma-joined list)
+// and a single combined filter param formatted key:v1,v2/key2:v3. Set Filter and
+// OrderBy for wire parity. The individual Filter*/PageSize/PageToken fields are
+// retained as divergent Go aliases and are NOT sent to task_list.
 type ListTasksOptions struct {
-	FilterTaskID         string    `url:"filter_task_id,omitempty"`
-	FilterType           string    `url:"filter_type,omitempty"`   // TRANSFER or DELETE
-	FilterStatus         string    `url:"filter_status,omitempty"` // ACTIVE, INACTIVE, FAILED, SUCCEEDED, CANCELED
-	TaskType             string    `url:"task_type,omitempty"`     // Alias for FilterType
-	Status               string    `url:"status,omitempty"`        // Alias for FilterStatus
-	FilterCompletedSince time.Time `url:"filter_completion_time.min,omitempty"`
-	FilterCompletedUntil time.Time `url:"filter_completion_time.max,omitempty"`
-	FilterRequestedSince time.Time `url:"filter_request_time.min,omitempty"`
-	FilterRequestedUntil time.Time `url:"filter_request_time.max,omitempty"`
+	Filter               string    `url:"filter,omitempty"`  // combined key:v1,v2/key2:v3 form
+	OrderBy              string    `url:"orderby,omitempty"` // comma-joined list
 	Limit                int       `url:"limit,omitempty"`
 	Offset               int       `url:"offset,omitempty"`
-	PageSize             int       `url:"page_size,omitempty"`
-	PageToken            string    `url:"page_token,omitempty"`
+	FilterTaskID         string    `url:"filter_task_id,omitempty"` // divergent alias; not sent
+	FilterType           string    `url:"filter_type,omitempty"`    // divergent alias; not sent
+	FilterStatus         string    `url:"filter_status,omitempty"`  // divergent alias; not sent
+	TaskType             string    `url:"task_type,omitempty"`      // divergent alias; not sent
+	Status               string    `url:"status,omitempty"`         // divergent alias; not sent
+	FilterCompletedSince time.Time `url:"-"`                        // divergent alias; not sent
+	FilterCompletedUntil time.Time `url:"-"`                        // divergent alias; not sent
+	FilterRequestedSince time.Time `url:"-"`                        // divergent alias; not sent
+	FilterRequestedUntil time.Time `url:"-"`                        // divergent alias; not sent
+	PageSize             int       `url:"page_size,omitempty"`      // divergent alias; not sent
+	PageToken            string    `url:"page_token,omitempty"`     // divergent alias; not sent
 }
 
-// TransferItem represents a single file or directory to transfer
+// TransferItem represents a single file or directory to transfer.
+//
+// Upstream add_item writes external_checksum + checksum_algorithm (there is no
+// bare "checksum" wire key).
 type TransferItem struct {
-	DataType        string `json:"DATA_TYPE,omitempty"` // Should be "transfer_item"
-	SourcePath      string `json:"source_path"`
-	DestinationPath string `json:"destination_path"`
-	Recursive       bool   `json:"recursive,omitempty"`
-	Checksum        string `json:"checksum,omitempty"`
+	DataType          string `json:"DATA_TYPE,omitempty"` // Should be "transfer_item"
+	SourcePath        string `json:"source_path"`
+	DestinationPath   string `json:"destination_path"`
+	Recursive         bool   `json:"recursive,omitempty"`
+	ExternalChecksum  string `json:"external_checksum,omitempty"`
+	ChecksumAlgorithm string `json:"checksum_algorithm,omitempty"`
+}
+
+// FilterRule is an include/exclude rule applied to a recursive transfer.
+type FilterRule struct {
+	DataType string `json:"DATA_TYPE,omitempty"` // "filter_rule"
+	Method   string `json:"method"`              // include | exclude
+	Name     string `json:"name"`
+	Type     string `json:"type,omitempty"` // file | dir
 }
 
 // DeleteItem represents a single file or directory to delete
@@ -197,15 +234,25 @@ type TransferTaskRequest struct {
 	SubmissionID           string         `json:"submission_id,omitempty"`
 	UseSharing             bool           `json:"use_sharing,omitempty"`
 	SymlinkDepth           int            `json:"symlink_depth,omitempty"`
-	PreserveMtime          bool           `json:"preserve_mtime,omitempty"`
+	PreserveMtime          bool           `json:"preserve_timestamp,omitempty"`
+	SourceLocalUser        string         `json:"source_local_user,omitempty"`
+	DestinationLocalUser   string         `json:"destination_local_user,omitempty"`
+	FilterRules            []FilterRule   `json:"filter_rules,omitempty"`
 	Items                  []TransferItem `json:"DATA"`
 }
 
-// DeleteTaskRequest represents a request to create a delete task
+// DeleteTaskRequest represents a request to create a delete task.
+//
+// recursive/ignore_missing/interpret_globs/local_user are top-level fields
+// written by upstream DeleteData (recursive is NOT a per-item field).
 type DeleteTaskRequest struct {
 	DataType          string       `json:"DATA_TYPE,omitempty"`
 	Label             string       `json:"label,omitempty"`
 	EndpointID        string       `json:"endpoint"`
+	Recursive         bool         `json:"recursive,omitempty"`
+	IgnoreMissing     bool         `json:"ignore_missing,omitempty"`
+	InterpretGlobs    bool         `json:"interpret_globs,omitempty"`
+	LocalUser         string       `json:"local_user,omitempty"`
 	Deadline          *time.Time   `json:"deadline,omitempty"`
 	NotifyOnSucceeded bool         `json:"notify_on_succeeded,omitempty"`
 	NotifyOnFailed    bool         `json:"notify_on_failed,omitempty"`
@@ -237,9 +284,9 @@ type OperationResult struct {
 // NOTE: ActivationRequirements struct has been removed as activation is now handled
 // automatically with properly scoped tokens in modern Globus endpoints (v0.10+).
 
-// FileListItem represents an item in a file listing
+// FileListItem represents an item in a file listing (and a stat result)
 type FileListItem struct {
-	DataType     string `json:"data_type"`
+	DataType     string `json:"DATA_TYPE"`
 	Name         string `json:"name"`
 	Type         string `json:"type"` // file or dir
 	Size         int64  `json:"size,omitempty"`
@@ -250,28 +297,36 @@ type FileListItem struct {
 	Link         string `json:"link_target,omitempty"`
 }
 
-// FileList represents a paginated list of files and directories
+// FileList represents a directory listing.
+//
+// operation_ls returns items under uppercase "DATA" and the containing endpoint
+// under "endpoint" (not "endpoint_id"). It is limit/offset paginated, not
+// marker-paginated.
 type FileList struct {
-	Data          []FileListItem `json:"data"`
-	EndpointID    string         `json:"endpoint_id"`
-	Path          string         `json:"path"`
-	MaybeSharing  bool           `json:"maybe_sharing,omitempty"`
-	ConstantTasks []string       `json:"constant_tasks,omitempty"`
-	AbsolutePath  string         `json:"absolute_path,omitempty"`
-	Marker        string         `json:"marker,omitempty"`
-	ContinueFrom  string         `json:"continue_from,omitempty"`
-	HasNextPage   bool           `json:"has_next_page"`
+	Data         []FileListItem `json:"DATA"`
+	EndpointID   string         `json:"endpoint"`
+	Path         string         `json:"path"`
+	AbsolutePath string         `json:"absolute_path,omitempty"`
+	Total        int            `json:"total"`
+	HasNextPage  bool           `json:"has_next_page"` // divergent convenience field
 }
 
-// ListFileOptions contains options for listing files
+// ListFileOptions contains options for listing files.
+//
+// The operation_ls wire params at 3.65.0 are path, show_hidden (encoded 1/0),
+// limit, offset, orderby (comma-joined list), filter (key:v1,v2/key2:v3 form)
+// and local_user. ExcludedTypes/ContinueFrom/Marker are retained as divergent
+// Go aliases and are NOT operation_ls wire params.
 type ListFileOptions struct {
 	OrderBy       string `url:"orderby,omitempty"` // name, type, date, size
 	Filter        string `url:"filter,omitempty"`
 	ShowHidden    bool   `url:"show_hidden,omitempty"`
-	ContinueFrom  string `url:"continue_from,omitempty"`
-	Marker        string `url:"marker,omitempty"`
 	Limit         int    `url:"limit,omitempty"`
-	ExcludedTypes string `url:"excluded_types,omitempty"` // Comma-separated list of types to exclude: file, dir, symlink
+	Offset        int    `url:"offset,omitempty"`
+	LocalUser     string `url:"local_user,omitempty"`
+	ContinueFrom  string `url:"continue_from,omitempty"`  // divergent alias; not sent
+	Marker        string `url:"marker,omitempty"`         // divergent alias; not sent
+	ExcludedTypes string `url:"excluded_types,omitempty"` // divergent alias; not sent
 }
 
 // MarshalJSON for time.Time types properly formats them for the API

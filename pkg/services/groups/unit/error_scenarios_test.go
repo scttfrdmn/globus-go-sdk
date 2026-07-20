@@ -172,7 +172,7 @@ func TestSubscriptionErrorScenarios(t *testing.T) {
 				testErr = client.SetSubscriptionAdminVerified(ctx, "test-group", "sub-123")
 
 			case "GetSubscription_GroupNotFound", "GetSubscription_NoSubscription":
-				_, testErr = client.GetGroupSubscription(ctx, "test-group")
+				_, testErr = client.GetGroupBySubscriptionID(ctx, "test-group")
 
 			case "GetBySubscription_NotFound", "GetBySubscription_InvalidFormat":
 				_, testErr = client.GetGroupBySubscriptionID(ctx, "invalid-sub-123")
@@ -252,7 +252,7 @@ func TestGroupManagementErrorScenarios(t *testing.T) {
 				"code":  "NOT_OWNER",
 			},
 			ExpectedError: "Only group owner can update",
-			Method:        http.MethodPatch,
+			Method:        http.MethodPut,
 			Path:          "/groups/test-group",
 		},
 		// DeleteGroup error cases
@@ -299,7 +299,7 @@ func TestGroupManagementErrorScenarios(t *testing.T) {
 			// Test specific operations
 			switch scenario.Name {
 			case "GetGroup_NotFound", "GetGroup_AccessDenied":
-				_, testErr = client.GetGroup(ctx, "test-group")
+				_, testErr = client.GetGroup(ctx, "test-group", nil)
 
 			case "CreateGroup_NameTaken", "CreateGroup_InvalidName":
 				_, testErr = client.CreateGroup(ctx, &groups.GroupCreate{
@@ -352,7 +352,7 @@ func TestNetworkErrorScenarios(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), 50*time.Millisecond)
 		defer cancel()
 
-		_, err = client.GetGroup(ctx, "test-group")
+		_, err = client.GetGroup(ctx, "test-group", nil)
 		if err == nil {
 			t.Error("Expected timeout error, got nil")
 		}
@@ -371,7 +371,7 @@ func TestNetworkErrorScenarios(t *testing.T) {
 		}
 
 		ctx := context.Background()
-		_, err = client.GetGroup(ctx, "test-group")
+		_, err = client.GetGroup(ctx, "test-group", nil)
 		if err == nil {
 			t.Error("Expected URL error, got nil")
 		}

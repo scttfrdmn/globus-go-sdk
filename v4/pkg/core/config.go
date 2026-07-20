@@ -74,10 +74,10 @@ type RetryConfig struct {
 // DefaultRetryConfig returns the default retry configuration
 func DefaultRetryConfig() *RetryConfig {
 	return &RetryConfig{
-		MaxRetries:         3,
-		InitialBackoff:     1 * time.Second,
-		MaxBackoff:         30 * time.Second,
-		BackoffMultiplier:  2.0,
+		MaxRetries:        3,
+		InitialBackoff:    1 * time.Second,
+		MaxBackoff:        30 * time.Second,
+		BackoffMultiplier: 2.0,
 		RetryableStatusCodes: []int{
 			http.StatusTooManyRequests,
 			http.StatusInternalServerError,
@@ -191,10 +191,10 @@ func (p *StaticTokenProvider) Refresh(ctx context.Context) error {
 // Scopes defines well-known OAuth2 scopes for Globus services
 var Scopes = struct {
 	// Auth service scopes
-	AuthOpenID   string
-	AuthEmail    string
-	AuthProfile  string
-	AuthManage   string
+	AuthOpenID  string
+	AuthEmail   string
+	AuthProfile string
+	AuthManage  string
 
 	// Transfer service scopes
 	TransferAll string

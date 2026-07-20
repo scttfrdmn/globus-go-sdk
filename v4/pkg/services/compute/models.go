@@ -40,15 +40,15 @@ type FunctionSubmission struct {
 
 // FunctionRun represents a function execution
 type FunctionRun struct {
-	ID          string                 `json:"id"`
-	FunctionID  string                 `json:"function_id"`
-	EndpointID  string                 `json:"endpoint_id"`
-	Status      string                 `json:"status"`
-	Result      interface{}            `json:"result,omitempty"`
-	Exception   string                 `json:"exception,omitempty"`
-	StartTime   time.Time              `json:"start_time,omitempty"`
-	EndTime     time.Time              `json:"completion_time,omitempty"`
-	ExecutionTime float64              `json:"execution_time,omitempty"`
+	ID            string      `json:"id"`
+	FunctionID    string      `json:"function_id"`
+	EndpointID    string      `json:"endpoint_id"`
+	Status        string      `json:"status"`
+	Result        interface{} `json:"result,omitempty"`
+	Exception     string      `json:"exception,omitempty"`
+	StartTime     time.Time   `json:"start_time,omitempty"`
+	EndTime       time.Time   `json:"completion_time,omitempty"`
+	ExecutionTime float64     `json:"execution_time,omitempty"`
 }
 
 // FunctionList represents a list of function runs

@@ -563,7 +563,7 @@ func TestSimpleAuthorizer_ViaGroupsClient(t *testing.T) {
 	groupsClient.Client.BaseURL = server.URL + "/"
 
 	// Make a real request which will trigger GetAuthorizationHeader on the simpleAuthorizer.
-	_, _ = groupsClient.ListGroups(context.Background(), nil)
+	_, _ = groupsClient.GetMyGroups(context.Background(), nil)
 
 	if gotAuth != "Bearer test-bearer-token" {
 		t.Errorf("Authorization header = %q, want %q", gotAuth, "Bearer test-bearer-token")
@@ -587,7 +587,7 @@ func TestSimpleAuthorizer_EmptyToken(t *testing.T) {
 		t.Fatalf("NewGroupsClient(\"\") error: %v", err)
 	}
 	groupsClient.Client.BaseURL = server.URL + "/"
-	_, _ = groupsClient.ListGroups(context.Background(), nil)
+	_, _ = groupsClient.GetMyGroups(context.Background(), nil)
 	if gotAuth != "" {
 		t.Errorf("expected empty Authorization header for empty token, got %q", gotAuth)
 	}

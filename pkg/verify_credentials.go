@@ -132,7 +132,7 @@ func VerifyCredentials() error {
 			}
 
 			// Check group
-			group, err := groupsClient.GetGroup(ctx, groupID)
+			group, err := groupsClient.GetGroup(ctx, groupID, nil)
 			if err != nil {
 				fmt.Printf("❌ Failed to get group: %v\n", err)
 			} else {

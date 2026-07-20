@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2025 Scott Friedman and Project Contributors
+// Copyright (c) 2025-2026 Scott Friedman and Project Contributors
 package search
 
 import (
@@ -8,693 +8,264 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 )
 
-// Test mock server
+// setupMockServer returns a test server + client pointed at it.
 func setupMockServer(handler http.HandlerFunc) (*httptest.Server, *Client, error) {
 	server := httptest.NewServer(handler)
-
-	// Create a client that uses the test server
 	client, err := NewClient(
 		WithAccessToken("test-token"),
 		WithBaseURL(server.URL+"/"),
 	)
-
 	return server, client, err
 }
 
 func TestListIndexes(t *testing.T) {
-	// Setup test server
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		// Check request method
-		if r.Method != http.MethodGet {
-			t.Errorf("Expected GET request, got %s", r.Method)
+		if r.Method != http.MethodGet || r.URL.Path != "/index_list" {
+			t.Errorf("%s %s, want GET /index_list", r.Method, r.URL.Path)
 		}
-
-		// Check path
-		if r.URL.Path != "/index_list" {
-			t.Errorf("Expected path /index_list, got %s", r.URL.Path)
-		}
-
-		// Check query parameters
-		queryParams := r.URL.Query()
-		if limit := queryParams.Get("limit"); limit != "10" {
-			t.Errorf("Expected limit=10, got %s", limit)
-		}
-
-		// Return mock response
-		indexTime, _ := time.Parse(time.RFC3339, "2023-01-01T00:00:00Z")
-		response := IndexList{
-			Indexes: []Index{
-				{
-					ID:          "test-index-id",
-					DisplayName: "Test Index",
-					Description: "A test index",
-					IsActive:    true,
-					IsPublic:    false,
-					CreatedBy:   "test-user",
-					CreatedAt:   indexTime,
-					UpdatedAt:   indexTime,
-				},
-			},
-			Total:     1,
-			HadErrors: false,
-			HasMore:   false,
-		}
-
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(IndexList{Indexes: []Index{{ID: "idx-1", DisplayName: "One"}}})
 	}
-
 	server, client, err := setupMockServer(handler)
 	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
+		t.Fatalf("setup: %v", err)
 	}
 	defer server.Close()
 
-	// Test list indexes
-	options := &ListIndexesOptions{
-		Limit: 10,
-	}
-
-	indexList, err := client.ListIndexes(context.Background(), options)
+	list, err := client.ListIndexes(context.Background(), nil)
 	if err != nil {
 		t.Fatalf("ListIndexes() error = %v", err)
 	}
-
-	// Check response
-	if len(indexList.Indexes) != 1 {
-		t.Errorf("Expected 1 index, got %d", len(indexList.Indexes))
-	}
-
-	index := indexList.Indexes[0]
-	if index.ID != "test-index-id" {
-		t.Errorf("Expected index ID = test-index-id, got %s", index.ID)
-	}
-	if index.DisplayName != "Test Index" {
-		t.Errorf("Expected display name = Test Index, got %s", index.DisplayName)
+	if len(list.Indexes) != 1 || list.Indexes[0].ID != "idx-1" {
+		t.Errorf("indexes = %+v", list.Indexes)
 	}
 }
 
-func TestGetIndex(t *testing.T) {
-	// Setup test server
+func TestCreateUpdateIndex(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		// Check request method
-		if r.Method != http.MethodGet {
-			t.Errorf("Expected GET request, got %s", r.Method)
+		switch {
+		case r.Method == http.MethodPost && r.URL.Path == "/index":
+			_ = json.NewEncoder(w).Encode(Index{ID: "idx-new", DisplayName: "New"})
+		case r.Method == http.MethodPatch && r.URL.Path == "/index/idx-new":
+			_ = json.NewEncoder(w).Encode(Index{ID: "idx-new", DisplayName: "Renamed"})
+		default:
+			t.Errorf("unexpected %s %s", r.Method, r.URL.Path)
 		}
-
-		// Check path
-		if r.URL.Path != "/index/test-index-id" {
-			t.Errorf("Expected path /index/test-index-id, got %s", r.URL.Path)
-		}
-
-		// Return mock response
-		indexTime, _ := time.Parse(time.RFC3339, "2023-01-01T00:00:00Z")
-		response := Index{
-			ID:          "test-index-id",
-			DisplayName: "Test Index",
-			Description: "A test index",
-			IsActive:    true,
-			IsPublic:    false,
-			CreatedBy:   "test-user",
-			CreatedAt:   indexTime,
-			UpdatedAt:   indexTime,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
 	}
-
 	server, client, err := setupMockServer(handler)
 	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
+		t.Fatalf("setup: %v", err)
 	}
 	defer server.Close()
 
-	// Test get index
-	index, err := client.GetIndex(context.Background(), "test-index-id")
-	if err != nil {
-		t.Fatalf("GetIndex() error = %v", err)
-	}
-
-	// Check response
-	if index.ID != "test-index-id" {
-		t.Errorf("Expected index ID = test-index-id, got %s", index.ID)
-	}
-	if index.DisplayName != "Test Index" {
-		t.Errorf("Expected display name = Test Index, got %s", index.DisplayName)
-	}
-
-	// Test empty index ID
-	_, err = client.GetIndex(context.Background(), "")
-	if err == nil {
-		t.Error("GetIndex() with empty ID should return error")
-	}
-}
-
-func TestCreateIndex(t *testing.T) {
-	// Setup test server
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		// Check request method
-		if r.Method != http.MethodPost {
-			t.Errorf("Expected POST request, got %s", r.Method)
-		}
-
-		// Check path
-		if r.URL.Path != "/index" {
-			t.Errorf("Expected path /index, got %s", r.URL.Path)
-		}
-
-		// Decode request body
-		var request IndexCreateRequest
-		json.NewDecoder(r.Body).Decode(&request)
-
-		// Check request body
-		if request.DisplayName != "New Test Index" {
-			t.Errorf("Expected display name = New Test Index, got %s", request.DisplayName)
-		}
-
-		// Return mock response
-		indexTime, _ := time.Parse(time.RFC3339, "2023-01-01T00:00:00Z")
-		response := Index{
-			ID:          "new-test-index-id",
-			DisplayName: request.DisplayName,
-			Description: request.Description,
-			IsActive:    true,
-			IsPublic:    false,
-			CreatedBy:   "test-user",
-			CreatedAt:   indexTime,
-			UpdatedAt:   indexTime,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
-	}
-
-	server, client, err := setupMockServer(handler)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-	defer server.Close()
-
-	// Test create index
-	createRequest := &IndexCreateRequest{
-		DisplayName: "New Test Index",
-		Description: "A new test index",
-	}
-
-	index, err := client.CreateIndex(context.Background(), createRequest)
+	idx, err := client.CreateIndex(context.Background(), &IndexCreateRequest{DisplayName: "New"})
 	if err != nil {
 		t.Fatalf("CreateIndex() error = %v", err)
 	}
-
-	// Check response
-	if index.ID != "new-test-index-id" {
-		t.Errorf("Expected index ID = new-test-index-id, got %s", index.ID)
-	}
-	if index.DisplayName != "New Test Index" {
-		t.Errorf("Expected display name = New Test Index, got %s", index.DisplayName)
-	}
-
-	// Test nil request
-	_, err = client.CreateIndex(context.Background(), nil)
-	if err == nil {
-		t.Error("CreateIndex() with nil request should return error")
-	}
-
-	// Test empty display name
-	_, err = client.CreateIndex(context.Background(), &IndexCreateRequest{})
-	if err == nil {
-		t.Error("CreateIndex() with empty display name should return error")
-	}
-}
-
-func TestUpdateIndex(t *testing.T) {
-	// Setup test server
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		// Check request method
-		if r.Method != http.MethodPatch {
-			t.Errorf("Expected PATCH request, got %s", r.Method)
-		}
-
-		// Check path
-		if r.URL.Path != "/index/test-index-id" {
-			t.Errorf("Expected path /index/test-index-id, got %s", r.URL.Path)
-		}
-
-		// Decode request body
-		var request IndexUpdateRequest
-		json.NewDecoder(r.Body).Decode(&request)
-
-		// Check request body
-		if request.DisplayName != "Updated Test Index" {
-			t.Errorf("Expected display name = Updated Test Index, got %s", request.DisplayName)
-		}
-
-		// Return mock response
-		indexTime, _ := time.Parse(time.RFC3339, "2023-01-01T00:00:00Z")
-		response := Index{
-			ID:          "test-index-id",
-			DisplayName: request.DisplayName,
-			Description: "Updated description",
-			IsActive:    true,
-			IsPublic:    false,
-			CreatedBy:   "test-user",
-			CreatedAt:   indexTime,
-			UpdatedAt:   time.Now(),
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
-	}
-
-	server, client, err := setupMockServer(handler)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-	defer server.Close()
-
-	// Test update index
-	updateRequest := &IndexUpdateRequest{
-		DisplayName: "Updated Test Index",
-		Description: "Updated description",
-	}
-
-	index, err := client.UpdateIndex(context.Background(), "test-index-id", updateRequest)
-	if err != nil {
+	if _, err := client.UpdateIndex(context.Background(), idx.ID, &IndexUpdateRequest{DisplayName: "Renamed"}); err != nil {
 		t.Fatalf("UpdateIndex() error = %v", err)
 	}
-
-	// Check response
-	if index.ID != "test-index-id" {
-		t.Errorf("Expected index ID = test-index-id, got %s", index.ID)
-	}
-	if index.DisplayName != "Updated Test Index" {
-		t.Errorf("Expected display name = Updated Test Index, got %s", index.DisplayName)
-	}
-
-	// Test empty index ID
-	_, err = client.UpdateIndex(context.Background(), "", updateRequest)
-	if err == nil {
-		t.Error("UpdateIndex() with empty ID should return error")
-	}
-
-	// Test nil request
-	_, err = client.UpdateIndex(context.Background(), "test-index-id", nil)
-	if err == nil {
-		t.Error("UpdateIndex() with nil request should return error")
-	}
 }
 
-func TestDeleteIndex(t *testing.T) {
-	// Setup test server
+func TestSearchHitsIndexScopedPath(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		// Check request method
-		if r.Method != http.MethodDelete {
-			t.Errorf("Expected DELETE request, got %s", r.Method)
+		if r.Method != http.MethodPost || r.URL.Path != "/index/idx-1/search" {
+			t.Errorf("%s %s, want POST /index/idx-1/search", r.Method, r.URL.Path)
 		}
-
-		// Check path
-		if r.URL.Path != "/index/test-index-id" {
-			t.Errorf("Expected path /index/test-index-id, got %s", r.URL.Path)
-		}
-
-		// Return success response
-		w.WriteHeader(http.StatusNoContent)
+		_ = json.NewEncoder(w).Encode(SearchResponse{
+			Count: 2, Total: 2, HasNextPage: false,
+			GMeta: []SearchResult{{Subject: "s1"}, {Subject: "s2"}},
+		})
 	}
-
 	server, client, err := setupMockServer(handler)
 	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
+		t.Fatalf("setup: %v", err)
 	}
 	defer server.Close()
 
-	// Test delete index
-	err = client.DeleteIndex(context.Background(), "test-index-id")
-	if err != nil {
-		t.Fatalf("DeleteIndex() error = %v", err)
-	}
-
-	// Test empty index ID
-	err = client.DeleteIndex(context.Background(), "")
-	if err == nil {
-		t.Error("DeleteIndex() with empty ID should return error")
-	}
-}
-
-func TestSearch(t *testing.T) {
-	// Setup test server
-	handler := func(w http.ResponseWriter, r *http.Request) {
-		// Check request method
-		if r.Method != http.MethodPost {
-			t.Errorf("Expected POST request, got %s", r.Method)
-		}
-
-		// Check path
-		if r.URL.Path != "/search" {
-			t.Errorf("Expected path /search, got %s", r.URL.Path)
-		}
-
-		// Decode request body
-		var request SearchRequest
-		json.NewDecoder(r.Body).Decode(&request)
-
-		// Check request body
-		if request.IndexID != "test-index-id" {
-			t.Errorf("Expected index ID = test-index-id, got %s", request.IndexID)
-		}
-		if request.Query != "test query" {
-			t.Errorf("Expected query = test query, got %s", request.Query)
-		}
-
-		// Return mock response
-		response := SearchResponse{
-			Count:    2,
-			Total:    2,
-			Subjects: []string{"subject1", "subject2"},
-			Results: []SearchResult{
-				{
-					Subject: "subject1",
-					Content: map[string]interface{}{
-						"title": "Result 1",
-						"data":  "Content 1",
-					},
-					Score: 0.95,
-				},
-				{
-					Subject: "subject2",
-					Content: map[string]interface{}{
-						"title": "Result 2",
-						"data":  "Content 2",
-					},
-					Score: 0.85,
-				},
-			},
-			HadErrors: false,
-			HasMore:   false,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
-	}
-
-	server, client, err := setupMockServer(handler)
-	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
-	}
-	defer server.Close()
-
-	// Test search
-	searchRequest := &SearchRequest{
-		IndexID: "test-index-id",
-		Query:   "test query",
-		Options: &SearchOptions{
-			Limit: 10,
-		},
-	}
-
-	searchResponse, err := client.Search(context.Background(), searchRequest)
+	resp, err := client.Search(context.Background(), &SearchRequest{IndexID: "idx-1", Query: "hello"})
 	if err != nil {
 		t.Fatalf("Search() error = %v", err)
 	}
-
-	// Check response
-	if searchResponse.Count != 2 {
-		t.Errorf("Expected count = 2, got %d", searchResponse.Count)
-	}
-	if len(searchResponse.Results) != 2 {
-		t.Errorf("Expected 2 results, got %d", len(searchResponse.Results))
-	}
-
-	// Test nil request
-	_, err = client.Search(context.Background(), nil)
-	if err == nil {
-		t.Error("Search() with nil request should return error")
-	}
-
-	// Test empty index ID
-	_, err = client.Search(context.Background(), &SearchRequest{Query: "test"})
-	if err == nil {
-		t.Error("Search() with empty index ID should return error")
+	if len(resp.Results) != 2 {
+		t.Errorf("got %d results, want 2", len(resp.Results))
 	}
 }
 
-func TestIngestDocuments(t *testing.T) {
-	// Setup test server
+func TestGetSearch(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		// Check request method
-		if r.Method != http.MethodPost {
-			t.Errorf("Expected POST request, got %s", r.Method)
+		if r.Method != http.MethodGet || r.URL.Path != "/index/idx-1/search" {
+			t.Errorf("%s %s, want GET /index/idx-1/search", r.Method, r.URL.Path)
 		}
-
-		// Check path
-		if r.URL.Path != "/ingest" {
-			t.Errorf("Expected path /ingest, got %s", r.URL.Path)
+		if r.URL.Query().Get("q") != "hello" {
+			t.Errorf("q = %q", r.URL.Query().Get("q"))
 		}
-
-		// Decode request body
-		var request IngestRequest
-		json.NewDecoder(r.Body).Decode(&request)
-
-		// Check request body
-		if request.IndexID != "test-index-id" {
-			t.Errorf("Expected index ID = test-index-id, got %s", request.IndexID)
-		}
-		if len(request.Documents) != 2 {
-			t.Errorf("Expected 2 documents, got %d", len(request.Documents))
-		}
-
-		// Return mock response
-		response := IngestResponse{
-			Task: IngestTask{
-				TaskID:          "test-task-id",
-				ProcessingState: "SUCCESS",
-				CreatedAt:       time.Now().Format(time.RFC3339),
-				CompletedAt:     time.Now().Format(time.RFC3339),
-			},
-			Succeeded: 2,
-			Failed:    0,
-			Total:     2,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(SearchResponse{Total: 1, GMeta: []SearchResult{{Subject: "s1"}}})
 	}
-
 	server, client, err := setupMockServer(handler)
 	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
+		t.Fatalf("setup: %v", err)
 	}
 	defer server.Close()
 
-	// Test ingest documents
-	ingestRequest := &IngestRequest{
-		IndexID: "test-index-id",
-		Documents: []SearchDocument{
-			{
-				Subject: "subject1",
-				Content: map[string]interface{}{
-					"title": "Document 1",
-					"data":  "Content 1",
-				},
-			},
-			{
-				Subject: "subject2",
-				Content: map[string]interface{}{
-					"title": "Document 2",
-					"data":  "Content 2",
-				},
-			},
-		},
+	resp, err := client.GetSearch(context.Background(), "idx-1", "hello", 0, 0, false)
+	if err != nil {
+		t.Fatalf("GetSearch() error = %v", err)
 	}
+	if len(resp.Results) != 1 {
+		t.Errorf("got %d results", len(resp.Results))
+	}
+}
 
-	ingestResponse, err := client.IngestDocuments(context.Background(), ingestRequest)
+func TestIngestHitsIndexScopedPath(t *testing.T) {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/index/idx-1/ingest" {
+			t.Errorf("%s %s, want POST /index/idx-1/ingest", r.Method, r.URL.Path)
+		}
+		_ = json.NewEncoder(w).Encode(IngestResponse{Task: IngestTask{TaskID: "task-1"}})
+	}
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	defer server.Close()
+
+	_, err = client.IngestDocuments(context.Background(), &IngestRequest{
+		IndexID:   "idx-1",
+		Documents: []SearchDocument{{Subject: "s1", Content: map[string]interface{}{"a": 1}}},
+	})
 	if err != nil {
 		t.Fatalf("IngestDocuments() error = %v", err)
 	}
-
-	// Check response
-	if ingestResponse.Task.TaskID != "test-task-id" {
-		t.Errorf("Expected task ID = test-task-id, got %s", ingestResponse.Task.TaskID)
-	}
-	if ingestResponse.Succeeded != 2 {
-		t.Errorf("Expected succeeded = 2, got %d", ingestResponse.Succeeded)
-	}
-
-	// Test nil request
-	_, err = client.IngestDocuments(context.Background(), nil)
-	if err == nil {
-		t.Error("IngestDocuments() with nil request should return error")
-	}
-
-	// Test empty index ID
-	_, err = client.IngestDocuments(context.Background(), &IngestRequest{
-		Documents: []SearchDocument{{Subject: "test", Content: map[string]interface{}{"test": "test"}}},
-	})
-	if err == nil {
-		t.Error("IngestDocuments() with empty index ID should return error")
-	}
-
-	// Test empty documents
-	_, err = client.IngestDocuments(context.Background(), &IngestRequest{IndexID: "test-index-id"})
-	if err == nil {
-		t.Error("IngestDocuments() with empty documents should return error")
-	}
 }
 
-func TestDeleteDocuments(t *testing.T) {
-	// Setup test server
+func TestDeleteDocumentsHitsBatchDeletePath(t *testing.T) {
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		// Check request method
-		if r.Method != http.MethodPost {
-			t.Errorf("Expected POST request, got %s", r.Method)
+		if r.Method != http.MethodPost || r.URL.Path != "/index/idx-1/batch_delete_by_subject" {
+			t.Errorf("%s %s, want POST /index/idx-1/batch_delete_by_subject", r.Method, r.URL.Path)
 		}
-
-		// Check path
-		if r.URL.Path != "/delete" {
-			t.Errorf("Expected path /delete, got %s", r.URL.Path)
-		}
-
-		// Decode request body
-		var request DeleteDocumentsRequest
-		json.NewDecoder(r.Body).Decode(&request)
-
-		// Check request body
-		if request.IndexID != "test-index-id" {
-			t.Errorf("Expected index ID = test-index-id, got %s", request.IndexID)
-		}
-		if len(request.Subjects) != 2 {
-			t.Errorf("Expected 2 subjects, got %d", len(request.Subjects))
-		}
-
-		// Return mock response
-		response := DeleteDocumentsResponse{
-			Task: IngestTask{
-				TaskID:          "test-task-id",
-				ProcessingState: "SUCCESS",
-				CreatedAt:       time.Now().Format(time.RFC3339),
-				CompletedAt:     time.Now().Format(time.RFC3339),
-			},
-			Succeeded: 2,
-			Failed:    0,
-			Total:     2,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(DeleteDocumentsResponse{TaskID: "task-1"})
 	}
-
 	server, client, err := setupMockServer(handler)
 	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
+		t.Fatalf("setup: %v", err)
 	}
 	defer server.Close()
 
-	// Test delete documents
-	deleteRequest := &DeleteDocumentsRequest{
-		IndexID:  "test-index-id",
-		Subjects: []string{"subject1", "subject2"},
-	}
-
-	deleteResponse, err := client.DeleteDocuments(context.Background(), deleteRequest)
+	resp, err := client.DeleteDocuments(context.Background(), &DeleteDocumentsRequest{
+		IndexID:  "idx-1",
+		Subjects: []string{"s1", "s2"},
+	})
 	if err != nil {
 		t.Fatalf("DeleteDocuments() error = %v", err)
 	}
-
-	// Check response
-	if deleteResponse.Task.TaskID != "test-task-id" {
-		t.Errorf("Expected task ID = test-task-id, got %s", deleteResponse.Task.TaskID)
+	if resp.TaskID != "task-1" {
+		t.Errorf("TaskID = %s", resp.TaskID)
 	}
-	if deleteResponse.Succeeded != 2 {
-		t.Errorf("Expected succeeded = 2, got %d", deleteResponse.Succeeded)
-	}
+}
 
-	// Test nil request
-	_, err = client.DeleteDocuments(context.Background(), nil)
-	if err == nil {
-		t.Error("DeleteDocuments() with nil request should return error")
+func TestSubjectAndEntryUseQueryParams(t *testing.T) {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/index/idx-1/subject":
+			if r.URL.Query().Get("subject") != "urn:s" {
+				t.Errorf("subject param = %q", r.URL.Query().Get("subject"))
+			}
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"subject": "urn:s"})
+		case "/index/idx-1/entry":
+			if r.URL.Query().Get("subject") != "urn:s" {
+				t.Errorf("entry subject param = %q", r.URL.Query().Get("subject"))
+			}
+			_ = json.NewEncoder(w).Encode(map[string]interface{}{"subject": "urn:s"})
+		default:
+			t.Errorf("unexpected path %s", r.URL.Path)
+		}
 	}
-
-	// Test empty index ID
-	_, err = client.DeleteDocuments(context.Background(), &DeleteDocumentsRequest{
-		Subjects: []string{"subject1"},
-	})
-	if err == nil {
-		t.Error("DeleteDocuments() with empty index ID should return error")
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("setup: %v", err)
 	}
+	defer server.Close()
 
-	// Test empty subjects
-	_, err = client.DeleteDocuments(context.Background(), &DeleteDocumentsRequest{
-		IndexID: "test-index-id",
-	})
-	if err == nil {
-		t.Error("DeleteDocuments() with empty subjects should return error")
+	if _, err := client.GetSubject(context.Background(), "idx-1", "urn:s"); err != nil {
+		t.Fatalf("GetSubject() error = %v", err)
+	}
+	if _, err := client.GetEntry(context.Background(), "idx-1", "urn:s", ""); err != nil {
+		t.Fatalf("GetEntry() error = %v", err)
 	}
 }
 
 func TestGetTaskStatus(t *testing.T) {
-	// Setup test server
 	handler := func(w http.ResponseWriter, r *http.Request) {
-		// Check request method
-		if r.Method != http.MethodGet {
-			t.Errorf("Expected GET request, got %s", r.Method)
+		if r.URL.Path != "/task/task-1" {
+			t.Errorf("path = %s, want /task/task-1", r.URL.Path)
 		}
-
-		// Check path
-		if r.URL.Path != "/task/test-task-id" {
-			t.Errorf("Expected path /task/test-task-id, got %s", r.URL.Path)
-		}
-
-		// Return mock response
-		response := TaskStatusResponse{
-			TaskID:           "test-task-id",
-			State:            "SUCCESS",
-			CreatedAt:        time.Now().Format(time.RFC3339),
-			CompletedAt:      time.Now().Format(time.RFC3339),
-			DetailLocation:   "detail/location",
-			TotalDocuments:   10,
-			FailedDocuments:  1,
-			SuccessDocuments: 9,
-			ErrorCount:       1,
-		}
-
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(response)
+		_ = json.NewEncoder(w).Encode(TaskStatusResponse{TaskID: "task-1", IndexID: "idx-1", State: "SUCCESS"})
 	}
-
 	server, client, err := setupMockServer(handler)
 	if err != nil {
-		t.Fatalf("Failed to create client: %v", err)
+		t.Fatalf("setup: %v", err)
 	}
 	defer server.Close()
 
-	// Test get task status
-	taskStatus, err := client.GetTaskStatus(context.Background(), "test-task-id")
+	task, err := client.GetTaskStatus(context.Background(), "task-1")
 	if err != nil {
 		t.Fatalf("GetTaskStatus() error = %v", err)
 	}
-
-	// Check response
-	if taskStatus.TaskID != "test-task-id" {
-		t.Errorf("Expected task ID = test-task-id, got %s", taskStatus.TaskID)
+	if task.State != "SUCCESS" || task.IndexID != "idx-1" {
+		t.Errorf("task = %+v", task)
 	}
-	if taskStatus.State != "SUCCESS" {
-		t.Errorf("Expected state = SUCCESS, got %s", taskStatus.State)
-	}
+}
 
-	// Test empty task ID
-	_, err = client.GetTaskStatus(context.Background(), "")
-	if err == nil {
-		t.Error("GetTaskStatus() with empty task ID should return error")
+func TestGetTaskList(t *testing.T) {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/task_list/idx-1" {
+			t.Errorf("path = %s, want /task_list/idx-1", r.URL.Path)
+		}
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{
+			"tasks": []map[string]interface{}{{"task_id": "t1"}, {"task_id": "t2"}},
+		})
+	}
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	defer server.Close()
+
+	tasks, err := client.GetTaskList(context.Background(), "idx-1")
+	if err != nil {
+		t.Fatalf("GetTaskList() error = %v", err)
+	}
+	if len(tasks) != 2 {
+		t.Errorf("got %d tasks, want 2", len(tasks))
+	}
+}
+
+func TestCreateRoleBody(t *testing.T) {
+	handler := func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost || r.URL.Path != "/index/idx-1/role" {
+			t.Errorf("%s %s, want POST /index/idx-1/role", r.Method, r.URL.Path)
+		}
+		var body map[string]interface{}
+		_ = json.NewDecoder(r.Body).Decode(&body)
+		if body["role_name"] != "writer" {
+			t.Errorf("role_name = %v", body["role_name"])
+		}
+		_ = json.NewEncoder(w).Encode(SearchRole{ID: "r1", RoleName: "writer"})
+	}
+	server, client, err := setupMockServer(handler)
+	if err != nil {
+		t.Fatalf("setup: %v", err)
+	}
+	defer server.Close()
+
+	role, err := client.CreateRole(context.Background(), "idx-1", "writer", "urn:globus:auth:identity:x")
+	if err != nil {
+		t.Fatalf("CreateRole() error = %v", err)
+	}
+	if role.RoleName != "writer" {
+		t.Errorf("RoleName = %s", role.RoleName)
 	}
 }

@@ -326,7 +326,7 @@ func (c *Client) IngestDocuments(ctx context.Context, request *IngestRequest) (*
 	}
 
 	var response IngestResponse
-	err := c.doRequestLowLevel(ctx, http.MethodPost, "ingest", nil, request, &response)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "index/"+request.IndexID+"/ingest", nil, request, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -345,11 +345,11 @@ func (c *Client) Search(ctx context.Context, request *SearchRequest) (*SearchRes
 	}
 
 	var response SearchResponse
-	err := c.doRequestLowLevel(ctx, http.MethodPost, "search", nil, request, &response)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "index/"+request.IndexID+"/search", nil, request, &response)
 	if err != nil {
 		return nil, err
 	}
-
+	response.normalize()
 	return &response, nil
 }
 
@@ -368,11 +368,11 @@ func (c *Client) StructuredSearch(ctx context.Context, request *StructuredSearch
 	}
 
 	var response SearchResponse
-	err := c.doRequestLowLevel(ctx, http.MethodPost, "search", nil, request, &response)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "index/"+request.IndexID+"/search", nil, request, &response)
 	if err != nil {
 		return nil, err
 	}
-
+	response.normalize()
 	return &response, nil
 }
 
@@ -391,7 +391,7 @@ func (c *Client) DeleteDocuments(ctx context.Context, request *DeleteDocumentsRe
 	}
 
 	var response DeleteDocumentsResponse
-	err := c.doRequestLowLevel(ctx, http.MethodPost, "delete", nil, request, &response)
+	err := c.doRequestLowLevel(ctx, http.MethodPost, "index/"+request.IndexID+"/batch_delete_by_subject", nil, request, &response)
 	if err != nil {
 		return nil, err
 	}
@@ -494,20 +494,21 @@ func (it *SearchIterator) Next() bool {
 	}
 
 	it.currentResp = resp
-	it.hasMore = resp.HasMore
+	it.hasMore = resp.HasNextPage
 
-	// Update the page token for the next request only if there are more pages
+	// Advance the offset for the next request only if more pages remain. Search
+	// is offset-paginated at 3.65.0 (no page token on the wire).
 	if it.hasMore {
 		if it.structRequest != nil {
 			if it.structRequest.Options == nil {
 				it.structRequest.Options = &SearchOptions{}
 			}
-			it.structRequest.Options.PageToken = resp.PageToken
+			it.structRequest.Options.Offset += len(resp.GMeta)
 		} else {
 			if it.request.Options == nil {
 				it.request.Options = &SearchOptions{}
 			}
-			it.request.Options.PageToken = resp.PageToken
+			it.request.Options.Offset += len(resp.GMeta)
 		}
 	}
 

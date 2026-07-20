@@ -283,101 +283,6 @@ func TestListRunsNilOptions(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// TestListActionProvidersAllOptions
-// ---------------------------------------------------------------------------
-
-func TestListActionProvidersAllOptions(t *testing.T) {
-	server, client := startMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query()
-		checks := map[string]string{
-			"per_page":      "10",
-			"offset":        "5",
-			"marker":        "m-tok",
-			"orderby":       "display_name",
-			"q":             "transfer",
-			"filter_owner":  "globus",
-			"filter_type":   "action",
-			"filter_globus": "true",
-		}
-		for k, v := range checks {
-			if got := q.Get(k); got != v {
-				t.Errorf("param %s: got %q, want %q", k, got, v)
-			}
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(flows.ActionProviderList{ActionProviders: []flows.ActionProvider{}})
-	})
-	defer server.Close()
-
-	_, err := client.ListActionProviders(context.Background(), &flows.ListActionProvidersOptions{
-		PerPage:      10,
-		Offset:       5,
-		Marker:       "m-tok",
-		OrderBy:      "display_name",
-		Q:            "transfer",
-		FilterOwner:  "globus",
-		FilterType:   "action",
-		FilterGlobus: true,
-	})
-	if err != nil {
-		t.Fatalf("ListActionProviders with all options: %v", err)
-	}
-}
-
-func TestListActionProvidersWithLimit(t *testing.T) {
-	server, client := startMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-		if got := r.URL.Query().Get("limit"); got != "30" {
-			t.Errorf("expected limit=30, got %q", got)
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(flows.ActionProviderList{ActionProviders: []flows.ActionProvider{}})
-	})
-	defer server.Close()
-
-	_, err := client.ListActionProviders(context.Background(), &flows.ListActionProvidersOptions{Limit: 30})
-	if err != nil {
-		t.Fatalf("ListActionProviders with limit: %v", err)
-	}
-}
-
-func TestListActionProvidersNilOptions(t *testing.T) {
-	server, client := startMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(flows.ActionProviderList{ActionProviders: []flows.ActionProvider{}})
-	})
-	defer server.Close()
-
-	_, err := client.ListActionProviders(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("ListActionProviders with nil options: %v", err)
-	}
-}
-
-// ---------------------------------------------------------------------------
-// TestListActionRolesWithOffset
-// ---------------------------------------------------------------------------
-
-func TestListActionRolesWithOffset(t *testing.T) {
-	server, client := startMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-		q := r.URL.Query()
-		if q.Get("limit") != "5" {
-			t.Errorf("expected limit=5, got %q", q.Get("limit"))
-		}
-		if q.Get("offset") != "10" {
-			t.Errorf("expected offset=10, got %q", q.Get("offset"))
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(flows.ActionRoleList{ActionRoles: []flows.ActionRole{}})
-	})
-	defer server.Close()
-
-	_, err := client.ListActionRoles(context.Background(), "provider-1", 5, 10)
-	if err != nil {
-		t.Fatalf("ListActionRoles with offset: %v", err)
-	}
-}
-
-// ---------------------------------------------------------------------------
 // TestGetRunLogsWithOffset
 // ---------------------------------------------------------------------------
 
@@ -562,66 +467,6 @@ func TestListAllRuns(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// TestListAllActionProviders
-// ---------------------------------------------------------------------------
-
-func TestListAllActionProviders(t *testing.T) {
-	server, client := startMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(flows.ActionProviderList{
-			ActionProviders: []flows.ActionProvider{
-				{ID: "p1", DisplayName: "Provider 1", Owner: "globus", CreatedAt: flowTime, UpdatedAt: flowTime},
-			},
-			Total:   1,
-			HadMore: false,
-			Offset:  0,
-			Limit:   100,
-		})
-	})
-	defer server.Close()
-
-	providers, err := client.ListAllActionProviders(context.Background(), nil)
-	if err != nil {
-		t.Fatalf("ListAllActionProviders: %v", err)
-	}
-	if len(providers) != 1 {
-		t.Fatalf("expected 1 provider, got %d", len(providers))
-	}
-}
-
-// ---------------------------------------------------------------------------
-// TestListAllActionRoles
-// ---------------------------------------------------------------------------
-
-func TestListAllActionRoles(t *testing.T) {
-	server, client := startMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/action_providers/provider-1/roles" {
-			t.Errorf("unexpected path: %s", r.URL.Path)
-		}
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(flows.ActionRoleList{
-			ActionRoles: []flows.ActionRole{
-				{ID: "role-1", Name: "Role 1"},
-				{ID: "role-2", Name: "Role 2"},
-			},
-			Total:   2,
-			HadMore: false,
-			Offset:  0,
-			Limit:   100,
-		})
-	})
-	defer server.Close()
-
-	roles, err := client.ListAllActionRoles(context.Background(), "provider-1")
-	if err != nil {
-		t.Fatalf("ListAllActionRoles: %v", err)
-	}
-	if len(roles) != 2 {
-		t.Fatalf("expected 2 roles, got %d", len(roles))
-	}
-}
-
-// ---------------------------------------------------------------------------
 // TestListAllRunLogs
 // ---------------------------------------------------------------------------
 
@@ -633,7 +478,7 @@ func TestListAllRunLogs(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(flows.RunLogList{
 			Entries: []flows.RunLogEntry{
-				{Code: "STARTED", RunID: "run-1", CreatedAt: flowTime, Description: "started"},
+				{Code: "STARTED", Time: flowTime, Description: "started"},
 			},
 			Total:   1,
 			HadMore: false,
@@ -728,70 +573,6 @@ func TestGetRunsIterator(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
-// TestGetActionProvidersIterator
-// ---------------------------------------------------------------------------
-
-func TestGetActionProvidersIterator(t *testing.T) {
-	server, client := startMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(flows.ActionProviderList{
-			ActionProviders: []flows.ActionProvider{
-				{ID: "p1", DisplayName: "P1", Owner: "globus", CreatedAt: flowTime, UpdatedAt: flowTime},
-			},
-			Total:   1,
-			HadMore: false,
-			Offset:  0,
-			Limit:   100,
-		})
-	})
-	defer server.Close()
-
-	iter := client.GetActionProvidersIterator(nil)
-	var providers []flows.ActionProvider
-	for iter.Next(context.Background()) {
-		providers = append(providers, *iter.ActionProvider())
-	}
-	if err := iter.Err(); err != nil {
-		t.Fatalf("iterator error: %v", err)
-	}
-	if len(providers) != 1 {
-		t.Fatalf("expected 1 provider, got %d", len(providers))
-	}
-}
-
-// ---------------------------------------------------------------------------
-// TestGetActionRolesIterator
-// ---------------------------------------------------------------------------
-
-func TestGetActionRolesIterator(t *testing.T) {
-	server, client := startMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(flows.ActionRoleList{
-			ActionRoles: []flows.ActionRole{
-				{ID: "r1", Name: "Role 1"},
-			},
-			Total:   1,
-			HadMore: false,
-			Offset:  0,
-			Limit:   100,
-		})
-	})
-	defer server.Close()
-
-	iter := client.GetActionRolesIterator("provider-1", 100)
-	var roles []flows.ActionRole
-	for iter.Next(context.Background()) {
-		roles = append(roles, *iter.ActionRole())
-	}
-	if err := iter.Err(); err != nil {
-		t.Fatalf("iterator error: %v", err)
-	}
-	if len(roles) != 1 {
-		t.Fatalf("expected 1 role, got %d", len(roles))
-	}
-}
-
-// ---------------------------------------------------------------------------
 // TestGetRunLogsIterator
 // ---------------------------------------------------------------------------
 
@@ -800,8 +581,8 @@ func TestGetRunLogsIterator(t *testing.T) {
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(flows.RunLogList{
 			Entries: []flows.RunLogEntry{
-				{Code: "STARTED", RunID: "run-1", CreatedAt: flowTime, Description: "started"},
-				{Code: "COMPLETED", RunID: "run-1", CreatedAt: flowTime, Description: "done"},
+				{Code: "STARTED", Time: flowTime, Description: "started"},
+				{Code: "COMPLETED", Time: flowTime, Description: "done"},
 			},
 			Total:   2,
 			HadMore: false,
@@ -932,29 +713,6 @@ func TestParseErrorResponseRunNotFound(t *testing.T) {
 		t.Errorf("expected RunNotFoundError, got %T: %v", err, err)
 	}
 }
-
-func TestParseErrorResponseActionProviderNotFound(t *testing.T) {
-	body := []byte(`{"code":"NOT_FOUND","message":"Provider not found"}`)
-	err := flows.ParseErrorResponse(body, http.StatusNotFound, "prov-123", "action_provider")
-	if err == nil {
-		t.Fatal("expected error")
-	}
-	if !flows.IsActionProviderNotFoundError(err) {
-		t.Errorf("expected ActionProviderNotFoundError, got %T: %v", err, err)
-	}
-}
-
-func TestParseErrorResponseActionRoleNotFound(t *testing.T) {
-	body := []byte(`{"code":"NOT_FOUND","message":"Role not found"}`)
-	err := flows.ParseErrorResponse(body, http.StatusNotFound, "prov-1:role-1", "action_role")
-	if err == nil {
-		t.Fatal("expected error")
-	}
-	if !flows.IsActionRoleNotFoundError(err) {
-		t.Errorf("expected ActionRoleNotFoundError, got %T: %v", err, err)
-	}
-}
-
 func TestParseErrorResponseForbidden(t *testing.T) {
 	body := []byte(`{"code":"FORBIDDEN","message":"Access denied"}`)
 	err := flows.ParseErrorResponse(body, http.StatusForbidden, "", "")
@@ -1055,28 +813,6 @@ func TestRunNotFoundErrorMessage(t *testing.T) {
 		t.Error("expected non-empty error message")
 	}
 }
-
-func TestActionProviderNotFoundErrorMessage(t *testing.T) {
-	e := &flows.ActionProviderNotFoundError{
-		ProviderID:    "prov-abc",
-		ErrorResponse: &flows.ErrorResponse{Code: "NOT_FOUND", Message: "not found"},
-	}
-	if e.Error() == "" {
-		t.Error("expected non-empty error message")
-	}
-}
-
-func TestActionRoleNotFoundErrorMessage(t *testing.T) {
-	e := &flows.ActionRoleNotFoundError{
-		ProviderID:    "prov-abc",
-		RoleID:        "role-xyz",
-		ErrorResponse: &flows.ErrorResponse{Code: "NOT_FOUND", Message: "not found"},
-	}
-	if e.Error() == "" {
-		t.Error("expected non-empty error message")
-	}
-}
-
 func TestForbiddenErrorMessage(t *testing.T) {
 	e := &flows.ForbiddenError{
 		ErrorResponse: &flows.ErrorResponse{Code: "FORBIDDEN", Message: "Access denied"},
@@ -1126,7 +862,7 @@ func TestRunFlowHTTPError404(t *testing.T) {
 
 	_, err := client.RunFlow(context.Background(), &flows.RunRequest{
 		FlowID: "flow-1",
-		Input:  map[string]interface{}{"key": "val"},
+		Body:   map[string]interface{}{"key": "val"},
 	})
 	if err == nil {
 		t.Fatal("expected error for 404")
@@ -1136,41 +872,6 @@ func TestRunFlowHTTPError404(t *testing.T) {
 		t.Errorf("expected RunNotFoundError, got %T: %v", err, err)
 	}
 }
-
-func TestGetActionProviderHTTPError404(t *testing.T) {
-	server, client := startMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(flows.ErrorResponse{Code: "NOT_FOUND", Message: "not found"})
-	})
-	defer server.Close()
-
-	_, err := client.GetActionProvider(context.Background(), "missing-prov")
-	if err == nil {
-		t.Fatal("expected error for 404")
-	}
-	if !flows.IsActionProviderNotFoundError(err) {
-		t.Errorf("expected ActionProviderNotFoundError, got %T: %v", err, err)
-	}
-}
-
-func TestGetActionRoleHTTPError404(t *testing.T) {
-	server, client := startMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusNotFound)
-		json.NewEncoder(w).Encode(flows.ErrorResponse{Code: "NOT_FOUND", Message: "not found"})
-	})
-	defer server.Close()
-
-	_, err := client.GetActionRole(context.Background(), "prov-1", "role-1")
-	if err == nil {
-		t.Fatal("expected error for 404")
-	}
-	if !flows.IsActionRoleNotFoundError(err) {
-		t.Errorf("expected ActionRoleNotFoundError, got %T: %v", err, err)
-	}
-}
-
 func TestGetRunHTTPError404(t *testing.T) {
 	server, client := startMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -1219,20 +920,6 @@ func TestListFlowsHTTPError400(t *testing.T) {
 	}
 	if !flows.IsValidationError(err) {
 		t.Errorf("expected ValidationError, got %T: %v", err, err)
-	}
-}
-
-func TestListActionProvidersHTTPError400(t *testing.T) {
-	server, client := startMockServer(t, func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusBadRequest)
-		json.NewEncoder(w).Encode(flows.ErrorResponse{Code: "VALIDATION_ERROR", Message: "bad params"})
-	})
-	defer server.Close()
-
-	_, err := client.ListActionProviders(context.Background(), nil)
-	if err == nil {
-		t.Fatal("expected error for 400")
 	}
 }
 
