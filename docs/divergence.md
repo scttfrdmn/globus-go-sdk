@@ -36,6 +36,37 @@ present:
   fields. `DoRequest` now sends a `url.Values` body as flat
   `application/x-www-form-urlencoded`; all other bodies remain JSON.
 
+## GCS: result envelope unpacking, marker pagination, full manager surface
+
+The Phase 2 audit found the GCS client could not parse real responses (it decoded
+flat objects and JSON:API pages; GCS wraps everything in a `result#1.0.0`
+envelope with a `data` array). The client was rebuilt:
+
+- **Envelope unpacking.** A generic `GCSResponse` type parses the envelope;
+  single-object GETs unpack `data[0]` by matching the DATA_TYPE name (before
+  `#`), and lists read the whole `data` array. Nearly every method uses this.
+- **Marker pagination.** GCS returns top-level `has_next_page` + `marker` (not
+  JSON:API `links.next`). The `CollectionPager` was rebuilt on
+  `paging.MarkerPaginator`; the `JSONAPILinks`/`JSONAPIMeta`/`CollectionPage`
+  types and `listCollectionsAbsolute` were removed. Added storage-gateway, role,
+  and user-credential pagers.
+- **`ListCollections` params fixed.** The fabricated `filter_owned`/`limit`/
+  `offset` were removed; upstream uses `mapped_collection_id`, `filter`
+  (comma-joined), `include` (comma-joined), `page_size`, `marker`.
+- **Unauthenticated `/info`.** `GetGCSInfo` calls `GET /info` with no
+  Authorization header, via the new `core.Client.DoRequestNoAuth`.
+- **Full manager surface added:** endpoint (`GetEndpoint`/`UpdateEndpoint`),
+  collection create, storage gateways CRUD, roles CRUD, and user credentials
+  CRUD, each with its typed request `*Document` builder and response type.
+  `UpdateStorageGateway` and the `Delete*` methods return the raw envelope (no
+  data unpacking), matching upstream.
+- **Known deferrals (recorded, not blockers):** connector-specific policy
+  builder classes (POSIX/S3/…) are represented as `json.RawMessage` `policies`
+  fields rather than typed helpers; the DATA_TYPE version auto-deduction that the
+  Python SDK performs is left to the caller (DataType is omitempty, defaulting to
+  the base version server-side). The Go-only `Downloader` has no upstream
+  equivalent and is retained as an experimental convenience.
+
 ## Compute: passthrough documents, V2+V3 folded, phantom routes removed
 
 Upstream Globus Compute (at 4.8.1) is only `__init__.py`, `client.py`, and

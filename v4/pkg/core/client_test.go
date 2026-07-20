@@ -153,6 +153,41 @@ func TestDoRequestFormEncoding(t *testing.T) {
 	})
 }
 
+// TestDoRequestNoAuth verifies that DoRequestNoAuth omits the Authorization
+// header while DoRequest sets it.
+func TestDoRequestNoAuth(t *testing.T) {
+	var gotAuth string
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		gotAuth = r.Header.Get("Authorization")
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer server.Close()
+
+	client, err := NewClient(&Config{
+		AccessToken: "test-token",
+		Scopes:      []string{"test-scope"},
+		BaseURL:     server.URL,
+		RetryConfig: &RetryConfig{MaxRetries: 0},
+	})
+	if err != nil {
+		t.Fatalf("NewClient() error = %v", err)
+	}
+
+	if err := client.DoRequestNoAuth(context.Background(), http.MethodGet, "/info", nil, nil, nil); err != nil {
+		t.Fatalf("DoRequestNoAuth() error = %v", err)
+	}
+	if gotAuth != "" {
+		t.Errorf("Authorization header = %q, want empty", gotAuth)
+	}
+
+	if err := client.DoRequest(context.Background(), http.MethodGet, "/info", nil, nil, nil); err != nil {
+		t.Fatalf("DoRequest() error = %v", err)
+	}
+	if gotAuth != "Bearer test-token" {
+		t.Errorf("Authorization header = %q, want Bearer test-token", gotAuth)
+	}
+}
+
 // TestClientCloseNilConfig tests Close with nil config edge case
 func TestClientCloseNilConfig(t *testing.T) {
 	// This test ensures Close handles edge cases gracefully

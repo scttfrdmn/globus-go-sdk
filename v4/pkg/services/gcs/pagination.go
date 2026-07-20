@@ -8,81 +8,98 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/paging"
 )
 
-// CollectionPager iterates through pages of GCS collection listings.
-// It is created by CollectionClient.NewCollectionPager and drives the
-// JSON:API next-link pagination used by the GCS manager API.
-//
-// EXPERIMENTAL: this API may change without notice.
-//
-// Example:
-//
-//	pager := client.NewCollectionPager(nil)
-//	for pager.HasMore() {
-//	    page, err := pager.NextPage(ctx)
-//	    if err != nil { return err }
-//	    for _, c := range page.Data {
-//	        fmt.Println(c.DisplayName)
-//	    }
-//	}
-type CollectionPager struct {
-	inner *paging.JSONAPIPaginator[Collection]
-	opts  *ListCollectionsOptions
-	// last holds the most recently fetched page metadata (Links, Meta).
-	// Items are returned via NextPage; we still expose a CollectionPage
-	// for callers that inspect Links or Meta directly.
-	client *CollectionClient
-}
-
-// HasMore reports whether more pages remain. It is true before any call to
-// NextPage, and true after a page whose Links.Next is non-empty.
-func (p *CollectionPager) HasMore() bool {
-	return p.inner.HasNext()
-}
-
-// NextPage fetches the next page of results. After the last page it returns
-// (nil, nil) and subsequent calls return ErrNoPagesRemaining.
-func (p *CollectionPager) NextPage(ctx context.Context) (*CollectionPage, error) {
-	if !p.inner.HasNext() {
-		return nil, ErrNoPagesRemaining
+// NewCollectionPager returns a marker Paginator over all collections matching
+// options. GCS uses top-level has_next_page + marker pagination (not JSON:API
+// links). Pass nil for default options.
+func (c *CollectionClient) NewCollectionPager(options *ListCollectionsOptions) paging.Paginator[Collection] {
+	pageSize := 0
+	if options != nil && options.PageSize > 0 {
+		pageSize = options.PageSize
 	}
-	// The inner paginator returns []Collection; we need a *CollectionPage.
-	// Re-fetch via the client methods directly so we preserve Links/Meta.
-	_ = ctx // used by the fetch closure
-	return p.fetchPage(ctx)
+	return paging.NewMarkerPaginator(
+		func(ctx context.Context, limit int, marker string) ([]Collection, bool, string, error) {
+			o := &ListCollectionsOptions{Marker: marker, PageSize: limit}
+			if options != nil {
+				o.MappedCollectionID = options.MappedCollectionID
+				o.Filter = options.Filter
+				o.Include = options.Include
+			}
+			result, err := c.ListCollections(ctx, o)
+			if err != nil {
+				return nil, false, "", err
+			}
+			return result.Data, result.HasNextPage, result.Marker, nil
+		},
+		pageSize,
+	)
 }
 
-// fetchPage is called by the inner paginator's fetchFn.
-func (p *CollectionPager) fetchPageFn(ctx context.Context, nextURL string) ([]Collection, string, error) {
-	var page *CollectionPage
-	var err error
-	if nextURL == "" {
-		page, err = p.client.ListCollections(ctx, p.opts)
-	} else {
-		page, err = p.client.listCollectionsAbsolute(ctx, nextURL)
+// NewStorageGatewayPager returns a marker Paginator over all storage gateways
+// matching options. Pass nil for default options.
+func (c *CollectionClient) NewStorageGatewayPager(options *StorageGatewayListOptions) paging.Paginator[StorageGateway] {
+	pageSize := 0
+	if options != nil && options.PageSize > 0 {
+		pageSize = options.PageSize
 	}
-	if err != nil {
-		return nil, "", err
+	return paging.NewMarkerPaginator(
+		func(ctx context.Context, limit int, marker string) ([]StorageGateway, bool, string, error) {
+			o := &StorageGatewayListOptions{Marker: marker, PageSize: limit}
+			if options != nil {
+				o.Include = options.Include
+			}
+			result, err := c.GetStorageGatewayList(ctx, o)
+			if err != nil {
+				return nil, false, "", err
+			}
+			return result.Data, result.HasNextPage, result.Marker, nil
+		},
+		pageSize,
+	)
+}
+
+// NewRolePager returns a marker Paginator over all roles matching options. Pass
+// nil for default options.
+func (c *CollectionClient) NewRolePager(options *RoleListOptions) paging.Paginator[GCSRole] {
+	pageSize := 0
+	if options != nil && options.PageSize > 0 {
+		pageSize = options.PageSize
 	}
-	return page.Data, page.Links.Next, nil
+	return paging.NewMarkerPaginator(
+		func(ctx context.Context, limit int, marker string) ([]GCSRole, bool, string, error) {
+			o := &RoleListOptions{Marker: marker, PageSize: limit}
+			if options != nil {
+				o.CollectionID = options.CollectionID
+				o.Include = options.Include
+			}
+			result, err := c.GetRoleList(ctx, o)
+			if err != nil {
+				return nil, false, "", err
+			}
+			return result.Data, result.HasNextPage, result.Marker, nil
+		},
+		pageSize,
+	)
 }
 
-// fetchPage is a thin wrapper that builds a CollectionPage from the inner pager.
-func (p *CollectionPager) fetchPage(ctx context.Context) (*CollectionPage, error) {
-	// Drive the inner paginator directly so we stay in sync.
-	items, err := p.inner.NextPage(ctx)
-	if err != nil {
-		return nil, err
+// NewUserCredentialPager returns a marker Paginator over all user credentials
+// matching options. Pass nil for default options.
+func (c *CollectionClient) NewUserCredentialPager(options *UserCredentialListOptions) paging.Paginator[UserCredential] {
+	pageSize := 0
+	if options != nil && options.PageSize > 0 {
+		pageSize = options.PageSize
 	}
-	return &CollectionPage{Data: items}, nil
+	return paging.NewMarkerPaginator(
+		func(ctx context.Context, limit int, marker string) ([]UserCredential, bool, string, error) {
+			o := &UserCredentialListOptions{Marker: marker, PageSize: limit}
+			if options != nil {
+				o.StorageGateway = options.StorageGateway
+			}
+			result, err := c.GetUserCredentialList(ctx, o)
+			if err != nil {
+				return nil, false, "", err
+			}
+			return result.Data, result.HasNextPage, result.Marker, nil
+		},
+		pageSize,
+	)
 }
-
-// ErrNoPagesRemaining is returned by NextPage when no more pages exist.
-type ErrNoPagesRemainingType struct{}
-
-func (e ErrNoPagesRemainingType) Error() string {
-	return "gcs: no more pages remaining"
-}
-
-// ErrNoPagesRemaining is the sentinel error returned by CollectionPager.NextPage
-// when the caller has already consumed all pages.
-var ErrNoPagesRemaining error = ErrNoPagesRemainingType{}

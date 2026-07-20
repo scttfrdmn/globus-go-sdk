@@ -53,11 +53,22 @@ func (c *Client) DoRequest(ctx context.Context, method, endpoint string, query u
 	return c.DoRequestURL(ctx, method, c.buildURL(endpoint, query), body, result)
 }
 
+// DoRequestNoAuth is like DoRequest but omits the Authorization header. It is
+// used for the few endpoints that must be called unauthenticated (e.g. the GCS
+// manager's GET /info).
+func (c *Client) DoRequestNoAuth(ctx context.Context, method, endpoint string, query url.Values, body interface{}, result interface{}) error {
+	return c.doRequestURL(ctx, method, c.buildURL(endpoint, query), body, result, true)
+}
+
 // DoRequestURL performs an HTTP request against a fully-formed URL, bypassing the
 // base-URL join. It is used for the handful of endpoints that live outside a
 // client's base path (e.g. Auth's host-root OIDC discovery / JWKS URIs). The
 // retry, auth, and decoding behavior matches DoRequest.
 func (c *Client) DoRequestURL(ctx context.Context, method, reqURL string, body interface{}, result interface{}) error {
+	return c.doRequestURL(ctx, method, reqURL, body, result, false)
+}
+
+func (c *Client) doRequestURL(ctx context.Context, method, reqURL string, body interface{}, result interface{}, skipAuth bool) error {
 	// Marshal request body if provided.
 	// A url.Values body is sent as application/x-www-form-urlencoded (required
 	// by the OAuth2 token/introspect/revoke endpoints); anything else is JSON.
@@ -92,18 +103,20 @@ func (c *Client) DoRequestURL(ctx context.Context, method, reqURL string, body i
 
 	// Set headers
 	req.Header.Set("User-Agent", c.config.UserAgent)
-	if c.config.Authorizer != nil {
-		authHeader, authErr := c.config.Authorizer.GetAuthorizationHeader(ctx)
-		if authErr != nil {
-			return &NetworkError{
-				Operation: "get_auth_header",
-				Message:   "authorizer failed to provide authorization header",
-				Err:       authErr,
+	if !skipAuth {
+		if c.config.Authorizer != nil {
+			authHeader, authErr := c.config.Authorizer.GetAuthorizationHeader(ctx)
+			if authErr != nil {
+				return &NetworkError{
+					Operation: "get_auth_header",
+					Message:   "authorizer failed to provide authorization header",
+					Err:       authErr,
+				}
 			}
+			req.Header.Set("Authorization", authHeader)
+		} else {
+			req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.config.AccessToken))
 		}
-		req.Header.Set("Authorization", authHeader)
-	} else {
-		req.Header.Set("Authorization", fmt.Sprintf("Bearer %s", c.config.AccessToken))
 	}
 	if contentType != "" {
 		req.Header.Set("Content-Type", contentType)

@@ -41,6 +41,26 @@ Timers client realigned to the Python globus-sdk 4.8.1 wire (Phase 2 audit).
   `GetRun`, `CreateOnceTimer`, `CreateRecurringTimer`, and the `Callback`,
   `TimerRun`, `TimerRunList`, `ListRunsOptions` types.
 
+### Changed — GCS (v4 module, Phase 2 parity audit)
+
+**Breaking** within the v4 line — the GCS client was rebuilt to parse the real
+`result#1.0.0` envelope (it previously could not decode GCS responses):
+
+- Added `GCSResponse` envelope + DATA_TYPE unpacking; every single-object method
+  unwraps `data[0]`. Marker pagination replaces JSON:API paging: removed
+  `CollectionPage`/`JSONAPILinks`/`JSONAPIMeta`, rebuilt `NewCollectionPager` on
+  the marker paginator, and added storage-gateway/role/user-credential pagers.
+- `GetCollection` takes `(ctx, id, *GetCollectionOptions)`; `UpdateCollection`
+  takes a `*CollectionDocument` (was the narrow `CollectionUpdate`).
+  `ListCollectionsOptions` reworked to `mapped_collection_id`/`filter`/`include`/
+  `page_size`/`marker` (removed `filter_owned`/`limit`/`offset`).
+- Added the full GCS Manager surface: `GetGCSInfo` (unauthenticated),
+  `GetEndpoint`/`UpdateEndpoint`, `CreateCollection`, storage gateways CRUD,
+  roles CRUD, user credentials CRUD, with `*Document` request builders and typed
+  responses.
+
+Added core `DoRequestNoAuth` for the unauthenticated GCS `/info` call.
+
 ### Changed — Compute (v4 module, Phase 2 parity audit)
 
 **Breaking** within the v4 line — upstream compute has no models/pagination, so
