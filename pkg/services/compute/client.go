@@ -113,16 +113,31 @@ func (c *Client) send(ctx context.Context, method, path string, body interface{}
 	return result, nil
 }
 
+// getInto issues a GET and decodes the response into dest, which may be any JSON
+// shape (object, array, or scalar). Used by endpoints whose responses are not
+// JSON objects.
+func (c *Client) getInto(ctx context.Context, path string, query url.Values, dest interface{}) error {
+	return c.doRequest(ctx, http.MethodGet, path, query, nil, dest)
+}
+
 // --- Service-level (V2) ---
 
 // GetVersion returns the compute service version (GET /v2/version). service is
 // an optional query param; pass "" to omit.
-func (c *Client) GetVersion(ctx context.Context, service string) (map[string]interface{}, error) {
+//
+// The response is polymorphic: with no service it is a bare JSON string (the API
+// version), and with a service it is a JSON object. The result is returned as an
+// untyped value (string or map[string]interface{}); type-assert as needed.
+func (c *Client) GetVersion(ctx context.Context, service string) (interface{}, error) {
 	query := url.Values{}
 	if service != "" {
 		query.Set("service", service)
 	}
-	return c.get(ctx, "v2/version", query)
+	var result interface{}
+	if err := c.getInto(ctx, "v2/version", query, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // GetResultAMQPURL returns a connection URL for the result AMQP queue
@@ -156,12 +171,19 @@ func (c *Client) GetEndpoint(ctx context.Context, endpointID string) (map[string
 
 // GetEndpoints lists compute endpoints (GET /v2/endpoints). Pass opts.Role to
 // filter; opts may be nil.
-func (c *Client) GetEndpoints(ctx context.Context, opts *GetEndpointsOptions) (map[string]interface{}, error) {
+//
+// The response is a top-level JSON array of endpoint documents, so the result is
+// returned as a slice of passthrough maps.
+func (c *Client) GetEndpoints(ctx context.Context, opts *GetEndpointsOptions) ([]map[string]interface{}, error) {
 	query := url.Values{}
 	if opts != nil && opts.Role != "" {
 		query.Set("role", opts.Role)
 	}
-	return c.get(ctx, "v2/endpoints", query)
+	var result []map[string]interface{}
+	if err := c.getInto(ctx, "v2/endpoints", query, &result); err != nil {
+		return nil, err
+	}
+	return result, nil
 }
 
 // GetEndpointStatus retrieves an endpoint's status (GET /v2/endpoints/{id}/status).
