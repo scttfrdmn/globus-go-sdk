@@ -79,7 +79,7 @@ func TestIntegration_SDKConfig(t *testing.T) {
 	}
 
 	// Test list groups to verify client works
-	groups, err := groupsClient.ListGroups(ctx, nil)
+	groups, err := groupsClient.GetMyGroups(ctx, nil)
 	if err != nil {
 		t.Fatalf("Groups client failed: %v", err)
 	}
