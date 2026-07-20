@@ -40,7 +40,7 @@ func main() {
 		{
 			FlowID: "flow1",
 			Label:  "Batch run 1",
-			Input: map[string]interface{}{
+			Body: map[string]interface{}{
 				"message": "Batch message 1",
 			},
 		},

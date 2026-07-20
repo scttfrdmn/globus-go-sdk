@@ -15,8 +15,8 @@ import (
 func TestBatchRunFlows(t *testing.T) {
 	// Setup test server
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.URL.Path != "/runs" || r.Method != http.MethodPost {
-			t.Errorf("Expected POST /runs, got %s %s", r.Method, r.URL.Path)
+		if r.URL.Path != "/flows/test-flow-id/run" || r.Method != http.MethodPost {
+			t.Errorf("Expected POST /flows/test-flow-id/run, got %s %s", r.Method, r.URL.Path)
 			w.WriteHeader(http.StatusNotFound)
 			return
 		}
@@ -33,7 +33,7 @@ func TestBatchRunFlows(t *testing.T) {
 		runTime, _ := time.Parse(time.RFC3339, "2023-01-01T00:00:00Z")
 		response := RunResponse{
 			RunID:     "run-id-" + request.Label, // Use label to create unique ID
-			FlowID:    request.FlowID,
+			FlowID:    "test-flow-id",
 			Status:    "ACTIVE",
 			CreatedAt: runTime,
 			StartedAt: runTime,
@@ -41,7 +41,7 @@ func TestBatchRunFlows(t *testing.T) {
 			Tags:      request.Tags,
 			UserID:    "test-user",
 			RunOwner:  "test-user",
-			Input:     request.Input,
+			Input:     request.Body,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -70,7 +70,7 @@ func TestBatchRunFlows(t *testing.T) {
 		requests[i] = &RunRequest{
 			FlowID: "test-flow-id",
 			Label:  fmt.Sprintf("batch-%d", i),
-			Input: map[string]interface{}{
+			Body: map[string]interface{}{
 				"param": fmt.Sprintf("value-%d", i),
 			},
 		}

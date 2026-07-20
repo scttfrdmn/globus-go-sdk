@@ -10,6 +10,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — Flows (v3 module, Phase 2 parity audit vs 3.65.0)
+
+**Breaking** within the v3 line:
+
+- Base URL corrected to `https://flows.automate.globus.org/`. `RunFlow` posts to
+  `/flows/{id}/run` with input under `body` (was `/runs` + `input`).
+  `UpdateFlow`/`UpdateRun` use PUT; `DeleteRun` is `POST /runs/{id}/release`.
+- Removed the action-provider surface (`ListActionProviders`,
+  `GetActionProvider`, `ListActionRoles`, `GetActionRole`, their iterators/batch,
+  and `ActionProvider*`/`ActionRole*` types) — no upstream route at 3.65.0.
+- `RunResponse` timestamp keys → `start_time`/`completion_time`; `RunLogEntry`
+  timestamp → `time` (removed `run_id`).
+- Added `ValidateFlow`, `ValidateRun`, `GetRunDefinition`, `DeleteRun`,
+  `ResumeRun`.
+
 ### Changed — Search (v3 module, Phase 2 parity audit vs 3.65.0)
 
 **Breaking** within the v3 line:

@@ -16,6 +16,27 @@ into Go types and clients.
 Sections below prefixed **v3:** apply to the frozen v3 module (tracking Python
 globus-sdk 3.65.0); all other sections apply to the active v4 module.
 
+## v3 Flows: base host, body envelope, removed action providers (Phase 2 audit vs 3.65.0)
+
+The v3 flows client diverged from Python globus-sdk 3.65.0 on base URL, the run
+body key, verbs, and a phantom action-provider surface. Corrected:
+
+- **Base URL** `https://flows.automate.globus.org/` (was `flows.globus.org/v1/`).
+- **RunFlow** posts to `POST /flows/{flow_id}/run` (was `POST /runs`) with the
+  input under `body` (was `input`); `RunRequest.FlowID` is used in the URL, not
+  the body. Added `ValidateRun` (`POST /flows/{id}/validate_run`).
+- **Verbs:** `UpdateFlow`/`UpdateRun` use `PUT` (UpdateRun was `PATCH`).
+  `DeleteRun` is `POST /runs/{id}/release`.
+- **Removed the action-provider surface** (`ListActionProviders`,
+  `GetActionProvider`, `ListActionRoles`, `GetActionRole`, their iterators, the
+  `BatchGetActionRoles` batch, and the `ActionProvider*`/`ActionRole*` types) —
+  no such routes exist in the globus-sdk flows service at 3.65.0.
+- **Timestamp keys:** `RunResponse.started_at`→`start_time`,
+  `completed_at`→`completion_time`; `RunLogEntry.created_at`→`time` (and its
+  `run_id` field, which is not returned, was removed).
+- **Added:** `ValidateFlow` (`POST /flows/validate`), `GetRunDefinition`,
+  `DeleteRun`, `ResumeRun`.
+
 ## v3 Search: index-scoped routes, gmeta/index_list keys (Phase 2 audit vs 3.65.0)
 
 The v3 search client posted to non-index-scoped routes and decoded the wrong

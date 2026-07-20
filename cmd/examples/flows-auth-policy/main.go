@@ -211,7 +211,7 @@ func main() {
 		FlowID: flowID,
 		Label:  "Auth-Policy SDK Example Run " + timestamp,
 		Tags:   []string{"example", "auth-policy", "go-sdk"},
-		Input: map[string]interface{}{
+		Body: map[string]interface{}{
 			"message": "Hello from the Globus Go SDK auth-policy example!",
 		},
 	}
