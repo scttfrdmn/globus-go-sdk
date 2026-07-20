@@ -12,11 +12,23 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/pkg/browser"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg"
 )
+
+// resourceServerEnvVar maps a Globus resource-server name to the environment
+// variable the integration tests read for a pre-supplied token. Resource
+// servers without a mapping (auth, timers, compute) are omitted — those tests
+// use client credentials.
+var resourceServerEnvVar = map[string]string{
+	"transfer.api.globus.org": "GLOBUS_TEST_TRANSFER_TOKEN",
+	"groups.api.globus.org":   "GLOBUS_TEST_GROUPS_TOKEN",
+	"search.api.globus.org":   "GLOBUS_TEST_SEARCH_TOKEN",
+	"flows.globus.org":        "GLOBUS_TEST_FLOWS_TOKEN",
+}
 
 // Config holds the CLI configuration
 type Config struct {
@@ -27,13 +39,21 @@ type Config struct {
 
 // TokenInfo holds the token information
 type TokenInfo struct {
-	AccessToken  string    `json:"access_token"`
-	RefreshToken string    `json:"refresh_token,omitempty"`
-	ExpiresIn    int       `json:"expires_in"`
-	ExpiresAt    time.Time `json:"expires_at"`
-	Scope        string    `json:"scope"`
-	TokenType    string    `json:"token_type"`
-	ResourceID   string    `json:"resource_id,omitempty"`
+	AccessToken    string    `json:"access_token"`
+	RefreshToken   string    `json:"refresh_token,omitempty"`
+	ExpiresIn      int       `json:"expires_in"`
+	ExpiresAt      time.Time `json:"expires_at"`
+	Scope          string    `json:"scope"`
+	TokenType      string    `json:"token_type"`
+	ResourceServer string    `json:"resource_server,omitempty"`
+	ResourceID     string    `json:"resource_id,omitempty"`
+}
+
+// tokenFileForResourceServer maps a resource-server name to a token filename.
+// Slashes and other separators become dashes so it is filesystem-safe.
+func tokenFileForResourceServer(resourceServer string) string {
+	safe := strings.NewReplacer("/", "-", ":", "-", " ", "-").Replace(resourceServer)
+	return "rs-" + safe
 }
 
 const (
@@ -244,18 +264,32 @@ func LoginCommand(args []string) error {
 			return fmt.Errorf("state mismatch, possible CSRF attack")
 		}
 
-		// Exchange code for token
-		token, err := exchangeCodeForToken(config, result.Code)
+		// Exchange code for token(s). Globus returns the primary token plus one
+		// per additional resource server in other_tokens.
+		token, otherTokens, err := exchangeCodeForToken(config, result.Code)
 		if err != nil {
 			return fmt.Errorf("error exchanging code for token: %w", err)
 		}
 
-		// Save the token
+		// Save the primary token under the default name.
 		if err := saveToken(config, DefaultTokenFile, token); err != nil {
 			return fmt.Errorf("error saving token: %w", err)
 		}
 
-		fmt.Println("Login successful!")
+		// Also save every per-resource-server token under its resource-server
+		// name so `globus-cli token export-env` can surface them.
+		saved := 0
+		for _, ot := range append([]*TokenInfo{token}, otherTokens...) {
+			if ot.ResourceServer == "" {
+				continue
+			}
+			if err := saveToken(config, tokenFileForResourceServer(ot.ResourceServer), ot); err != nil {
+				return fmt.Errorf("error saving token for %s: %w", ot.ResourceServer, err)
+			}
+			saved++
+		}
+
+		fmt.Printf("Login successful! Stored tokens for %d resource server(s).\n", saved)
 		return nil
 	case <-time.After(5 * time.Minute):
 		return fmt.Errorf("login timed out after 5 minutes")
@@ -328,8 +362,9 @@ func generateRandomState() (string, error) {
 	return base64.URLEncoding.EncodeToString(buffer), nil
 }
 
-// exchangeCodeForToken exchanges an authorization code for a token
-func exchangeCodeForToken(config *Config, code string) (*TokenInfo, error) {
+// exchangeCodeForToken exchanges an authorization code for the primary token
+// and any additional per-resource-server tokens (other_tokens).
+func exchangeCodeForToken(config *Config, code string) (*TokenInfo, []*TokenInfo, error) {
 	// Create SDK configuration
 	sdkConfig := pkg.NewConfig().
 		WithClientID(config.ClientID).
@@ -337,7 +372,7 @@ func exchangeCodeForToken(config *Config, code string) (*TokenInfo, error) {
 
 	authClient, err := sdkConfig.NewAuthClient()
 	if err != nil {
-		return nil, fmt.Errorf("error creating auth client: %w", err)
+		return nil, nil, fmt.Errorf("error creating auth client: %w", err)
 	}
 
 	// Set redirect URL for authorization code exchange
@@ -346,20 +381,37 @@ func exchangeCodeForToken(config *Config, code string) (*TokenInfo, error) {
 	// Exchange code for token
 	tokenResp, err := authClient.ExchangeAuthorizationCode(context.Background(), code)
 	if err != nil {
-		return nil, fmt.Errorf("error exchanging authorization code: %w", err)
+		return nil, nil, fmt.Errorf("error exchanging authorization code: %w", err)
 	}
 
-	// Convert to token info
-	token := &TokenInfo{
-		AccessToken:  tokenResp.AccessToken,
-		RefreshToken: tokenResp.RefreshToken,
-		ExpiresIn:    tokenResp.ExpiresIn,
-		ExpiresAt:    time.Now().Add(time.Duration(tokenResp.ExpiresIn) * time.Second),
-		Scope:        tokenResp.Scope,
-		TokenType:    tokenResp.TokenType,
+	token := tokenInfoFromResponse(tokenResp.AccessToken, tokenResp.RefreshToken,
+		tokenResp.ExpiresIn, tokenResp.Scope, tokenResp.TokenType, tokenResp.ResourceServer)
+
+	// Globus returns one token per additional resource server in other_tokens.
+	others := []*TokenInfo{}
+	otherResps, err := tokenResp.GetOtherTokens()
+	if err != nil {
+		return nil, nil, fmt.Errorf("error parsing other_tokens: %w", err)
+	}
+	for _, ot := range otherResps {
+		others = append(others, tokenInfoFromResponse(ot.AccessToken, ot.RefreshToken,
+			ot.ExpiresIn, ot.Scope, ot.TokenType, ot.ResourceServer))
 	}
 
-	return token, nil
+	return token, others, nil
+}
+
+// tokenInfoFromResponse builds a TokenInfo, computing the absolute expiry.
+func tokenInfoFromResponse(access, refresh string, expiresIn int, scope, tokenType, resourceServer string) *TokenInfo {
+	return &TokenInfo{
+		AccessToken:    access,
+		RefreshToken:   refresh,
+		ExpiresIn:      expiresIn,
+		ExpiresAt:      time.Now().Add(time.Duration(expiresIn) * time.Second),
+		Scope:          scope,
+		TokenType:      tokenType,
+		ResourceServer: resourceServer,
+	}
 }
 
 // refreshToken refreshes a token
@@ -449,6 +501,12 @@ func TokenCommand(args []string) error {
 		return fmt.Errorf("error loading configuration: %w", err)
 	}
 
+	// export-env works off the per-resource-server token files and does not
+	// require the default combined token, so handle it before loading that.
+	if len(args) > 0 && args[0] == "export-env" {
+		return exportEnvTokens(config)
+	}
+
 	// Check if we have a token
 	token, err := LoadToken(config, DefaultTokenFile)
 	if err != nil {
@@ -469,6 +527,27 @@ func TokenCommand(args []string) error {
 
 	// Default to showing token info
 	return printTokenInfo(token)
+}
+
+// exportEnvTokens prints `export GLOBUS_TEST_<SVC>_TOKEN=...` lines for each
+// stored per-resource-server token that maps to an integration-test variable.
+// Intended to be eval'd:  eval "$(globus-cli token export-env)".
+func exportEnvTokens(config *Config) error {
+	printed := 0
+	for resourceServer, envVar := range resourceServerEnvVar {
+		token, err := LoadToken(config, tokenFileForResourceServer(resourceServer))
+		if err != nil {
+			// No token stored for this resource server (not requested at login,
+			// or expired without a refresh token) — skip it.
+			continue
+		}
+		fmt.Printf("export %s=%s\n", envVar, token.AccessToken)
+		printed++
+	}
+	if printed == 0 {
+		fmt.Fprintln(os.Stderr, "No per-resource-server tokens found. Run `globus-cli login` first.")
+	}
+	return nil
 }
 
 // printTokenInfo prints information about a token
