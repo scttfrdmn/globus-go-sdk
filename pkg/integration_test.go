@@ -14,8 +14,10 @@ import (
 	"github.com/joho/godotenv"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/flows"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/groups"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/tokens"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"
 )
 
 func init() {
@@ -61,39 +63,54 @@ func TestIntegration_SDKConfig(t *testing.T) {
 		t.Fatalf("Failed to create auth client: %v", err)
 	}
 
-	// Test client credentials flow to verify client works
+	// Verify the auth client works.
 	ctx := context.Background()
-	tokenResp, err := authClient.GetClientCredentialsToken(ctx, auth.AuthScope)
+	authToken, err := authClient.GetClientCredentialsToken(ctx, auth.AuthScope)
 	if err != nil {
 		t.Fatalf("Auth client failed: %v", err)
 	}
-
-	if tokenResp.AccessToken == "" {
+	if authToken.AccessToken == "" {
 		t.Error("Expected non-empty access token")
 	}
 
+	// Globus issues per-resource-server tokens, so each service client needs a
+	// token minted for that service's scope — a single token cannot authorize
+	// all of them. Mint one per service.
+	serviceToken := func(scope string) string {
+		resp, err := authClient.GetClientCredentialsToken(ctx, scope)
+		if err != nil {
+			t.Fatalf("Failed to get token for scope %q: %v", scope, err)
+		}
+		return resp.AccessToken
+	}
+
 	// Create Groups client
-	groupsClient, err := config.NewGroupsClient(tokenResp.AccessToken)
+	groupsClient, err := config.NewGroupsClient(serviceToken(groups.GroupsScope))
 	if err != nil {
 		t.Fatalf("Failed to create groups client: %v", err)
 	}
 
 	// Test list groups to verify client works
-	groups, err := groupsClient.GetMyGroups(ctx, nil)
+	groupList, err := groupsClient.GetMyGroups(ctx, nil)
 	if err != nil {
 		t.Fatalf("Groups client failed: %v", err)
 	}
 
-	t.Logf("Found %d groups", len(groups.Groups))
+	t.Logf("Found %d groups", len(groupList.Groups))
 
 	// Create Transfer client
-	transferClient, err := config.NewTransferClient(tokenResp.AccessToken)
+	transferClient, err := config.NewTransferClient(serviceToken(transfer.TransferScope))
 	if err != nil {
 		t.Fatalf("Failed to create transfer client: %v", err)
 	}
 
-	// Test list endpoints to verify client works
-	endpoints, err := transferClient.ListEndpoints(ctx, nil)
+	// Test endpoint search to verify client works. endpoint_search requires a
+	// filter/scope — an unfiltered search is a 400 — so scope it to the caller's
+	// own endpoints.
+	endpoints, err := transferClient.ListEndpoints(ctx, &transfer.ListEndpointsOptions{
+		FilterScope: "my-endpoints",
+		Limit:       5,
+	})
 	if err != nil {
 		t.Fatalf("Transfer client failed: %v", err)
 	}
@@ -101,15 +118,14 @@ func TestIntegration_SDKConfig(t *testing.T) {
 	t.Logf("Found %d endpoints", len(endpoints.Data))
 
 	// Create Search client
-	searchClient, err := config.NewSearchClient(tokenResp.AccessToken)
+	searchClient, err := config.NewSearchClient(serviceToken(search.SearchScope))
 	if err != nil {
 		t.Fatalf("Failed to create search client: %v", err)
 	}
 
-	// Test list indexes to verify client works
-	indexes, err := searchClient.ListIndexes(ctx, &search.ListIndexesOptions{
-		Limit: 5,
-	})
+	// Test list indexes to verify client works. index_list takes no pagination
+	// params upstream, so call it without options.
+	indexes, err := searchClient.ListIndexes(ctx, nil)
 	if err != nil {
 		t.Fatalf("Search client failed: %v", err)
 	}
@@ -117,15 +133,14 @@ func TestIntegration_SDKConfig(t *testing.T) {
 	t.Logf("Found %d search indexes", len(indexes.Indexes))
 
 	// Create Flows client
-	flowsClient, err := config.NewFlowsClient(tokenResp.AccessToken)
+	flowsClient, err := config.NewFlowsClient(serviceToken(flows.FlowsScope))
 	if err != nil {
 		t.Fatalf("Failed to create flows client: %v", err)
 	}
 
-	// Test list flows to verify client works
-	flowsList, err := flowsClient.ListFlows(ctx, &flows.ListFlowsOptions{
-		Limit: 5,
-	})
+	// Test list flows to verify client works. list_flows paginates by marker and
+	// does not accept limit/per_page/offset (they 422), so call without options.
+	flowsList, err := flowsClient.ListFlows(ctx, nil)
 	if err != nil {
 		t.Fatalf("Flows client failed: %v", err)
 	}

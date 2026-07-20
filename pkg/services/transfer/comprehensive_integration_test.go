@@ -265,6 +265,11 @@ func TestComprehensiveTransfer(t *testing.T) {
 	)
 
 	if err != nil {
+		// A 502/503/504 means the remote collection is unreachable (a
+		// test-environment condition, not an SDK defect) — skip, don't fail.
+		if strings.Contains(err.Error(), "502") || strings.Contains(err.Error(), "503") || strings.Contains(err.Error(), "504") {
+			t.Skipf("Endpoint unavailable; skipping — the remote collection is not reachable: %v", err)
+		}
 		if IsPermissionDenied(err) || strings.Contains(err.Error(), "403") {
 			t.Fatalf("PERMISSION ERROR: Cannot create source directory: %v - To resolve, set GLOBUS_TEST_TRANSFER_TOKEN with a token that has write permissions", err)
 		} else {
