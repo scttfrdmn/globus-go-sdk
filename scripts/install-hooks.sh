@@ -35,49 +35,58 @@ if [ $? -ne 0 ]; then
     EXIT_STATUS=1
 fi
 
-# Run go fmt
-echo "Running go fmt..."
-go fmt ./...
-if [ $? -ne 0 ]; then
-    echo "Error: go fmt failed!"
-    EXIT_STATUS=1
-fi
-
-# Run staticcheck if installed
 GOBIN="$(go env GOPATH)/bin"
-if [ -x "$GOBIN/staticcheck" ]; then
-    echo "Running staticcheck..."
-    "$GOBIN/staticcheck" ./...
-    if [ $? -ne 0 ]; then
-        echo "Warning: staticcheck found issues"
-        # Don't fail the commit for linting issues
-    fi
-elif command -v staticcheck &> /dev/null; then
-    echo "Running staticcheck..."
-    staticcheck ./...
-    if [ $? -ne 0 ]; then
-        echo "Warning: staticcheck found issues"
-        # Don't fail the commit for linting issues
-    fi
-else
-    echo "staticcheck not found. Install with: go install honnef.co/go/tools/cmd/staticcheck@latest"
-fi
+REPO_ROOT="$(git rev-parse --show-toplevel)"
 
-# Run go vet
-echo "Running go vet..."
-go vet ./...
-if [ $? -ne 0 ]; then
-    echo "Error: go vet failed!"
-    EXIT_STATUS=1
-fi
+# This repo hosts two independent Go modules: the v3 module at the repo root
+# and the v4 module under v4/. Each needs its own fmt/vet/test pass, since a
+# root-level "./..." only sees the module it is run from.
+MODULES=("$REPO_ROOT" "$REPO_ROOT/v4")
 
-# Run unit tests (short mode)
-echo "Running unit tests (short mode)..."
-go test ./pkg/... -short
-if [ $? -ne 0 ]; then
-    echo "Error: Unit tests failed!"
-    EXIT_STATUS=1
-fi
+for MOD in "${MODULES[@]}"; do
+    if [ ! -f "$MOD/go.mod" ]; then
+        continue
+    fi
+    echo "--- Checking module: $MOD ---"
+    cd "$MOD" || { echo "Error: cannot cd to $MOD"; EXIT_STATUS=1; continue; }
+
+    # Run go fmt
+    echo "Running go fmt..."
+    go fmt ./...
+    if [ $? -ne 0 ]; then
+        echo "Error: go fmt failed in $MOD!"
+        EXIT_STATUS=1
+    fi
+
+    # Run staticcheck if installed
+    if [ -x "$GOBIN/staticcheck" ]; then
+        echo "Running staticcheck..."
+        "$GOBIN/staticcheck" ./... || echo "Warning: staticcheck found issues"
+    elif command -v staticcheck &> /dev/null; then
+        echo "Running staticcheck..."
+        staticcheck ./... || echo "Warning: staticcheck found issues"
+    else
+        echo "staticcheck not found. Install with: go install honnef.co/go/tools/cmd/staticcheck@latest"
+    fi
+
+    # Run go vet
+    echo "Running go vet..."
+    go vet ./...
+    if [ $? -ne 0 ]; then
+        echo "Error: go vet failed in $MOD!"
+        EXIT_STATUS=1
+    fi
+
+    # Run unit tests (short mode)
+    echo "Running unit tests (short mode)..."
+    go test ./pkg/... -short
+    if [ $? -ne 0 ]; then
+        echo "Error: Unit tests failed in $MOD!"
+        EXIT_STATUS=1
+    fi
+done
+
+cd "$REPO_ROOT" || true
 
 if [ $EXIT_STATUS -eq 0 ]; then
     echo "All pre-commit checks passed!"

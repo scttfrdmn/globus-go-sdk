@@ -10,6 +10,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added (v4 module — `github.com/scttfrdmn/globus-go-sdk/v4`)
+
+Closes the wire-visible gap to upstream Python globus-sdk **v4.8.1**.
+
+- **Flows registered APIs** (Python SDK v4.6.0; `per_page` added v4.7.0):
+  - `GetRegisteredAPI(ctx, id)` — `GET /registered_apis/{id}`
+  - `ListRegisteredAPIs(ctx, options)` — `GET /registered_apis`, marker
+    pagination, items under the `registered_apis` key, query params
+    `filter_roles` (comma-joined), `orderby`, `marker`, `per_page`
+  - `NewRegisteredAPIsPager(options)` — marker-based paginator
+  - New types: `RegisteredAPI`, `RegisteredAPIRoles`, `RegisteredAPIList`,
+    `ListRegisteredAPIsOptions`
+- **Transfer bookmark management** (Python SDK v4.6.0, amended v4.8.0):
+  - `CreateBookmark`, `GetBookmark`, `ListBookmarks`, `UpdateBookmark`,
+    `DeleteBookmark` — JSON:API under `/v2/bookmarks`
+  - New types: `Bookmark`, `BookmarkCreate`, `BookmarkUpdate`, `BookmarkList`,
+    `ListBookmarksOptions`. No `pinned` field (removed upstream in v4.8.0).
+  - **Divergence:** upstream places these on the experimental
+    `TransferClientV2`; the Go v4 module folds them into `transfer.Client`,
+    matching the Streams/Tunnels approach. Per upstream v4.8.1 `list_bookmarks`
+    is not paginated, so `ListBookmarks` does a single-page fetch. See
+    [docs/divergence.md](docs/divergence.md).
+
 ### Changed
 - **Upstream parity tracking overhauled.** `.github/upstream-versions.json` now
   separates `ported` (the upstream Python SDK version this module actually
@@ -18,19 +41,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   in the gap (not just the newest), files one issue per release, and only bumps
   `seen` — `ported` is bumped by humans when features land. This surfaces parity
   gaps honestly instead of hiding them.
+- **v4 module `ported` parity bumped to `v4.8.1`.** `core.Version` (v4) is now
+  `4.8.1`. The v4.8.0/v4.8.1 upstream changes not reflected here are
+  Python-internal (orjson support, representation providers,
+  `get_current_transport`) and have no Go equivalent.
+- **Pre-commit hook now checks both Go modules.** `scripts/install-hooks.sh`
+  previously ran `go fmt`/`go vet`/`go test` only from the repo root (the v3
+  module); it now iterates over both the root (v3) and `v4/` modules.
 
 ### Fixed
 - **Version constants now report the true parity point.** The `core.Version`
   constant (and `pkg.Version` in the v3 module) previously read `4.4.0` in both
-  modules. Corrected to `3.65.0` (v3 module, final v3 line) and `4.5.0` (v4
-  module, its verified current parity). `UserAgent()` now reports the correct
-  version.
-
-### Notes
-- Upstream Python globus-sdk has released v4.6.0–v4.8.1. The wire-visible gap
-  (Flows registered-APIs, Transfer bookmark management) is tracked for a
-  follow-up release; the v4.8.0/v4.8.1 changes are Python-internal (orjson,
-  transport representation providers) with no Go equivalent.
+  modules. Corrected to `3.65.0` (v3 module, final v3 line) and, with this
+  release, `4.8.1` (v4 module). `UserAgent()` now reports the correct version.
 
 ## [4.5.0-2] - 2026-04-03
 

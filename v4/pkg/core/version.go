@@ -11,9 +11,9 @@ import (
 // Version is the current version of the Globus Go SDK v4.
 //
 // This tracks feature parity with the upstream Python globus-sdk. The v4 module
-// currently implements the API surface of Python globus-sdk v4.5.0. See
+// currently implements the API surface of Python globus-sdk v4.8.1. See
 // .github/upstream-versions.json for the ported-vs-seen parity tracking.
-const Version = "4.5.0"
+const Version = "4.8.1"
 
 // VersionInfo provides additional info about the build
 type VersionInfo struct {
