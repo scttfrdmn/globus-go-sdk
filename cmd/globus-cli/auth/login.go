@@ -17,6 +17,7 @@ import (
 
 	"github.com/pkg/browser"
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg"
+	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"
 )
 
 // resourceServerEnvVar maps a Globus resource-server name to the environment
@@ -28,6 +29,27 @@ var resourceServerEnvVar = map[string]string{
 	"groups.api.globus.org":   "GLOBUS_TEST_GROUPS_TOKEN",
 	"search.api.globus.org":   "GLOBUS_TEST_SEARCH_TOKEN",
 	"flows.globus.org":        "GLOBUS_TEST_FLOWS_TOKEN",
+}
+
+// newAuthClient builds the SDK auth client for the CLI. If GLOBUS_AUTH_BASE_URL
+// is set, the client's base URL is overridden — used to point the login flow at
+// a local mock auth server for offline testing (see cmd/mock-auth-server).
+func newAuthClient(config *Config) (*auth.Client, error) {
+	sdkConfig := pkg.NewConfig().
+		WithClientID(config.ClientID).
+		WithClientSecret(config.ClientSecret)
+
+	authClient, err := sdkConfig.NewAuthClient()
+	if err != nil {
+		return nil, fmt.Errorf("error creating auth client: %w", err)
+	}
+	if base := os.Getenv("GLOBUS_AUTH_BASE_URL"); base != "" {
+		if !strings.HasSuffix(base, "/") {
+			base += "/"
+		}
+		authClient.Client.BaseURL = base
+	}
+	return authClient, nil
 }
 
 // Config holds the CLI configuration
@@ -220,13 +242,9 @@ func LoginCommand(args []string) error {
 	}
 
 	// Generate the authorization URL
-	sdkConfig := pkg.NewConfig().
-		WithClientID(config.ClientID).
-		WithClientSecret(config.ClientSecret)
-
-	authClient, err := sdkConfig.NewAuthClient()
+	authClient, err := newAuthClient(config)
 	if err != nil {
-		return fmt.Errorf("error creating auth client: %w", err)
+		return err
 	}
 
 	// Use all scopes to make the login useful for all commands
@@ -365,14 +383,9 @@ func generateRandomState() (string, error) {
 // exchangeCodeForToken exchanges an authorization code for the primary token
 // and any additional per-resource-server tokens (other_tokens).
 func exchangeCodeForToken(config *Config, code string) (*TokenInfo, []*TokenInfo, error) {
-	// Create SDK configuration
-	sdkConfig := pkg.NewConfig().
-		WithClientID(config.ClientID).
-		WithClientSecret(config.ClientSecret)
-
-	authClient, err := sdkConfig.NewAuthClient()
+	authClient, err := newAuthClient(config)
 	if err != nil {
-		return nil, nil, fmt.Errorf("error creating auth client: %w", err)
+		return nil, nil, err
 	}
 
 	// Set redirect URL for authorization code exchange
@@ -417,13 +430,9 @@ func tokenInfoFromResponse(access, refresh string, expiresIn int, scope, tokenTy
 // refreshToken refreshes a token
 func refreshToken(config *Config, refreshToken string) (*TokenInfo, error) {
 	// Create SDK configuration
-	sdkConfig := pkg.NewConfig().
-		WithClientID(config.ClientID).
-		WithClientSecret(config.ClientSecret)
-
-	authClient, err := sdkConfig.NewAuthClient()
+	authClient, err := newAuthClient(config)
 	if err != nil {
-		return nil, fmt.Errorf("error creating auth client: %w", err)
+		return nil, err
 	}
 
 	// Refresh the token
@@ -460,13 +469,9 @@ func LogoutCommand(args []string) error {
 	}
 
 	// Create SDK configuration
-	sdkConfig := pkg.NewConfig().
-		WithClientID(config.ClientID).
-		WithClientSecret(config.ClientSecret)
-
-	authClient, err := sdkConfig.NewAuthClient()
+	authClient, err := newAuthClient(config)
 	if err != nil {
-		return fmt.Errorf("error creating auth client: %w", err)
+		return err
 	}
 
 	// Revoke the access token
@@ -568,13 +573,9 @@ func printTokenInfo(token *TokenInfo) error {
 // revokeToken revokes a token
 func revokeToken(config *Config, token *TokenInfo, args []string) error {
 	// Create SDK configuration
-	sdkConfig := pkg.NewConfig().
-		WithClientID(config.ClientID).
-		WithClientSecret(config.ClientSecret)
-
-	authClient, err := sdkConfig.NewAuthClient()
+	authClient, err := newAuthClient(config)
 	if err != nil {
-		return fmt.Errorf("error creating auth client: %w", err)
+		return err
 	}
 
 	// Check which token to revoke
