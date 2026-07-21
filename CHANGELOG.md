@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — Transfer endpoint keywords string/array (both v3 and v4 modules)
+
+Found by dogfooding the Go CLI against live Globus: `endpoint search` failed with
+`cannot unmarshal string into ... keywords of type []string`. The Transfer API
+returns an endpoint's `keywords` as **either** a JSON array or a single
+comma-separated string. `Endpoint.Keywords` is now a `Keywords` type that
+unmarshals both forms into `[]string` (underlying type unchanged, so existing
+`[]string` usage is unaffected).
+
 ### Added — Auth & Groups RBAC/introspection modeling (v4 module; issues #50–#52)
 
 Enhancements requested by the arpeggio portal (RBAC + DUA audit trails):

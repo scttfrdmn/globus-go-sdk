@@ -4,8 +4,39 @@ package transfer
 
 import (
 	"encoding/json"
+	"strings"
 	"time"
 )
+
+// Keywords is a list of endpoint keywords. The Transfer API is inconsistent on
+// the wire: some endpoints return keywords as a JSON array, others as a single
+// comma-separated string. Keywords unmarshals both forms into a []string.
+type Keywords []string
+
+// UnmarshalJSON accepts either ["a","b"] or "a,b".
+func (k *Keywords) UnmarshalJSON(data []byte) error {
+	// Try an array first.
+	var arr []string
+	if err := json.Unmarshal(data, &arr); err == nil {
+		*k = arr
+		return nil
+	}
+	// Fall back to a comma-separated string.
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	if s == "" {
+		*k = nil
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	for i := range parts {
+		parts[i] = strings.TrimSpace(parts[i])
+	}
+	*k = parts
+	return nil
+}
 
 const (
 	// SyncLevel constants define how to synchronize files
@@ -30,7 +61,7 @@ type Endpoint struct {
 	OwnerID                string                 `json:"owner_id"`
 	Organization           string                 `json:"organization,omitempty"`
 	Department             string                 `json:"department,omitempty"`
-	Keywords               []string               `json:"keywords,omitempty"`
+	Keywords               Keywords               `json:"keywords,omitempty"`
 	ContactEmail           string                 `json:"contact_email,omitempty"`
 	ContactInfo            string                 `json:"contact_info,omitempty"`
 	Public                 bool                   `json:"public"`

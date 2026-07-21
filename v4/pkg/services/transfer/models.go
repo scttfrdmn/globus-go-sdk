@@ -2,7 +2,39 @@
 // SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors
 package transfer
 
-import "time"
+import (
+	"encoding/json"
+	"strings"
+	"time"
+)
+
+// Keywords is a list of endpoint keywords. The Transfer API returns keywords as
+// either a JSON array or a single comma-separated string depending on the
+// endpoint; Keywords unmarshals both into a []string.
+type Keywords []string
+
+// UnmarshalJSON accepts either ["a","b"] or "a,b".
+func (k *Keywords) UnmarshalJSON(data []byte) error {
+	var arr []string
+	if err := json.Unmarshal(data, &arr); err == nil {
+		*k = arr
+		return nil
+	}
+	var s string
+	if err := json.Unmarshal(data, &s); err != nil {
+		return err
+	}
+	if s == "" {
+		*k = nil
+		return nil
+	}
+	parts := strings.Split(s, ",")
+	for i := range parts {
+		parts[i] = strings.TrimSpace(parts[i])
+	}
+	*k = parts
+	return nil
+}
 
 // Endpoint represents a Globus Transfer endpoint
 type Endpoint struct {
@@ -14,7 +46,7 @@ type Endpoint struct {
 	Description          string    `json:"description,omitempty"`
 	Organization         string    `json:"organization,omitempty"`
 	Department           string    `json:"department,omitempty"`
-	Keywords             []string  `json:"keywords,omitempty"`
+	Keywords             Keywords  `json:"keywords,omitempty"`
 	MyEffectiveRoles     []string  `json:"my_effective_roles,omitempty"`
 	SubscriptionID       string    `json:"subscription_id,omitempty"`
 	NetworkUse           string    `json:"network_use,omitempty"`
