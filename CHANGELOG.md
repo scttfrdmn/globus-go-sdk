@@ -10,6 +10,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — GCSv5 endpoint fields + token session_info (v4 module)
+
+Requested by the Go CLI to unblock `collection`/`gcs` and `session` commands.
+Wire details verified against docs.globus.org (Transfer endpoint/collection
+fields; Auth token introspection `session_info`):
+
+- **transfer**: `Endpoint` gained the Globus Connect Server v5 fields the
+  Transfer API returns — `gcs_manager_url` (the base URL of the endpoint's GCS
+  Manager API, needed to construct a `gcs.CollectionClient` from an endpoint
+  ID), plus `gcs_version`, `https_server`, `tlsftp_server`, `host_endpoint_id`,
+  `non_functional_endpoint_id`, `mapped_collection_id`,
+  `authentication_policy_id`, `authentication_timeout_mins`. Null/empty for
+  non-GCSv5 entities.
+- **auth**: `TokenIntrospection` gained `SessionInfo` (`session_info`),
+  populated with `include=session_info` — `session_id` plus an
+  `authentications` map of identity ID → `{auth_time, idp, acr, amr}`. This is
+  the data behind a `session show` CLI command. (`IntrospectToken` already
+  forwards the `include` option, so no client change was needed.)
+
 ### Fixed — Transfer endpoint keywords string/array (both v3 and v4 modules)
 
 Found by dogfooding the Go CLI against live Globus: `endpoint search` failed with

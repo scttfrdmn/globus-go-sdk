@@ -37,6 +37,34 @@ type TokenIntrospection struct {
 	// IdentitySetDetail holds the full linked-identity records, populated when
 	// include=identity_set_detail — avoiding a second GetIdentities round trip.
 	IdentitySetDetail []Identity `json:"identity_set_detail,omitempty"`
+	// SessionInfo describes the Globus Auth session the token derives from,
+	// populated when include=session_info. Used to answer "which identities have
+	// authenticated in this session and when" (the basis for `session show`).
+	SessionInfo *SessionInfo `json:"session_info,omitempty"`
+}
+
+// SessionInfo is the session detail returned by token introspection when
+// include=session_info is requested. See the Globus Auth Sessions guide.
+type SessionInfo struct {
+	// SessionID is the session's UUID.
+	SessionID string `json:"session_id,omitempty"`
+	// Authentications maps an identity ID (UUID) to when and how that identity
+	// last authenticated in this session.
+	Authentications map[string]SessionAuthentication `json:"authentications,omitempty"`
+}
+
+// SessionAuthentication records a single identity's authentication within a
+// session.
+type SessionAuthentication struct {
+	// AuthTime is the Unix timestamp of the authentication.
+	AuthTime int64 `json:"auth_time"`
+	// IDP is the UUID of the identity provider used.
+	IDP string `json:"idp,omitempty"`
+	// ACR is the Authentication Context Class Reference (e.g. an MFA profile
+	// URL), when present.
+	ACR string `json:"acr,omitempty"`
+	// AMR lists the Authentication Methods References (e.g. ["mfa"]).
+	AMR []string `json:"amr,omitempty"`
 }
 
 // TokenResponse represents an OAuth2 token response. When a single token request

@@ -54,6 +54,21 @@ type Endpoint struct {
 	PreferredConcurrency int       `json:"preferred_concurrency,omitempty"`
 	Created              time.Time `json:"creation_time"`
 	LastModified         time.Time `json:"last_modified_time,omitempty"`
+
+	// Globus Connect Server v5 fields. Populated for GCSv5 endpoints and
+	// collections; null/empty for other entity types. GCSManagerURL is the base
+	// URL of the endpoint's GCS Manager API, needed to construct a
+	// gcs.CollectionClient. See docs.globus.org Transfer endpoint/collection
+	// fields.
+	GCSManagerURL             string `json:"gcs_manager_url,omitempty"`
+	GCSVersion                string `json:"gcs_version,omitempty"`
+	HTTPSServer               string `json:"https_server,omitempty"`
+	TLSFTPServer              string `json:"tlsftp_server,omitempty"`
+	HostEndpointID            string `json:"host_endpoint_id,omitempty"`
+	NonFunctionalEndpointID   string `json:"non_functional_endpoint_id,omitempty"`
+	MappedCollectionID        string `json:"mapped_collection_id,omitempty"`
+	AuthenticationPolicyID    string `json:"authentication_policy_id,omitempty"`
+	AuthenticationTimeoutMins int    `json:"authentication_timeout_mins,omitempty"`
 }
 
 // EndpointList represents a paginated list of endpoints

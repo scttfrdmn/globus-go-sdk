@@ -76,6 +76,33 @@ func TestGetEndpoint(t *testing.T) {
 		require.True(t, ok)
 		assert.True(t, apiErr.IsNotFound())
 	})
+
+	t.Run("GCSv5 fields decode", func(t *testing.T) {
+		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			testhelpers.RespondJSON(w, http.StatusOK, map[string]interface{}{
+				"id":                          "gcs-ep",
+				"display_name":                "GCSv5 Collection",
+				"gcs_manager_url":             "https://gcs.example.org",
+				"gcs_version":                 "5.4.0",
+				"https_server":                "https://gcs.example.org:443",
+				"host_endpoint_id":            "host-uuid",
+				"mapped_collection_id":        "mapped-uuid",
+				"authentication_timeout_mins": 30,
+			})
+		})
+		client, err := transfer.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
+		require.NoError(t, err)
+		defer client.Close()
+
+		ep, err := client.GetEndpoint(context.Background(), "gcs-ep")
+		require.NoError(t, err)
+		assert.Equal(t, "https://gcs.example.org", ep.GCSManagerURL)
+		assert.Equal(t, "5.4.0", ep.GCSVersion)
+		assert.Equal(t, "https://gcs.example.org:443", ep.HTTPSServer)
+		assert.Equal(t, "host-uuid", ep.HostEndpointID)
+		assert.Equal(t, "mapped-uuid", ep.MappedCollectionID)
+		assert.Equal(t, 30, ep.AuthenticationTimeoutMins)
+	})
 }
 
 func TestSubmitTransfer(t *testing.T) {
