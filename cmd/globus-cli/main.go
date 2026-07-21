@@ -52,7 +52,7 @@ func main() {
 		{
 			Name:        "token",
 			Description: "Display or manage tokens",
-			Usage:       "globus-cli token [info|revoke] [token]",
+			Usage:       "globus-cli token [info|revoke|export-env] [token]",
 			Execute:     auth.TokenCommand,
 		},
 		{

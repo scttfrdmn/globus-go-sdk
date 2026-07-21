@@ -95,6 +95,21 @@ check-test-creds:
 	fi
 	@echo "Globus test credentials detected."
 
+# Interactive-login integration tests. Logs in via globus-cli (browser/device
+# flow), which stores a token per resource server, then exports those as
+# GLOBUS_TEST_<SVC>_TOKEN and runs the tagged suite. Use this instead of
+# test-integration when you want user-token coverage (transfer/groups/search/
+# flows) rather than client-credentials. compute/auth/timers still use client
+# credentials, so GLOBUS_TEST_CLIENT_ID/SECRET remain useful here too.
+.PHONY: test-integration-login
+test-integration-login:
+	@echo "Logging in via globus-cli (a browser window will open)..."
+	$(GO) run ./cmd/globus-cli login
+	@echo "Exporting per-resource-server tokens and running integration tests..."
+	eval "$$($(GO) run ./cmd/globus-cli token export-env)" && \
+		$(GO) test -v -tags=integration -count=1 ./... && \
+		cd v4 && $(GO) test -v -tags=integration -count=1 ./...
+
 .PHONY: clean
 clean:
 	$(GO) clean
@@ -153,6 +168,7 @@ help:
 	@echo "  test-shell         - Run shell script tests"
 	@echo "  test-coverage      - Run tests with coverage report"
 	@echo "  test-integration   - Run credentialed integration tests (needs .env.test or GLOBUS_TEST_CLIENT_ID/SECRET)"
+	@echo "  test-integration-login - Interactive globus-cli login, then run integration tests with user tokens"
 	@echo "  check-test-creds   - Preflight that Globus test credentials are present"
 	@echo "  security-scan      - Run security scanning tools"
 	@echo "  install-bats       - Install BATS testing framework"
