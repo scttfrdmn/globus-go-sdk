@@ -16,21 +16,27 @@ type UserInfo struct {
 
 // TokenIntrospection represents the result of token introspection
 type TokenIntrospection struct {
-	Active      bool     `json:"active"`
-	Scope       string   `json:"scope,omitempty"`
-	ClientID    string   `json:"client_id,omitempty"`
-	Username    string   `json:"username,omitempty"`
-	TokenType   string   `json:"token_type,omitempty"`
-	Exp         int64    `json:"exp,omitempty"`
-	Iat         int64    `json:"iat,omitempty"`
-	Nbf         int64    `json:"nbf,omitempty"`
-	Sub         string   `json:"sub,omitempty"`
-	Aud         []string `json:"aud,omitempty"`
-	Iss         string   `json:"iss,omitempty"`
-	Jti         string   `json:"jti,omitempty"`
-	Name        string   `json:"name,omitempty"`
-	Email       string   `json:"email,omitempty"`
-	IdentitySet []string `json:"identity_set,omitempty"` // populated when include=identity_set
+	Active       bool     `json:"active"`
+	Scope        string   `json:"scope,omitempty"`
+	ClientID     string   `json:"client_id,omitempty"`
+	Username     string   `json:"username,omitempty"`
+	TokenType    string   `json:"token_type,omitempty"`
+	Exp          int64    `json:"exp,omitempty"`
+	Iat          int64    `json:"iat,omitempty"`
+	Nbf          int64    `json:"nbf,omitempty"`
+	Sub          string   `json:"sub,omitempty"`
+	Aud          []string `json:"aud,omitempty"`
+	Iss          string   `json:"iss,omitempty"`
+	Jti          string   `json:"jti,omitempty"`
+	Name         string   `json:"name,omitempty"`
+	Email        string   `json:"email,omitempty"`
+	Organization string   `json:"organization,omitempty"`
+	// IdentitySet holds the linked identity UUIDs, populated when
+	// include=identity_set.
+	IdentitySet []string `json:"identity_set,omitempty"`
+	// IdentitySetDetail holds the full linked-identity records, populated when
+	// include=identity_set_detail — avoiding a second GetIdentities round trip.
+	IdentitySetDetail []Identity `json:"identity_set_detail,omitempty"`
 }
 
 // TokenResponse represents an OAuth2 token response. When a single token request

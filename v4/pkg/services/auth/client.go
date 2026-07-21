@@ -55,6 +55,13 @@ func (c *Client) GetUserInfo(ctx context.Context) (*UserInfo, error) {
 // the OAuth2 introspection spec. Pass opts.Include (e.g. "identity_set") to
 // request extra fields; opts may be nil.
 // v4: Context is always first parameter
+// IntrospectToken introspects an OAuth2 token (POST /oauth2/token/introspect).
+//
+// This endpoint authenticates the *client*, not a user. A confidential client
+// must construct the auth Client with a client-authenticating authorizer —
+// authorizers.NewBasicAuthAuthorizer(clientID, clientSecret) — so the request
+// carries "Authorization: Basic base64(id:secret)" as RFC 7662 requires. A
+// user Bearer token is not accepted here.
 func (c *Client) IntrospectToken(ctx context.Context, token string, opts *IntrospectOptions) (*TokenIntrospection, error) {
 	if token == "" {
 		return nil, &core.ValidationError{

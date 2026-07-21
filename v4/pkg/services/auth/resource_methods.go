@@ -380,6 +380,11 @@ func (c *Client) GetConsents(ctx context.Context, identityID string, all bool) (
 
 // GetDependentTokens performs the dependent-token grant (POST /oauth2/token),
 // returning one token per dependent resource server.
+//
+// Like introspection, this grant authenticates the *client*. A confidential
+// client must construct the auth Client with
+// authorizers.NewBasicAuthAuthorizer(clientID, clientSecret) so the request is
+// client-authenticated via HTTP Basic auth.
 func (c *Client) GetDependentTokens(ctx context.Context, token string, opts *DependentTokensOptions) ([]DependentTokenInfo, error) {
 	if token == "" {
 		return nil, &core.ValidationError{Field: "token", Message: "token is required"}

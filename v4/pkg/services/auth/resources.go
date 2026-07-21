@@ -13,6 +13,9 @@ type Identity struct {
 	Organization     string `json:"organization"`
 	IdentityProvider string `json:"identity_provider"`
 	Status           string `json:"status"`
+	// IdentityType distinguishes a login identity from a linked identity
+	// ("login" vs "link"), returned by GetIdentities and in identity_set_detail.
+	IdentityType string `json:"identity_type,omitempty"`
 }
 
 // IdentityProvider represents a Globus Auth identity provider.
@@ -218,7 +221,10 @@ type DependentTokenInfo struct {
 
 // IntrospectOptions carries optional parameters for IntrospectToken.
 type IntrospectOptions struct {
-	Include string // e.g. "identity_set"
+	// Include is the comma-separated introspection include set, e.g.
+	// "identity_set" (UUIDs, into IdentitySet) or "identity_set_detail" (full
+	// records, into IdentitySetDetail).
+	Include string
 }
 
 // GetIdentitiesOptions controls GetIdentities. Usernames and IDs are mutually

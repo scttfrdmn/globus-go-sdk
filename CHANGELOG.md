@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — Auth & Groups RBAC/introspection modeling (v4 module; issues #50–#52)
+
+Enhancements requested by the arpeggio portal (RBAC + DUA audit trails):
+
+- **groups #50**: `Group` gained `MyMemberships []Member` (`my_memberships`), and
+  `GetMyGroupsWithOptions(ctx, *GetMyGroupsOptions)` sends `include=my_memberships`
+  so the caller's **role** (member/manager/admin) is recoverable — previously the
+  Group-level `IsGroupAdmin`/`IsMember` bools collapsed manager into member.
+- **auth #51**: `TokenIntrospection` gained `Organization` and
+  `IdentitySetDetail []Identity` (`include=identity_set_detail`, full linked-identity
+  records inline — no second `GetIdentities` call); `Identity` gained
+  `IdentityType` (login vs link).
+- **auth #52**: added `authorizers.NewBasicAuthAuthorizer(clientID, clientSecret)`
+  for HTTP Basic client authentication, and documented on `IntrospectToken`/
+  `GetDependentTokens` that a confidential client must use it (those endpoints
+  authenticate the client per RFC 7662, not a user Bearer token).
+
 ### Fixed (v4 module — `github.com/scttfrdmn/globus-go-sdk/v4`)
 
 Core wire-fidelity fixes from the Phase 2 parity audit against Python
