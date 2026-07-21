@@ -3,20 +3,19 @@
 
 SHELL := /bin/bash
 GO := go
-GOPATH := $(shell go env GOPATH)
-GOBIN := $(GOPATH)/bin
-GOLANGCILINT := $(GOBIN)/golangci-lint
-GOIMPORTS := $(GOBIN)/goimports
-GOCOV := $(GOBIN)/gocov
-GOCOVXML := $(GOBIN)/gocov-xml
-STATICCHECK := $(GOBIN)/staticcheck
+# GOBIN is resolved at recipe time and always quoted in shell commands, since the
+# path may contain spaces (e.g. "/Volumes/External HD/go/bin"). Do NOT use
+# $(GOBIN)/tool as a make target or prerequisite — Make splits paths on spaces,
+# which corrupts the target graph. Tools are installed via phony ensure-* targets
+# and invoked by bare command name (GOBIN is on PATH after `go install`).
+GOBIN := $(shell go env GOPATH)/bin
 PRE_COMMIT := $(shell which pre-commit)
 
 .PHONY: all
 all: lint staticcheck lint-shell test
 
 .PHONY: setup
-setup: $(GOLANGCILINT) $(GOIMPORTS) $(GOCOV) $(GOCOVXML) $(STATICCHECK) setup-pre-commit install-bats
+setup: ensure-golangci-lint ensure-goimports ensure-gocov ensure-gocov-xml ensure-staticcheck setup-pre-commit install-bats
 	$(GO) mod download
 
 .PHONY: setup-pre-commit
@@ -27,28 +26,41 @@ setup-pre-commit:
 	fi
 	pre-commit install
 
-$(GOLANGCILINT):
-	curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(GOBIN) latest
+# ensure-* targets install a tool only if it is not already on PATH. Using
+# `command -v` (not a file-path target) sidesteps the spaces-in-GOBIN problem.
+.PHONY: ensure-golangci-lint
+ensure-golangci-lint:
+	@command -v golangci-lint >/dev/null 2>&1 || \
+		curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b "$(GOBIN)" latest
 
-$(GOIMPORTS):
-	$(GO) install golang.org/x/tools/cmd/goimports@latest
+.PHONY: ensure-goimports
+ensure-goimports:
+	@command -v goimports >/dev/null 2>&1 || $(GO) install golang.org/x/tools/cmd/goimports@latest
 
-$(GOCOV):
-	$(GO) install github.com/axw/gocov/gocov@latest
+.PHONY: ensure-gocov
+ensure-gocov:
+	@command -v gocov >/dev/null 2>&1 || $(GO) install github.com/axw/gocov/gocov@latest
 
-$(GOCOVXML):
-	$(GO) install github.com/AlekSi/gocov-xml@latest
+.PHONY: ensure-gocov-xml
+ensure-gocov-xml:
+	@command -v gocov-xml >/dev/null 2>&1 || $(GO) install github.com/AlekSi/gocov-xml@latest
 
-$(STATICCHECK):
-	$(GO) install honnef.co/go/tools/cmd/staticcheck@latest
+.PHONY: ensure-staticcheck
+ensure-staticcheck:
+	@command -v staticcheck >/dev/null 2>&1 || $(GO) install honnef.co/go/tools/cmd/staticcheck@latest
+
+# tool resolves a tool name to an invokable path: the one on PATH if present,
+# else the (quoted) copy in GOBIN. Handles GOBIN not being on PATH and spaces in
+# the GOBIN path. Usage in a recipe: $$($(call tool,staticcheck)) ./...
+tool = command -v $(1) 2>/dev/null || printf '%s' "$(GOBIN)/$(1)"
 
 .PHONY: lint
-lint: $(GOLANGCILINT)
-	$(GOLANGCILINT) run --config .golangci.yml
+lint: ensure-golangci-lint
+	"$$($(call tool,golangci-lint))" run --config .golangci.yml
 
 .PHONY: fmt
-fmt: $(GOIMPORTS)
-	$(GOIMPORTS) -w .
+fmt: ensure-goimports
+	"$$($(call tool,goimports))" -w .
 	$(GO) fmt ./...
 
 .PHONY: vet
@@ -56,18 +68,18 @@ vet:
 	$(GO) vet ./...
 
 .PHONY: staticcheck
-staticcheck: $(STATICCHECK)
-	$(STATICCHECK) ./...
+staticcheck: ensure-staticcheck
+	"$$($(call tool,staticcheck))" ./...
 
 .PHONY: test
 test:
 	$(GO) test -race ./...
 
 .PHONY: test-coverage
-test-coverage: $(GOCOV) $(GOCOVXML)
+test-coverage: ensure-gocov ensure-gocov-xml
 	$(GO) test -race -coverprofile=coverage.txt -covermode=atomic ./...
-	$(GOCOV) convert coverage.txt > coverage.json
-	$(GOCOVXML) < coverage.json > coverage.xml
+	"$$($(call tool,gocov))" convert coverage.txt > coverage.json
+	"$$($(call tool,gocov-xml))" < coverage.json > coverage.xml
 	$(GO) tool cover -html=coverage.txt -o coverage.html
 
 # Credentialed integration tests against the live Globus API.
