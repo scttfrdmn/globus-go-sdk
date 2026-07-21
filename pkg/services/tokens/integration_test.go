@@ -224,11 +224,13 @@ func TestTokenManagerFunctionalOptions(t *testing.T) {
 			expectError: false,
 		},
 		{
-			name:    "Missing required options",
+			// NewManager defaults to in-memory storage, so no options is valid
+			// and yields a manager backed by MemoryStorage (no refresh handler).
+			name:    "No options uses default in-memory storage",
 			options: []ClientOption{
 				// No storage or refresh handler
 			},
-			expectError: true,
+			expectError: false,
 		},
 	}
 
@@ -247,8 +249,10 @@ func TestTokenManagerFunctionalOptions(t *testing.T) {
 				t.Fatalf("Failed to create token manager: %v", err)
 			}
 
-			// Verify the manager was created with correct options
-			if manager.RefreshHandler != authClient && !tc.expectError && tc.name != "Missing required options" {
+			// Verify the manager was created with correct options. The
+			// default-storage case sets no auth client, so skip the
+			// refresh-handler check there.
+			if manager.RefreshHandler != authClient && !tc.expectError && tc.name != "No options uses default in-memory storage" {
 				t.Errorf("RefreshHandler not set correctly")
 			}
 
