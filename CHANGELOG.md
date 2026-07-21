@@ -10,6 +10,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — GCS manage_collections endpoint scope helper (v4 module)
+
+`gcs.EndpointManageCollectionsScope(endpointID)` returns the endpoint's
+`urn:globus:auth:scope:<endpoint_id>:manage_collections` scope, required for GCS
+Manager management operations (list/create/delete collections, storage gateways,
+roles, user credentials). The existing `CollectionScopes` only covered the
+collection data-plane scopes (`https`/`data_access`, URL format); management
+needs this endpoint scope in URN format. Verified against globus-sdk-python
+`GCSEndpointScopes`/`GCSCollectionScopes`.
+
 ### Added — GCSv5 endpoint fields + token session_info (v4 module)
 
 Requested by the Go CLI to unblock `collection`/`gcs` and `session` commands.

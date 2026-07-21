@@ -239,8 +239,21 @@ type UserCredentialListOptions struct {
 // CollectionScopes returns the standard Globus scope strings for a collection.
 // HTTPS scope is required for data-plane file access.
 // DataAccess scope is required for transfer task submission to the collection.
+//
+// These are "collection" scopes in URL format, keyed by the collection ID (the
+// data-access resource server). See globus-sdk-python GCSCollectionScopes.
 func CollectionScopes(collectionID string) (https, dataAccess string) {
 	https = fmt.Sprintf("https://auth.globus.org/scopes/%s/https", collectionID)
 	dataAccess = fmt.Sprintf("https://auth.globus.org/scopes/%s/data_access", collectionID)
 	return
+}
+
+// EndpointManageCollectionsScope returns the GCS endpoint's manage_collections
+// scope, required for management operations against the GCS Manager API
+// (listing/creating/deleting collections, storage gateways, roles, and user
+// credentials). Unlike the collection data-plane scopes, this is an endpoint
+// scope in Globus Auth URN format, keyed by the endpoint ID. See
+// globus-sdk-python GCSEndpointScopes.
+func EndpointManageCollectionsScope(endpointID string) string {
+	return fmt.Sprintf("urn:globus:auth:scope:%s:manage_collections", endpointID)
 }
