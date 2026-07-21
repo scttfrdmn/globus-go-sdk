@@ -77,8 +77,13 @@ func (m *Manager) GetToken(ctx context.Context, resource string) (*Entry, error)
 		return entry, nil
 	}
 
-	// If the token can't be refreshed, return it as-is (it might be valid but close to expiry)
+	// If the token can't be refreshed, return it as-is when it is merely close to
+	// expiry (still valid), but error when it has actually expired — a caller
+	// cannot do anything useful with a known-expired, non-refreshable token.
 	if !entry.TokenSet.CanRefresh() {
+		if entry.TokenSet.IsExpired() {
+			return nil, fmt.Errorf("token for resource %q is expired and has no refresh token", resource)
+		}
 		return entry, nil
 	}
 

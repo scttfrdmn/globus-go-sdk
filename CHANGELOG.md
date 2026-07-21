@@ -23,6 +23,14 @@ globus-sdk v4.8.1 (both bugs affected every service):
   `application/x-www-form-urlencoded` (required by the OAuth2
   token/introspect/revoke endpoints); previously it JSON-marshalled every body.
 
+### Changed — Tokens (v3 module — `github.com/scttfrdmn/globus-go-sdk/v3`)
+
+- `tokens.Manager.GetToken` now returns an error when a token is **expired and
+  has no refresh token**, instead of returning the dead token. A token that is
+  merely close to expiry (still valid) with no refresh token is still returned
+  as-is. This is a behavior change for callers that relied on receiving an
+  expired, non-refreshable token back.
+
 ### Fixed — Compute non-object responses (both v3 and v4 modules)
 
 **Breaking** for two compute methods, in both modules:

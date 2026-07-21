@@ -211,36 +211,46 @@ func TestGetTokenCannotRefresh(t *testing.T) {
 		t.Fatalf("Failed to create token manager: %v", err)
 	}
 
-	// Store an expired token without a refresh token
-	noRefreshEntry := &Entry{
-		Resource: "no-refresh",
+	// A token that is close to expiry (within the refresh threshold) but not yet
+	// expired and has no refresh token is returned as-is — it is still usable.
+	nearExpiryEntry := &Entry{
+		Resource: "near-expiry-no-refresh",
+		TokenSet: &TokenSet{
+			AccessToken: "near-expiry-access-token",
+			// No refresh token; expires soon but still valid now.
+			ExpiresAt: time.Now().Add(5 * time.Minute),
+			Scope:     "test-scope",
+		},
+	}
+	if err = storage.Store(nearExpiryEntry); err != nil {
+		t.Fatalf("Failed to store token: %v", err)
+	}
+
+	entry, err := manager.GetToken(ctx, "near-expiry-no-refresh")
+	if err != nil {
+		t.Errorf("Unexpected error for near-expiry non-refreshable token: %v", err)
+	}
+	if entry == nil || entry.TokenSet.AccessToken != "near-expiry-access-token" {
+		t.Error("Expected the near-expiry token to be returned as-is")
+	}
+
+	// A fully expired token with no refresh token cannot be refreshed and is not
+	// usable, so GetToken must return an error rather than the dead token.
+	expiredEntry := &Entry{
+		Resource: "expired-no-refresh",
 		TokenSet: &TokenSet{
 			AccessToken: "expired-access-token",
-			// No refresh token
+			// No refresh token; already expired.
 			ExpiresAt: time.Now().Add(-1 * time.Hour),
 			Scope:     "test-scope",
 		},
 	}
-
-	err = storage.Store(noRefreshEntry)
-	if err != nil {
+	if err = storage.Store(expiredEntry); err != nil {
 		t.Fatalf("Failed to store token: %v", err)
 	}
 
-	// Get the token, which should return the expired token (implementation doesn't error here)
-	entry, err := manager.GetToken(ctx, "no-refresh")
-	if err != nil {
-		t.Errorf("Unexpected error: %v", err)
-	}
-
-	// Verify the token is still expired
-	if !entry.TokenSet.IsExpired() {
-		t.Error("Expected token to be expired")
-	}
-
-	// Verify it's the same token
-	if entry.TokenSet.AccessToken != "expired-access-token" {
-		t.Errorf("Expected original token, got %s", entry.TokenSet.AccessToken)
+	if _, err = manager.GetToken(ctx, "expired-no-refresh"); err == nil {
+		t.Error("Expected error for expired non-refreshable token, got nil")
 	}
 }
 

@@ -403,16 +403,10 @@ func TestGetTokenWithExpiredTokenIntegration(t *testing.T) {
 		t.Fatalf("Failed to store token: %v", err)
 	}
 
-	// Getting an expired, non-refreshable token returns it as-is (no error):
-	// Manager.GetToken deliberately returns a token it cannot refresh rather
-	// than erroring (see manager.go — "return it as-is"). Callers are expected
-	// to check expiry themselves. This asserts that documented behavior.
-	entry, err := manager.GetToken(ctx, "expired-no-refresh")
-	if err != nil {
-		t.Fatalf("GetToken on an expired non-refreshable token should not error, got: %v", err)
-	}
-	if entry == nil || !entry.TokenSet.IsExpired() {
-		t.Error("expected the (still-expired) stored token to be returned as-is")
+	// Getting an expired token with no refresh token must error: the manager
+	// cannot refresh it and a known-expired token is not usable.
+	if _, err = manager.GetToken(ctx, "expired-no-refresh"); err == nil {
+		t.Error("Expected error when getting expired token without refresh token, but got nil")
 	}
 }
 
