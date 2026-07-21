@@ -314,3 +314,15 @@ func TestClose(t *testing.T) {
 	assert.NoError(t, client.Close())
 	assert.NoError(t, client.Close())
 }
+
+// TestScopeHelpers verifies the collection (URL-format) and endpoint
+// (URN-format) scope strings, matching globus-sdk-python's GCSCollectionScopes
+// and GCSEndpointScopes.
+func TestScopeHelpers(t *testing.T) {
+	https, dataAccess := gcs.CollectionScopes("col-123")
+	assert.Equal(t, "https://auth.globus.org/scopes/col-123/https", https)
+	assert.Equal(t, "https://auth.globus.org/scopes/col-123/data_access", dataAccess)
+
+	manage := gcs.EndpointManageCollectionsScope("ep-456")
+	assert.Equal(t, "urn:globus:auth:scope:ep-456:manage_collections", manage)
+}
