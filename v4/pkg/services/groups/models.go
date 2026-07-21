@@ -24,6 +24,11 @@ type Group struct {
 	// Memberships is populated only when a group is fetched with
 	// include=memberships; the Groups API has no separate members endpoint.
 	Memberships []Member `json:"memberships,omitempty"`
+	// MyMemberships holds the caller's own membership(s) in the group, populated
+	// only with include=my_memberships. Each entry carries the caller's Role
+	// (member/manager/admin) — the only way to distinguish manager from member,
+	// since the Group-level IsGroupAdmin/IsMember bools cannot.
+	MyMemberships []Member `json:"my_memberships,omitempty"`
 }
 
 // GroupCreate represents the data needed to create a new group
@@ -55,6 +60,15 @@ type GroupUpdate struct {
 // allowed_actions, child_ids).
 type GetGroupOptions struct {
 	Include []string
+}
+
+// GetMyGroupsOptions controls GetMyGroupsWithOptions. Statuses filters by
+// membership status; Include is comma-joined into the `include` query param.
+// Use include=my_memberships to populate each group's MyMemberships (and thus
+// the caller's role).
+type GetMyGroupsOptions struct {
+	Statuses []string
+	Include  []string
 }
 
 // Member represents a group membership entry, as embedded in a group document

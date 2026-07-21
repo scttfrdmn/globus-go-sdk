@@ -74,6 +74,28 @@ func (c *Client) GetMyGroups(ctx context.Context, statuses []string) ([]Group, e
 	return out, nil
 }
 
+// GetMyGroupsWithOptions lists the caller's groups (GET /groups/my_groups) with
+// optional status filtering and includes. Pass Include=["my_memberships"] to
+// populate each returned group's MyMemberships, which carries the caller's role
+// (member/manager/admin) — not derivable from the Group-level bool fields.
+func (c *Client) GetMyGroupsWithOptions(ctx context.Context, opts *GetMyGroupsOptions) ([]Group, error) {
+	query := url.Values{}
+	if opts != nil {
+		if len(opts.Statuses) > 0 {
+			query.Set("statuses", strings.Join(opts.Statuses, ","))
+		}
+		if len(opts.Include) > 0 {
+			query.Set("include", strings.Join(opts.Include, ","))
+		}
+	}
+
+	var out []Group
+	if err := c.baseClient.DoRequest(ctx, http.MethodGet, "/groups/my_groups", query, nil, &out); err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // GetGroupBySubscriptionID looks up the group associated with a subscription
 // (GET /subscription_info/{subscription_id}).
 func (c *Client) GetGroupBySubscriptionID(ctx context.Context, subscriptionID string) (*Group, error) {
