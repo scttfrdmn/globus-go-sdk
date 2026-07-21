@@ -65,7 +65,11 @@ jobs:
         continue-on-error: true  # stdlib TLS vulnerabilities require Go runtime upgrade
 
       - name: Install gosec
-        run: go install github.com/securego/gosec/v2/cmd/gosec@latest
+        # Pin to a version compatible with the Go toolchain above. gosec@latest
+        # raises its Go floor over time (v2.28+ needs Go 1.25), which breaks the
+        # install under GOTOOLCHAIN=local. Bump this alongside the Go version.
+        run: go install github.com/securego/gosec/v2/cmd/gosec@v2.22.0
+        continue-on-error: true  # tooling install issues shouldn't fail the job
 
       - name: Run gosec
         run: gosec -fmt=sarif -out=gosec-results.sarif ./...
