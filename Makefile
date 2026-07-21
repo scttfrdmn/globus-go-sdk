@@ -110,6 +110,14 @@ test-integration-login:
 		$(GO) test -v -tags=integration -count=1 ./... && \
 		cd v4 && $(GO) test -v -tags=integration -count=1 ./...
 
+# Offline smoke test of the login -> other_tokens -> export-env plumbing against
+# the local mock auth server (no network, no real credentials). Verifies login
+# stores a token per resource server and export-env emits the expected
+# GLOBUS_TEST_<SVC>_TOKEN lines.
+.PHONY: test-login-mock
+test-login-mock:
+	@./scripts/test_login_mock.sh
+
 .PHONY: clean
 clean:
 	$(GO) clean
@@ -169,6 +177,7 @@ help:
 	@echo "  test-coverage      - Run tests with coverage report"
 	@echo "  test-integration   - Run credentialed integration tests (needs .env.test or GLOBUS_TEST_CLIENT_ID/SECRET)"
 	@echo "  test-integration-login - Interactive globus-cli login, then run integration tests with user tokens"
+	@echo "  test-login-mock    - Offline smoke test of the login/export-env plumbing (mock auth server)"
 	@echo "  check-test-creds   - Preflight that Globus test credentials are present"
 	@echo "  security-scan      - Run security scanning tools"
 	@echo "  install-bats       - Install BATS testing framework"
