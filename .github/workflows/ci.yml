@@ -212,13 +212,12 @@ jobs:
           go mod verify
 
       - name: Run integration tests
-        run: |
-          if [ "${SKIP_INTEGRATION}" = "true" ]; then
-            echo "Skipping integration tests (SKIP_INTEGRATION=true)"
-            exit 0
-          fi
-          ./scripts/run_integration_tests.sh
+        # The script honors SKIP_INTEGRATION (defaults to skipping) and runs the
+        # -tags=integration suite in both modules against the live Globus API.
+        run: ./scripts/run_integration_tests.sh
         env:
           SKIP_INTEGRATION: ${{ secrets.SKIP_INTEGRATION || 'true' }}
           GLOBUS_TEST_CLIENT_ID: ${{ secrets.GLOBUS_CLIENT_ID }}
           GLOBUS_TEST_CLIENT_SECRET: ${{ secrets.GLOBUS_CLIENT_SECRET }}
+          GLOBUS_TEST_SOURCE_ENDPOINT_ID: ${{ secrets.GLOBUS_TEST_SOURCE_ENDPOINT_ID }}
+          GLOBUS_TEST_DEST_ENDPOINT_ID: ${{ secrets.GLOBUS_TEST_DEST_ENDPOINT_ID }}

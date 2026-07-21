@@ -166,6 +166,10 @@ jobs:
       - name: Run integration tests
         run: ./scripts/run_integration_tests.sh
         env:
-          SKIP_INTEGRATION: ${{ secrets.SKIP_INTEGRATION }}
-          GLOBUS_CLIENT_ID: ${{ secrets.GLOBUS_CLIENT_ID }}
-          GLOBUS_CLIENT_SECRET: ${{ secrets.GLOBUS_CLIENT_SECRET }}
+          # Default to skipping so the job is a no-op unless the repo opts in by
+          # setting SKIP_INTEGRATION=false and providing credentials.
+          SKIP_INTEGRATION: ${{ secrets.SKIP_INTEGRATION || 'true' }}
+          GLOBUS_TEST_CLIENT_ID: ${{ secrets.GLOBUS_CLIENT_ID }}
+          GLOBUS_TEST_CLIENT_SECRET: ${{ secrets.GLOBUS_CLIENT_SECRET }}
+          GLOBUS_TEST_SOURCE_ENDPOINT_ID: ${{ secrets.GLOBUS_TEST_SOURCE_ENDPOINT_ID }}
+          GLOBUS_TEST_DEST_ENDPOINT_ID: ${{ secrets.GLOBUS_TEST_DEST_ENDPOINT_ID }}

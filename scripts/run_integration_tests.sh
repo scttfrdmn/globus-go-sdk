@@ -124,6 +124,13 @@ main() {
   echo -e "${BLUE}        Globus Go SDK Integration Test Runner${NC}"
   echo -e "${BLUE}=========================================================${NC}"
 
+  # Honor SKIP_INTEGRATION so CI can gate on a secret without duplicating the
+  # check in each workflow. Absent/empty means "do not skip".
+  if [ "${SKIP_INTEGRATION}" = "true" ]; then
+    echo -e "${YELLOW}Skipping integration tests (SKIP_INTEGRATION=true).${NC}"
+    exit 0
+  fi
+
   # Load environment variables from .env.test file if it exists
   load_env_file
   
@@ -146,9 +153,7 @@ main() {
     fi
     
     # Run the credential verification tool
-    cmd/verify-credentials/verify-credentials
-    
-    if [ $? -ne 0 ]; then
+    if ! cmd/verify-credentials/verify-credentials; then
       echo -e "${RED}❌ Credential verification failed. Please check your credentials.${NC}"
       exit 1
     fi
@@ -158,9 +163,12 @@ main() {
   fi
   
   if [ $# -eq 0 ]; then
-    # Run all integration tests
-    echo -e "${BLUE}Running integration tests for ${GREEN}all packages${NC}"
-    go test -v -tags=integration ./...
+    # Run all integration tests in both modules. -count=1 disables the test
+    # cache so a credentialed run always actually hits the live API.
+    echo -e "${BLUE}Running integration tests for ${GREEN}all packages (v3)${NC}"
+    go test -v -tags=integration -count=1 ./...
+    echo -e "${BLUE}Running integration tests for ${GREEN}all packages (v4)${NC}"
+    (cd v4 && go test -v -tags=integration -count=1 ./...)
   elif [ $# -eq 1 ]; then
     # Run tests for a specific package
     run_tests "./$1/..." ""
