@@ -24,6 +24,17 @@ type AuthParams struct {
 
 	// State is an optional CSRF token embedded in the authorization URL.
 	State string
+
+	// Session enforcement parameters (Globus Auth "high assurance" / step-up
+	// auth). When set, they are emitted on the authorization URL so the login
+	// forces re-authentication of specific identities/domains/policies (the
+	// mechanism behind a CLI `session update`). See the Globus Auth Sessions
+	// guide; mirrors the fields on auth.AuthorizationURLOptions.
+	SessionRequiredIdentities   []string // session_required_identities
+	SessionRequiredSingleDomain []string // session_required_single_domain
+	SessionRequiredPolicies     []string // session_required_policies
+	SessionRequiredMFA          bool     // session_required_mfa
+	SessionMessage              string   // session_message
 }
 
 // LoginResult is returned by LoginFlowManager.RunLoginFlow after a successful

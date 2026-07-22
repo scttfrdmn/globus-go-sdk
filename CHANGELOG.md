@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — session enforcement params on the login flow (v4 module)
+
+`login.AuthParams` gained `SessionRequiredIdentities`, `SessionRequiredSingleDomain`,
+`SessionRequiredPolicies`, `SessionRequiredMFA`, and `SessionMessage`, and the
+command-line login flow now emits the corresponding `session_required_*` /
+`session_message` parameters on the authorization URL. This lets a caller force
+step-up re-authentication of specific identities/domains/policies during login —
+the mechanism behind a CLI `session update`. (These params already existed on
+`auth.AuthorizationURLOptions`; this threads them through the login-flow manager.)
+Verified against the `GetAuthorizationURL` param names.
+
 ### Added — GCS manage_collections endpoint scope helper (v4 module)
 
 `gcs.EndpointManageCollectionsScope(endpointID)` returns the endpoint's
