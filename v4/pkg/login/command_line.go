@@ -84,7 +84,7 @@ func (m *CommandLineLoginFlowManager) RunLoginFlow(ctx context.Context, params A
 		redirectURI = params.RedirectURI
 	}
 
-	authURL := m.buildAuthURL(scopes, redirectURI, params.State)
+	authURL := m.buildAuthURL(scopes, redirectURI, params.State, params)
 
 	fmt.Println("Please open the following URL in your browser to authenticate:")
 	fmt.Println()
@@ -108,7 +108,7 @@ func (m *CommandLineLoginFlowManager) RunLoginFlow(ctx context.Context, params A
 }
 
 // buildAuthURL constructs the Globus Auth authorization URL.
-func (m *CommandLineLoginFlowManager) buildAuthURL(scopes []string, redirectURI, state string) string {
+func (m *CommandLineLoginFlowManager) buildAuthURL(scopes []string, redirectURI, state string, params AuthParams) string {
 	q := url.Values{}
 	q.Set("response_type", "code")
 	q.Set("client_id", m.clientID)
@@ -118,6 +118,22 @@ func (m *CommandLineLoginFlowManager) buildAuthURL(scopes []string, redirectURI,
 	}
 	if state != "" {
 		q.Set("state", state)
+	}
+	// Session enforcement (step-up auth) parameters, when requested.
+	if len(params.SessionRequiredIdentities) > 0 {
+		q.Set("session_required_identities", strings.Join(params.SessionRequiredIdentities, ","))
+	}
+	if len(params.SessionRequiredSingleDomain) > 0 {
+		q.Set("session_required_single_domain", strings.Join(params.SessionRequiredSingleDomain, ","))
+	}
+	if len(params.SessionRequiredPolicies) > 0 {
+		q.Set("session_required_policies", strings.Join(params.SessionRequiredPolicies, ","))
+	}
+	if params.SessionRequiredMFA {
+		q.Set("session_required_mfa", "true")
+	}
+	if params.SessionMessage != "" {
+		q.Set("session_message", params.SessionMessage)
 	}
 	return m.authBaseURL + "/v2/oauth2/authorize?" + q.Encode()
 }
