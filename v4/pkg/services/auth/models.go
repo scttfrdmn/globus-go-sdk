@@ -123,10 +123,30 @@ type Project struct {
 	LastUpdated   time.Time      `json:"last_updated"`
 }
 
-// ProjectAdmins is the expanded admins object on a project.
+// ProjectAdmins is the expanded admins object on a project. The Globus Auth
+// Projects API returns identities and groups as arrays of objects (not ID
+// strings); the string ID arrays live on Project.AdminIDs/AdminGroupIDs.
 type ProjectAdmins struct {
-	Identities []string `json:"identities"`
-	Groups     []string `json:"groups"`
+	Identities []ProjectAdminIdentity `json:"identities"`
+	Groups     []ProjectAdminGroup    `json:"groups"`
+}
+
+// ProjectAdminIdentity is an expanded admin identity in ProjectAdmins.Identities.
+type ProjectAdminIdentity struct {
+	ID               string `json:"id"`
+	Username         string `json:"username"`
+	Name             string `json:"name"`
+	Email            string `json:"email"`
+	IdentityProvider string `json:"identity_provider"`
+	IdentityType     string `json:"identity_type"`
+	Organization     string `json:"organization"`
+	Status           string `json:"status"`
+}
+
+// ProjectAdminGroup is an expanded admin group in ProjectAdmins.Groups.
+type ProjectAdminGroup struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
 
 // ProjectCreate is the create-project body (nested under a "project" key on the
