@@ -69,7 +69,11 @@ func (e *APIError) IsServerError() bool {
 	return e.StatusCode >= 500 && e.StatusCode < 600
 }
 
-// NewAPIError creates a new APIError from an HTTP response
+// NewAPIError creates a new APIError from an HTTP response. The message
+// argument is the already-read response body (the caller reads resp.Body to
+// produce it); NewAPIError parses that string for structured fields rather than
+// re-reading resp.Body, which by this point is drained. See issue #63: the old
+// code decoded resp.Body a second time, always hit io.EOF, and left Details nil.
 func NewAPIError(resp *http.Response, message string) *APIError {
 	apiErr := &APIError{
 		StatusCode:   resp.StatusCode,
@@ -78,27 +82,52 @@ func NewAPIError(resp *http.Response, message string) *APIError {
 		HTTPResponse: resp,
 	}
 
-	// Try to parse error response body
-	if resp.Body != nil {
-		var errorBody map[string]interface{}
-		if err := json.NewDecoder(resp.Body).Decode(&errorBody); err == nil {
-			// Extract common error fields
-			if code, ok := errorBody["code"].(string); ok {
-				apiErr.Code = code
+	// Parse the body (passed in as message) for structured error fields.
+	var errorBody map[string]interface{}
+	if err := json.Unmarshal([]byte(message), &errorBody); err == nil {
+		// Extract common top-level error fields.
+		if code, ok := errorBody["code"].(string); ok {
+			apiErr.Code = code
+		}
+		if msg, ok := errorBody["message"].(string); ok && msg != "" {
+			apiErr.Message = msg
+		}
+		if resource, ok := errorBody["resource"].(string); ok {
+			apiErr.Resource = resource
+		}
+
+		// Some Globus errors (e.g. Auth) nest the details under errors[0]
+		// rather than at the top level; fall back to the first sub-error for
+		// code/message when the top-level fields are absent.
+		if sub, ok := firstSubError(errorBody); ok {
+			if apiErr.Code == "" {
+				if code, ok := sub["code"].(string); ok {
+					apiErr.Code = code
+				}
 			}
-			if msg, ok := errorBody["message"].(string); ok && msg != "" {
+			if msg, ok := sub["message"].(string); ok && msg != "" && apiErr.Message == message {
 				apiErr.Message = msg
 			}
-			if resource, ok := errorBody["resource"].(string); ok {
-				apiErr.Resource = resource
-			}
-
-			// Store all additional details
-			apiErr.Details = errorBody
 		}
+
+		// Store the full parsed body for consumers that need nested fields
+		// (e.g. authorization_parameters.session_required_policies).
+		apiErr.Details = errorBody
 	}
 
 	return apiErr
+}
+
+// firstSubError returns the first element of a top-level "errors" array as a
+// map, if present. Globus Auth returns error details in this JSON:API-style
+// shape (`{"errors":[{"code":...,"detail":...}]}`).
+func firstSubError(body map[string]interface{}) (map[string]interface{}, bool) {
+	errs, ok := body["errors"].([]interface{})
+	if !ok || len(errs) == 0 {
+		return nil, false
+	}
+	sub, ok := errs[0].(map[string]interface{})
+	return sub, ok
 }
 
 // ValidationError represents a client-side validation error
