@@ -60,6 +60,21 @@ func (c *Client) GetEndpoint(ctx context.Context, endpointID string) (*Endpoint,
 	return &endpoint, nil
 }
 
+// CreateEndpoint creates an endpoint (POST /v0.10/endpoint). doc is a
+// passthrough endpoint document. Setting "is_globus_connect": true registers a
+// Globus Connect Personal (mapped) endpoint; the response then carries a
+// "globus_connect_setup_key" used to configure an installed GCP agent.
+func (c *Client) CreateEndpoint(ctx context.Context, doc map[string]interface{}) (GenericResponse, error) {
+	if doc == nil {
+		return nil, &core.ValidationError{Field: "doc", Message: "endpoint document is required"}
+	}
+	var resp GenericResponse
+	if err := c.baseClient.DoRequest(ctx, http.MethodPost, "/v0.10/endpoint", nil, doc, &resp); err != nil {
+		return nil, err
+	}
+	return resp, nil
+}
+
 // UpdateEndpoint updates an endpoint (PUT /v0.10/endpoint/{id}). doc is a
 // passthrough endpoint document.
 func (c *Client) UpdateEndpoint(ctx context.Context, endpointID string, doc map[string]interface{}) (GenericResponse, error) {
