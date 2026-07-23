@@ -1,0 +1,32 @@
+# Gitleaks configuration for globus-go-sdk.
+#
+# Extends the default ruleset (real-secret detection stays on) and allowlists
+# known false positives: public client IDs (not secrets), documentation example
+# tokens, and obvious placeholder values. Keep this list tight — do not add
+# blanket file globs that would mask genuine leaks.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Known false positives (public IDs, doc examples, placeholders)"
+
+# Regexes for values that are not secrets.
+regexes = [
+  # The public/native default client ID (a UUID identifying the app, not a credential).
+  '''e6c75d97-532a-4c88-b031-f5a3014430e3''',
+  # Documentation placeholder API keys.
+  '''1234567890abcdef''',
+]
+
+# Paths that only contain illustrative tokens (docs), never real secrets.
+paths = [
+  '''doc/.*\.md''',
+  '''.*_test\.go''',
+]
+
+# Commit-message / example stopwords.
+stopwords = [
+  "example",
+  "placeholder",
+  "dummy",
+]

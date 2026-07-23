@@ -84,17 +84,23 @@ jobs:
           chmod +x gitleaks
           sudo mv gitleaks /usr/local/bin/
           
+      # Uses the repo's .gitleaks.toml (default rules + a tight allowlist for
+      # known false positives: the public client-ID UUID and doc placeholders).
+      # gitleaks exits non-zero only when non-allowlisted secrets are found, so
+      # we rely on its exit code rather than the mere presence of a report.
       - name: Run Gitleaks
         run: |
-          gitleaks detect --report-format json --report-path gitleaks-report.json
-        continue-on-error: true  # Don't fail the build yet
-          
-      - name: Check Gitleaks results
-        run: |
-          if [ -s gitleaks-report.json ]; then
-            echo "Gitleaks found potential secrets in the codebase"
-            cat gitleaks-report.json
-            exit 1
-          else
-            echo "No secrets found by Gitleaks"
-          fi
+          gitleaks detect \
+            --config .gitleaks.toml \
+            --report-format json \
+            --report-path gitleaks-report.json \
+            --redact
+          echo "No non-allowlisted secrets found by Gitleaks"
+
+      - name: Upload Gitleaks report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gitleaks-report
+          path: gitleaks-report.json
+          if-no-files-found: ignore
