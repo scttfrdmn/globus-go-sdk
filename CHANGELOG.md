@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — ProjectAdmins identities/groups decode (v4 module)
+
+The Globus Auth Projects API returns `admins.identities` and `admins.groups` as
+arrays of objects, but `auth.ProjectAdmins` typed both as `[]string`, so any
+project carrying an expanded `admins` object failed to decode (`cannot
+unmarshal object into Go struct field ...identities of type string`). This
+blocked the entire `project` command tree in globus-go-cli right after auth.
+Added `ProjectAdminIdentity` (id/username/name/email/identity_provider/
+identity_type/organization/status) and `ProjectAdminGroup` (id/name), used in
+`ProjectAdmins`. `Project.AdminIDs` (`admin_ids`) is unchanged — that field
+genuinely is a string array. Found via globus-go-cli issue #61.
+
 ### Fixed — login flow now implements PKCE (v4 module)
 
 The command-line login flow performed the OAuth2 authorization-code exchange
