@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — APIError.Details populated from response body (v4 module)
+
+`core.NewAPIError` re-read `resp.Body` to parse `Details`, but the caller had
+already drained it via `io.ReadAll` to build the message argument, so the second
+decode always hit `io.EOF` and `Details` stayed nil (the raw JSON body leaked
+into `Message` instead). This broke every consumer of `Details` — notably
+globus-go-cli's `session_required_policies` retry (globus-go-cli#41), which
+caught the 403 but found `Details["authorization_parameters"]` nil and never
+re-authenticated. `NewAPIError` now parses the body it is passed (rather than
+re-reading `resp.Body`), and also extracts `code`/`message` from `errors[0]` for
+the JSON:API-style nested-error shape Globus Auth returns. Found via
+globus-go-cli issue #63.
+
 ### Fixed — ProjectAdmins identities/groups decode (v4 module)
 
 The Globus Auth Projects API returns `admins.identities` and `admins.groups` as
