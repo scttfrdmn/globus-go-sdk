@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — transfer CreateEndpoint (v4 module)
+
+`transfer.Client.CreateEndpoint(ctx, doc)` does `POST /v0.10/endpoint` with a
+passthrough endpoint document. Setting `"is_globus_connect": true` registers a
+Globus Connect Personal (mapped) endpoint; the response carries a
+`globus_connect_setup_key`. Verified against globus-cli's `gcp create mapped`,
+which posts to the same path (upstream Python SDK has no typed `create_endpoint`
+— the CLI uses a raw `.post`). Unblocks a Go CLI `gcp create mapped` command.
+
 ### Added — session enforcement params on the login flow (v4 module)
 
 `login.AuthParams` gained `SessionRequiredIdentities`, `SessionRequiredSingleDomain`,

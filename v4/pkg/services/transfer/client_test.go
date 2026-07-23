@@ -105,6 +105,46 @@ func TestGetEndpoint(t *testing.T) {
 	})
 }
 
+func TestCreateEndpoint(t *testing.T) {
+	t.Run("nil doc returns validation error", func(t *testing.T) {
+		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {})
+		client, err := transfer.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
+		require.NoError(t, err)
+		defer client.Close()
+
+		_, err = client.CreateEndpoint(context.Background(), nil)
+		require.Error(t, err)
+		valErr, ok := err.(*core.ValidationError)
+		require.True(t, ok, "expected ValidationError, got %T", err)
+		assert.Equal(t, "doc", valErr.Field)
+	})
+
+	t.Run("GCP mapped create returns setup key", func(t *testing.T) {
+		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPost, r.Method)
+			assert.Contains(t, r.URL.Path, "/v0.10/endpoint")
+			testhelpers.RespondJSON(w, http.StatusCreated, map[string]interface{}{
+				"DATA_TYPE":                "endpoint_create_result",
+				"code":                     "Created",
+				"id":                       "new-gcp-ep",
+				"globus_connect_setup_key": "setup-key-123",
+			})
+		})
+		client, err := transfer.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
+		require.NoError(t, err)
+		defer client.Close()
+
+		resp, err := client.CreateEndpoint(context.Background(), map[string]interface{}{
+			"DATA_TYPE":         "endpoint",
+			"display_name":      "My GCP",
+			"is_globus_connect": true,
+		})
+		require.NoError(t, err)
+		assert.Equal(t, "new-gcp-ep", resp["id"])
+		assert.Equal(t, "setup-key-123", resp["globus_connect_setup_key"])
+	})
+}
+
 func TestSubmitTransfer(t *testing.T) {
 	t.Run("nil transfer returns validation error", func(t *testing.T) {
 		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {})
