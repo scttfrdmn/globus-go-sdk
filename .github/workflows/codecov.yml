@@ -1,5 +1,9 @@
 name: Code Coverage
 
+permissions:
+  contents: read
+  pull-requests: write
+
 on:
   push:
     branches: [ main, v*.*.* ]
@@ -47,10 +51,11 @@ jobs:
             awk '{print "**Total coverage:** " $3}' >> coverage-summary.md
       
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
-          file: ./coverage.txt
+          files: ./coverage.txt
           fail_ci_if_error: false
+          token: ${{ secrets.CODECOV_TOKEN }}
       
       - name: Upload coverage report
         uses: actions/upload-artifact@v4
@@ -103,8 +108,11 @@ jobs:
             fi
           done
       
+      # Advisory PR comment; never gate the build on it (it fails on
+      # fork PRs / when the token lacks pull-requests: write).
       - name: Post coverage comment
         if: github.event_name == 'pull_request'
+        continue-on-error: true
         uses: marocchino/sticky-pull-request-comment@v2
         with:
           path: coverage-summary.md
