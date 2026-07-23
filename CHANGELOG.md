@@ -10,6 +10,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — login flow now implements PKCE (v4 module)
+
+The command-line login flow performed the OAuth2 authorization-code exchange
+**without PKCE**, so it failed against public/native clients that require a
+`code_challenge` ("PKCE code_challenge required for client") — which includes
+modern Globus clients. `RunLoginFlow` now generates a `code_verifier`, sends
+`code_challenge` + `code_challenge_method=S256` on the authorize URL, and sends
+`code_verifier` in the token exchange (RFC 7636). This unblocks native-app login
+and the consent-escalation flows (e.g. `manage_projects`) against PKCE-enforcing
+clients. Found via globus-go-cli issue #32.
+
 ### Added — transfer CreateEndpoint (v4 module)
 
 `transfer.Client.CreateEndpoint(ctx, doc)` does `POST /v0.10/endpoint` with a
