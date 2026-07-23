@@ -5,6 +5,9 @@ package login
 import (
 	"bufio"
 	"context"
+	"crypto/rand"
+	"crypto/sha256"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -84,7 +87,16 @@ func (m *CommandLineLoginFlowManager) RunLoginFlow(ctx context.Context, params A
 		redirectURI = params.RedirectURI
 	}
 
-	authURL := m.buildAuthURL(scopes, redirectURI, params.State, params)
+	// PKCE (RFC 7636): Globus requires a code_challenge for public/native
+	// clients. Generate a verifier, send its S256 challenge on the authorize
+	// URL, and the verifier in the token exchange.
+	verifier, err := generatePKCEVerifier()
+	if err != nil {
+		return nil, fmt.Errorf("login: generate PKCE verifier: %w", err)
+	}
+	challenge := pkceChallengeS256(verifier)
+
+	authURL := m.buildAuthURL(scopes, redirectURI, params.State, params, challenge)
 
 	fmt.Println("Please open the following URL in your browser to authenticate:")
 	fmt.Println()
@@ -104,11 +116,12 @@ func (m *CommandLineLoginFlowManager) RunLoginFlow(ctx context.Context, params A
 		return nil, fmt.Errorf("login: auth code is empty")
 	}
 
-	return m.exchangeCode(ctx, code, redirectURI)
+	return m.exchangeCode(ctx, code, redirectURI, verifier)
 }
 
-// buildAuthURL constructs the Globus Auth authorization URL.
-func (m *CommandLineLoginFlowManager) buildAuthURL(scopes []string, redirectURI, state string, params AuthParams) string {
+// buildAuthURL constructs the Globus Auth authorization URL. codeChallenge, when
+// non-empty, adds the PKCE (S256) challenge parameters.
+func (m *CommandLineLoginFlowManager) buildAuthURL(scopes []string, redirectURI, state string, params AuthParams, codeChallenge string) string {
 	q := url.Values{}
 	q.Set("response_type", "code")
 	q.Set("client_id", m.clientID)
@@ -118,6 +131,10 @@ func (m *CommandLineLoginFlowManager) buildAuthURL(scopes []string, redirectURI,
 	}
 	if state != "" {
 		q.Set("state", state)
+	}
+	if codeChallenge != "" {
+		q.Set("code_challenge", codeChallenge)
+		q.Set("code_challenge_method", "S256")
 	}
 	// Session enforcement (step-up auth) parameters, when requested.
 	if len(params.SessionRequiredIdentities) > 0 {
@@ -138,9 +155,27 @@ func (m *CommandLineLoginFlowManager) buildAuthURL(scopes []string, redirectURI,
 	return m.authBaseURL + "/v2/oauth2/authorize?" + q.Encode()
 }
 
+// generatePKCEVerifier returns a high-entropy PKCE code_verifier: 32 random
+// bytes base64url-encoded (43 chars), well within RFC 7636's 43–128 range and
+// using only unreserved characters.
+func generatePKCEVerifier() (string, error) {
+	b := make([]byte, 32)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return base64.RawURLEncoding.EncodeToString(b), nil
+}
+
+// pkceChallengeS256 derives the S256 code_challenge from a verifier:
+// BASE64URL(SHA256(verifier)), no padding (RFC 7636 §4.2).
+func pkceChallengeS256(verifier string) string {
+	sum := sha256.Sum256([]byte(verifier))
+	return base64.RawURLEncoding.EncodeToString(sum[:])
+}
+
 // exchangeCode posts the authorization code to the token endpoint and parses
 // the response into a LoginResult.
-func (m *CommandLineLoginFlowManager) exchangeCode(ctx context.Context, code, redirectURI string) (*LoginResult, error) {
+func (m *CommandLineLoginFlowManager) exchangeCode(ctx context.Context, code, redirectURI, codeVerifier string) (*LoginResult, error) {
 	form := url.Values{}
 	form.Set("grant_type", "authorization_code")
 	form.Set("code", code)
@@ -148,6 +183,9 @@ func (m *CommandLineLoginFlowManager) exchangeCode(ctx context.Context, code, re
 	form.Set("redirect_uri", redirectURI)
 	if m.clientSecret != "" {
 		form.Set("client_secret", m.clientSecret)
+	}
+	if codeVerifier != "" {
+		form.Set("code_verifier", codeVerifier)
 	}
 
 	tokenURL := m.authBaseURL + "/v2/oauth2/token"
