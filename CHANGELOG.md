@@ -10,6 +10,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — upstream 4.9.0–4.10.0 parity (v4 module) and 3.66.0 (v3 module)
+
+- **Flows web inputs** (upstream 4.9.0): `flows.Client.ListWebInputs`
+  (`GET /web_inputs`; `filter_roles`/`filter_states`/`filter_flow_ids`/
+  `filter_run_ids`/`orderby` comma-joined, `per_page`, `marker`),
+  `GetWebInput` (`GET /web_inputs/{id}`), `RespondToWebInput`
+  (`POST /web_inputs/{id}/respond`, `{"response": {"value": ...}}`), and
+  `NewWebInputsPager` (null `marker` ends pagination). Typed `WebInput`,
+  `WebInputSummary`, `WebInputOption`, `WebInputRoles`.
+- **Logout sweep** (upstream 4.9.0 `logout(sweep=True)`):
+  `UserApp.LogoutWithOptions` / `ClientApp.LogoutWithOptions` with
+  `app.LogoutOptions{Sweep: true}` remove every token in the app's storage.
+  `Logout` and the `GlobusApp` interface are unchanged.
+- **Authorize URL `session_required_*`** (upstream 4.9.1): already comma-joined
+  and omitted when empty in Go; regression test added for
+  `auth.Client.GetAuthorizationURL`.
+- 4.10.0 / 3.66.0 are security-only certifi pins (Python packaging) with no Go
+  equivalent.
+- **Parity bumped:** v4 `ported` → v4.10.0 (`core.Version` "4.10.0"); v3
+  `ported` → v3.66.0 (`core.Version`/`pkg.Version` "3.66.0"). Closes #69, #70,
+  #71, #72.
+
 ### Fixed — APIError.Details populated from response body (v4 module)
 
 `core.NewAPIError` re-read `resp.Body` to parse `Details`, but the caller had
