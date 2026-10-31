@@ -106,7 +106,19 @@ func (a *UserApp) GetAuthorizer(_ context.Context, resourceServer string) (core.
 }
 
 // Logout removes stored tokens for all registered resource servers.
-func (a *UserApp) Logout(_ context.Context) error {
+// Equivalent to LogoutWithOptions(ctx, nil).
+func (a *UserApp) Logout(ctx context.Context) error {
+	return a.LogoutWithOptions(ctx, nil)
+}
+
+// LogoutWithOptions removes stored tokens. By default only tokens for the
+// app's registered resource servers are removed; with opts.Sweep every token
+// in the app's storage is removed (upstream GlobusApp.logout(sweep=True),
+// Python SDK v4.9.0).
+func (a *UserApp) LogoutWithOptions(_ context.Context, opts *LogoutOptions) error {
+	if opts != nil && opts.Sweep {
+		return sweepTokenStorage(a.config.TokenStorage)
+	}
 	a.mu.RLock()
 	defer a.mu.RUnlock()
 	for rs := range a.scopes {

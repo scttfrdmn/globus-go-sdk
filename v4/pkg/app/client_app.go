@@ -74,6 +74,16 @@ func (a *ClientApp) Logout(_ context.Context) error {
 	return nil
 }
 
+// LogoutWithOptions is a no-op unless opts.Sweep is set, in which case every
+// token in the app's storage is removed (upstream GlobusApp.logout(sweep=True),
+// Python SDK v4.9.0) — useful when the storage is shared with other apps.
+func (a *ClientApp) LogoutWithOptions(ctx context.Context, opts *LogoutOptions) error {
+	if opts != nil && opts.Sweep {
+		return sweepTokenStorage(a.config.TokenStorage)
+	}
+	return a.Logout(ctx)
+}
+
 // Close releases resources held by the app.
 func (a *ClientApp) Close() error {
 	return a.config.TokenStorage.Close()
