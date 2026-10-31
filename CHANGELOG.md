@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — dependencies (both modules)
+
+Added `.github/dependabot.yml` (weekly grouped version updates for the v3 and
+v4 Go modules and for GitHub Actions). v4: `github.com/stretchr/testify`
+v1.10.0 → v1.12.1 (test-only). v3: indirect `golang.org/x/sys` v0.8.0 → v0.30.0,
+the newest release that does not raise the module's `go 1.22` floor. Closes #68.
+
 ### Fixed — APIError.Details populated from response body (v4 module)
 
 `core.NewAPIError` re-read `resp.Body` to parse `Details`, but the caller had

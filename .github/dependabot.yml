@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: Apache-2.0
+# Version updates for both Go modules and the GitHub Actions used in CI.
+# Security alerts are enabled separately in the repository settings.
+version: 2
+updates:
+  - package-ecosystem: gomod
+    directory: /            # v3 module
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, go, v3]
+    commit-message:
+      prefix: "deps(v3)"
+    groups:
+      v3-go:
+        patterns: ["*"]
+
+  - package-ecosystem: gomod
+    directory: /v4          # v4 module
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, go, v4]
+    commit-message:
+      prefix: "deps(v4)"
+    groups:
+      v4-go:
+        patterns: ["*"]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    labels: [dependencies, github-actions, component:ci]
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns: ["*"]
