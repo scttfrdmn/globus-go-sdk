@@ -17,7 +17,7 @@ type jsonAPICollection struct {
 
 type jsonAPIResourceData struct {
 	Type          string                    `json:"type"`
-	ID            string                    `json:"id"`
+	ID            jsonAPIID                 `json:"id"`
 	Attributes    map[string]interface{}    `json:"attributes"`
 	Relationships map[string]jsonAPIRelData `json:"-"`
 }
@@ -31,7 +31,7 @@ func attrString(attrs map[string]interface{}, key string) string {
 
 func flattenTunnel(res jsonAPIResourceData) Tunnel {
 	return Tunnel{
-		ID:          res.ID,
+		ID:          string(res.ID),
 		DisplayName: attrString(res.Attributes, "label"),
 		Status:      attrString(res.Attributes, "status"),
 		Metadata:    res.Attributes,
@@ -40,7 +40,7 @@ func flattenTunnel(res jsonAPIResourceData) Tunnel {
 
 func flattenSAP(res jsonAPIResourceData) StreamAccessPoint {
 	return StreamAccessPoint{
-		ID:       res.ID,
+		ID:       string(res.ID),
 		Metadata: res.Attributes,
 	}
 }

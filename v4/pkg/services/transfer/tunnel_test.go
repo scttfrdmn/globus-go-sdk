@@ -6,6 +6,7 @@ import (
 	"context"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -197,9 +198,17 @@ func TestListStreamAccessPoints(t *testing.T) {
 func TestGetTunnelEvents(t *testing.T) {
 	server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "/v2/tunnels/tunnel-123/events", r.URL.Path)
-		testhelpers.RespondJSON(w, http.StatusOK, jsonapiCollection(
-			map[string]interface{}{"type": "TunnelEvent", "id": "ev-1", "attributes": map[string]interface{}{"code": "STARTED"}},
-		))
+		// Wire shape from upstream fixture testing/data/transfer/v2/get_tunnel_events.py
+		// (4.10.0): integer ids, string details, zone-less "time" (issue #66).
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte(`{"data": [
+			{"type": "TunnelEvent", "id": 2768, "attributes": {"code": "STARTED", "is_error": false,
+			 "description": "started", "details": "Attempting tunnel establishment",
+			 "time": "2026-02-12T21:59:01.857473"}},
+			{"type": "TunnelEvent", "id": 2770, "attributes": {"code": "TUNNEL_FAILED", "is_error": true,
+			 "description": "failed", "details": "Peer unreachable", "time": "2026-02-12T22:00:00.000001"}}
+		]}`))
 	})
 	client, err := transfer.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
 	require.NoError(t, err)
@@ -207,6 +216,16 @@ func TestGetTunnelEvents(t *testing.T) {
 
 	result, err := client.GetTunnelEvents(context.Background(), "tunnel-123", nil)
 	require.NoError(t, err)
-	require.Len(t, result.Events, 1)
-	assert.Equal(t, "STARTED", result.Events[0].Code)
+	require.Len(t, result.Events, 2)
+	ev := result.Events[0]
+	assert.Equal(t, "2768", ev.ID)
+	assert.Equal(t, "tunnel-123", ev.TunnelID)
+	assert.Equal(t, "STARTED", ev.Code)
+	assert.Equal(t, "started", ev.Description)
+	assert.Equal(t, "Attempting tunnel establishment", ev.DetailText)
+	assert.False(t, ev.IsError)
+	require.NotNil(t, ev.OccurredAt)
+	assert.True(t, ev.OccurredAt.Equal(time.Date(2026, 2, 12, 21, 59, 1, 857473000, time.UTC)))
+	assert.Equal(t, "Attempting tunnel establishment", ev.Details["details"])
+	assert.True(t, result.Events[1].IsError)
 }

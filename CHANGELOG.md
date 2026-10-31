@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — Transfer directory listings and tunnel events failed to decode (v4 module)
+
+`ListDirectory` failed on every non-empty listing: Transfer returns
+`last_modified` as `2026-08-12 19:08:37+00:00` (space separator, not RFC 3339),
+which `DirectoryEntry.LastModified time.Time` rejected. `DirectoryEntry` now
+decodes RFC 3339, the space-separated form and zone-less times (field type
+unchanged). `GetTunnelEvents` failed on every real response because
+`/v2/tunnels/{id}/events` returns integer JSON:API ids; ids are now accepted as
+string or number. `TunnelEvent` gains `DetailText` (`attributes.details`) and
+`IsError`, and `OccurredAt` is now populated from `attributes.time` (zone-less,
+read as UTC). `Details` still holds the raw attributes map. Closes #65, #66.
+
 ### Fixed — APIError.Details populated from response body (v4 module)
 
 `core.NewAPIError` re-read `resp.Body` to parse `Details`, but the caller had
