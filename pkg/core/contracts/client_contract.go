@@ -6,7 +6,6 @@ import (
 	"context"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/interfaces"
 )
@@ -144,12 +143,10 @@ func verifyGetLoggerMethod(t *testing.T, client interfaces.ClientInterface) {
 func verifyContextCancellation(t *testing.T, client interfaces.ClientInterface) {
 	t.Helper()
 
-	// Create a context that cancels after a short timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
-	defer cancel()
-
-	// Sleep to ensure the context deadline has passed
-	time.Sleep(2 * time.Millisecond)
+	// Cancel the context before the request (deterministic; a 1ms timeout plus
+	// a 2ms sleep raced the deadline timer and flaked under load).
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
 
 	// Create a test request
 	req, err := http.NewRequest("GET", client.GetBaseURL()+"/test", nil)

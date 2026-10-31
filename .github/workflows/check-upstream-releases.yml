@@ -48,11 +48,11 @@ jobs:
 
             echo "Checking $repo_label..."
 
-            if [ "$version_line" = "v3" ]; then
-              version_pattern="^v3\.[0-9]"
-            else
-              version_pattern="^v4\.[0-9]"
-            fi
+            # Upstream git tags carry NO "v" prefix (e.g. "4.9.0"); only release
+            # titles do. Accept an optional "v" so either form matches, and
+            # normalise every version to a bare "X.Y.Z" before comparing.
+            local major="${version_line#v}"
+            version_pattern="^v?${major}\.[0-9]"
 
             # All stable releases on this line, oldest-first (drop pre-releases a/b/rc).
             local all_tags
@@ -60,19 +60,23 @@ jobs:
               | jq -r '.[].tagName' \
               | grep -E "$version_pattern" \
               | grep -viE 'a[0-9]+$|b[0-9]+$|rc[0-9]+$' \
+              | sed -E 's/^v//' \
               | sort -V)
 
             if [ -z "$all_tags" ]; then
-              echo "  [WARNING] Could not find $version_line releases for $upstream_repo"
-              return 0
+              # Fail loudly: a silent green here is how a tag-format mismatch
+              # hid every upstream release from 4.8.1 to 4.10.0 (issue #67).
+              echo "::error::Could not find any $version_line releases for $upstream_repo (tag filter: $version_pattern)"
+              exit 1
             fi
 
             local latest_tag
             latest_tag=$(echo "$all_tags" | tail -n1)
 
             local seen_version ported_version
-            seen_version=$(jq -r --arg key "$version_key" '.seen[$key] // "none"' "$TRACK_FILE")
-            ported_version=$(jq -r --arg key "$version_key" '.ported[$key] // "none"' "$TRACK_FILE")
+            # Stored values use a "v" prefix (e.g. "v4.8.1"); strip it to compare.
+            seen_version=$(jq -r --arg key "$version_key" '.seen[$key] // "none" | ltrimstr("v")' "$TRACK_FILE")
+            ported_version=$(jq -r --arg key "$version_key" '.ported[$key] // "none" | ltrimstr("v")' "$TRACK_FILE")
 
             echo "  Ported (implemented): $ported_version"
             echo "  Seen (last observed): $seen_version"
@@ -88,17 +92,18 @@ jobs:
               return 0
             fi
 
-            # Releases strictly newer than seen_version (all of them if seen == none).
-            local new_tags
+            # Releases strictly newer than seen_version by version order (all of
+            # them if seen == none), so intermediate releases are never skipped.
+            local new_tags="" candidate
             if [ "$seen_version" = "none" ]; then
               new_tags="$latest_tag"
             else
-              new_tags=$(echo "$all_tags" | awk -v seen="$seen_version" '
-                found { print }
-                $0 == seen { found=1 }
-              ')
-              # If seen wasn't found in the list (e.g. renamed), fall back to latest only.
-              [ -z "$new_tags" ] && new_tags="$latest_tag"
+              while IFS= read -r candidate; do
+                [ "$candidate" = "$seen_version" ] && continue
+                if [ "$(printf '%s\n%s\n' "$seen_version" "$candidate" | sort -V | tail -n1)" = "$candidate" ]; then
+                  new_tags+="$candidate"$'\n'
+                fi
+              done <<< "$all_tags"
             fi
 
             local tag
@@ -106,7 +111,7 @@ jobs:
               [ -z "$tag" ] && continue
 
               local existing_issue
-              existing_issue=$(gh issue list --repo ${{ github.repository }} \
+              existing_issue=$(gh issue list --repo ${{ github.repository }} --state all \
                 --search "\"New $repo_label release: $tag\" in:title" \
                 --json number --jq '.[0].number' 2>/dev/null || echo "")
               if [ -n "$existing_issue" ]; then
@@ -126,7 +131,7 @@ jobs:
               issue_body=$(printf \
                 '## New %s Release: `%s`\n\n**Published:** %s\n**Version Line:** %s\n**Currently ported (Go):** `%s`\n\n### Links\n- [Release Page](%s)\n- [Compare Changes](%s)\n\n### Release Notes\n\n%s\n\n---\n\n### Action Items\n- [ ] Review release notes for wire-visible (HTTP/API) changes\n- [ ] Skip Python-internal changes with no Go equivalent (note which)\n- [ ] Port new features and improvements\n- [ ] Add/update tests\n- [ ] Update docs and CHANGELOG\n- [ ] **After porting: bump `.ported[%s]` in `%s` to `%s`**\n\n_CI has bumped `.seen` to record this release was observed. `.ported` stays until the work lands._\n' \
                 "$repo_label" "$tag" "$published_at" "$version_line" "$ported_version" \
-                "$release_url" "$comparison_url" "$release_body" "$version_key" "$TRACK_FILE" "$tag")
+                "$release_url" "$comparison_url" "$release_body" "$version_key" "$TRACK_FILE" "v$tag")
 
               local issue_number
               issue_number=$(gh issue create \
@@ -138,7 +143,7 @@ jobs:
             done <<< "$new_tags"
 
             # Record that we've now observed up to latest_tag. Never touches .ported.
-            jq --arg key "$version_key" --arg version "$latest_tag" \
+            jq --arg key "$version_key" --arg version "v$latest_tag" \
               '.seen[$key] = $version' "$TRACK_FILE" > "$TRACK_FILE.tmp"
             mv "$TRACK_FILE.tmp" "$TRACK_FILE"
 
