@@ -4,6 +4,7 @@ package app
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/login"
@@ -47,6 +48,32 @@ func (c *AppConfig) withDefaults(clientID, clientSecret string) *AppConfig {
 		cfg.LoginFlowManager = login.NewCommandLineLoginFlowManager(clientID, clientSecret)
 	}
 	return &cfg
+}
+
+// LogoutOptions controls UserApp.LogoutWithOptions and
+// ClientApp.LogoutWithOptions.
+type LogoutOptions struct {
+	// Sweep removes every token in the app's TokenStorage, not only the
+	// tokens for the app's registered resource servers. Use it to clear a
+	// shared storage of tokens left by earlier scope configurations.
+	Sweep bool
+}
+
+// sweepTokenStorage removes every token held by s.
+func sweepTokenStorage(s tokenstorage.TokenStorage) error {
+	all, err := s.GetAll()
+	if err != nil {
+		return fmt.Errorf("app: list stored tokens: %w", err)
+	}
+	for _, td := range all {
+		if td == nil {
+			continue
+		}
+		if err := s.Remove(td.ResourceServer); err != nil {
+			return fmt.Errorf("app: remove token for %s: %w", td.ResourceServer, err)
+		}
+	}
+	return nil
 }
 
 // GlobusApp is the interface implemented by UserApp and ClientApp.
