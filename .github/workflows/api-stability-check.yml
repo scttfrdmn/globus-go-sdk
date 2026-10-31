@@ -43,13 +43,13 @@ jobs:
           # First check if apigen exists in base code
           if [ -d "./cmd/apigen" ]; then
             go build -o ./bin/apigen ./cmd/apigen
-            ./bin/apigen -dir ./pkg -o ../api-base.json
+            ./bin/apigen -dir ./pkg -output ../api-base.json
           else
             # Fallback if apigen doesn't exist in base code
             echo "apigen not found in base code, using current version to generate base API signature"
             cd ..
             go build -o ./bin/apigen ./cmd/apigen
-            ./bin/apigen -dir ./base-code/pkg -o ./api-base.json
+            ./bin/apigen -dir ./base-code/pkg -output ./api-base.json
           fi
 
       - name: Checkout current code
@@ -62,13 +62,16 @@ jobs:
           mkdir -p ./bin
           go build -o ./bin/apigen ./cmd/apigen
           go build -o ./bin/apicompare ./cmd/apicompare
-          ./bin/apigen -dir ./pkg -o api-current.json
+          ./bin/apigen -dir ./pkg -output api-current.json
 
       - name: Compare API changes
         id: compare
+        env:
+          # Pass the title via env, never ${{ }} inside the script (injection).
+          PR_TITLE: ${{ github.event.pull_request.title }}
         run: |
           LEVEL="minor"  # Default to minor version check
-          if [[ "${{ github.event.pull_request.title }}" == *"BREAKING CHANGE"* ]]; then
+          if [[ "$PR_TITLE" == *"BREAKING CHANGE"* ]]; then
             LEVEL="major"
             echo "Major version change detected in PR title, allowing breaking changes"
           fi
@@ -86,13 +89,14 @@ jobs:
           fi
 
           # Run the comparison
-          COMPARE_OUTPUT=$(./bin/apicompare -old api-base.json -new api-current.json -level $LEVEL || echo "Comparison failed")
-          COMPARE_STATUS=$?
+          # Capture the real exit status (the old "|| echo" form always gave 0).
+          COMPARE_STATUS=0
+          COMPARE_OUTPUT=$(./bin/apicompare -old api-base.json -new api-current.json -level "$LEVEL") || COMPARE_STATUS=$?
 
           echo "$COMPARE_OUTPUT"
 
           # For initial PR that adds the API tools, allow failures
-          if [[ "${{ github.event.pull_request.title }}" == *"API Stability Phase 2"* ]]; then
+          if [[ "$PR_TITLE" == *"API Stability Phase 2"* ]]; then
             echo "API Stability Phase 2 PR detected - allowing compatibility check to pass"
             exit 0
           elif [ $COMPARE_STATUS -ne 0 ]; then

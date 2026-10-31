@@ -22,6 +22,45 @@ string or number. `TunnelEvent` gains `DetailText` (`attributes.details`) and
 `IsError`, and `OccurredAt` is now populated from `attributes.time` (zone-less,
 read as UTC). `Details` still holds the raw attributes map. Closes #65, #66.
 
+### Added — upstream 4.9.0–4.10.0 parity (v4 module) and 3.66.0 (v3 module)
+
+- **Flows web inputs** (upstream 4.9.0): `flows.Client.ListWebInputs`
+  (`GET /web_inputs`; `filter_roles`/`filter_states`/`filter_flow_ids`/
+  `filter_run_ids`/`orderby` comma-joined, `per_page`, `marker`),
+  `GetWebInput` (`GET /web_inputs/{id}`), `RespondToWebInput`
+  (`POST /web_inputs/{id}/respond`, `{"response": {"value": ...}}`), and
+  `NewWebInputsPager` (null `marker` ends pagination). Typed `WebInput`,
+  `WebInputSummary`, `WebInputOption`, `WebInputRoles`.
+- **Logout sweep** (upstream 4.9.0 `logout(sweep=True)`):
+  `UserApp.LogoutWithOptions` / `ClientApp.LogoutWithOptions` with
+  `app.LogoutOptions{Sweep: true}` remove every token in the app's storage.
+  `Logout` and the `GlobusApp` interface are unchanged.
+- **Authorize URL `session_required_*`** (upstream 4.9.1): already comma-joined
+  and omitted when empty in Go; regression test added for
+  `auth.Client.GetAuthorizationURL`.
+- 4.10.0 / 3.66.0 are security-only certifi pins (Python packaging) with no Go
+  equivalent.
+- **Parity bumped:** v4 `ported` → v4.10.0 (`core.Version` "4.10.0"); v3
+  `ported` → v3.66.0 (`core.Version`/`pkg.Version` "3.66.0"). Closes #69, #70,
+  #71, #72.
+
+### Changed — dependencies (both modules)
+
+Added `.github/dependabot.yml` (weekly grouped version updates for the v3 and
+v4 Go modules and for GitHub Actions). v4: `github.com/stretchr/testify`
+v1.10.0 → v1.12.1 (test-only). v3: indirect `golang.org/x/sys` v0.8.0 → v0.30.0,
+the newest release that does not raise the module's `go 1.22` floor. Closes #68.
+
+### Fixed — upstream release check never matched an upstream tag (CI)
+
+`check-upstream-releases.yml` filtered tags with `^v4\.`/`^v3\.`, but upstream
+globus-sdk-python tags carry no `v` prefix (`4.9.0`; only release titles do), so
+the job matched nothing and passed green daily while 4.9.0, 4.9.1, 4.10.0 and
+3.66.0 shipped unnoticed. It now accepts an optional `v`, compares versions with
+the prefix stripped, selects new releases by version order, dedupes against
+closed issues too, and fails loudly when no releases are found. `seen` recorded
+as v4.10.0 / v3.66.0 (issues #69–#72). Closes #67.
+
 ### Fixed — APIError.Details populated from response body (v4 module)
 
 `core.NewAPIError` re-read `resp.Body` to parse `Details`, but the caller had

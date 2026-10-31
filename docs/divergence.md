@@ -13,8 +13,9 @@ Wire-visible behavior (HTTP methods, URL paths, request/response JSON) always
 matches upstream. Divergences are limited to how that surface is *organized*
 into Go types and clients.
 
-Sections below prefixed **v3:** apply to the frozen v3 module (tracking Python
-globus-sdk 3.65.0); all other sections apply to the active v4 module.
+Sections below prefixed **v3:** apply to the v3 module (tracking the Python
+globus-sdk v3 maintenance line, 3.65.0 → 3.66.0 with no API change); all other
+sections apply to the active v4 module.
 
 ## Corrected in the v4 parity audit (2026-07): core URL and OAuth2 encoding bugs
 
@@ -517,3 +518,24 @@ to match Python globus-sdk 3.65.0:
   absent from the Go models. Per upstream v4.8.1 `list_bookmarks` is **not**
   paginated (it returns the full set in a single response), so `ListBookmarks`
   does a single-page fetch and there is no bookmarks pager.
+
+## Flows: web inputs (upstream 4.9.0)
+
+`ListWebInputs`, `GetWebInput` and `RespondToWebInput` match the upstream
+`FlowsClient` methods on the wire (`GET /web_inputs`, `GET /web_inputs/{id}`,
+`POST /web_inputs/{id}/respond` with `{"response": {"value": ...}}`). Go adds
+typed `WebInput`/`WebInputSummary` models where upstream returns raw dicts;
+`WebInput.Context` and `InputSchema` stay maps because their shape varies by
+`presentation_style`/input type. Upstream paginates with a
+`NullableMarkerPaginator` (a null `marker` ends the listing); Go exposes this as
+`NewWebInputsPager` and `WebInputList.HasNextPage()` (true when `Marker != ""`).
+
+## App: `LogoutWithOptions` instead of a `sweep` keyword (upstream 4.9.0)
+
+Upstream added `GlobusApp.logout(*, sweep=False)`. Go keeps `Logout(ctx)` and the
+`GlobusApp` interface unchanged (adding a parameter or interface method would
+break callers and external implementers) and adds
+`UserApp.LogoutWithOptions(ctx, *LogoutOptions)` / `ClientApp.LogoutWithOptions`
+with `LogoutOptions{Sweep: true}`. Known remaining gap: upstream `logout` also
+**revokes** each access/refresh token at Globus Auth before removing it; Go only
+removes tokens from storage (tracked in #73).

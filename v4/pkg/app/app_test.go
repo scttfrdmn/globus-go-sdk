@@ -134,6 +134,30 @@ func TestUserApp_Logout_RemovesTokens(t *testing.T) {
 	assert.Nil(t, td)
 }
 
+func TestUserApp_LogoutWithOptions_Sweep(t *testing.T) {
+	ctx := context.Background()
+	storage := tokenstorage.NewMemoryTokenStorage()
+	require.NoError(t, storage.Store(tokenData("transfer.api.globus.org", "at", "rt")))
+	require.NoError(t, storage.Store(tokenData("groups.api.globus.org", "at2", "")))
+	require.NoError(t, storage.Store(tokenData("stale.example.org", "at3", "")))
+
+	a, err := app.NewUserApp("client-id", "", &app.AppConfig{TokenStorage: storage})
+	require.NoError(t, err)
+	a.AddScopeRequirements("transfer.api.globus.org", "transfer:all")
+
+	// Default logout leaves tokens for resource servers the app doesn't use.
+	require.NoError(t, a.LogoutWithOptions(ctx, nil))
+	all, err := storage.GetAll()
+	require.NoError(t, err)
+	assert.Len(t, all, 2)
+
+	// Sweep clears everything (upstream logout(sweep=True), v4.9.0).
+	require.NoError(t, a.LogoutWithOptions(ctx, &app.LogoutOptions{Sweep: true}))
+	all, err = storage.GetAll()
+	require.NoError(t, err)
+	assert.Empty(t, all)
+}
+
 func TestUserApp_Close(t *testing.T) {
 	a, err := app.NewUserApp("client-id", "", nil)
 	require.NoError(t, err)
@@ -195,6 +219,24 @@ func TestClientApp_Logout_NoOp(t *testing.T) {
 	a, err := app.NewClientApp("client-id", "client-secret", nil)
 	require.NoError(t, err)
 	assert.NoError(t, a.Logout(context.Background()))
+}
+
+func TestClientApp_LogoutWithOptions(t *testing.T) {
+	ctx := context.Background()
+	storage := tokenstorage.NewMemoryTokenStorage()
+	require.NoError(t, storage.Store(tokenData("transfer.api.globus.org", "at", "")))
+	a, err := app.NewClientApp("client-id", "client-secret", &app.AppConfig{TokenStorage: storage})
+	require.NoError(t, err)
+
+	require.NoError(t, a.LogoutWithOptions(ctx, nil)) // no-op, as before
+	all, err := storage.GetAll()
+	require.NoError(t, err)
+	assert.Len(t, all, 1)
+
+	require.NoError(t, a.LogoutWithOptions(ctx, &app.LogoutOptions{Sweep: true}))
+	all, err = storage.GetAll()
+	require.NoError(t, err)
+	assert.Empty(t, all)
 }
 
 func TestClientApp_Close(t *testing.T) {
