@@ -5,7 +5,7 @@
     "globus/globus-sdk-python:v4": "v4.8.1"
   },
   "seen": {
-    "globus/globus-sdk-python:v3": "v3.65.0",
-    "globus/globus-sdk-python:v4": "v4.8.1"
+    "globus/globus-sdk-python:v3": "v3.66.0",
+    "globus/globus-sdk-python:v4": "v4.10.0"
   }
 }
