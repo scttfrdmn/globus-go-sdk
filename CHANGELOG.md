@@ -17,6 +17,16 @@ v4 Go modules and for GitHub Actions). v4: `github.com/stretchr/testify`
 v1.10.0 → v1.12.1 (test-only). v3: indirect `golang.org/x/sys` v0.8.0 → v0.30.0,
 the newest release that does not raise the module's `go 1.22` floor. Closes #68.
 
+### Fixed — upstream release check never matched an upstream tag (CI)
+
+`check-upstream-releases.yml` filtered tags with `^v4\.`/`^v3\.`, but upstream
+globus-sdk-python tags carry no `v` prefix (`4.9.0`; only release titles do), so
+the job matched nothing and passed green daily while 4.9.0, 4.9.1, 4.10.0 and
+3.66.0 shipped unnoticed. It now accepts an optional `v`, compares versions with
+the prefix stripped, selects new releases by version order, dedupes against
+closed issues too, and fails loudly when no releases are found. `seen` recorded
+as v4.10.0 / v3.66.0 (issues #69–#72). Closes #67.
+
 ### Fixed — APIError.Details populated from response body (v4 module)
 
 `core.NewAPIError` re-read `resp.Body` to parse `Details`, but the caller had

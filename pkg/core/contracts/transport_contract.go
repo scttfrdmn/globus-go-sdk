@@ -8,7 +8,6 @@ import (
 	"net/url"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/scttfrdmn/globus-go-sdk/v3/pkg/core/interfaces"
 )
@@ -213,12 +212,11 @@ func verifyRoundTripMethod(t *testing.T, transport interfaces.Transport) {
 func verifyTransportContextCancellation(t *testing.T, transport interfaces.Transport) {
 	t.Helper()
 
-	// Create a context that cancels after a short timeout
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Millisecond)
-	defer cancel()
-
-	// Sleep to ensure the context deadline has passed
-	time.Sleep(2 * time.Millisecond)
+	// Cancel the context before the request. (A 1ms timeout plus a 2ms sleep
+	// was flaky: nothing guarantees the deadline timer has closed Done() by
+	// the time the sleep returns, so the transport sometimes saw a live ctx.)
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
 
 	// Attempt a request with the canceled context
 	query := url.Values{}
