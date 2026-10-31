@@ -356,12 +356,20 @@ type StreamAccessPoint struct {
 // TunnelEvent represents an event associated with a tunnel.
 // Added in Python SDK v4.4.0.
 type TunnelEvent struct {
-	ID          string                 `json:"id"`
-	TunnelID    string                 `json:"tunnel_id"`
-	Code        string                 `json:"code"`
-	Description string                 `json:"description,omitempty"`
-	Details     map[string]interface{} `json:"details,omitempty"`
-	OccurredAt  *time.Time             `json:"occurred_at,omitempty"`
+	ID          string `json:"id"` // JSON:API id (an integer on the wire, normalised to a string)
+	TunnelID    string `json:"tunnel_id"`
+	Code        string `json:"code"`
+	Description string `json:"description,omitempty"`
+	// DetailText is the event's human-readable attributes.details string.
+	DetailText string `json:"detail_text,omitempty"`
+	// IsError mirrors attributes.is_error.
+	IsError bool `json:"is_error,omitempty"`
+	// Details holds the event's full raw JSON:API attributes map (code,
+	// description, details, is_error, time, and any future keys).
+	Details map[string]interface{} `json:"details,omitempty"`
+	// OccurredAt is parsed from attributes.time, which Transfer sends without
+	// a timezone; it is interpreted as UTC. Nil when absent or unparseable.
+	OccurredAt *time.Time `json:"occurred_at,omitempty"`
 }
 
 // TunnelEventList represents a paginated list of tunnel events

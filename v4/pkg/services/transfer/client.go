@@ -655,14 +655,22 @@ func (c *Client) GetTunnelEvents(ctx context.Context, tunnelID string, options *
 	}
 	list := &TunnelEventList{Events: make([]TunnelEvent, 0, len(doc.Data))}
 	for _, res := range doc.Data {
-		ev := TunnelEvent{ID: res.ID, TunnelID: tunnelID}
-		if v, ok := res.Attributes["code"].(string); ok {
-			ev.Code = v
+		ev := TunnelEvent{
+			ID:          string(res.ID),
+			TunnelID:    tunnelID,
+			Code:        attrString(res.Attributes, "code"),
+			Description: attrString(res.Attributes, "description"),
+			DetailText:  attrString(res.Attributes, "details"),
+			Details:     res.Attributes,
 		}
-		if v, ok := res.Attributes["description"].(string); ok {
-			ev.Description = v
+		if v, ok := res.Attributes["is_error"].(bool); ok {
+			ev.IsError = v
 		}
-		ev.Details = res.Attributes
+		if ts := attrString(res.Attributes, "time"); ts != "" {
+			if t, err := parseTransferTime(ts); err == nil {
+				ev.OccurredAt = &t
+			}
+		}
 		list.Events = append(list.Events, ev)
 	}
 	return list, nil
