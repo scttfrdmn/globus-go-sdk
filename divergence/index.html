@@ -21,7 +21,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -29,10 +29,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -1659,6 +1659,28 @@
   
 </li>
       
+        <li class="md-nav__item">
+  <a href="#flows-web-inputs-upstream-490" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Flows: web inputs (upstream 4.9.0)
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#app-logoutwithoptions-instead-of-a-sweep-keyword-upstream-490" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        App: LogoutWithOptions instead of a sweep keyword (upstream 4.9.0)
+      
+    </span>
+  </a>
+  
+</li>
+      
     </ul>
   
 </nav>
@@ -1691,8 +1713,9 @@ choice is discoverable and intentional rather than accidental drift.</p>
 <p>Wire-visible behavior (HTTP methods, URL paths, request/response JSON) always
 matches upstream. Divergences are limited to how that surface is <em>organized</em>
 into Go types and clients.</p>
-<p>Sections below prefixed <strong>v3:</strong> apply to the frozen v3 module (tracking Python
-globus-sdk 3.65.0); all other sections apply to the active v4 module.</p>
+<p>Sections below prefixed <strong>v3:</strong> apply to the v3 module (tracking the Python
+globus-sdk v3 maintenance line, 3.65.0 → 3.66.0 with no API change); all other
+sections apply to the active v4 module.</p>
 <h2 id="corrected-in-the-v4-parity-audit-2026-07-core-url-and-oauth2-encoding-bugs">Corrected in the v4 parity audit (2026-07): core URL and OAuth2 encoding bugs<a class="headerlink" href="#corrected-in-the-v4-parity-audit-2026-07-core-url-and-oauth2-encoding-bugs" title="Permanent link">&para;</a></h2>
 <p>The Phase 2 parity audit (against Python globus-sdk tag 4.8.1) found two
 cross-cutting <code>pkg/core</code> bugs that broke wire fidelity for <em>every</em> service. They
@@ -2182,6 +2205,23 @@ to match Python globus-sdk 3.65.0:</p>
   paginated (it returns the full set in a single response), so <code>ListBookmarks</code>
   does a single-page fetch and there is no bookmarks pager.</li>
 </ul>
+<h2 id="flows-web-inputs-upstream-490">Flows: web inputs (upstream 4.9.0)<a class="headerlink" href="#flows-web-inputs-upstream-490" title="Permanent link">&para;</a></h2>
+<p><code>ListWebInputs</code>, <code>GetWebInput</code> and <code>RespondToWebInput</code> match the upstream
+<code>FlowsClient</code> methods on the wire (<code>GET /web_inputs</code>, <code>GET /web_inputs/{id}</code>,
+<code>POST /web_inputs/{id}/respond</code> with <code>{"response": {"value": ...}}</code>). Go adds
+typed <code>WebInput</code>/<code>WebInputSummary</code> models where upstream returns raw dicts;
+<code>WebInput.Context</code> and <code>InputSchema</code> stay maps because their shape varies by
+<code>presentation_style</code>/input type. Upstream paginates with a
+<code>NullableMarkerPaginator</code> (a null <code>marker</code> ends the listing); Go exposes this as
+<code>NewWebInputsPager</code> and <code>WebInputList.HasNextPage()</code> (true when <code>Marker != ""</code>).</p>
+<h2 id="app-logoutwithoptions-instead-of-a-sweep-keyword-upstream-490">App: <code>LogoutWithOptions</code> instead of a <code>sweep</code> keyword (upstream 4.9.0)<a class="headerlink" href="#app-logoutwithoptions-instead-of-a-sweep-keyword-upstream-490" title="Permanent link">&para;</a></h2>
+<p>Upstream added <code>GlobusApp.logout(*, sweep=False)</code>. Go keeps <code>Logout(ctx)</code> and the
+<code>GlobusApp</code> interface unchanged (adding a parameter or interface method would
+break callers and external implementers) and adds
+<code>UserApp.LogoutWithOptions(ctx, *LogoutOptions)</code> / <code>ClientApp.LogoutWithOptions</code>
+with <code>LogoutOptions{Sweep: true}</code>. Known remaining gap: upstream <code>logout</code> also
+<strong>revokes</strong> each access/refresh token at Globus Auth before removing it; Go only
+removes tokens from storage (tracked in #73).</p>
 
 
 
@@ -2204,7 +2244,7 @@ to match Python globus-sdk 3.65.0:</p>
     <span class="md-icon" title="Last update">
       <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M21 13.1c-.1 0-.3.1-.4.2l-1 1 2.1 2.1 1-1c.2-.2.2-.6 0-.8l-1.3-1.3c-.1-.1-.2-.2-.4-.2m-1.9 1.8-6.1 6V23h2.1l6.1-6.1zM12.5 7v5.2l4 2.4-1 1L11 13V7zM11 21.9c-5.1-.5-9-4.8-9-9.9C2 6.5 6.5 2 12 2c5.3 0 9.6 4.1 10 9.3-.3-.1-.6-.2-1-.2s-.7.1-1 .2C19.6 7.2 16.2 4 12 4c-4.4 0-8 3.6-8 8 0 4.1 3.1 7.5 7.1 7.9l-.1.2z"/></svg>
     </span>
-    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="July 20, 2026 21:10:28 UTC">July 20, 2026</span>
+    <span class="git-revision-date-localized-plugin git-revision-date-localized-plugin-date" title="October 31, 2026 23:35:14 UTC">October 31, 2026</span>
   </span>
 
     
@@ -2285,10 +2325,10 @@ to match Python globus-sdk 3.65.0:</p>
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.tracking", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.tracking", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>

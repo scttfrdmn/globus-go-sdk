@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.7">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.8.0">
     
     
       
@@ -33,10 +33,10 @@
       
     
     
-      <link rel="stylesheet" href="../assets/stylesheets/main.ec1eaa64.min.css">
+      <link rel="stylesheet" href="../assets/stylesheets/main.57a0d79d.min.css">
       
         
-        <link rel="stylesheet" href="../assets/stylesheets/palette.ab4e12ef.min.css">
+        <link rel="stylesheet" href="../assets/stylesheets/palette.fb2fffe2.min.css">
       
       
 
@@ -1899,43 +1899,43 @@
 <p>The SDK provides clients for these Globus services:</p>
 <h3 id="auth-service"><a href="auth/">Auth Service</a><a class="headerlink" href="#auth-service" title="Permanent link">&para;</a></h3>
 <p>Authentication and identity management.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="s">&quot;github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span><span class="w"> </span><span class="s">"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/auth"</span>
 <a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a>
 <a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="nx">client</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">auth</span><span class="p">.</span><span class="nx">NewClient</span><span class="p">(</span><span class="nx">authorizer</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="transfer-service"><a href="transfer/">Transfer Service</a><a class="headerlink" href="#transfer-service" title="Permanent link">&para;</a></h3>
 <p>File and directory transfer operations.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span><span class="w"> </span><span class="s">&quot;github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="kn">import</span><span class="w"> </span><span class="s">"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/transfer"</span>
 <a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a>
 <a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a><span class="nx">client</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">transfer</span><span class="p">.</span><span class="nx">NewClient</span><span class="p">(</span><span class="nx">authorizer</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="search-service"><a href="search/">Search Service</a><a class="headerlink" href="#search-service" title="Permanent link">&para;</a></h3>
 <p>Search index management and queries.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span><span class="w"> </span><span class="s">&quot;github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="kn">import</span><span class="w"> </span><span class="s">"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/search"</span>
 <a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a>
 <a id="__codelineno-2-3" name="__codelineno-2-3" href="#__codelineno-2-3"></a><span class="nx">client</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">search</span><span class="p">.</span><span class="nx">NewClient</span><span class="p">(</span><span class="nx">authorizer</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="groups-service"><a href="groups/">Groups Service</a><a class="headerlink" href="#groups-service" title="Permanent link">&para;</a></h3>
 <p>Group membership and policy management.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">import</span><span class="w"> </span><span class="s">&quot;github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/groups&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a><span class="kn">import</span><span class="w"> </span><span class="s">"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/groups"</span>
 <a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>
 <a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a><span class="nx">client</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">groups</span><span class="p">.</span><span class="nx">NewClient</span><span class="p">(</span><span class="nx">authorizer</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="flows-service"><a href="flows/">Flows Service</a><a class="headerlink" href="#flows-service" title="Permanent link">&para;</a></h3>
 <p>Workflow automation and management.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">import</span><span class="w"> </span><span class="s">&quot;github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/flows&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="kn">import</span><span class="w"> </span><span class="s">"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/flows"</span>
 <a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a>
 <a id="__codelineno-4-3" name="__codelineno-4-3" href="#__codelineno-4-3"></a><span class="nx">client</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">flows</span><span class="p">.</span><span class="nx">NewClient</span><span class="p">(</span><span class="nx">authorizer</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="timers-service"><a href="timers/">Timers Service</a><a class="headerlink" href="#timers-service" title="Permanent link">&para;</a></h3>
 <p>Scheduled task execution.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">import</span><span class="w"> </span><span class="s">&quot;github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/timers&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a><span class="kn">import</span><span class="w"> </span><span class="s">"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/timers"</span>
 <a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>
 <a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="nx">client</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">timers</span><span class="p">.</span><span class="nx">NewClient</span><span class="p">(</span><span class="nx">authorizer</span><span class="p">)</span>
 </code></pre></div>
 <h3 id="compute-service"><a href="compute/">Compute Service</a><a class="headerlink" href="#compute-service" title="Permanent link">&para;</a></h3>
 <p>Distributed computing operations.</p>
-<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">import</span><span class="w"> </span><span class="s">&quot;github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/compute&quot;</span>
+<div class="highlight"><pre><span></span><code><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="kn">import</span><span class="w"> </span><span class="s">"github.com/scttfrdmn/globus-go-sdk/v3/pkg/services/compute"</span>
 <a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a>
 <a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="nx">client</span><span class="w"> </span><span class="o">:=</span><span class="w"> </span><span class="nx">compute</span><span class="p">.</span><span class="nx">NewClient</span><span class="p">(</span><span class="nx">authorizer</span><span class="p">)</span>
 </code></pre></div>
@@ -2072,10 +2072,10 @@
     
       
       
-      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.tracking", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.2c215733.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": ["navigation.tabs", "navigation.sections", "navigation.top", "navigation.tracking", "search.highlight", "search.suggest", "content.code.copy", "content.code.annotate"], "search": "../assets/javascripts/workers/search.a7633da7.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": {"provider": "mike"}}</script>
     
     
-      <script src="../assets/javascripts/bundle.d7400e89.min.js"></script>
+      <script src="../assets/javascripts/bundle.c21346df.min.js"></script>
       
     
   </body>
