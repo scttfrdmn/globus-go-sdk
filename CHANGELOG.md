@@ -10,6 +10,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed — app logout now revokes tokens (v4 module)
+
+`UserApp.Logout`/`LogoutWithOptions` (and `ClientApp.LogoutWithOptions` with
+`Sweep`) now revoke each stored access token and refresh token at Globus Auth
+(`POST /v2/oauth2/token/revoke`) before removing it, matching upstream
+`GlobusApp.logout`. Confidential clients authenticate with Basic auth; native
+clients send `client_id`. Revocation is best-effort: tokens are always removed
+locally, and revocation failures are returned as one joined error. **Behavior
+change:** logout now makes network calls. New optional `AppConfig.AuthBaseURL`
+(default `https://auth.globus.org`) and `AppConfig.HTTPClient`; point
+`AuthBaseURL` at a mock server in tests. Closes #73.
+
 ### Fixed — Shell Script Lint workflow (CI)
 
 Both `shell-lint.yml` jobs had failed on every run since 2026-07. ShellCheck:

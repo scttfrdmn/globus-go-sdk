@@ -4,7 +4,8 @@ package app
 
 import (
 	"context"
-	"fmt"
+	"net/http"
+	"strings"
 
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/login"
@@ -26,6 +27,13 @@ type AppConfig struct {
 	// access tokens can be renewed without user interaction.
 	RequestRefreshTokens bool
 
+	// AuthBaseURL is the Globus Auth base URL used to revoke tokens on logout.
+	// Default: "https://auth.globus.org".
+	AuthBaseURL string
+
+	// HTTPClient performs token revocation. Default: a client with a 30s timeout.
+	HTTPClient *http.Client
+
 	// Environment is the Globus environment name (e.g. "production", "sandbox").
 	// Default: "production".
 	Environment string
@@ -38,6 +46,13 @@ func (c *AppConfig) withDefaults(clientID, clientSecret string) *AppConfig {
 
 	if cfg.TokenStorage == nil {
 		cfg.TokenStorage = tokenstorage.NewMemoryTokenStorage()
+	}
+	if cfg.AuthBaseURL == "" {
+		cfg.AuthBaseURL = defaultAuthBaseURL
+	}
+	cfg.AuthBaseURL = strings.TrimRight(cfg.AuthBaseURL, "/")
+	if cfg.HTTPClient == nil {
+		cfg.HTTPClient = defaultHTTPClient()
 	}
 	if cfg.Environment == "" {
 		cfg.Environment = "production"
@@ -59,29 +74,13 @@ type LogoutOptions struct {
 	Sweep bool
 }
 
-// sweepTokenStorage removes every token held by s.
-func sweepTokenStorage(s tokenstorage.TokenStorage) error {
-	all, err := s.GetAll()
-	if err != nil {
-		return fmt.Errorf("app: list stored tokens: %w", err)
-	}
-	for _, td := range all {
-		if td == nil {
-			continue
-		}
-		if err := s.Remove(td.ResourceServer); err != nil {
-			return fmt.Errorf("app: remove token for %s: %w", td.ResourceServer, err)
-		}
-	}
-	return nil
-}
-
 // GlobusApp is the interface implemented by UserApp and ClientApp.
 type GlobusApp interface {
 	// Login initiates user authentication (UserApp) or is a no-op (ClientApp).
 	Login(ctx context.Context) error
 
-	// Logout removes stored tokens for all registered resource servers.
+	// Logout revokes and removes stored tokens for all registered resource
+	// servers.
 	Logout(ctx context.Context) error
 
 	// LoginRequired returns true when stored credentials are missing for one

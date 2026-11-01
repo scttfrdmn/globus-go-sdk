@@ -124,11 +124,13 @@ func TestUserApp_Logout_RemovesTokens(t *testing.T) {
 	storage := tokenstorage.NewMemoryTokenStorage()
 	require.NoError(t, storage.Store(tokenData("transfer.api.globus.org", "at", "rt")))
 
-	a, err := app.NewUserApp("client-id", "client-secret", &app.AppConfig{TokenStorage: storage})
+	rs := newRevokeServer(t)
+	a, err := app.NewUserApp("client-id", "client-secret", &app.AppConfig{TokenStorage: storage, AuthBaseURL: rs.URL})
 	require.NoError(t, err)
 	a.AddScopeRequirements("transfer.api.globus.org", "transfer:all")
 
 	require.NoError(t, a.Logout(ctx))
+	assert.Equal(t, []string{"at", "rt"}, rs.tokens(), "access then refresh token revoked")
 	td, err := storage.Get("transfer.api.globus.org")
 	require.NoError(t, err)
 	assert.Nil(t, td)
@@ -141,7 +143,8 @@ func TestUserApp_LogoutWithOptions_Sweep(t *testing.T) {
 	require.NoError(t, storage.Store(tokenData("groups.api.globus.org", "at2", "")))
 	require.NoError(t, storage.Store(tokenData("stale.example.org", "at3", "")))
 
-	a, err := app.NewUserApp("client-id", "", &app.AppConfig{TokenStorage: storage})
+	rs := newRevokeServer(t)
+	a, err := app.NewUserApp("client-id", "", &app.AppConfig{TokenStorage: storage, AuthBaseURL: rs.URL})
 	require.NoError(t, err)
 	a.AddScopeRequirements("transfer.api.globus.org", "transfer:all")
 
@@ -225,10 +228,12 @@ func TestClientApp_LogoutWithOptions(t *testing.T) {
 	ctx := context.Background()
 	storage := tokenstorage.NewMemoryTokenStorage()
 	require.NoError(t, storage.Store(tokenData("transfer.api.globus.org", "at", "")))
-	a, err := app.NewClientApp("client-id", "client-secret", &app.AppConfig{TokenStorage: storage})
+	rs := newRevokeServer(t)
+	a, err := app.NewClientApp("client-id", "client-secret", &app.AppConfig{TokenStorage: storage, AuthBaseURL: rs.URL})
 	require.NoError(t, err)
 
 	require.NoError(t, a.LogoutWithOptions(ctx, nil)) // no-op, as before
+	assert.Empty(t, rs.tokens(), "plain logout makes no revoke calls")
 	all, err := storage.GetAll()
 	require.NoError(t, err)
 	assert.Len(t, all, 1)
@@ -237,6 +242,8 @@ func TestClientApp_LogoutWithOptions(t *testing.T) {
 	all, err = storage.GetAll()
 	require.NoError(t, err)
 	assert.Empty(t, all)
+	assert.Equal(t, []string{"at"}, rs.tokens())
+	assert.True(t, rs.reqs[0].basicOK, "client app authenticates with Basic auth")
 }
 
 func TestClientApp_Close(t *testing.T) {
@@ -257,4 +264,119 @@ func TestClientApp_ImplementsGlobusApp(t *testing.T) {
 	a, err := app.NewClientApp("id", "secret", nil)
 	require.NoError(t, err)
 	var _ app.GlobusApp = a
+}
+
+// ---- logout token revocation (upstream GlobusApp.logout) ----
+
+type revokeReq struct {
+	token, clientID string
+	basicUser       string
+	basicOK         bool
+	contentType     string
+}
+
+type revokeServer struct {
+	*httptest.Server
+	reqs   []revokeReq
+	status int
+}
+
+func (r *revokeServer) tokens() []string {
+	var out []string
+	for _, q := range r.reqs {
+		out = append(out, q.token)
+	}
+	return out
+}
+
+func newRevokeServer(t *testing.T) *revokeServer {
+	t.Helper()
+	rs := &revokeServer{status: http.StatusOK}
+	rs.Server = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		assert.Equal(t, http.MethodPost, r.Method)
+		assert.Equal(t, "/v2/oauth2/token/revoke", r.URL.Path)
+		require.NoError(t, r.ParseForm())
+		u, _, ok := r.BasicAuth()
+		rs.reqs = append(rs.reqs, revokeReq{
+			token: r.PostForm.Get("token"), clientID: r.PostForm.Get("client_id"),
+			basicUser: u, basicOK: ok, contentType: r.Header.Get("Content-Type"),
+		})
+		w.WriteHeader(rs.status)
+		_, _ = w.Write([]byte(`{"active": false}`))
+	}))
+	t.Cleanup(rs.Close)
+	return rs
+}
+
+func TestUserApp_Logout_RevokesConfidentialWithBasicAuth(t *testing.T) {
+	storage := tokenstorage.NewMemoryTokenStorage()
+	require.NoError(t, storage.Store(tokenData("transfer.api.globus.org", "at", "rt")))
+	rs := newRevokeServer(t)
+	a, err := app.NewUserApp("cid", "secret", &app.AppConfig{TokenStorage: storage, AuthBaseURL: rs.URL + "/"})
+	require.NoError(t, err)
+	a.AddScopeRequirements("transfer.api.globus.org", "transfer:all")
+
+	require.NoError(t, a.Logout(context.Background()))
+	require.Len(t, rs.reqs, 2)
+	for _, q := range rs.reqs {
+		assert.True(t, q.basicOK)
+		assert.Equal(t, "cid", q.basicUser)
+		assert.Empty(t, q.clientID, "confidential clients authenticate via Basic, not client_id")
+		assert.Equal(t, "application/x-www-form-urlencoded", q.contentType)
+	}
+}
+
+func TestUserApp_Logout_RevokesNativeWithClientID(t *testing.T) {
+	storage := tokenstorage.NewMemoryTokenStorage()
+	require.NoError(t, storage.Store(tokenData("transfer.api.globus.org", "at", "")))
+	rs := newRevokeServer(t)
+	a, err := app.NewUserApp("native-cid", "", &app.AppConfig{TokenStorage: storage, AuthBaseURL: rs.URL})
+	require.NoError(t, err)
+	a.AddScopeRequirements("transfer.api.globus.org", "transfer:all")
+
+	require.NoError(t, a.Logout(context.Background()))
+	require.Len(t, rs.reqs, 1, "no refresh token, so only the access token is revoked")
+	assert.False(t, rs.reqs[0].basicOK)
+	assert.Equal(t, "native-cid", rs.reqs[0].clientID)
+	assert.Equal(t, "at", rs.reqs[0].token)
+}
+
+func TestUserApp_Logout_RevokeFailureStillRemovesTokens(t *testing.T) {
+	storage := tokenstorage.NewMemoryTokenStorage()
+	require.NoError(t, storage.Store(tokenData("transfer.api.globus.org", "at", "rt")))
+	rs := newRevokeServer(t)
+	rs.status = http.StatusInternalServerError
+	a, err := app.NewUserApp("cid", "", &app.AppConfig{TokenStorage: storage, AuthBaseURL: rs.URL})
+	require.NoError(t, err)
+	a.AddScopeRequirements("transfer.api.globus.org", "transfer:all")
+
+	err = a.Logout(context.Background())
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "HTTP 500")
+	assert.Len(t, rs.reqs, 2, "keeps going after the first failure")
+	td, gerr := storage.Get("transfer.api.globus.org")
+	require.NoError(t, gerr)
+	assert.Nil(t, td, "token removed locally even though revocation failed")
+}
+
+func TestUserApp_Logout_NothingStoredMakesNoRequests(t *testing.T) {
+	rs := newRevokeServer(t)
+	a, err := app.NewUserApp("cid", "", &app.AppConfig{AuthBaseURL: rs.URL})
+	require.NoError(t, err)
+	a.AddScopeRequirements("transfer.api.globus.org", "transfer:all")
+	require.NoError(t, a.Logout(context.Background()))
+	assert.Empty(t, rs.reqs)
+}
+
+func TestUserApp_LogoutSweep_RevokesEveryStoredToken(t *testing.T) {
+	storage := tokenstorage.NewMemoryTokenStorage()
+	require.NoError(t, storage.Store(tokenData("transfer.api.globus.org", "at1", "rt1")))
+	require.NoError(t, storage.Store(tokenData("stale.example.org", "at2", "")))
+	rs := newRevokeServer(t)
+	a, err := app.NewUserApp("cid", "", &app.AppConfig{TokenStorage: storage, AuthBaseURL: rs.URL})
+	require.NoError(t, err)
+	a.AddScopeRequirements("transfer.api.globus.org", "transfer:all")
+
+	require.NoError(t, a.LogoutWithOptions(context.Background(), &app.LogoutOptions{Sweep: true}))
+	assert.ElementsMatch(t, []string{"at1", "rt1", "at2"}, rs.tokens())
 }
