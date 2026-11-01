@@ -10,6 +10,7 @@ import (
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/authorizers"
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/core"
 	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/login"
+	"github.com/scttfrdmn/globus-go-sdk/v4/pkg/tokenstorage"
 )
 
 // UserApp is a GlobusApp implementation for applications that authenticate
@@ -105,28 +106,42 @@ func (a *UserApp) GetAuthorizer(_ context.Context, resourceServer string) (core.
 	return authorizers.NewAccessTokenAuthorizer(td.AccessToken), nil
 }
 
-// Logout removes stored tokens for all registered resource servers.
-// Equivalent to LogoutWithOptions(ctx, nil).
+// Logout revokes and removes stored tokens for all registered resource
+// servers. Equivalent to LogoutWithOptions(ctx, nil).
 func (a *UserApp) Logout(ctx context.Context) error {
 	return a.LogoutWithOptions(ctx, nil)
 }
 
-// LogoutWithOptions removes stored tokens. By default only tokens for the
-// app's registered resource servers are removed; with opts.Sweep every token
-// in the app's storage is removed (upstream GlobusApp.logout(sweep=True),
-// Python SDK v4.9.0).
-func (a *UserApp) LogoutWithOptions(_ context.Context, opts *LogoutOptions) error {
+// LogoutWithOptions revokes each stored access and refresh token at Globus
+// Auth, then removes it from storage (upstream GlobusApp.logout). By default
+// only tokens for the app's registered resource servers are cleared; with
+// opts.Sweep every token in storage is (upstream logout(sweep=True), v4.9.0).
+//
+// Revocation is best-effort: tokens are removed locally even when revoking
+// them fails, and any failures are returned joined in a single error.
+func (a *UserApp) LogoutWithOptions(ctx context.Context, opts *LogoutOptions) error {
+	var tokens []*tokenstorage.TokenData
 	if opts != nil && opts.Sweep {
-		return sweepTokenStorage(a.config.TokenStorage)
-	}
-	a.mu.RLock()
-	defer a.mu.RUnlock()
-	for rs := range a.scopes {
-		if err := a.config.TokenStorage.Remove(rs); err != nil {
-			return fmt.Errorf("app: remove token for %s: %w", rs, err)
+		all, err := a.config.TokenStorage.GetAll()
+		if err != nil {
+			return fmt.Errorf("app: list stored tokens: %w", err)
 		}
+		tokens = all
+	} else {
+		a.mu.RLock()
+		for rs := range a.scopes {
+			td, err := a.config.TokenStorage.Get(rs)
+			if err != nil {
+				a.mu.RUnlock()
+				return fmt.Errorf("app: read token for %s: %w", rs, err)
+			}
+			if td != nil {
+				tokens = append(tokens, td)
+			}
+		}
+		a.mu.RUnlock()
 	}
-	return nil
+	return a.config.clearTokens(ctx, a.clientID, a.clientSecret, tokens)
 }
 
 // Close releases resources held by the app.

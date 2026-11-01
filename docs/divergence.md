@@ -536,6 +536,13 @@ Upstream added `GlobusApp.logout(*, sweep=False)`. Go keeps `Logout(ctx)` and th
 `GlobusApp` interface unchanged (adding a parameter or interface method would
 break callers and external implementers) and adds
 `UserApp.LogoutWithOptions(ctx, *LogoutOptions)` / `ClientApp.LogoutWithOptions`
-with `LogoutOptions{Sweep: true}`. Known remaining gap: upstream `logout` also
-**revokes** each access/refresh token at Globus Auth before removing it; Go only
-removes tokens from storage (tracked in #73).
+with `LogoutOptions{Sweep: true}`.
+
+**Revocation is best-effort.** Like upstream, logout revokes each access token
+and then refresh token (`POST /v2/oauth2/token/revoke`; Basic auth for
+confidential clients, `client_id` in the body for native ones) before removing
+it. Upstream raises on the first revocation error and leaves the remaining
+tokens stored. Go keeps going: every token is removed locally even if revoking
+it failed, and all failures come back as one joined error, so a logout always
+clears local credentials. The revoke target is `AppConfig.AuthBaseURL` (default
+`https://auth.globus.org`), with `AppConfig.HTTPClient` overridable.
