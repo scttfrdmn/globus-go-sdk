@@ -60,7 +60,7 @@ for pkg in "${service_packages[@]}"; do
   echo "### $pkg_name"
   
   # Run with integration tag
-  echo "```"
+  echo '```'
   result=$(go test -tags=integration "$pkg" -v 2>&1)
   echo "$result" | grep -E "PASS:|FAIL:|SKIP:" || true
   
@@ -81,7 +81,7 @@ for pkg in "${service_packages[@]}"; do
     echo "Failed tests:"
     echo "$result" | grep "FAIL:" | sed 's/--- FAIL: /- /g' | cut -d' ' -f1-2
   fi
-  echo "```"
+  echo '```'
   
   echo "**Summary:** $passed_count passed, $failed_count failed, $skipped_count skipped"
   echo

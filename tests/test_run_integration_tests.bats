@@ -1,137 +1,88 @@
 #!/usr/bin/env bats
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2025 Scott Friedman and Project Contributors
+# SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors
 
-# Load the BATS test helper libraries
+# Tests for scripts/run_integration_tests.sh. A stub `go` on PATH records its
+# arguments, so no real tests or Globus calls run.
+
 load "bats/bats-support/load.bash"
 load "bats/bats-assert/load.bash"
-load "bats/bats-file/load.bash"
 
-# Path to the script
-SCRIPT_PATH="../scripts/run_integration_tests.sh"
+SCRIPT="${BATS_TEST_DIRNAME}/../scripts/run_integration_tests.sh"
 
-# Setup function runs before each test
 setup() {
-    # Create a temporary directory for tests
-    TEST_TEMP_DIR="$(mktemp -d)"
-    
-    # Export as environment variable for use in tests
-    export TEST_TEMP_DIR
-    
-    # Create a mock .env.test file
-    cat > "${TEST_TEMP_DIR}/.env.test" << EOF
-GLOBUS_TEST_CLIENT_ID=test-client-id
-GLOBUS_TEST_CLIENT_SECRET=test-client-secret
-GLOBUS_TEST_SOURCE_ENDPOINT_ID=test-source-endpoint
-GLOBUS_TEST_DEST_ENDPOINT_ID=test-dest-endpoint
-GLOBUS_TEST_GROUP_ID=test-group-id
-EOF
-}
-
-# Teardown function runs after each test
-teardown() {
-    # Remove the temporary directory
-    rm -rf "$TEST_TEMP_DIR"
-}
-
-# Helper function to mock go test command
-mock_go_test() {
-    cat > "${TEST_TEMP_DIR}/mock_go_test.sh" << 'EOF'
+    TEST_DIR="$(mktemp -d)"
+    mkdir -p "$TEST_DIR/bin" "$TEST_DIR/repo/v4"
+    GO_LOG="$TEST_DIR/go.log"
+    cat > "$TEST_DIR/bin/go" <<STUB
 #!/bin/bash
-echo "Running mock go test with args: $@"
-echo "MOCK_GO_TEST_CALLED=true" >> "${TEST_TEMP_DIR}/go_test_called"
-echo "MOCK_GO_TEST_ARGS=$@" >> "${TEST_TEMP_DIR}/go_test_called"
-EOF
-    chmod +x "${TEST_TEMP_DIR}/mock_go_test.sh"
-    
-    # Add the directory with the mock to PATH
-    export PATH="${TEST_TEMP_DIR}:$PATH"
-    
-    # Create a mock alias for 'go'
-    alias go="${TEST_TEMP_DIR}/mock_go_test.sh"
+echo "\$PWD|\$*" >> "$GO_LOG"
+STUB
+    chmod +x "$TEST_DIR/bin/go"
+    export PATH="$TEST_DIR/bin:$PATH"
+    unset GLOBUS_TEST_CLIENT_ID GLOBUS_TEST_CLIENT_SECRET SKIP_INTEGRATION
+    cd "$TEST_DIR/repo"
 }
 
-# Test basic script execution
-@test "Script runs without errors" {
-    cd "$TEST_TEMP_DIR"
-    run bash "$SCRIPT_PATH" -- echo "Test only" || exit 0
-    
+teardown() {
+    rm -rf "$TEST_DIR"
+}
+
+with_creds() {
+    export GLOBUS_TEST_CLIENT_ID="cid" GLOBUS_TEST_CLIENT_SECRET="secret"
+}
+
+@test "SKIP_INTEGRATION=true exits 0 without running go" {
+    SKIP_INTEGRATION=true run bash "$SCRIPT"
     assert_success
-    assert_output --partial "Test only"
+    assert_output --partial "Skipping integration tests"
+    [ ! -e "$GO_LOG" ]
 }
 
-# Test env file loading
-@test "Loads environment variables from .env.test file" {
-    cd "$TEST_TEMP_DIR"
-    
-    # Run the function to load env vars (sourcing the script)
-    run bash -c "source $SCRIPT_PATH && load_env_file && echo \$GLOBUS_TEST_CLIENT_ID"
-    
-    assert_success
-    assert_output --partial "test-client-id"
-}
-
-# Test check_env_vars success
-@test "check_env_vars succeeds when required vars are set" {
-    cd "$TEST_TEMP_DIR"
-    
-    export GLOBUS_TEST_CLIENT_ID="test-client-id"
-    export GLOBUS_TEST_CLIENT_SECRET="test-client-secret"
-    
-    run bash -c "source $SCRIPT_PATH && check_env_vars"
-    
-    assert_success
-}
-
-# Test check_env_vars failure
-@test "check_env_vars fails when required vars are missing" {
-    cd "$TEST_TEMP_DIR"
-    
-    # Unset any existing variables
-    unset GLOBUS_TEST_CLIENT_ID
-    unset GLOBUS_TEST_CLIENT_SECRET
-    
-    run bash -c "source $SCRIPT_PATH && check_env_vars"
-    
+@test "fails when required credentials are missing" {
+    run bash "$SCRIPT"
     assert_failure
-    assert_output --partial "Some required environment variables are missing"
+    assert_output --partial "GLOBUS_TEST_CLIENT_ID is not set"
+    assert_output --partial "GLOBUS_TEST_CLIENT_SECRET is not set"
+    [ ! -e "$GO_LOG" ]
 }
 
-# Test running all integration tests
-@test "Runs all integration tests when no arguments provided" {
-    cd "$TEST_TEMP_DIR"
-    mock_go_test
-    
-    # Source the script and call main function to simulate execution
-    run bash -c "source $SCRIPT_PATH && main"
-    
+@test "loads credentials from .env.test" {
+    printf '# comment\n\nGLOBUS_TEST_CLIENT_ID=from-file\nGLOBUS_TEST_CLIENT_SECRET=s=with=equals\n' > .env.test
+    run bash "$SCRIPT"
     assert_success
-    assert [ -f "${TEST_TEMP_DIR}/go_test_called" ]
-    assert_file_contains "${TEST_TEMP_DIR}/go_test_called" "MOCK_GO_TEST_ARGS=-v -tags=integration ./..."
+    assert_output --partial "Loaded GLOBUS_TEST_CLIENT_ID"
+    assert_output --partial "GLOBUS_TEST_CLIENT_SECRET is set"
 }
 
-# Test running specific package tests
-@test "Runs tests for specific package when package provided" {
-    cd "$TEST_TEMP_DIR"
-    mock_go_test
-    
-    # Source the script and call main function with a package argument
-    run bash -c "source $SCRIPT_PATH && main pkg/services/auth"
-    
+@test "no arguments runs both modules uncached" {
+    with_creds
+    run bash "$SCRIPT"
     assert_success
-    assert [ -f "${TEST_TEMP_DIR}/go_test_called" ]
-    assert_file_contains "${TEST_TEMP_DIR}/go_test_called" "MOCK_GO_TEST_ARGS=-v -tags=integration ./pkg/services/auth/..."
+    run cat "$GO_LOG"
+    assert_line --index 0 "$TEST_DIR/repo|test -v -tags=integration -count=1 ./..."
+    assert_line --index 1 "$TEST_DIR/repo/v4|test -v -tags=integration -count=1 ./..."
 }
 
-# Test running specific tests with pattern
-@test "Runs tests matching pattern when package and pattern provided" {
-    cd "$TEST_TEMP_DIR"
-    mock_go_test
-    
-    # Source the script and call main function with package and pattern
-    run bash -c "source $SCRIPT_PATH && main pkg/services/auth TestAuth"
-    
+@test "one argument runs that package tree" {
+    with_creds
+    run bash "$SCRIPT" pkg/services/auth
     assert_success
-    assert [ -f "${TEST_TEMP_DIR}/go_test_called" ]
-    assert_file_contains "${TEST_TEMP_DIR}/go_test_called" "MOCK_GO_TEST_ARGS=-v -tags=integration ./pkg/services/auth/... -run TestAuth"
+    run cat "$GO_LOG"
+    assert_output "$TEST_DIR/repo|test -v -tags=integration ./pkg/services/auth/..."
+}
+
+@test "two arguments add a -run pattern" {
+    with_creds
+    run bash "$SCRIPT" pkg/services/transfer Transfer
+    assert_success
+    run cat "$GO_LOG"
+    assert_output "$TEST_DIR/repo|test -v -tags=integration ./pkg/services/transfer/... -run Transfer"
+}
+
+@test "three arguments print usage and fail" {
+    with_creds
+    run bash "$SCRIPT" a b c
+    assert_failure
+    assert_output --partial "Usage:"
 }

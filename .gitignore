@@ -44,3 +44,6 @@ build/
 # Debug logs
 debug.log
 **/.claude/settings.local.json
+
+# BATS and helper libraries cloned by scripts/install_bats.sh
+tests/bats/

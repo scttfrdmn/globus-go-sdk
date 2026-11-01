@@ -13,7 +13,7 @@ echo "Testing SDK version: ${SDK_VERSION}"
 
 # Create a temporary directory for testing
 TEMP_DIR=$(mktemp -d)
-trap "rm -rf $TEMP_DIR" EXIT
+trap 'rm -rf "$TEMP_DIR"' EXIT
 
 echo "Created temporary directory: ${TEMP_DIR}"
 

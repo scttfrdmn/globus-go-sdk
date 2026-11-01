@@ -20,6 +20,7 @@ if [ ! -f "${SDK_ROOT}/.env.test" ]; then
 fi
 
 # Check for required variables in .env.test
+# shellcheck source=/dev/null  # local credentials file, not in the repo
 source "${SDK_ROOT}/.env.test"
 
 # Support both prefixed and non-prefixed variables

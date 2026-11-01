@@ -19,30 +19,30 @@ MISSING_HEADERS=0
 
 # Check Go files
 echo -e "${BLUE}Checking Go files...${NC}"
-for file in $(find . -name "*.go" -not -path "./vendor/*" -not -path "./pkg/gen/*"); do
+while IFS= read -r file; do
   if ! grep -q "SPDX-License-Identifier: Apache-2.0" "$file"; then
     echo -e "${RED}❌ Missing SPDX header: ${file}${NC}"
     MISSING_HEADERS=$((MISSING_HEADERS+1))
   fi
-done
+done < <(find . -name "*.go" -not -path "./vendor/*" -not -path "./pkg/gen/*" -not -path "./tests/bats/*")
 
 # Check shell scripts
 echo -e "${BLUE}Checking shell scripts...${NC}"
-for file in $(find . -name "*.sh"); do
+while IFS= read -r file; do
   if ! grep -q "SPDX-License-Identifier: Apache-2.0" "$file"; then
     echo -e "${RED}❌ Missing SPDX header: ${file}${NC}"
     MISSING_HEADERS=$((MISSING_HEADERS+1))
   fi
-done
+done < <(find . -name "*.sh" -not -path "./tests/bats/*")
 
 # Check Markdown files (optional, uncomment if needed)
 echo -e "${BLUE}Checking Markdown files...${NC}"
-for file in $(find . -name "*.md" -not -path "./vendor/*" -not -path "./LICENSE.md"); do
+while IFS= read -r file; do
   if ! grep -q "SPDX-License-Identifier: Apache-2.0" "$file"; then
     echo -e "${YELLOW}⚠ Missing SPDX header: ${file}${NC}"
     # Not counting this as an error, just a warning
   fi
-done
+done < <(find . -name "*.md" -not -path "./vendor/*" -not -path "./LICENSE.md" -not -path "./tests/bats/*")
 
 # Display summary
 if [ $MISSING_HEADERS -eq 0 ]; then

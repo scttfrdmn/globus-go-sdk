@@ -1,6 +1,7 @@
 #!/bin/bash
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2025 Scott Friedman and Project Contributors
+# shellcheck disable=SC2129  # the report is built from many sequential appends
 
 # Script to generate a detailed test coverage report for the Globus Go SDK
 # This script runs tests, generates coverage data, and produces a markdown

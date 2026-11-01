@@ -40,7 +40,7 @@ run_test() {
 }
 
 # Initialize log file
-> "${LOG_FILE}"
+: > "${LOG_FILE}"
 log "Starting comprehensive testing for Globus Go SDK"
 log "SDK root: ${SDK_ROOT}"
 

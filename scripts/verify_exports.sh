@@ -11,12 +11,12 @@
 # Main function to run the verification
 function verify_exports() {
   echo "Verifying SDK package exports..."
-  cd "$(dirname "$0")/.." && go build ./... || {
+  if ! { cd "$(dirname "$0")/.." && go build ./...; }; then
     echo "ERROR: Package export verification failed"
     echo "This means that some required functions or types are not properly exported"
     echo "Fix the issues before releasing a new version to avoid breaking dependent projects"
     return 1
-  }
+  fi
 
   echo "All package exports verified successfully"
   return 0
