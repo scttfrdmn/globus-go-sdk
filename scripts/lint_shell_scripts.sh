@@ -38,7 +38,7 @@ echo -e "Found $(echo "$SHELL_SCRIPTS" | wc -l | tr -d '[:space:]') shell script
 
 # Check if specific files were provided
 if [ $# -gt 0 ]; then
-    SHELL_SCRIPTS="$@"
+    SHELL_SCRIPTS="$*"
     echo -e "${YELLOW}Linting only the specified files: ${SHELL_SCRIPTS}${NC}"
 fi
 

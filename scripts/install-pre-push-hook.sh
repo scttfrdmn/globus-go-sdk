@@ -3,7 +3,6 @@
 # SPDX-FileCopyrightText: 2025 Scott Friedman and Project Contributors
 # Script to install git pre-push hook
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(git rev-parse --show-toplevel)"
 
 echo "Installing git pre-push hook..."

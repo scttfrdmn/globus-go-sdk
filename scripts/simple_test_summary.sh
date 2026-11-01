@@ -10,33 +10,33 @@ echo
 echo "## Transfer Service Tests"
 echo
 echo "### Unit Tests"
-echo "```"
+echo '```'
 go test ./pkg/services/transfer | grep -E "ok|FAIL"
-echo "```"
+echo '```'
 echo
 echo "### Integration Tests"
-echo "```"
+echo '```'
 go test -tags=integration ./pkg/services/transfer | grep -E "ok|FAIL"
-echo "```"
+echo '```'
 echo
 echo "#### Integration Tests Details"
-echo "```"
-go test -tags=integration ./pkg/services/transfer -v | grep -E "--- PASS:|--- FAIL:|--- SKIP:"
-echo "```"
+echo '```'
+go test -tags=integration ./pkg/services/transfer -v | grep -E -- "--- PASS:|--- FAIL:|--- SKIP:"
+echo '```'
 echo
 echo "## Auth Service Tests"
 echo
 echo "### Unit Tests"
-echo "```"
+echo '```'
 go test ./pkg/services/auth | grep -E "ok|FAIL"
-echo "```"
+echo '```'
 echo
 echo "### Integration Tests"
-echo "```"
+echo '```'
 go test -tags=integration ./pkg/services/auth | grep -E "ok|FAIL"
-echo "```"
+echo '```'
 echo
 echo "#### Integration Tests Details"
-echo "```"
-go test -tags=integration ./pkg/services/auth -v | grep -E "--- PASS:|--- FAIL:|--- SKIP:"
-echo "```"
+echo '```'
+go test -tags=integration ./pkg/services/auth -v | grep -E -- "--- PASS:|--- FAIL:|--- SKIP:"
+echo '```'

@@ -1,137 +1,72 @@
 #!/usr/bin/env bats
 # SPDX-License-Identifier: Apache-2.0
-# Copyright (c) 2025 Scott Friedman and Project Contributors
+# SPDX-FileCopyrightText: 2025-2026 Scott Friedman and Project Contributors
 
-# Load the BATS test helper libraries
+# Tests for scripts/check-license-headers.sh. The script takes no arguments and
+# scans the current directory: .go and .sh files without an SPDX line are
+# errors (exit 1); .md files only warn.
+
 load "bats/bats-support/load.bash"
 load "bats/bats-assert/load.bash"
-load "bats/bats-file/load.bash"
 
-# Path to the scripts
-CHECK_SCRIPT_PATH="../scripts/check-license-headers.sh"
-UPDATE_SCRIPT_PATH="../scripts/update-license-headers.sh"
+CHECK_SCRIPT="${BATS_TEST_DIRNAME}/../scripts/check-license-headers.sh"
+SPDX="// SPDX-License-Identifier: Apache-2.0"
 
-# Setup function runs before each test
 setup() {
-    # Create a temporary directory for tests
-    TEST_TEMP_DIR="$(mktemp -d)"
-    
-    # Export as environment variable for use in tests
-    export TEST_TEMP_DIR
-    
-    # Create sample files with and without license headers
-    create_sample_files
+    TEST_DIR="$(mktemp -d)"
+    mkdir -p "$TEST_DIR/pkg/core" "$TEST_DIR/scripts"
+    cd "$TEST_DIR"
 }
 
-# Teardown function runs after each test
 teardown() {
-    # Remove the temporary directory
-    rm -rf "$TEST_TEMP_DIR"
+    rm -rf "$TEST_DIR"
 }
 
-# Helper function to create sample files
-create_sample_files() {
-    # Go file with correct header
-    mkdir -p "${TEST_TEMP_DIR}/pkg/core"
-    cat > "${TEST_TEMP_DIR}/pkg/core/sample.go" << EOF
-// SPDX-License-Identifier: Apache-2.0
-// Copyright (c) 2025 Scott Friedman and Project Contributors
-package core
-
-func SampleFunction() string {
-    return "Hello, World!"
-}
-EOF
-
-    # Go file without header
-    cat > "${TEST_TEMP_DIR}/pkg/core/missing_header.go" << EOF
-package core
-
-func AnotherFunction() string {
-    return "Missing header"
-}
-EOF
-
-    # Shell script with incorrect header
-    mkdir -p "${TEST_TEMP_DIR}/scripts"
-    cat > "${TEST_TEMP_DIR}/scripts/test.sh" << EOF
-#!/bin/bash
-# Copyright (c) 2025 Wrong Header
-echo "This has a wrong header"
-EOF
-
-    # Python file without header
-    cat > "${TEST_TEMP_DIR}/scripts/test.py" << EOF
-#!/usr/bin/env python3
-def main():
-    print("No header here")
-EOF
-}
-
-# Test check-license-headers script basic execution
-@test "check-license-headers script runs without errors" {
-    cd "$TEST_TEMP_DIR"
-    run bash "$CHECK_SCRIPT_PATH" --directory "$TEST_TEMP_DIR" || true
-    
-    # Even though some files will fail the check, the script should run
-    assert_output --partial "Checking license headers"
-}
-
-# Test check-license-headers detects missing headers
-@test "check-license-headers correctly identifies missing headers" {
-    cd "$TEST_TEMP_DIR"
-    run bash "$CHECK_SCRIPT_PATH" --directory "$TEST_TEMP_DIR" || true
-    
-    assert_output --partial "missing_header.go"
-    assert_output --partial "test.py"
-}
-
-# Test check-license-headers detects incorrect headers
-@test "check-license-headers correctly identifies incorrect headers" {
-    cd "$TEST_TEMP_DIR"
-    run bash "$CHECK_SCRIPT_PATH" --directory "$TEST_TEMP_DIR" || true
-    
-    assert_output --partial "test.sh"
-}
-
-# Test check-license-headers passes correct headers
-@test "check-license-headers passes files with correct headers" {
-    cd "$TEST_TEMP_DIR"
-    run bash "$CHECK_SCRIPT_PATH" --file "${TEST_TEMP_DIR}/pkg/core/sample.go"
-    
+@test "passes when every Go and shell file has an SPDX header" {
+    printf '%s\npackage core\n' "$SPDX" > pkg/core/ok.go
+    printf '#!/bin/bash\n# SPDX-License-Identifier: Apache-2.0\n' > scripts/ok.sh
+    run bash "$CHECK_SCRIPT"
     assert_success
-    assert_output --partial "Header is correct"
+    assert_output --partial "All files have proper SPDX license headers"
 }
 
-# Test update-license-headers script adds missing headers
-@test "update-license-headers adds missing headers" {
-    cd "$TEST_TEMP_DIR"
-    
-    # Verify header is missing
-    assert_not_file_contains "${TEST_TEMP_DIR}/pkg/core/missing_header.go" "SPDX-License-Identifier"
-    
-    # Run update script
-    run bash "$UPDATE_SCRIPT_PATH" --directory "$TEST_TEMP_DIR"
-    assert_success
-    
-    # Verify header was added
-    assert_file_contains "${TEST_TEMP_DIR}/pkg/core/missing_header.go" "SPDX-License-Identifier: Apache-2.0"
-    assert_file_contains "${TEST_TEMP_DIR}/pkg/core/missing_header.go" "Copyright (c) 2025 Scott Friedman and Project Contributors"
+@test "fails and names a Go file missing its header" {
+    printf '%s\npackage core\n' "$SPDX" > pkg/core/ok.go
+    printf 'package core\n' > pkg/core/missing.go
+    run bash "$CHECK_SCRIPT"
+    assert_failure
+    assert_output --partial "Missing SPDX header: ./pkg/core/missing.go"
+    refute_output --partial "ok.go"
+    assert_output --partial "Found 1 files missing SPDX license headers"
 }
 
-# Test update-license-headers corrects incorrect headers
-@test "update-license-headers corrects incorrect headers" {
-    cd "$TEST_TEMP_DIR"
-    
-    # Verify wrong header exists
-    assert_file_contains "${TEST_TEMP_DIR}/scripts/test.sh" "Copyright (c) 2025 Wrong Header"
-    
-    # Run update script
-    run bash "$UPDATE_SCRIPT_PATH" --directory "$TEST_TEMP_DIR"
+@test "fails and names a shell script missing its header" {
+    printf '#!/bin/bash\necho hi\n' > scripts/missing.sh
+    run bash "$CHECK_SCRIPT"
+    assert_failure
+    assert_output --partial "Missing SPDX header: ./scripts/missing.sh"
+}
+
+@test "counts every missing file" {
+    printf 'package core\n' > pkg/core/a.go
+    printf 'package core\n' > pkg/core/b.go
+    printf '#!/bin/bash\n' > scripts/c.sh
+    run bash "$CHECK_SCRIPT"
+    assert_failure
+    assert_output --partial "Found 3 files missing SPDX license headers"
+}
+
+@test "markdown without a header only warns" {
+    printf '%s\npackage core\n' "$SPDX" > pkg/core/ok.go
+    printf '# Title\n' > README.md
+    run bash "$CHECK_SCRIPT"
     assert_success
-    
-    # Verify header was corrected
-    assert_file_contains "${TEST_TEMP_DIR}/scripts/test.sh" "SPDX-License-Identifier: Apache-2.0"
-    assert_file_contains "${TEST_TEMP_DIR}/scripts/test.sh" "Copyright (c) 2025 Scott Friedman and Project Contributors"
-    assert_not_file_contains "${TEST_TEMP_DIR}/scripts/test.sh" "Wrong Header"
+    assert_output --partial "Missing SPDX header: ./README.md"
+}
+
+@test "vendored Go files are ignored" {
+    mkdir -p vendor/x
+    printf 'package x\n' > vendor/x/x.go
+    run bash "$CHECK_SCRIPT"
+    assert_success
 }

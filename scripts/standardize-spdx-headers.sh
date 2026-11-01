@@ -9,14 +9,13 @@ set -e  # Exit on error
 # Print colorized output
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-RED='\033[0;31m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 echo -e "${BLUE}Standardizing license headers to SPDX format...${NC}"
 
 # Go source files
-find . -name "*.go" -not -path "./vendor/*" | while read file; do
+find . -name "*.go" -not -path "./vendor/*" | while read -r file; do
   # Skip if file already has SPDX header
   if grep -q "SPDX-License-Identifier: Apache-2.0" "$file"; then
     echo -e "${GREEN}✓ SPDX header already present in ${file}${NC}"
@@ -65,7 +64,7 @@ find . -name "*.go" -not -path "./vendor/*" | while read file; do
 done
 
 # Shell scripts
-find . -name "*.sh" | while read file; do
+find . -name "*.sh" | while read -r file; do
   # Skip if file already has SPDX header
   if grep -q "SPDX-License-Identifier: Apache-2.0" "$file"; then
     echo -e "${GREEN}✓ SPDX header already present in ${file}${NC}"
@@ -102,7 +101,7 @@ find . -name "*.sh" | while read file; do
 done
 
 # Markdown files
-find . -name "*.md" | while read file; do
+find . -name "*.md" | while read -r file; do
   # Skip if file already has SPDX header
   if grep -q "SPDX-License-Identifier: Apache-2.0" "$file"; then
     echo -e "${GREEN}✓ SPDX header already present in ${file}${NC}"

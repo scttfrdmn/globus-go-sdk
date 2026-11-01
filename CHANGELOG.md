@@ -10,6 +10,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed — Shell Script Lint workflow (CI)
+
+Both `shell-lint.yml` jobs had failed on every run since 2026-07. ShellCheck:
+`scripts/test_summary.sh` and `scripts/simple_test_summary.sh` were broken
+(`echo "```"` started a command substitution; `grep -E "--- PASS"` parsed as an
+option), plus warnings across 12 scripts. Shell Tests: the runner also
+collected the cloned BATS libraries' own suites from `tests/bats/` (now
+excluded and git-ignored), and all 13 project tests targeted an interface the
+scripts never had. Rewrote them against real behavior (a stub `go` keeps the
+integration-runner tests hermetic) and dropped the tests for
+`update-license-headers.sh`, a one-off with a hard-coded local path.
+`check-license-headers.sh` now skips `tests/bats/`. Closes #79.
+
 ### Fixed — Transfer directory listings and tunnel events failed to decode (v4 module)
 
 `ListDirectory` failed on every non-empty listing: Transfer returns
