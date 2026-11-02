@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — `Group.GroupType` and `Group.SubscriptionID` (v4 module)
+
+`groups.Group` now decodes `group_type` ("regular"/"plus") and
+`subscription_id` (empty when null or absent), as shown by `globus group list`.
+Additive. Closes #84.
+
 ### Added — `TunnelUpdate.State` (v4 module)
 
 `transfer.TunnelUpdate` gains `State`, sent as `attributes.state` in the

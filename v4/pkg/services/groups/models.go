@@ -21,6 +21,11 @@ type Group struct {
 	SignAgreementMessage  string                 `json:"sign_agreement_message,omitempty"`
 	Policies              map[string]interface{} `json:"policies,omitempty"`
 	EnforceProvisionRules bool                   `json:"enforce_provision_rules,omitempty"`
+	// GroupType is "regular" or "plus" (a subscription-associated group).
+	GroupType string `json:"group_type,omitempty"`
+	// SubscriptionID is set for groups tied to a Globus subscription; null
+	// (empty) otherwise.
+	SubscriptionID string `json:"subscription_id,omitempty"`
 	// Memberships is populated only when a group is fetched with
 	// include=memberships; the Groups API has no separate members endpoint.
 	Memberships []Member `json:"memberships,omitempty"`
