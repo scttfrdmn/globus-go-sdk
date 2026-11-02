@@ -10,6 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added — `TunnelUpdate.State` (v4 module)
+
+`transfer.TunnelUpdate` gains `State`, sent as `attributes.state` in the
+JSON:API `PATCH /v2/tunnels/{id}` body and omitted when empty. Lets callers
+stop a tunnel (`{"data":{"type":"Tunnel","attributes":{"state":"STOPPING"}}}`),
+as `globus streams tunnel stop` does. Closes #82.
+
 ### Changed — app logout now revokes tokens (v4 module)
 
 `UserApp.Logout`/`LogoutWithOptions` (and `ClientApp.LogoutWithOptions` with

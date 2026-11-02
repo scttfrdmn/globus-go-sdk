@@ -333,6 +333,10 @@ type TunnelUpdate struct {
 	Label             string `json:"-"`
 	ListenerPort      *int   `json:"-"`
 	ListenerIPAddress string `json:"-"`
+	// State requests a lifecycle change, sent as attributes.state; e.g.
+	// "STOPPING" stops a tunnel (what `globus streams tunnel stop` sends).
+	// Omitted when empty.
+	State string `json:"-"`
 }
 
 // ListTunnelsOptions contains options for listing tunnels

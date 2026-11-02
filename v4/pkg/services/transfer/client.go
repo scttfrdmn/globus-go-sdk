@@ -586,6 +586,7 @@ func (c *Client) UpdateTunnel(ctx context.Context, tunnelID string, data *Tunnel
 	attrs := map[string]interface{}{}
 	setIf(attrs, "label", data.Label)
 	setIf(attrs, "listener_ip_address", data.ListenerIPAddress)
+	setIf(attrs, "state", data.State)
 	if data.ListenerPort != nil {
 		attrs["listener_port"] = *data.ListenerPort
 	}
