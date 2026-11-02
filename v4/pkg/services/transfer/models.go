@@ -273,16 +273,41 @@ type OperationResponse struct {
 // Tunnel represents a Globus Streams tunnel.
 // Added in Python SDK v4.3.0.
 type Tunnel struct {
-	ID               string                 `json:"id"`
-	DisplayName      string                 `json:"display_name,omitempty"`
-	Owner            string                 `json:"owner,omitempty"`
-	SourceEndpointID string                 `json:"source_endpoint_id,omitempty"`
-	SourcePath       string                 `json:"source_path,omitempty"`
-	Status           string                 `json:"status,omitempty"`
-	CreatedAt        *time.Time             `json:"created_at,omitempty"`
-	UpdatedAt        *time.Time             `json:"updated_at,omitempty"`
-	ExpiresAt        *time.Time             `json:"expires_at,omitempty"`
-	Metadata         map[string]interface{} `json:"metadata,omitempty"`
+	ID string `json:"id"`
+	// Label is attributes.label.
+	Label string `json:"label,omitempty"`
+	// Deprecated: DisplayName mirrors Label (the wire attribute is "label");
+	// use Label.
+	DisplayName string `json:"display_name,omitempty"`
+	// Owner is the owning identity ID (relationships.owner).
+	Owner string `json:"owner,omitempty"`
+	// State is the machine-readable lifecycle state (attributes.state), e.g.
+	// "AWAITING_LISTENER"; Status is its human-readable description.
+	State string `json:"state,omitempty"`
+	// ListenerAccessPointID / InitiatorAccessPointID are the stream access
+	// points from relationships.listener / relationships.initiator.
+	ListenerAccessPointID  string `json:"listener_access_point_id,omitempty"`
+	InitiatorAccessPointID string `json:"initiator_access_point_id,omitempty"`
+	ListenerIPAddress      string `json:"listener_ip_address,omitempty"`
+	ListenerPort           *int   `json:"listener_port,omitempty"`
+	InitiatorIPAddress     string `json:"initiator_ip_address,omitempty"`
+	InitiatorPort          *int   `json:"initiator_port,omitempty"`
+	LifetimeMins           *int   `json:"lifetime_mins,omitempty"`
+	Restartable            bool   `json:"restartable,omitempty"`
+	SubmissionID           string `json:"submission_id,omitempty"`
+	// Relationships holds every to-one JSON:API relationship by name
+	// (listener, initiator, owner, ...).
+	Relationships map[string]JSONAPIRelationship `json:"relationships,omitempty"`
+	// SourceEndpointID, SourcePath, UpdatedAt and ExpiresAt are not part of
+	// the /v2/tunnels wire shape and are left empty by the client.
+	SourceEndpointID string `json:"source_endpoint_id,omitempty"`
+	SourcePath       string `json:"source_path,omitempty"`
+	Status           string `json:"status,omitempty"`
+	// CreatedAt is parsed from attributes.created_time (zone-less, read as UTC).
+	CreatedAt *time.Time             `json:"created_at,omitempty"`
+	UpdatedAt *time.Time             `json:"updated_at,omitempty"`
+	ExpiresAt *time.Time             `json:"expires_at,omitempty"`
+	Metadata  map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // TunnelList represents a paginated list of tunnels
@@ -333,6 +358,10 @@ type TunnelUpdate struct {
 	Label             string `json:"-"`
 	ListenerPort      *int   `json:"-"`
 	ListenerIPAddress string `json:"-"`
+	// State requests a lifecycle change, sent as attributes.state; e.g.
+	// "STOPPING" stops a tunnel (what `globus streams tunnel stop` sends).
+	// Omitted when empty.
+	State string `json:"-"`
 }
 
 // ListTunnelsOptions contains options for listing tunnels
@@ -344,13 +373,28 @@ type ListTunnelsOptions struct {
 // StreamAccessPoint represents a Globus Stream Access Point.
 // Added in Python SDK v4.3.0.
 type StreamAccessPoint struct {
-	ID         string                 `json:"id"`
-	TunnelID   string                 `json:"tunnel_id,omitempty"`
-	EndpointID string                 `json:"endpoint_id,omitempty"`
-	Path       string                 `json:"path,omitempty"`
-	AccessURL  string                 `json:"access_url,omitempty"`
-	ExpiresAt  *time.Time             `json:"expires_at,omitempty"`
-	Metadata   map[string]interface{} `json:"metadata,omitempty"`
+	ID              string   `json:"id"`
+	DisplayName     string   `json:"display_name,omitempty"`
+	AdvertisedOwner string   `json:"advertised_owner,omitempty"`
+	ContactEmail    string   `json:"contact_email,omitempty"`
+	ContactInfo     string   `json:"contact_info,omitempty"`
+	Department      string   `json:"department,omitempty"`
+	Description     string   `json:"description,omitempty"`
+	InfoLink        string   `json:"info_link,omitempty"`
+	Organization    string   `json:"organization,omitempty"`
+	Keywords        Keywords `json:"keywords,omitempty"`
+	TLSFTPServer    string   `json:"tlsftp_server,omitempty"`
+	// Relationships holds every to-one JSON:API relationship by name.
+	Relationships map[string]JSONAPIRelationship `json:"relationships,omitempty"`
+	// EndpointID is the host endpoint (relationships.host_endpoint).
+	EndpointID string `json:"endpoint_id,omitempty"`
+	// TunnelID, Path, AccessURL and ExpiresAt are not part of the
+	// /v2/stream_access_points wire shape and are left empty by the client.
+	TunnelID  string                 `json:"tunnel_id,omitempty"`
+	Path      string                 `json:"path,omitempty"`
+	AccessURL string                 `json:"access_url,omitempty"`
+	ExpiresAt *time.Time             `json:"expires_at,omitempty"`
+	Metadata  map[string]interface{} `json:"metadata,omitempty"`
 }
 
 // TunnelEvent represents an event associated with a tunnel.
