@@ -16,6 +16,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 `subscription_id` (empty when null or absent), as shown by `globus group list`.
 Additive. Closes #84.
 
+### Added — `TunnelUpdate.State` (v4 module)
+
+`transfer.TunnelUpdate` gains `State`, sent as `attributes.state` in the
+JSON:API `PATCH /v2/tunnels/{id}` body and omitted when empty. Lets callers
+stop a tunnel (`{"data":{"type":"Tunnel","attributes":{"state":"STOPPING"}}}`),
+as `globus streams tunnel stop` does.
+
+### Fixed — tunnel and stream access point decoding dropped fields (v4 module)
+
+JSON:API relationships were never decoded, and `flattenTunnel`/`flattenSAP` kept
+only id/label/status, so most of the wire data was reachable only through the
+raw `Metadata` map. `Tunnel` now has typed `Label`, `State`,
+`ListenerAccessPointID`, `InitiatorAccessPointID`, listener/initiator IP and
+port, `LifetimeMins`, `Restartable`, `SubmissionID`, and `Relationships`.
+`Owner` is now populated from `relationships.owner` and `CreatedAt` from
+`created_time`. `DisplayName` is kept as a deprecated alias of `Label`.
+`StreamAccessPoint` now has `DisplayName`, `AdvertisedOwner`, `ContactEmail`,
+`ContactInfo`, `Department`, `Description`, `InfoLink`, `Organization`,
+`Keywords`, `TLSFTPServer`, and `Relationships`, with `EndpointID` from
+`relationships.host_endpoint`. Null and to-many relationships are tolerated.
+Additive. Closes #82.
+
 ### Changed — app logout now revokes tokens (v4 module)
 
 `UserApp.Logout`/`LogoutWithOptions` (and `ClientApp.LogoutWithOptions` with

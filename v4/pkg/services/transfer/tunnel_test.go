@@ -4,6 +4,7 @@ package transfer_test
 
 import (
 	"context"
+	"io"
 	"net/http"
 	"testing"
 	"time"
@@ -95,6 +96,58 @@ func TestUpdateTunnel(t *testing.T) {
 		result, err := client.UpdateTunnel(context.Background(), "tunnel-123", &transfer.TunnelUpdate{Label: "updated"})
 		require.NoError(t, err)
 		assert.Equal(t, "tunnel-123", result.ID)
+	})
+
+	// globus streams tunnel stop PATCHes exactly
+	// {"data":{"type":"Tunnel","attributes":{"state":"STOPPING"}}} (issue #82).
+	t.Run("state-only update sends the stop document", func(t *testing.T) {
+		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			assert.Equal(t, http.MethodPatch, r.Method)
+			body, err := io.ReadAll(r.Body)
+			require.NoError(t, err)
+			assert.JSONEq(t, `{"data":{"type":"Tunnel","attributes":{"state":"STOPPING"}}}`, string(body))
+			testhelpers.RespondJSON(w, http.StatusOK,
+				jsonapiResource("Tunnel", "tunnel-123", map[string]interface{}{"state": "STOPPING"}))
+		})
+		client, err := transfer.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
+		require.NoError(t, err)
+		defer client.Close()
+
+		_, err = client.UpdateTunnel(context.Background(), "tunnel-123", &transfer.TunnelUpdate{State: "STOPPING"})
+		require.NoError(t, err)
+	})
+
+	t.Run("state sits alongside the other attributes", func(t *testing.T) {
+		port := 8080
+		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			body, err := io.ReadAll(r.Body)
+			require.NoError(t, err)
+			assert.JSONEq(t, `{"data":{"type":"Tunnel","attributes":{
+				"label":"l","listener_port":8080,"listener_ip_address":"10.0.0.1","state":"STOPPING"}}}`, string(body))
+			testhelpers.RespondJSON(w, http.StatusOK, jsonapiResource("Tunnel", "tunnel-123", map[string]interface{}{}))
+		})
+		client, err := transfer.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
+		require.NoError(t, err)
+		defer client.Close()
+
+		_, err = client.UpdateTunnel(context.Background(), "tunnel-123", &transfer.TunnelUpdate{
+			Label: "l", ListenerPort: &port, ListenerIPAddress: "10.0.0.1", State: "STOPPING"})
+		require.NoError(t, err)
+	})
+
+	t.Run("empty state is omitted", func(t *testing.T) {
+		server := testhelpers.NewMockServer(t, func(w http.ResponseWriter, r *http.Request) {
+			body, err := io.ReadAll(r.Body)
+			require.NoError(t, err)
+			assert.NotContains(t, string(body), "state")
+			testhelpers.RespondJSON(w, http.StatusOK, jsonapiResource("Tunnel", "tunnel-123", map[string]interface{}{}))
+		})
+		client, err := transfer.NewClient(context.Background(), testhelpers.NewTestConfig(server.URL))
+		require.NoError(t, err)
+		defer client.Close()
+
+		_, err = client.UpdateTunnel(context.Background(), "tunnel-123", &transfer.TunnelUpdate{Label: "only-label"})
+		require.NoError(t, err)
 	})
 }
 
